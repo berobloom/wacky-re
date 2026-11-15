@@ -407,7 +407,11 @@ struct sfxchan {
 struct car {
     char f00[6];
     short face;
-    char f08[0xc4 - 8];
+    char f08[0x1a - 8];
+    int score;
+    char f1e[0x9c - 0x1e];
+    short place;
+    char f9e[0xc4 - 0x9e];
     int sndhandle;
     char fc8[0xd0 - 0xc8];
     int fd0;
@@ -1388,7 +1392,18 @@ int map_cell(short x, short y)
 /* ---- swapping the second player's view in and out */
 
 extern short v88b0a, v88b0e, v88c6e, v88c72, v88c76, v88ca2, v88ca6, v88c6a, v88b7e;
-extern int v7d898, v7d860, v7d840, v6ab48, v6aae0;
+extern int v7d898, v7d860, v7d840;
+
+struct player {                 /* 0x6AAB0, 0x68 bytes */
+    unsigned short place;
+    short f02, f04;
+    short f06;
+    char f08[0x30 - 8];
+    int pos;
+    char f34[0x68 - 0x34];
+};
+
+extern struct player players[];
 extern struct kart *kart7d5bc, *kart7d5c0;
 
 void view2_in(void)
@@ -1400,7 +1415,7 @@ void view2_in(void)
     curkart = kart7d5bc;
     v88b0a = v88ca2;
     v88b0e = v88ca6;
-    curpos = v6ab48;
+    curpos = players[1].pos;
     myplayer = v88c6a;
     v7d860 = v7d840;
     v88b7e = 1;
@@ -1410,7 +1425,7 @@ void view2_save(void)
 {
     v88ca2 = v88b0a;
     v88ca6 = v88b0e;
-    v6ab48 = curpos;
+    players[1].pos = curpos;
     v7d840 = v7d860;
 }
 
@@ -1418,9 +1433,154 @@ void view2_out(void)
 {
     v88b0a = v88c6e;
     v88b0e = v88c72;
-    curpos = v6aae0;
+    curpos = players[0].pos;
     myplayer = v88c76;
     v7d860 = v7d898;
     curkart = kart7d5c0;
     v88b7e = 0;
+}
+
+/* ---- place display */
+
+extern int v7d998;
+extern short v88bb2;
+struct face { char *img; char f04[0x98 - 4]; };
+extern struct face faces[];
+void print_at(int x, int y, char *s, int mode);
+
+void show_place(short n)
+{
+    char buf[4];
+    unsigned short save;
+
+    if (splitscreen || v7d998 || v88bb2 == 4)
+        return;
+    switch (players[n].place) {
+    case 1:
+        strcpy(buf, "1ST");
+        break;
+    case 2:
+        strcpy(buf, "2ND");
+        break;
+    case 3:
+        strcpy(buf, "3RD");
+        break;
+    }
+    save = pal_a;
+    spr_y = 4 + (players[n].place - 1) * 0x1C;
+    pal_a = 0;
+    print_at(0xF0, spr_y, buf, 0);
+    sprptr = faces[players[n].f06].img;
+    spr_x = 0x10E;
+    spr_y = 4 + (players[n].place - 1) * 0x1C;
+    spr_h = 0x26;
+    spr_w = 0x1C;
+    drawsprite();
+    pal_a = 16000;
+    drawsprite();
+    print_at(0xF0, spr_y, buf, 0);
+    pal_a = save;
+}
+
+/* ---- race places */
+
+extern short nplayers;
+
+void calc_places(void)
+{
+    int idx[10];
+    int score[10];
+    int n;
+    int i, j, t, found, s, pl;
+
+    for (i = 1; i <= 8; i++) {
+        score[i] = cars[i - 1].score;
+        idx[i] = i - 1;
+    }
+    for (i = 1; i <= 7; i++) {
+        for (j = i + 1; j <= 8; j++) {
+            if (score[i] < score[j]) {
+                t = score[i];
+                score[i] = score[j];
+                score[j] = t;
+                t = idx[i];
+                idx[i] = idx[j];
+                idx[j] = t;
+            }
+        }
+    }
+    if (splitscreen && nplayers > 1) {
+        for (i = 0; i <= nplayers; i++) {
+            if (idx[i + 1] != 0 && idx[i + 1] != 1)
+                cars[idx[i + 1]].place = i + 1;
+        }
+    }
+    for (i = 0; i <= nplayers; i++) {
+        if (idx[i + 1] == 0) {
+            j = i;
+            n = i + 1;
+            break;
+        }
+    }
+    s = cars[0].score;
+    found = 0;
+    for (i = 0; i <= nplayers; i++) {
+        if (i != j && cars[idx[i + 1]].score == s) {
+            found = 1;
+            break;
+        }
+    }
+    if (!found) {
+        if (v88bb2 == 4)
+            n = 1;
+        if (n < 1)
+            n = 1;
+        if (n > 8)
+            n = 8;
+        cars[0].place = n;
+    }
+    if (splitscreen) {
+        for (i = 0; i <= nplayers; i++) {
+            if (idx[i + 1] == 1) {
+                j = i;
+                n = i + 1;
+                break;
+            }
+        }
+        if (n < 1)
+            n = 1;
+        if (n > 8)
+            n = 8;
+        s = cars[1].score;
+        found = 0;
+        for (i = 0; i <= nplayers; i++) {
+            if (i != j && cars[idx[i + 1]].score == s) {
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            if (v88bb2 == 4)
+                n = 1;
+            if (n < 1)
+                n = 1;
+            if (n > 8)
+                n = 8;
+            cars[1].place = n;
+        }
+    } else {
+        j = 0;
+    }
+    for (i = 0; i <= j; i++) {
+        pl = (short)players[i].place;
+        if (pl) {
+            if (pl < 1)
+                pl = 1;
+            if (pl > 8)
+                pl = 8;
+            if (v88bb2 == 4)
+                pl = 1;
+            cars[i].place = pl;
+        }
+    }
 }
