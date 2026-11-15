@@ -543,3 +543,7 @@
 0x07d87c v7d87c          # SPECULATIVE: destination sprite/pointer block base
 0x07d884 v7d884          # SPECULATIVE: block base A (0x70660)
 0x07d888 v7d888          # SPECULATIVE: block base B (0x6E728)
+0x017888 fn_17888        # LIKELY: center and double-print a string (pal_a 0 then 0x3E80), y defaults to 0x60
+0x017928 fn_17928        # ?
+0x017928 fn_17928        # LIKELY: race-start setup monster (~2.4KB: mode flags v88bde/p2offset/view flags, lap-data pointers, net wait ("WAITING FOR PLAYER ONE..."), demo .BMC load, music load; single frame esp-0xa4 spans 0x17928-0x182cd)
+0x0182ce (dead)         # CONFIRMED dead: no call/jmp/dword reference anywhere in the image; byte copy dst+i*3 <- src+i*3 (ret 4, 5th arg on stack); must still be reproduced for byte-identical rebuild

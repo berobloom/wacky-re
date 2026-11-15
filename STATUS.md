@@ -17,9 +17,13 @@ keep a session diary here.
 Take the first open item when QUEUE.md has none open. Mark items CLOSED or
 BLOCKED (with the reason) rather than deleting them.
 
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1437C, 62 functions byte-identical and 15 near
-   misses (`src/check.sh`; near misses are marked `differs:` in the source, and the stack-slot ones are QUESTIONS.md 2).
-   Next: continue at 0x14380 in address order. `tools/wc/starts.py ww LO HI` lists function starts (it can
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1790D (through fn_17888), 78 functions
+   byte-identical and ~20 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
+   register/scheduling ones are QUESTIONS.md 2). Session 2026-08-05b added fn_16f90/fn_173c4/fn_17888,
+   struct player pack(1) layout, struct face 0x98 record, calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX.
+   Next in address order: fn_17928 (2.4 KB setup monster, 0x17928-0x182cd, one frame, multiple internal rets),
+   dead block 0x182ce-0x18326 (no xrefs, still needs bytes), fn_1832c (~4 KB), then 0x19c68 / 0x19db8 / 0x19eac /
+   0x1a148 (lap menu, tractable). `src/ww.c` is ~4 K lines: grep, don't read whole. `tools/wc/starts.py ww LO HI` lists function starts (it can
    also list loop bodies that follow a jmp). Watcom 9.5 `-oe` inlines functions defined later in the
    file too: readdat/datsize/seekdat/since2/sfx_play2/view2_* calls show up inline. Functions after the
    data-file block (0x14128-0x14260) go at the end of the file.

@@ -2296,6 +2296,24 @@ void readdat(void *buf, int n)
     fread(buf, n, 1, datfile);
 }
 
+/* ---- centered double-print (0x17888) */
+
+void fn_17888(char *s, short y)
+{
+    int save;
+    int x;
+
+    save = pal_a;
+    pal_a = 0;
+    x = (0x140 - (short)((int)strlen(s) * 8)) / 2;
+    if (y == 0)
+        y = 0x60;
+    print_at((short)x, y, s, 0);
+    pal_a = 0x3e80;
+    print_at((short)x, y, s, 0);
+    pal_a = save;
+}
+
 /* ---- my DAT player record load (0x173C4) */
 
 extern short v88b7e;
