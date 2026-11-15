@@ -6,7 +6,8 @@ usage: starts.py PROG 0xLO 0xHI
 A start is a 4-aligned address that is a direct call target, or that follows a ret/iret/jmp and the
 compiler's 4-byte padding (90 / 8b c0 / 8d 40 00). Prints each with its source (call, after-ret, both).
 Watcom pads functions to 4 inside a module, so this finds the functions with no register-save prologue
-that a prologue scanner misses. False positives: jump-table targets that follow a jmp.
+that a prologue scanner misses. False positives: jump-table targets and loop bodies that follow a jmp
+(check that the previous instruction really ends a function).
 """
 import json
 import os
