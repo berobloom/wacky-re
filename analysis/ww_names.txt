@@ -4,7 +4,7 @@
 0x0102cc crcstep      # LIKELY: (crc >> 8) ^ b indexes the table at 0x7D380; result (crc << 8) ^ entry
 0x0105fc sendbyte     # SPECULATIVE: called per byte by sendstr; takes the byte in AL
 0x0109d8 sendstr      # STRONGLY SUPPORTED: matching C in analysis/optpin/T6.C; sends a string, CR, LF with tick waits
-0x010b74 getit        # LIKELY: matching C (T2.C); name is a placeholder
+0x010b74 xalloc       # LIKELY: matching C (T2.C); malloc (clib nmalloc 0x41475), -1 on failure, else the block through a pointer
 0x012490 fromscroll   # SPECULATIVE: matching C (T1.C); global at the 'scrollpos' address minus the argument
 0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
 0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
@@ -15,3 +15,5 @@
 0x0341d8 waitkey      # LIKELY: matching C (T2.C); prints "Press any key when ready.."
 0x07d584 datfile      # LIKELY: the FILE* seekdat/telldat/readdat use
 0x07e720 ticks        # LIKELY: zeroed and polled by sendstr's waits
+0x07ebb0 sendfail     # LIKELY: set to 1 by sendstr when aborted (objmatch fixup check of T6.C)
+0x088cd0 aborted      # LIKELY: tested == 1 by sendstr, set by the asm interrupt handler near 0x409C0

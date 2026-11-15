@@ -14,7 +14,7 @@ unsigned short crcstep(unsigned short crc, unsigned short b)
     return (crc << 8) ^ crctab[crcidx];
 }
 
-int getit(int *p, int x)
+int xalloc(int *p, int x)
 {
     int r;
     r = ext41475(x);

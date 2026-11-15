@@ -7,6 +7,11 @@ Each public code symbol's bytes (up to the next public at a higher offset) are s
 fixups fill masked. With addresses (one per public, in offset order; 0 skips one) each function is compared at
 its address: MATCH, or the first differing byte with both sides shown, so a near miss reads like a diff.
 Otherwise it is searched for (needs a run of 4 bytes no fixup touches): FOUND at the address(es), or not found.
+
+Then the fixups of the matched functions are checked against the game's bytes (32-bit offsets, absolute or
+self-relative): an external named in analysis/PROG_names.txt must point at that address; one not named is
+listed as a proposed name; references into one of the module's own segments must agree on one base address
+per segment (the module's _TEXT base follows from the function addresses).
 """
 import json
 import os
@@ -50,6 +55,69 @@ def publics(recs):
     return out
 
 
+def names(prog):
+    out = {}
+    try:
+        for line in open(os.path.join(L.ROOT, 'analysis', prog + '_names.txt')):
+            f = line.split('#')[0].split()
+            if len(f) >= 2 and f[0].startswith('0x'):
+                out[f[1]] = int(f[0], 16)
+    except OSError:
+        pass
+    return out
+
+
+def plain(sym):
+    """Watcom's register-convention decoration: name_ for functions, _name for data"""
+    return sym[:-1] if sym.endswith('_') else sym[1:] if sym.startswith('_') else sym
+
+
+def check_fixups(recs, pubs, placed, code, cbase, known):
+    """placed: {public name: game address} for the functions that matched"""
+    pubat = {name: (seg, off) for seg, off, name in publics(recs)}
+    funcs = sorted((off, seg, name) for seg, off, name in pubs)
+    bases, bad, new, ok = {}, [], {}, 0
+    for name, addr in placed.items():
+        seg, off = pubat[name]
+        bases.setdefault(seg, {}).setdefault(addr - off, []).append(name)
+    for seg, at, loc, selfrel, kind, nm, disp in L.fixups_of(recs):
+        if loc != 9:
+            continue
+        fn = None
+        for off, s2, name in funcs:
+            if s2 == seg and off <= at:
+                fn = (off, name)
+        if not fn or fn[1] not in placed:
+            continue
+        game_at = placed[fn[1]] + at - fn[0]
+        v = struct.unpack_from('<I', code, game_at - cbase)[0]
+        tgt = (game_at + 4 + v) & 0xFFFFFFFF if selfrel else v
+        if kind == 'ext' and nm in pubat:
+            kind, s2, o2 = 'seg', pubat[nm][0], pubat[nm][1]
+            bases.setdefault(s2, {}).setdefault(tgt - disp - o2, []).append('%s@0x%x' % (fn[1], game_at))
+            continue
+        if kind == 'seg':
+            bases.setdefault(nm, {}).setdefault(tgt - disp, []).append('%s@0x%x' % (fn[1], game_at))
+            continue
+        want = known.get(plain(nm))
+        if want is None:
+            new.setdefault(plain(nm), set()).add(tgt - disp)
+        elif want + disp == tgt:
+            ok += 1
+        else:
+            bad.append('%s@0x%x: %s+%d should be 0x%x, game has 0x%x' % (fn[1], game_at, nm, disp, want + disp, tgt))
+    print('fixups: %d named targets agree' % ok)
+    for b in bad:
+        print('  WRONG ' + b)
+    for seg, bs in sorted(bases.items()):
+        if len(bs) == 1:
+            print('  segment %-8s base 0x%06x (%d references agree)' % (seg, next(iter(bs)), len(next(iter(bs.values())))))
+        else:
+            print('  segment %-8s DISAGREES: %s' % (seg, ', '.join('0x%x (%s)' % (b, ' '.join(v[:3])) for b, v in bs.items())))
+    for nm, addrs in sorted(new.items()):
+        print('  unnamed %-16s %s' % (nm, ' '.join('0x%06x' % a for a in sorted(addrs))))
+
+
 def main():
     if len(sys.argv) < 3:
         print(__doc__)
@@ -64,6 +132,7 @@ def main():
     segs = L.code_of(recs)
     pubs = sorted(p for p in publics(recs) if p[0] in segs)
     fi = 0
+    placed = {}
     for i, (seg, off, name) in enumerate(pubs):
         buf, mask = segs[seg]
         # the next public at a higher offset (the compiler gives functions with identical code one body)
@@ -73,8 +142,11 @@ def main():
         d = None if a is None else next((k for k in range(len(b)) if not m[k] and code[a + k] != b[k]), None)
         hits = L.find(code, b, m)
         if a is not None and d is None:
+            placed[name] = want[fi]
             print('%-20s %3d bytes  MATCH at 0x%06x (fixup bytes not compared)' % (name, len(b), want[fi]))
         elif hits:
+            if len(hits) == 1:
+                placed[name] = hits[0] + cbase
             print('%-20s %3d bytes  FOUND at 0x%06x%s' % (name, len(b), hits[0] + cbase,
                                                         '' if len(hits) == 1 else ' (+%d more)' % (len(hits) - 1)))
         elif a is None:
@@ -85,6 +157,8 @@ def main():
                 ' '.join('..' if m[k] else '%02x' % b[k] for k in range(max(0, d - 4), min(len(b), d + 12))),
                 ' '.join('%02x' % code[a + k] for k in range(max(0, d - 4), min(len(b), d + 12)))))
         fi += 1
+    if placed:
+        check_fixups(recs, pubs, placed, code, cbase, names(prog))
     return 0
 
 

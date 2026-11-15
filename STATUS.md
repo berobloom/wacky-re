@@ -16,8 +16,10 @@ keep a session diary here.
 Take the first open item when QUEUE.md has none open. Mark items CLOSED or
 BLOCKED (with the reason) rather than deleting them.
 
-1. Plan the matching rebuild: module boundaries and link order in obj1 (game C below 0x41450), the 12 asm
-   routines, the remaining options (findings/executables.md, Open), QUESTIONS.md 1.
+1. Matching rebuild, set up: the layout is known (findings/executables.md, Code layout: one C module
+   0x10010-0x36A4D, asm 0x36A4E-0x409EE, then libraries). Next: a per-function check that also compares
+   fixup targets (objmatch masks them), then decompile in address order; the asm as a byte-exact source.
+   Remaining options and QUESTIONS.md 1 as they come up.
 2. Inventory: archives and file formats (WACKY.DAT), strings.
 2. Get the original running under the harness; record the boot's segments or
    LE deltas and a first save state in `captures/`.

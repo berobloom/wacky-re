@@ -4,7 +4,8 @@
 #   analysis/optpin/check.sh [wcc386 options]      default: -s -3r -oilrt
 #
 # Needs .work/toolchains/inst/WC95B and .work/le/ww.* (findings/executables.md). Works in .work/optpin.
-# Expected with the default: 10 of 11 MATCH; crcstep_ differs (QUESTIONS.md 1).
+# Expected with the default: 10 of 11 MATCH; crcstep_ differs (QUESTIONS.md 1). T1 and T2 collect functions
+# from all over the game, so their fixup check reports segment bases that disagree; T6 (one function) agrees.
 set -eu
 cd "$(dirname "$0")/../.."
 [ $# -gt 0 ] || set -- -s -3r -oilrt

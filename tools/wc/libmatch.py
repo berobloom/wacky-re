@@ -124,6 +124,93 @@ def code_of(recs):
     return out
 
 
+def fixups_of(recs):
+    """the fixups of a module's code segments: [(seg, offset, loc, selfrel, kind, name, disp)];
+    kind 'seg' (name = segment), 'grp' (name = group) or 'ext' (name = external symbol)"""
+    lnames, segs, grps, exts, out = [None], [None], [None], [None], []
+    threads = {}
+    last = None
+    for t, b in recs:
+        if t == 0x96:
+            p = 0
+            while p < len(b):
+                n = b[p]
+                lnames.append(b[p + 1:p + 1 + n].decode('latin1'))
+                p += 1 + n
+        elif t in (0x98, 0x99):
+            p0 = 1 + (3 if b[0] >> 5 == 0 else 0)
+            for lsize in ((4, 2) if t == 0x99 else (2, 4)):
+                ln, p = index(b, p0 + lsize)
+                cl, p = index(b, p)
+                if 0 < ln < len(lnames) and 0 < cl < len(lnames) and p + 1 == len(b):
+                    break
+            segs.append((lnames[ln] if ln < len(lnames) else '?', lnames[cl] if cl < len(lnames) else '?'))
+        elif t == 0x9A:
+            gi, _ = index(b, 0)
+            grps.append(lnames[gi] if gi < len(lnames) else '?')
+        elif t in (0x8C, 0xB4):                          # EXTDEF, LEXTDEF
+            p = 0
+            while p < len(b):
+                n = b[p]
+                exts.append(b[p + 1:p + 1 + n].decode('latin1'))
+                p += 1 + n
+                _, p = index(b, p)
+        elif t in (0xB0, 0xB8):                          # COMDEF, LCOMDEF share the external indexes
+            p = 0
+            while p < len(b):
+                n = b[p]
+                exts.append(b[p + 1:p + 1 + n].decode('latin1'))
+                p += 1 + n
+                _, p = index(b, p)
+                kind = b[p]
+                p += 1
+                for _ in range(2 if kind == 0x61 else 1):
+                    v = b[p]
+                    p += {0x81: 3, 0x84: 4, 0x88: 5}.get(v, 1)
+        elif t in (0xA0, 0xA1):
+            si, p = index(b, 0)
+            off = struct.unpack_from('<I' if t == 0xA1 else '<H', b, p)[0]
+            last = (segs[si][0], off) if (segs[si][1] or '').upper() == 'CODE' else None
+        elif t in (0x9C, 0x9D):
+            p = 0
+            while p < len(b):
+                c = b[p]
+                if not c & 0x80:                          # THREAD: remember target threads
+                    method, num, frame = (c >> 2) & 7, c & 3, c & 0x40
+                    p += 1
+                    idx = None
+                    if method < 3:
+                        idx, p = index(b, p)
+                    if not frame:
+                        threads[num] = (method, idx)
+                    continue
+                selfrel = not c & 0x40
+                loc = (c >> 2) & 15
+                ofs = ((c & 3) << 8) | b[p + 1]
+                p += 2
+                fd = b[p]
+                p += 1
+                if not fd & 0x80 and ((fd >> 4) & 7) < 3:
+                    _, p = index(b, p)
+                if fd & 0x08:
+                    method, idx = threads.get(fd & 3, (None, None))
+                else:
+                    method = fd & 3
+                    idx, p = index(b, p)
+                disp = 0
+                if not fd & 0x04:
+                    disp = struct.unpack_from('<i' if t == 0x9D else '<h', b, p)[0]
+                    p += 4 if t == 0x9D else 2
+                if last is None:
+                    continue
+                kind, name = {0: ('seg', segs), 1: ('grp', grps), 2: ('ext', exts)}.get(method & 3, ('?', None))
+                nm = name[idx] if name and idx is not None and idx < len(name) else '?'
+                if kind == 'seg':
+                    nm = nm[0]
+                out.append((last[0], last[1] + ofs, loc, selfrel, kind, nm, disp))
+    return out
+
+
 def find(code, buf, mask):
     """all positions where buf occurs in code, the masked bytes free"""
     n = len(buf)
