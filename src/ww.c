@@ -2050,6 +2050,175 @@ void ani_draw(void)
     }
 }
 
+/* ---- sprites */
+
+extern char *wfont, *ajdata, *pufdata, *handledata, *lapdata, *hogdata, *sparkdata, *ofont, *ofont2, *ofont3, *genef, *crackdata, *icons;
+extern char *sp6a518[], *sp6a538[], *sp6a548[], *sp6a778[], *sp6a878[], *sp6a888[], *sp7b210[], *sp7c0b0[], *sp7c1d8[], *sp6e410[], *sp6e440[], *sp7c800[], *sp7d6d8[];
+extern char *ic7ea84, *hm7d740, *hm7d73c, *hm7d738, *hm7d734, *hm7d730, *hm7d72c, *hm7d724, *hm7d720, *hm7d71c, *hm7d728, *lp6e720, *lp6e724, *lp7d804, *gn7eb24, *gn7eb28, *gn7eb2c, *gn7eb40, *gn7eb44, *gn7eb48, *gn7c7f0, *gn7c7f4, *gn7c7f8, *gn7c7fc, *gn7eae8, *gn7c528, *gn7c52c, *gn7eae4;
+extern short nsprattr;
+extern char sprattr[];
+
+void sprites_load(void)
+{
+    char *p;
+    int i;
+
+    ani_giggles();
+    datfind("WFONT1.SP");
+    readdat(wfont, 0x1FFE);
+    datfind("AJ.SP");
+    readdat(ajdata, 0x10A0);
+    datfind("PUF.SP");
+    readdat(pufdata, 0x10A0);
+    datfind("HANDLE.SP");
+    readdat(handledata, 0xE60);
+    datfind("LAP.SP");
+    readdat(lapdata, 0x4C56);
+    datfind("HOGMIS.SP");
+    readdat(hogdata, 0x17C4);
+    datfind("SPARK.SP");
+    readdat(sparkdata, 0x168);
+    datfind("OFONT.SP");
+    readdat(ofont, 0xF40);
+    readdat(ofont2, 0xEBC);
+    readdat(ofont3, 0x2240);
+    datfind("GENEF.SP");
+    readdat(genef, 0x3964);
+    datfind("CRACK.SP");
+    readdat(crackdata, 0x1458);
+    datfind("ICONS.SP");
+    readdat(icons, 0x15C6);
+    p = ofont3;
+    for (i = 0; i < 137; i++) {
+        sp6a548[i] = p;
+        p += 0x40;
+    }
+    p = anidata;
+    for (i = 0; i < 7; i++) {
+        sp7b210[i] = p;
+        p += 0x1A20;
+    }
+    p = icons;
+    for (i = 0; i < 6; i++) {
+        sp7c0b0[i] = p;
+        p += 0x222;
+    }
+    ic7ea84 = p;
+    p += 0x31E;
+    for (i = 0; i < 10; i++) {
+        sp7c1d8[i] = p;
+        p += 0x96;
+    }
+    p = hogdata;
+    p += 0x2BE;
+    hm7d740 = p;
+    p += 0x2BE;
+    hm7d73c = p;
+    p += 0xEA;
+    hm7d738 = p;
+    p += 0xEA;
+    hm7d734 = p;
+    p += 0xEA;
+    hm7d730 = p;
+    p += 0xEA;
+    hm7d72c = p;
+    p += 0xEA;
+    hm7d724 = p;
+    p += 0x3A8;
+    hm7d720 = p;
+    p += 0x3A8;
+    hm7d71c = p;
+    p += 0x3A8;
+    hm7d728 = p;
+    p = lapdata;
+    p += 0x13F0;
+    for (i = 0; i < 10; i++) {
+        sp6e410[i] = p;
+        p += 0x27E;
+    }
+    lp6e720 = p;
+    p += 0x550;
+    lp6e724 = p;
+    p += 0x550;
+    img7d83c = p;
+    p += 0x616;
+    img7d814 = p;
+    p += 0x4D3;
+    img7d810 = p;
+    p += 0x487;
+    for (i = 0; i < 10; i++) {
+        sp6e440[i] = p;
+        p += 0x5A;
+    }
+    lp7d804 = p;
+    datfind("SPRITE.ATR");
+    readdat(&nsprattr, 2);
+    readdat(sprattr, nsprattr * 40);
+    p = wfont;
+    for (i = 0; i < 42; i++) {
+        sp6a888[i] = p;
+        p += 0xC3;
+    }
+    p = ajdata;
+    for (i = 0; i < 4; i++) {
+        sp6a878[i] = p;
+        p += 0x428;
+    }
+    p = pufdata;
+    for (i = 0; i < 4; i++) {
+        sp6a538[i] = p;
+        p += 0x428;
+    }
+    p = handledata;
+    for (i = 0; i < 8; i++) {
+        sp6a518[i] = p;
+        p += 0x1CC;
+    }
+    p = ofont;
+    for (i = 0; i < 61; i++) {
+        sp6a778[i] = p;
+        p += 0x40;
+    }
+    p = genef;
+    for (i = 0; i < 6; i++) {
+        sp7c800[i] = p;
+        p += 0x284;
+    }
+    gn7eb24 = p;
+    p += 0xC3;
+    gn7eb28 = p;
+    p += 0xC3;
+    gn7eb2c = p;
+    p += 0xC3;
+    gn7eb40 = p;
+    p += 0x428;
+    gn7eb44 = p;
+    p += 0x428;
+    gn7eb48 = p;
+    p += 0x428;
+    gn7c7f0 = p;
+    p += 0x428;
+    gn7c7f4 = p;
+    p += 0x428;
+    gn7c7f8 = p;
+    p += 0x428;
+    gn7c7fc = p;
+    p += 0x428;
+    gn7eae8 = p;
+    p += 0x428;
+    gn7c528 = p;
+    p += 0x134;
+    gn7c52c = p;
+    p += 0x134;
+    gn7eae4 = p;
+    p += 0x9C;
+    for (i = 0; i < 11; i++) {
+        sp7d6d8[i] = p;
+        p += 0x3F;
+    }
+    img7eb60 = p;
+}
+
 /* ---- the data file (these follow the code above; the calls before them are inlined) */
 
 void seekdat(long ofs)
