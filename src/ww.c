@@ -409,13 +409,28 @@ struct car {
     short face;
     char f08[0x1a - 8];
     int score;
-    char f1e[0x9c - 0x1e];
+    int score2;
+    char f22[0x82 - 0x22];
+    int f82;
+    char f86[0x94 - 0x86];
+    short f94, f96, f98, f9a;
     short place;
-    char f9e[0xc4 - 0x9e];
+    short lastcell;
+    short backward;
+    short lap;
+    char fa4[0xc4 - 0xa4];
     int sndhandle;
     char fc8[0xd0 - 0xc8];
     int fd0;
-    char fd4[0x104 - 0xd4];
+    int fd4;
+    int fd8;
+    int fdc;
+    int fe0;
+    int fe4;
+    int fe8;
+    int fec;
+    int ff0;
+    char ff4[0x104 - 0xf4];
 };
 
 extern int soundon;
@@ -425,7 +440,7 @@ extern char *enginedata;
 extern int sfxvol;
 extern int enginevol;
 extern short twoplayer, splitscreen;
-extern struct car cars[2];
+extern struct car cars[8];
 
 int FX_SoundActive(int handle);
 int FX_StopSound(int handle);
@@ -1394,13 +1409,17 @@ int map_cell(short x, short y)
 extern short v88b0a, v88b0e, v88c6e, v88c72, v88c76, v88ca2, v88ca6, v88c6a, v88b7e;
 extern int v7d898, v7d860, v7d840;
 
-struct player {                 /* 0x6AAB0, 0x68 bytes */
+struct player {                 /* 0x68 bytes; base 0x6AA90 is a guess (the most-used low address) */
+    char f00[0x16];
+    short x, y;
+    char f1a[0x20 - 0x1A];
     unsigned short place;
-    short f02, f04;
-    short f06;
-    char f08[0x30 - 8];
+    short lap;
+    short cell;
+    short face;
+    char f28[0x50 - 0x28];
     int pos;
-    char f34[0x68 - 0x34];
+    char f54[0x68 - 0x54];
 };
 
 extern struct player players[];
@@ -1470,7 +1489,7 @@ void show_place(short n)
     spr_y = 4 + (players[n].place - 1) * 0x1C;
     pal_a = 0;
     print_at(0xF0, spr_y, buf, 0);
-    sprptr = faces[players[n].f06].img;
+    sprptr = faces[players[n].face].img;
     spr_x = 0x10E;
     spr_y = 4 + (players[n].place - 1) * 0x1C;
     spr_h = 0x26;
@@ -1583,4 +1602,114 @@ void calc_places(void)
             cars[i].place = pl;
         }
     }
+}
+
+/* ---- laps */
+
+extern short curcell, ncells, nlaps, finished;
+extern int racetime, lastlap;
+extern int laptimes[];
+void FX_StopSound(int handle);
+void car_finished(int i);
+
+/* differs: the game inlines since2(cars[i].f82) and we call it (cf. modem and -oe); laptimes index in eax
+   rather than edi (+203); the backward-lap score2 operands load in the other order */
+void car_laps(void)
+{
+    int n;
+    int i;
+    int c;
+
+    n = splitscreen != 0;
+    for (i = 0; i <= n; i++) {
+        curcell = map_at(players[i].x, players[i].y);
+        if (curcell == 0)
+            continue;
+        if (curcell == 1 && cars[i].lastcell == ncells) {
+            cars[i].f96 = 0;
+            if (cars[i].backward) {
+                cars[i].backward = 0;
+            } else {
+                cars[i].lap++;
+                if (!twoplayer && !splitscreen && !v7d998 && v88bb2 == 4 && cars[i].lap > 1 && cars[i].lap <= 7) {
+                    c = cars[i].lap - 2;
+                    laptimes[c] = c == 0 ? racetime : racetime - lastlap;
+                    lastlap = racetime;
+                }
+                if (cars[i].lap <= nlaps) {
+                    cars[i].f94 = 1;
+                    if (cars[i].lap == nlaps) {
+                        voice_check(9);
+                        if (!voicebusy)
+                            voice_play(9);
+                        cars[i].fd4 = 7;
+                        cars[i].fe0 = 0;
+                        cars[i].fdc = 6;
+                        cars[i].fe4 = 0;
+                        cars[i].fe8 = 0;
+                        if (soundon) {
+                            if (cars[i].ff0) {
+                                FX_StopSound(cars[i].fec);
+                                cars[i].ff0 = 0;
+                            }
+                            car_finished(i);
+                        }
+                    }
+                }
+            }
+        } else if (curcell == ncells && cars[i].lastcell == 1) {
+            if (cars[i].f9a) {
+                if (!cars[i].f96) {
+                    cars[i].f98 = 0;
+                    cars[i].f82 = ticks2;
+                }
+                cars[i].f96 = 1;
+            }
+            cars[i].backward = 1;
+        } else if (curcell < cars[i].lastcell) {
+            if (!cars[i].f9a) {
+                if (!cars[i].f96) {
+                    cars[i].f98 = 0;
+                    cars[i].f82 = ticks2;
+                }
+                cars[i].f96 = 1;
+            }
+        } else if (cars[i].f96) {
+            if (curcell > cars[i].lastcell || since2(cars[i].f82) >= 10)
+                cars[i].f96 = 0;
+        }
+        cars[i].lastcell = curcell;
+        if (!cars[i].backward) {
+            cars[i].score = (cars[i].lap << 10) + curcell;
+            cars[i].score2 = curcell + cars[i].lap * ncells;
+        } else {
+            cars[i].score = ((cars[i].lap - 1) << 10) + curcell;
+            cars[i].score2 = curcell + ncells * (cars[i].lap - 1);
+        }
+        if (cars[i].lap == nlaps + 1 && players[i].place == 0) {
+            players[i].place = ++finished;
+            if (finished <= 3)
+                show_place(i);
+        }
+    }
+    for (i = 0; i <= nplayers; i++) {
+        if (i == 0)
+            continue;
+        if (splitscreen && i == 1)
+            continue;
+        c = map_at(players[i].x, players[i].y);
+        if (c == 1 && players[i].cell == ncells) {
+            if (players[i].lap < nlaps + 1)
+                players[i].lap++;
+            if (players[i].lap == nlaps + 1 && players[i].place == 0) {
+                players[i].place = ++finished;
+                if (finished <= 3)
+                    show_place(i);
+            }
+        }
+        cars[i].score = (players[i].lap << 10) + c;
+        cars[i].score2 = players[i].lap * ncells + c;
+        players[i].cell = c;
+    }
+    calc_places();
 }

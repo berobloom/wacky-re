@@ -278,7 +278,7 @@
 0x07d898 v7d898       # SPECULATIVE
 0x07d860 v7d860       # SPECULATIVE
 0x07d840 v7d840       # SPECULATIVE
-0x06aab0 players      # LIKELY: 0x68-byte records {place (unsigned short), ..., +6 face index, +0x30 pos}; view2 swaps players[0/1].pos
+0x06aa90 players      # SPECULATIVE base (most-used low address): 0x68-byte records {+0x16 x, +0x18 y, +0x20 place, +0x22 lap, +0x24 cell, +0x26 face, +0x50 pos}
 0x012770 show_place   # LIKELY: prints 1ST/2ND/3RD and the face of player n at y = (place-1)*28+4
 0x0148f4 print_at     # SPECULATIVE: (x, y, string, mode); strlen first, mode 2 sets 0x88ce8 = 0x2c
 0x073c08 faces        # SPECULATIVE: 0x98-byte records, image pointer first; indexed by players[].f06
@@ -286,3 +286,12 @@
 0x088bb2 v88bb2       # SPECULATIVE: short; show_place does nothing when 4
 0x0128a4 calc_places  # LIKELY: sorts the 8 cars by score (bubble sort), sets cars[].place 1..8; 1 when v88bb2 == 4
 0x088c40 nplayers     # SPECULATIVE: short; calc_places loops i <= nplayers
+0x012b44 car_laps     # LIKELY: map cell under each car; lap counting at cell 1 after the last cell, backward crossing, cars[].score = lap<<10 + cell, then calc_places
+0x088bb4 curcell      # LIKELY: short, the map cell under the car car_laps is on
+0x088ba2 ncells       # LIKELY: short, the last cell number of the track
+0x088b9c nlaps        # LIKELY: short, laps of the race
+0x088c60 finished     # LIKELY: short, cars over the line so far (gives players[].place)
+0x07e71c racetime     # SPECULATIVE: int; lap times are differences of it
+0x07e718 lastlap      # SPECULATIVE: racetime at the last lap
+0x07d358 laptimes     # SPECULATIVE: int[], laps 1..6 of a single-player time trial (v88bb2 == 4)
+0x02d67c car_finished # SPECULATIVE: called with the car index when its last lap starts and sound is on
