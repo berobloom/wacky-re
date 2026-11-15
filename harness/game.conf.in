@@ -1,0 +1,49 @@
+# DOSBox-X config for the dos-re-suite build (GDB stub 2159, QMP 4444).
+# harness/install.sh fills in @C@ / @CD@ and writes .work/dos/game.conf.
+# The servers must be in [dosbox]; anywhere else they silently do nothing.
+
+[sdl]
+output=surface
+
+[dosbox]
+# 16 MB as a typical mid-90s machine. Changing it moves the load segment (and
+# DOS/4GW's objects): keep it fixed for the whole project.
+memsize=16
+# no "really quit?" dialog when the harness stops the emulator (it would hold
+# the QMP and GDB ports open)
+quit warning=false
+# machine=svga_s3        # for VESA games; vgaonly for plain VGA
+gdbserver=true
+# another project running at the same time: other ports here (dosrun.py reads
+# them from this file) and the same values in the MCP env's DOS_RE_GDB_PORT /
+# DOS_RE_QMP_PORT
+gdbserver port=2159
+qmpserver=true
+qmpserver port=4444
+
+[cpu]
+core=normal
+# fixed cycles make runs comparable; note the value next to every timing
+# measurement (it is not real time when the host is busy: time in BIOS ticks)
+cycles=fixed 40000
+# cputype=pentium        # 32-bit (DOS/4GW) games
+
+# [sblaster]
+# sbtype=sb16
+# sbbase=220
+# irq=7
+# dma=1
+# hdma=5
+
+# [dos]
+# int33=false            # to load the game's own mouse driver (harness/TRAPS.md: Input)
+
+[autoexec]
+# Must match DOS_RE_GAME_DIR in the MCP env: the server retypes this when it
+# restarts the emulator. Do NOT start the game here: the server's prompt scan
+# then types into the running game, and boot-time loads fire before any
+# breakpoint can be armed.
+mount c "@C@"
+# mount d "@CD@" -t cdrom -label <LABEL>
+c:
+# cd \<GAMEDIR>

@@ -1,0 +1,19 @@
+# derived files: LE images, Ghidra output, the DOS install, venvs
+.work/
+__pycache__/
+*.pyc
+port/build/
+port/web/out/
+
+# the game itself is not committed; keep the checksums and the readme
+original/*
+!original/README.md
+!original/SHA256SUMS
+
+# big or one-shot captures stay local unless MANIFEST.md names them
+captures/*.png
+# RAM dumps and save states hold the game's code and data
+captures/*.bin
+captures/*.state
+captures/*.dmp
+captures/scratch/

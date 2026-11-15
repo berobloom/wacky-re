@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "Copy to .mcp.json (Claude Code) in the project root and edit the paths.",
+    "pi (pi-mcp-adapter 7) reads this same .mcp.json; it ignores .pi/mcp.json.",
+    "DOS_RE_GAME_DIR  mounted as C: and the emulator's working directory;",
+    "                 must match the mount line in DOS_RE_GAME_CONF",
+    "DOS_RE_GAME_EXE  typed at the DOS prompt to launch (no extension)",
+    "DOS_RE_GAME_CONF the .conf (harness/install.sh writes .work/dos/game.conf)",
+    "DOS_RE_DOSBOX_BINARY defaults to <suite>/.work/dosbox-x-remotedebug/src/dosbox-x"
+  ],
+  "mcpServers": {
+    "dosre": {
+      "type": "stdio",
+      "command": "/home/bjorn/projects/active/dos-re-suite/.venv/bin/python",
+      "args": ["/home/bjorn/projects/active/dos-re-suite/mcp/server.py"],
+      "env": {
+        "DOS_RE_GAME_DIR": "<project>/.work/dos/C",
+        "DOS_RE_GAME_CONF": "<project>/.work/dos/game.conf",
+        "DOS_RE_GAME_EXE": "<game>",
+        "DOS_RE_GDB_PORT": "2159",
+        "DOS_RE_QMP_PORT": "4444",
+        "DOS_RE_CAPTURE_DIR": "<project>/captures",
+        "DOS_RE_SERVER_NAME": "<Game> RE"
+      }
+    }
+  }
+}
