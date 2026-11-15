@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """libmatch.py: which modules of a Watcom (OMF) library occur in an LE program's code, byte for byte.
 
-usage: libmatch.py PROG LIB [LIB ...]        PROG: a program loaded by tools/le/leparse.py (.work/le/PROG.*)
+usage: libmatch.py [-l] PROG LIB [LIB ...]   PROG: a program loaded by tools/le/leparse.py (.work/le/PROG.*)
+                                             -l: also list each module found, by address
 
 For every module of every library the code segment's bytes are rebuilt from its LEDATA records with the bytes
 that fixups fill in masked out; the module is then searched for in the program's code object. Per library: how
@@ -153,16 +154,19 @@ def find(code, buf, mask):
 
 
 def main():
-    if len(sys.argv) < 3:
+    args = sys.argv[1:]
+    listing = args[:1] == ['-l']
+    args = args[1:] if listing else args
+    if len(args) < 2:
         print(__doc__)
         return 2
-    prog = sys.argv[1]
+    prog = args[0]
     le = os.path.join(ROOT, '.work', 'le')
     meta = json.load(open(os.path.join(le, prog + '.json')))
     code = open(os.path.join(le, prog + '.obj1.bin'), 'rb').read()
     cbase = meta['objects'][0]['base']
     found = {}
-    for lib in sys.argv[2:]:
+    for lib in args[1:]:
         data = open(lib, 'rb').read()
         n = hit = nbytes = 0
         found[lib] = {}
@@ -179,6 +183,10 @@ def main():
                 hit += 1
                 nbytes += size
         print('%-60s modules with code %4d, found %4d (%d bytes)' % (lib[-60:], n, hit, nbytes))
+        if listing:
+            for nm, (ok, size, addr) in sorted(found[lib].items(), key=lambda kv: kv[1][2] or 0):
+                if ok:
+                    print('  0x%06x %5d  %s' % (addr or 0, size, nm))
     libs = list(found)
     if len(libs) > 1:
         names = sorted(set().union(*[set(found[l]) for l in libs]))

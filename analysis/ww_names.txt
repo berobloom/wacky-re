@@ -1,0 +1,17 @@
+# WW.EXE names: 0xADDR name  # LEVEL: why. LE image addresses (code object at 0x10000).
+0x010260 crc_calc     # LIKELY: called 256 times by crc_init to fill the table at 0x7D380
+0x010298 crc_init     # LIKELY: fills the 256-word table at 0x7D380
+0x0102cc crcstep      # LIKELY: (crc >> 8) ^ b indexes the table at 0x7D380; result (crc << 8) ^ entry
+0x0105fc sendbyte     # SPECULATIVE: called per byte by sendstr; takes the byte in AL
+0x0109d8 sendstr      # STRONGLY SUPPORTED: matching C in analysis/optpin/T6.C; sends a string, CR, LF with tick waits
+0x010b74 getit        # LIKELY: matching C (T2.C); name is a placeholder
+0x012490 fromscroll   # SPECULATIVE: matching C (T1.C); global at the 'scrollpos' address minus the argument
+0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
+0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
+0x01424c readdat      # LIKELY: matching C (T1.C); fread on the same FILE*
+0x014238 get22        # SPECULATIVE: matching C (T2.C); name is a placeholder
+0x016a7c find12       # SPECULATIVE: matching C (T2.C); name is a placeholder
+0x0248ac setvmode     # LIKELY: matching C (T1.C); int386 0x10, AH=0
+0x0341d8 waitkey      # LIKELY: matching C (T2.C); prints "Press any key when ready.."
+0x07d584 datfile      # LIKELY: the FILE* seekdat/telldat/readdat use
+0x07e720 ticks        # LIKELY: zeroed and polled by sendstr's waits
