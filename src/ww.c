@@ -2221,6 +2221,47 @@ void sprites_load(void)
 
 /* ---- the data file (these follow the code above; the calls before them are inlined) */
 
+int datopen(char *name)
+{
+    short n;
+
+    datfile = fopen(name, "rb");
+    if (datfile == NULL)
+        return -1;
+    datidx = 0;
+    readdat(&n, 2);
+    readdat(datdir, n * 22);
+    return 1;
+}
+
+short datfind(char *name)
+{
+    short found;
+
+    strupr(name);
+    datidx = 0;
+    for (;;) {
+        if (datdir[datidx].name[0] == 0) {
+            found = 0;
+            break;
+        }
+        if (strcmp(name, datdir[datidx].name) == 0) {
+            found = 1;
+            break;
+        }
+        datidx++;
+    }
+    if (found)
+        seekdat(datdir[datidx].offset + 2);
+    return found;
+}
+
+void datclose(void)
+{
+    if (datfile)
+        fclose(datfile);
+}
+
 void seekdat(long ofs)
 {
     fseek(datfile, ofs, SEEK_SET);

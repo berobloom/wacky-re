@@ -236,7 +236,7 @@
 0x041550 FX_ErrorString # LIKELY: ASS
 0x041a0c FX_SetVolume # LIKELY: ASS
 0x011f98 voices_load  # LIKELY: reads AUDIOHED.FX (offsets) and AUDIOT.FX (samples) from the data file into voices
-0x01418c datfind      # LIKELY: looks a name up in datdir, sets datidx (Ghidra: strcmp loop, then fseek?)
+0x01418c datfind      # LIKELY: strupr(name), finds it in datdir (sets datidx), seeks to offset+2; returns found
 0x065080 datdir       # LIKELY: 0x16-byte entries {name[14], size, ?}; a 0 first byte ends it
 0x088b00 datidx       # LIKELY: short, the entry datfind found
 0x07eb14 voicedata    # LIKELY: AUDIOT.FX in memory
@@ -419,3 +419,7 @@
 0x07c528 gn7c528      # SPECULATIVE: sprite pointer (sprites_load)
 0x07c52c gn7c52c      # SPECULATIVE: sprite pointer (sprites_load)
 0x07eae4 gn7eae4      # SPECULATIVE: sprite pointer (sprites_load)
+0x014128 datopen      # LIKELY: fopen "rb", reads the entry count (short) and count*22 bytes of datdir
+0x014204 datclose     # LIKELY: fclose(datfile) if open
+0x042dd0 strupr       # LIKELY: clib
+0x042df0 strcmp       # LIKELY: clib
