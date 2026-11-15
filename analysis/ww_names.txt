@@ -280,7 +280,7 @@
 0x07d840 v7d840       # SPECULATIVE
 0x06aa90 players      # SPECULATIVE base (most-used low address): 0x68-byte records {+0x16 x, +0x18 y, +0x20 place, +0x22 lap, +0x24 cell, +0x26 face, +0x50 pos}
 0x012770 show_place   # LIKELY: prints 1ST/2ND/3RD and the face of player n at y = (place-1)*28+4
-0x0148f4 print_at     # SPECULATIVE: (x, y, string, mode); strlen first, mode 2 sets 0x88ce8 = 0x2c
+0x0148f4 print_at     # LIKELY: (x, y, s, mode) 8x8 OFONT text (sp6a778); mode 1 draws a box 4 px around it, mode 2 a tight box
 0x073c08 faces        # SPECULATIVE: 0x98-byte records, image pointer first; indexed by players[].f06
 0x07d998 v7d998       # SPECULATIVE: int; show_place does nothing when set
 0x088bb2 v88bb2       # SPECULATIVE: short; show_place does nothing when 4
@@ -439,3 +439,9 @@
 0x0146d4 wtext        # LIKELY: (x, y, s, scaled) draws s with the WFONT1 glyphs (A-Z, 0-9, ! ? ~ space . < > #), 11 px apart
 0x088c2e v88c2e       # SPECULATIVE: glyph height when scaled
 0x088c10 v88c10       # SPECULATIVE: glyph width when scaled
+0x014890 stext        # LIKELY: (x, y, s) 8x8 text, one sprite per byte from sfont via f373ee
+0x06a4c8 sfont        # LIKELY: sprite pointers indexed by character code (overlaps the other sp6a... tables)
+0x088ce8 v88ce8       # SPECULATIVE: char, box colour for f371e4
+0x088ce9 v88ce9       # SPECULATIVE: char, box colour for f371e4
+0x0373ee f373ee       # SPECULATIVE: asm sprite draw
+0x0371e4 f371e4       # SPECULATIVE: asm box fill (spr_x/y/h/w)

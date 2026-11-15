@@ -17,6 +17,10 @@ pointer to the finding, and leave it here so the number stays valid.
    the order the locals are declared in and with the parameter names (`p, q, baud, r` gives 0/+4/..), not with
    statement order or parameter types. What would settle it: learn Watcom 9.5's slot order (a symbol-table
    order: hash or declaration list?) from small probes, then pick names or declarations that give +8/+4/0.
+   Same open question in sounds_load, wtext, ents_show, voices_load (registers). Counter-evidence on types:
+   print_at 0x148F4 got its slots (x +4, mode 0) only with `short x` instead of `int x`, while names did
+   nothing there. So types of parameters do move slots in some functions; try `short` for each parameter
+   that is only stored to a 16-bit global.
 
 ## Hypotheses
 

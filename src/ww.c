@@ -1467,7 +1467,7 @@ extern int v7d998;
 extern short v88bb2;
 struct face { char *img[38]; };
 extern struct face faces[];
-void print_at(int x, int y, char *s, int mode);
+void print_at(short x, int y, char *s, short mode);
 
 void show_place(short n)
 {
@@ -2516,5 +2516,120 @@ void wtext(int x, int y, char *s, int scaled)
             drawsprite();
         }
         spr_x += 0xB;
+    }
+}
+
+extern char *sfont[];
+extern char v88ce8, v88ce9;
+void f373ee(void);
+void f371e4(void);
+
+void stext(int x, int y, char *s)
+{
+    int i, n;
+
+    spr_h = 8;
+    spr_w = 8;
+    spr_x = x;
+    spr_y = y;
+    n = strlen(s);
+    for (i = 1; i <= n; i++) {
+        sprptr = sfont[(unsigned char)s[i - 1]];
+        f373ee();
+        spr_x += 8;
+    }
+}
+
+void print_at(short x, int y, char *s, short mode)
+{
+    int i, ok, c;
+
+    i = 0;
+    if (strlen(s) == 0)
+        return;
+    if (mode != 0) {
+        if (mode != 2) {
+            spr_x = x - 4;
+            spr_y = y - 4;
+            spr_h = strlen(s) * 8 + 8;
+            spr_w = 0x10;
+            v88ce9 = 0x2C;
+            v88ce8 = 0x26;
+        } else {
+            spr_x = x;
+            v88ce8 = 0x2C;
+            v88ce9 = 0x2C;
+            spr_y = y;
+            spr_h = strlen(s) * 8;
+            spr_w = 8;
+        }
+        f371e4();
+    }
+    spr_x = x;
+    spr_h = 8;
+    spr_w = 8;
+    spr_y = y;
+    for (; s[i] != 0; i++) {
+        ok = 0;
+        if (s[i] >= 'A' && s[i] <= 'Z') {
+            c = s[i] - 'A';
+            ok = 1;
+        } else if (s[i] >= '0' && s[i] <= '9') {
+            c = s[i] - '0' + 26;
+            ok = 1;
+        } else {
+            switch (s[i]) {
+            case '!':
+                c = 0x24;
+                ok = 1;
+                break;
+            case '.':
+            case ':':
+                c = 0x35;
+                ok = 1;
+                break;
+            case '#':
+                c = 0x26;
+                ok = 1;
+                break;
+            case ',':
+                c = 0x36;
+                ok = 1;
+                break;
+            case '-':
+                c = 0x37;
+                ok = 1;
+                break;
+            case '\'':
+                c = 0x39;
+                ok = 1;
+                break;
+            case '@':
+                c = 0x38;
+                ok = 1;
+                break;
+            case '(':
+                c = 0x2C;
+                ok = 1;
+                break;
+            case ')':
+                c = 0x2D;
+                ok = 1;
+                break;
+            case '?':
+                c = 0x34;
+                ok = 1;
+                break;
+            case '&':
+                c = 0x2A;
+                ok = 1;
+                break;
+            }
+        }
+        if (ok) {
+            sprptr = sp6a778[c];
+            drawsprite();
+        }
+        spr_x += 8;
     }
 }
