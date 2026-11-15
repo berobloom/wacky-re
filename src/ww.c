@@ -1815,3 +1815,117 @@ void draw_status(void)
     if (!twoplayer && !splitscreen && !netvoices && v88bb2 == 4)
         print_at(0xE8, 6, "TIME TRIAL", 0);
 }
+
+/* ---- one frame */
+
+struct rec14 { char f00[0x14]; };
+extern struct rec14 rec7c208[];
+extern short v88b72, v88c8e, v88b4a, v88bf4, v88b78, v88c38, v7eb82;
+extern volatile char key88ccd;
+extern char *pal7d850, *p6a97c, *p7d714, *p7d718;
+extern char arr79a28[];
+extern char *p7d86c;
+extern char *palptr;
+void getpalette(void);
+void setpalette(void);
+void f27060(struct rec14 *r, int n);
+void f1bf94(char *p);
+void f375cd(void);
+void f28480(void);
+void f37e94(void);
+void f287ec(void);
+void f255d4(void);
+void f25a78(void);
+void f26a3c(void);
+void f266a8(void);
+void f2632c(void);
+void f253d8(void);
+void f3c3e9(void);
+void f2a92c(void);
+void f29e0c(void);
+void f261fc(void);
+void f37de0(void);
+void f32cf8(char *p);
+
+void frame_draw(void)
+{
+    if (v7d998 == 2)
+        f27060(&rec7c208[v88c8e], 1);
+    for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+        cars[v88b72].f96 = 0;
+        cars[v88b72].f98 = 0;
+        cars[v88b72].f94 = 0;
+    }
+    if (!v7d998) {
+        palptr = pal7d850;
+        getpalette();
+        f1bf94(pal7d850);
+    }
+    v88b4a = 0;
+    pal_a = 16000;
+    p7d714 = p6a97c;
+    f375cd();
+    pal_a = 16000;
+    if (v7d998 != 0 && v7d998 != 3) {
+        pal_b = 16000;
+        pal_c = 32000;
+        setpalette();
+    }
+    f28480();
+    if (v7eb80)
+        f37e94();
+    v88bf4 = 0;
+    v88b78 = 0;
+    p7d86c = arr79a28;
+    f287ec();
+    f255d4();
+    f25a78();
+    f26a3c();
+    if (v88c38)
+        f266a8();
+    f2632c();
+    if (v88b78)
+        f253d8();
+    if (twoplayer || splitscreen) {
+        view2_in();
+        f28480();
+        if (v7eb82) {
+            if (v88bde)
+                f3c3e9();
+            else
+                f37e94();
+        }
+        v88bf4 = 0;
+        v88b78 = 0;
+        p7d86c = arr79a28;
+        f287ec();
+        f255d4();
+        f25a78();
+        f26a3c();
+        if (v88c38)
+            f266a8();
+        f2632c();
+        if (v88b78)
+            f253d8();
+        view2_out();
+    }
+    if (v88ca0)
+        v88ca0 = 1;
+    draw_status();
+    f2a92c();
+    f29e0c();
+    f261fc();
+    draw_faces();
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    if (!v7d998)
+        f32cf8(p7d718);
+    pal_a = 0;
+    pal_b = 16000;
+    pal_c = 0;
+    setpalette();
+}

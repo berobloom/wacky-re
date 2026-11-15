@@ -308,3 +308,37 @@
 0x07eb60 img7eb60     # SPECULATIVE
 0x07d814 img7d814     # SPECULATIVE
 0x07d810 img7d810     # SPECULATIVE
+0x0133d8 frame_draw   # LIKELY: one frame: palette, world, second view (view2_in/out inlined), status bar, faces, F-key screenshot
+0x07c208 rec7c208     # SPECULATIVE: 0x14-byte records, v88c8e indexes them when v7d998 == 2 (demo playback?)
+0x088b72 v88b72       # SPECULATIVE: short, a global loop index (kept in bx)
+0x088c8e v88c8e       # SPECULATIVE
+0x088b4a v88b4a       # SPECULATIVE
+0x088bf4 v88bf4       # SPECULATIVE
+0x088b78 v88b78       # SPECULATIVE: short; f253d8 runs when set
+0x088c38 v88c38       # SPECULATIVE
+0x07eb82 v7eb82       # SPECULATIVE
+0x088ccd key88ccd     # LIKELY: volatile char; screenshot while set, then waits for release
+0x07d850 pal7d850     # SPECULATIVE: palette buffer
+0x06a97c p6a97c       # SPECULATIVE
+0x07d714 p7d714       # SPECULATIVE
+0x07d718 p7d718       # SPECULATIVE
+0x079a28 arr79a28     # SPECULATIVE: p7d86c is reset to it each view
+0x07d86c p7d86c       # SPECULATIVE
+0x027060 f27060       # SPECULATIVE: called from frame_draw
+0x01bf94 f1bf94       # SPECULATIVE: called from frame_draw
+0x0375cd f375cd       # SPECULATIVE: called from frame_draw
+0x028480 f28480       # SPECULATIVE: called from frame_draw
+0x037e94 f37e94       # SPECULATIVE: called from frame_draw
+0x0287ec f287ec       # SPECULATIVE: called from frame_draw
+0x0255d4 f255d4       # SPECULATIVE: called from frame_draw
+0x025a78 f25a78       # SPECULATIVE: called from frame_draw
+0x026a3c f26a3c       # SPECULATIVE: called from frame_draw
+0x0266a8 f266a8       # SPECULATIVE: called from frame_draw
+0x02632c f2632c       # SPECULATIVE: called from frame_draw
+0x0253d8 f253d8       # SPECULATIVE: called from frame_draw
+0x03c3e9 f3c3e9       # SPECULATIVE: called from frame_draw
+0x02a92c f2a92c       # SPECULATIVE: called from frame_draw
+0x029e0c f29e0c       # SPECULATIVE: called from frame_draw
+0x0261fc f261fc       # SPECULATIVE: called from frame_draw
+0x037de0 f37de0       # SPECULATIVE: called from frame_draw
+0x032cf8 f32cf8       # SPECULATIVE: called from frame_draw
