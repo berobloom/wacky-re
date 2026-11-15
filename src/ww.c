@@ -949,7 +949,7 @@ void input_clear2(void)
 
 extern int ctl775cc, ctl77558, ctl774e4;
 extern short ctl775d8, ctl775dc, ctl775d6, ctl775da;
-extern short v7ecb4;
+extern int v7ecb4;
 extern char cfgname[];
 extern char cfg7ee1c[0x492];
 extern short cfg7ee2a;
@@ -2728,4 +2728,905 @@ void joy_clear_y(void)
 {
     if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
         joy88b40 = 0;
+}
+
+/* ---- chat mode */
+
+extern int v7ed34, v7ed20, v7ed1c;
+extern int oldkbd_off;
+extern short oldkbd_seg;
+extern unsigned char v88cf3, v88cf0, v88cef;
+void kbd_off(void);
+void kbd_on(void);
+short net_key(int key, int flag, int x);
+
+/* differs: stack slots only (QUESTIONS 2): the save slots permute (sx 0x1b8, sw 0x1bc, s34 0x1c4 ... vs our
+   0x1b8 s34 ...) and the five 80-byte buffers too: game mine@0, blank@0x50, theirs@0xa0, buf@0xf0,
+   ch@0x140; ours ch@0, buf@0x50, mine@0xa0, theirs@0xf0, blank@0x140 for declaration order
+   mine,theirs,blank,buf,ch (not plain reverse). Statement order around strlen/center_x also scheduled
+   differently (spr_y=10 store after strlen in the game). */
+void chat(void)
+{
+    char mine[80], theirs[80], blank[80], buf[80], ch[80];
+    union REGS r;
+    struct SREGS s;
+    int sx, sw, sy, s34, x1, c8, s20, key, n2, sh, y1, s1c, x2, c9, y2, other, y2m, y1m;
+    int n1, t;
+
+    save_a = pal_a;
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 48000;
+    pal_a = pal_d;
+    pal_b = pal_d;
+    setpalette();
+    s34 = v7ed34;
+    s20 = v7ed20;
+    s1c = v7ed1c;
+    sh = spr_h;
+    spr_h = 320;
+    sw = spr_w;
+    spr_w = 200;
+    c9 = v88ce9;
+    v88ce9 = 0x2C;
+    c8 = v88ce8;
+    v88ce8 = 0x26;
+    sx = spr_x;
+    spr_x = 0;
+    sy = spr_y;
+    spr_y = 0;
+    f371e4();
+    while (key88cd0 == 0x2E)
+        ;
+    r.x.eax = 0x2509;
+    s.es = 0;
+    r.x.edx = oldkbd_off;
+    s.ds = oldkbd_seg;
+    int386x(0x21, &r, &r, &s);
+    kbd_off();
+    strcpy(buf, "PRESS ESC TO END CHAT MODE");
+    spr_y = 10;
+    spr_x = center_x(strlen(buf) * 8);
+    print_at(spr_x, spr_y, buf, 0);
+    strcpy(buf, "BI-DIRECTIONAL CHITTER CHATTER!");
+    spr_y = 0x14;
+    spr_x = center_x(strlen(buf) * 8);
+    print_at(spr_x, spr_y, buf, 0);
+    strcpy(buf, " YOUR GOOD SELF ");
+    spr_y = 0x28;
+    spr_x = center_x(strlen(buf) * 11);
+    wtext(spr_x, spr_y, buf, 0);
+    strcpy(buf, " THE OTHER DUDE ");
+    spr_y = 0x71;
+    spr_x = center_x(strlen(buf) * 11);
+    wtext(spr_x, spr_y, buf, 0);
+    strcpy(mine, "");
+    strcpy(theirs, "");
+    while (strlen(mine) < 38)
+        strcat(mine, " ");
+    while (strlen(theirs) < 38)
+        strcat(theirs, " ");
+    x1 = 8;
+    y1 = 0x49;
+    x2 = 8;
+    y2 = 0x8F;
+    strcpy(blank, mine);
+    n1 = 0;
+    v7ed20 = 0x1C;
+    v7ed1c = 0x220;
+    n2 = 0;
+    delay(0x18);
+    y2m = y2 - 10;
+    y1m = y1 - 10;
+    net88c14 = 0;
+    for (;;) {
+        t = ticks;
+        key = 0;
+        v88cf3 = 0;
+        if (kbhit())
+            key = getch();
+        v88cf0 = key;
+        net88c14 = net_key(v88cf0, v88cf3, 0);
+        other = v88cef;
+        if (key == 27 || other == 27 || net88c14)
+            break;
+        if (key == 13) {
+            stext((short)x1, (short)y1m, mine);
+            strcpy(mine, blank);
+            stext((short)x1, (short)y1, mine);
+            n1 = 0;
+        }
+        if (other == 13) {
+            stext((short)x2, (short)y2m, theirs);
+            strcpy(theirs, blank);
+            n2 = 0;
+            stext((short)x2, (short)y2, theirs);
+        }
+        if (key == 8 && n1 > 0) {
+            stext((short)(x1 + n1 * 8), (short)y1, " ");
+            n1--;
+            mine[n1] = ' ';
+            stext((short)(x1 + n1 * 8), (short)y1, " ");
+        }
+        if (other == 8 && n2 > 0) {
+            stext((short)(x2 + n2 * 8), (short)y2, " ");
+            n2--;
+            theirs[n2] = ' ';
+            stext((short)(x2 + n2 * 8), (short)y2, " ");
+        }
+        if (key >= 0x20 && key <= 0xA8 && n1 <= 0x24) {
+            ch[0] = key;
+            ch[1] = 0;
+            stext((short)(x1 + n1 * 8), (short)y1, ch);
+            mine[n1++] = key;
+        }
+        if (other >= 0x20 && other <= 0xA8 && n2 <= 0x24) {
+            ch[0] = other;
+            ch[1] = 0;
+            stext((short)(x2 + n2 * 8), (short)y2, ch);
+            theirs[n2++] = other;
+        }
+        v88ce9 = 0xFF;
+        v88ce8 = 0xFF;
+        spr_h = 8;
+        spr_w = 8;
+        spr_x = x1 + n1 * 8;
+        spr_y = y1;
+        f371e4();
+        spr_x = x2 + n2 * 8;
+        spr_y = y2;
+        f371e4();
+    }
+    spr_h = sh;
+    spr_w = sw;
+    v88ce9 = c9;
+    v88ce8 = c8;
+    spr_x = sx;
+    spr_y = sy;
+    v7ed20 = s20;
+    v7ed1c = s1c;
+    v7ed34 = s34;
+    kbd_on();
+    input_clear1();
+    input_clear2();
+    key88cd0 = 0;
+    delay(0x18);
+    pal_b = 48000;
+    pal_a = pal_d;
+    pal_c = pal_d;
+    setpalette();
+    pal_b = save_b;
+    pal_c = save_c;
+    pal_a = save_a;
+}
+
+/* ---- net-synchronized menu (used by every options screen: pumps chat/keys with the peer while open) */
+
+extern short v88bb0, v88b86, v88bb6, v88bb8, v88c80, v88c28, v88cf2;
+extern short v88bee, v88bf0, v88bf2, v88c00;
+extern char v88ccd, v88cd2, v88cdb, v88cd3, v88cd5, v88cd6, v88cdd, v88cce;
+extern int v7ecc0, v7ecc4, v7ecac, v7ed0c, v7ea70;
+extern int v7d8ac, v7d8a4;
+extern char *v7d85c;
+extern char *p6a978, *p6a980;
+extern char *sp6a528[];
+extern char mnames[];                    /* menu item names, 0x3c apart, from 0x7bc3c */
+
+extern short v88c7c, v88c7a, v88c54;
+extern short w7e730[], w7e584[], w7e8c4[];
+extern int v7ed08, v7ea5c;
+extern short v7ea58s;                     /* v7ea58 seen as short in another game source file */extern char *menu_buf6a518;              /* sp6a518 declared above */
+void f377ae(void);
+void fn_1c068(void);
+void fn_1c0ac(void);
+
+/* differs: stack slots all permuted (QUESTIONS 2; the game's menu(n,d,mode,c) has mode@0xc4, c@0xc8, n@0xcc,
+   d@0xd8, and 23 scalar slots: ours folds two into registers, frame 0xd8 vs 0xe0); the game also has a dead
+   inline strlen(mnames) at +0x1d3 (second one, result unused). Block structure, calls and the switch jump
+   table all agree. */
+short menu(short n, short d, short mode, short c)
+{
+    char cbuf[0x48], pbuf[0x3c];        /* game slots 0x00 and 0x48; sizes make the frame 0xe0 */
+    unsigned short savepal;
+    short bounce, tk, cursor, mow, show13, quit, isnet, sel, anim, cnt, state, four, i;
+    int w11, x0, yb, bx1, sy, ybase, d4;
+
+    if (mode == 2)
+        net7ed78 = 0;
+    v7ecc4 = 0;
+    v7ed20 = 0x440;
+    v7ed1c = 0x2a8;
+    v7ecc0 = 0;
+    mow = 0;
+    isnet = net7ed78 != 0;
+    quit = 0;
+    four = 4;
+    if (v88bb0 == 1) {
+        show13 = 1;                       /* slot 0xb4: ents_show skip flag */
+        four = 2;
+    } else
+        show13 = 0;
+    if (mode == 2) {
+        mode = 0;
+        quit = 1;
+    }
+    if (mode == 0) {
+        if (v88bb0 == 5) {
+            mow = 1;
+            cursor = v88b86;
+        }
+        if (v88bb0 == 0xe)
+            cursor = 1;
+        if (v88bb0 == 0xd || v88bb0 == 0xe || v88bb0 == 0x10)
+            cursor = v88c80;
+        if (v88bb0 == 1)
+            cursor = v88bb8;
+        if (v88bb0 == 6)
+            cursor = v88bb2;
+        if (v88bb0 == 2) {
+            mow = 1;
+            cursor = v88bb6;
+        }
+    } else
+        cursor = 1;
+    if (mode != 0)
+        voices_reset();
+    w11 = strlen(&mnames[0]) * 11;
+    x0 = (0x140 - w11) / 2;
+    yb = (0xc8 - n * 12) / 2;
+    if (v88bb0 == 1)
+        yb += 0x1e;
+    else
+        yb += 0xc;
+    if (mode != 0)
+        yb = 0x54;
+    bx1 = x0 - 0x12;
+    sy = yb - 7 + (cursor - 1) * 12;
+    spr_h = w11;
+    spr_x = x0;
+    spr_y = yb;
+    w11 += 0x15;
+    v88c00 = w11 + 0x14;
+    v88bf0 = bx1 + w11 + 0x14;
+    v88bf2 = yb - 7 + (n - 1) * 12;
+    v88bee = yb - 7 + (n - 1) * 12 + 0x17 - sy;
+    spr_w = n * 12;
+    v88bf0 = bx1;
+    v88bf2 = sy;
+    ticks = 0;
+    ticks2 = 0;
+    v7ea70 = ticks;
+    if (mode != 0) {
+        sprptr = p6a980;
+        spr_x = v88bf0;
+        savepal = pal_a;
+        spr_y = v88bf2;
+        pal_a = 0;
+        spr_h = v88c00;
+        sprptr += 0x6400;
+        spr_w = v88bee;
+        blit372c7();
+        pal_a = savepal;
+    }
+    if (mode == 0) {
+        v88b4a = 0;
+        p7d714 = p6a978;
+        savepal = pal_a;
+        f375cd();
+        pal_a = savepal;
+    }
+    spr_x = 0;
+    bounce = 9;
+    state = mode == 0;
+    tk = 0;
+    if (mow == 0)
+        d4 = 3;
+    else
+        d4 = 8;
+    anim = 0;
+    sel = 0;
+    cnt = 0;
+    for (i = 0; i < n; i++)
+        wtext(x0, yb + i * 12, &mnames[i * 0x3c], 0);
+    if (isnet) {
+        strcpy(cbuf, " PRESS 'C' TO CHAT ");
+        cbuf[7] = '"';
+        cbuf[9] = '"';
+        stext(center_x(strlen(cbuf) * 8), 0xb4, cbuf);
+    }
+    pal_c = 0x7d00;
+    pal_b = pal_a;
+    setpalette();
+    spr_x = bx1;
+    spr_h = 0x14;
+    spr_y = sy;
+    sprptr = sp6a518[sel];
+    spr_w = 0x17;
+    drawsprite();
+    spr_x += w11;
+    sprptr = sp6a528[sel];
+    drawsprite();
+    f37de0();
+    if (key88ccd)
+        screenshot();
+    while (key88ccd)
+        ;
+    if (d)
+        f32cf8(v7d85c);
+    if (pal_a)
+        pal_a = 0;
+    else
+        pal_a = 16000;
+    if (quit)
+        net_end(0);
+    ybase = yb - 7;
+    pal_b = 0x7d00;
+    for (;;) {
+        v7ea70 = ticks;
+        if (net7ed78) {
+            if (netgame == 1) {
+                v7d8a4 = v7d8ac;
+                ctl_setup(0);
+                f377ae();
+                if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
+                    joy88b40 = 0;
+                if (v88cce)
+                    joy88b40 = 1;
+                if (v88cd2)
+                    key88cd3 = 1;
+                if (v88cdb)
+                    key88cd6 = 1;
+                if (key88cd0 == 1) {
+                    v7ecc0 = 1;
+                    while (key88cd0 == 1)
+                        ;
+                } else
+                    v7ecc0 = 0;
+                v88cf0 = 0;
+                if (key88cd6)
+                    v88cf0 = 1;
+                if (key88cd3)
+                    v88cf0 += 2;
+                if (joy88b40)
+                    v88cf0 += 4;
+                if (v7ecc0)
+                    v88cf0 += 0x40;
+            } else {
+                key88cd5 = 0;
+                key88cdd = 0;
+                key88cd6 = 0;
+                key88cd3 = 0;
+                joy88b40 = 0;
+                joy88b42 = 0;
+                joy88b44 = 0;
+                joy88b46 = 0;
+                v88cf0 = 0;
+                v7ecc0 = 0;
+            }
+            v88cf3 = key88cd0 == 0x2e;
+            net88c14 = net_key(v88cf0, v88cf3, 0);
+            v7ecc4++;
+            if (v7ecc4 > 1) {
+                v7ecc4 = 2;
+                v7ed20 = 0x88;
+                v7ed1c = 0x2a8;
+            }
+            if (net88c14) {
+                fn_1c068();
+                msgbox("EXCESSIVE DATA ERRORS!", 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 300)
+                    ;
+                fn_1c0ac();
+                return 1;
+            }
+            if (v88cf2 == 1 || v88cf3 == 1) {
+                chat();
+                if (net88c14 == 0)
+                    continue;
+                fn_1c068();
+                msgbox("EXCESSIVE DATA ERRORS!", 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 300)
+                    ;
+                fn_1c0ac();
+                return 1;
+            }
+            if (netgame != 1) {
+                key88cd6 = v88cef & 1;
+                key88cd3 = v88cef & 2;
+                joy88b40 = v88cef & 4;
+                v7ecc0 = v88cef & 0x40;
+            }
+        }
+        if (anim == 0)
+            sy = ybase + (cursor - 1) * 12;
+        pal_c = pal_a;
+        setpalette();
+        if (mode == 0)
+            ents_show(bounce, 4, 1, mode, show13);
+        spr_x = bx1;
+        spr_h = 0x14;
+        spr_y = sy;
+        sprptr = sp6a518[sel];
+        spr_w = 0x17;
+        drawsprite();
+        spr_x += w11;
+        sprptr = sp6a528[sel];
+        drawsprite();
+        if (v88bb0 == 0xe) {
+            if (cursor == 1)
+                strcpy(pbuf, " PLAYER ONE ");
+            else
+                strcpy(pbuf, " PLAYER TWO ");
+            msgbox(pbuf, 0x3c);
+        }
+        if (c && netgame == 0)
+            msgbox("LEE & JACKSON LAWNMOWERS", 0x3c);
+        if (net7ed78 && netgame == 2 && mode == 0)
+            msgbox("REMOTE IS CONTROLLING MENU", 0x3a);
+        if (v7ecac)
+            msgbox("BOTH SIDES MUST USE SAME RATE", 0x3a);
+        f37de0();
+        if (key88ccd)
+            screenshot();
+        while (key88ccd)
+            ;
+        if (pal_a)
+            pal_a = 0;
+        else
+            pal_a = 16000;
+        while (ticks - v7ea70 < 8)
+            ;
+        tk++;
+        cnt++;
+        switch (state) {
+        case 1:
+            if (--bounce == 0) {
+                tk = 0;
+                state = 2;
+            }
+            break;
+        case 2:
+            if (tk > 30) {
+                state = 3;
+                tk = 0;
+            }
+            break;
+        case 3:
+            if (++bounce > 9) {
+                bounce = 9;
+                state = 4;
+                tk = 0;
+            }
+            break;
+        case 4:
+            for (i = 0; i < 4; i++) {
+                if (four != 4 && (i == 1 || i == 3))
+                    continue;
+                ents[i].id = d4;
+                if (mow == 0 && i >= 2)
+                    ents[i].y = 7;
+                else
+                    ents[i].y = 0;
+                d4++;
+                ents[i].x = 0;
+                if (mow == 0) {
+                    if (d4 > 7)
+                        d4 = 0;
+                } else if (d4 > 0xc)
+                    d4 = 5;
+            }
+            state = 1;
+            break;
+        }
+        if (anim) {
+            v7ed0c = 0;
+            if (cnt <= 0)
+                continue;
+            sel++;
+            if (sel > 3) {
+                sel = 0;
+                anim = 0;
+            }
+            cnt = 0;
+            continue;
+        }
+        if (net7ed78 == 0) {
+            v7d8a4 = v7d8ac;
+            ctl_setup(0);
+            f377ae();
+            if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
+                joy88b40 = 0;
+            if (v88cce)
+                joy88b40 = 1;
+            if (key88cd0 == 1) {
+                v7ecc0 = 1;
+                while (key88cd0 == 1)
+                    ;
+            } else
+                v7ecc0 = 0;
+        }
+        if (v88bb0 == 1 || v88bb0 == 0x10) {
+            if (v7ecc0)
+                cursor = n;
+        } else if (v7ecc0 && mode == 0) {
+            v88c28 = 0;
+            return cursor;
+        }
+        if (v88bb0 == 1) {
+            if (joy88b40 || key88cd3 || v88cd2 || v88cdb)
+                v7ed0c = 0;
+            else {
+                v7ed0c++;
+                if (v7ed0c >= 500) {
+                    v88c28 = 0;
+                    return cursor;
+                }
+            }
+        }
+        if (joy88b40) {
+            v88c28 = 0;
+            return cursor;
+        }
+        if (key88cd3 || v88cd2) {
+            cursor++;
+            anim = 1;
+            cnt = 0;
+            if (cursor > n)
+                cursor = 1;
+            continue;
+        }
+        if (key88cd6 || v88cdb) {
+            anim = 2;
+            cursor--;
+            cnt = 0;
+            if (cursor >= 1)
+                continue;
+            cursor = n;
+            continue;
+        }
+    }
+}
+
+/* ---- the option screens that drive menu() */
+
+extern short v7ee58, v774de, v88b9e, v88c80, v88c20;
+extern int v7ebd4, v7ec9c, v7eca0, v7edb0, v7ecb8;
+extern void fn_357ac(int v);
+
+void detail_menu(void)
+{
+    int r;
+
+    strcpy(&mnames[0], " HIGH   DETAIL ");
+    strcpy(&mnames[0x3c], " MEDIUM DETAIL ");
+    strcpy(&mnames[0x78], " LOW    DETAIL ");
+    v88c80 = v7ee58;
+    v88b9e = 0;
+    r = menu(3, 0, 0, 0);
+    if (v7ecc0)
+        v88b9e = 1;
+    else
+        v7ee58 = r;
+}
+
+void detail2_menu(void)
+{
+    int r;
+
+    strcpy(&mnames[0], " HIGH   DETAIL ");
+    strcpy(&mnames[0x3c], " MEDIUM DETAIL ");
+    strcpy(&mnames[0x78], " LOW    DETAIL ");
+    v88c80 = v774de;
+    v88b9e = 0;
+    r = menu(3, 0, 0, 0);
+    if (v7ecc0)
+        v88b9e = 1;
+    else
+        v774de = r;
+}
+
+short baud_menu(void)
+{
+    int r;
+
+    v88bb0 = 0xd;
+    v7ecac = 1;
+    v88b9e = 0;
+    switch (v7ebd4) {
+    case 0x2580:
+        v88c80 = 1;
+        break;
+    case 0x4b00:
+        v88c80 = 2;
+        break;
+    case 0x9600:
+        v88c80 = 3;
+        break;
+    case 0xe100:
+        v88c80 = 4;
+        break;
+    }
+    strcpy(&mnames[0], " 9600  BAUD      ");
+    strcpy(&mnames[0x3c], " 19200 BAUD      ");
+    strcpy(&mnames[0x78], " 38400 BAUD      ");
+    strcpy(&mnames[0xb4], " 57600 BAUD      ");
+    strcpy(&mnames[0xf0], " LEAVE THIS MENU ");
+    r = menu(5, 0, 0, 0);
+    v7ecac = 0;
+    if (v7ecc0)
+        v88b9e = 1;
+    if (v88b9e != 0 || r == 5)
+        return 0;
+    switch (r) {
+    case 1:
+        v7ebd4 = 0x2580;
+        break;
+    case 2:
+        v7ebd4 = 0x4b00;
+        break;
+    case 3:
+        v7ebd4 = 0x9600;
+        break;
+    case 4:
+        v7ebd4 = 0xe100;
+        break;
+    }
+    return 1;
+}
+
+void zones_menu(int which, int bonus)
+{
+    int netok, t, r;
+
+    v7ecb4 = 0;
+    v88b9e = 0;
+    netok = 0;
+    if (netgame != 0) {
+        if (v7ec9c == 3)
+            netok = 1;
+    } else {
+        if (v7eca0 == 3)
+            netok = 1;
+    }
+    if (netok == 0)
+        return;
+    v88bb0 = 0xd;
+    t = 0;
+    if (which == 2)
+        t = 1;
+    if (t != 0) {
+        if (twoplayer != 0 || splitscreen != 0)
+            if (v88b7e != 1)
+                return;
+    }
+    v88c80 = 1;
+    if (bonus != 0) {
+        strcpy(&mnames[0], " REGULAR ZONES    ");
+        strcpy(&mnames[0x3c], " BONUS PACK ZONES ");
+    } else {
+        strcpy(&mnames[0], " REGULAR RACES    ");
+        strcpy(&mnames[0x3c], " BONUS PACK RACES ");
+    }
+    r = menu(2, 0, 0, 0);
+    if (netgame && t && net88c14 != 0)
+        return;
+    if (v7ecc0 != 0)
+        v88b9e = 1;
+    if (v88b9e == 0) {
+        key88cd5 = 0;
+        key88cdd = 0;
+        key88cd6 = 0;
+        key88cd3 = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+        if (r == 2)
+            v7ecb4 = 3;
+    }
+}
+
+void engines_menu(int a)
+{
+    register int edxv;
+    int t, u, p;
+
+    v88bb0 = 0xd;
+    v88b9e = 0;
+    p = a;
+    if (twoplayer != 0)
+        return;
+    if (netvoices != 0)
+        return;
+    edxv = 0;
+    u = 0;
+    if (a == 3) {
+        edxv = 1;
+        p = 0;
+    }
+    if (p == 2) {
+        u = 1;
+        p = 0;
+    }
+    if (p)
+        t = v7ee5a;
+    if (v7edb0 != 0) {
+        v7ee5a = 2;
+        edxv = 2;
+        goto setr;
+    }
+    if (edxv != 0) {
+        edxv = v7ee5a;
+        goto setr;
+    }
+    if (u == 0)
+        goto domenu;
+    if (twoplayer == 0 && splitscreen == 0)
+        goto domenu;
+    if (v88b7e != 1)
+        return;
+domenu:
+    strcpy(&mnames[0], " FAST 12 HP ENGINES ");
+    strcpy(&mnames[0x3c], " SLOW 6 HP ENGINES  ");
+    v88c80 = v7ee5a;
+    edxv = menu(2, 0, 0, 0x4e);
+    if (netgame && u != 0 && net88c14 != 0)
+        return;
+    if (v7ecc0 != 0)
+        v88b9e = 1;
+    if (v88b9e != 0)
+        return;
+setr:
+    v7ecb8 = edxv;
+    fn_357ac(edxv);
+    if (p)
+        edxv = t;
+    v7ee5a = edxv;
+    v7ea58 = (short)edxv;
+    key88cd5 = 0;
+    key88cdd = 0;
+    key88cd6 = 0;
+    key88cd3 = 0;
+    joy88b40 = 0;
+    joy88b42 = 0;
+    joy88b44 = 0;
+    joy88b46 = 0;
+}
+
+void screen_menu(void)
+{
+    int sel, m;
+
+    sel = 1;
+    for (;;) {
+        strcpy(&mnames[0], " SINGLE SCREEN DETAIL ");
+        strcpy(&mnames[0x3c], " SPLIT SCREEN DETAIL  ");
+        v88c80 = sel;
+        v88b9e = 0;
+        strcpy(&mnames[0x78], " LEAVE THIS MENU      ");
+        v88bb0 = 0xd;
+        m = menu(3, 0, 0, 0);
+        sel = m;
+        if (v7ecc0 != 0)
+            v88b9e = 1;
+        if (v88b9e != 0)
+            break;
+        if (m == 3)
+            break;
+        switch (m) {
+        case 1:
+            detail_menu();
+            break;
+        case 2:
+            detail2_menu();
+            break;
+        default:
+            break;
+        }
+    }
+done:
+    save_config(1);
+    v88c20 = v7ee58;
+    v88b9e = 0;
+    v7ea58 = v7ee5a;
+}
+
+short find12(short x, short y)
+{
+    int i;
+
+    for (i = 0; i <= 84; i += 12) {
+        if (x == *(short *)((char *)ents + i + 4) &&
+            y == *(short *)((char *)ents + i + 6))
+            return *(short *)((char *)ents + i);
+    }
+    return -1;
+}
+
+void pnames_init(void)
+{
+    strcpy(pnames[0], "UNO");
+    strcpy(pnames[1], "SULTAN");
+    strcpy(pnames[2], "MORRIS");
+    strcpy(pnames[3], "PEGGLES");
+    strcpy(pnames[4], "RAZER");
+    strcpy(pnames[5], "RINGO");
+    strcpy(pnames[6], "BLOMBO");
+    strcpy(pnames[7], "TIGI");
+}
+
+void pname_desc(short idx)
+{
+    switch (idx) {
+    case 0:
+        strcpy(&mnames[0], "       UNO       ");
+        strcpy(&mnames[0x3c], "  CUTE AND FAST  ");
+        break;
+    case 1:
+        strcpy(&mnames[0], "      SULTAN     ");
+        strcpy(&mnames[0x3c], " ONE HUMP OR TWO ");
+        break;
+    case 2:
+        strcpy(&mnames[0], "      MORRIS     ");
+        strcpy(&mnames[0x3c], "   OLD RELIABLE  ");
+        break;
+    case 3:
+        strcpy(&mnames[0], "     PEGGLES     ");
+        strcpy(&mnames[0x3c], "  TURBO SQUAWK!  ");
+        break;
+    case 4:
+        strcpy(&mnames[0], "      RAZER      ");
+        strcpy(&mnames[0x3c], "  KILLER WHEELS  ");
+        break;
+    case 5:
+        strcpy(&mnames[0], "      RINGO      ");
+        strcpy(&mnames[0x3c], "   RAPID RASCAL  ");
+        break;
+    case 6:
+        strcpy(&mnames[0], "     BLOMBO      ");
+        strcpy(&mnames[0x3c], "  NEVER FORGETS  ");
+        break;
+    case 7:
+        strcpy(&mnames[0], "      TIGI       ");
+        strcpy(&mnames[0x3c], "  VROOM! GROWL!  ");
+        break;
+    default:
+        break;
+    }
+}
+
+void fn_16ca0(void)
+{
+    short i;
+
+    switch (v88c20) {
+    case 1:
+        v88c7c = 0x28;
+        break;
+    case 2:
+        v88c7c = 0x24;
+        break;
+    case 3:
+        v88c7c = 0x20;
+        break;
+    default:
+        break;
+    }
+    if (twoplayer != 0 || netvoices != 0)
+        v88c7c = 0x24;
+    v88c54 = 0x78;
+    v88c7a = v88c7c >> 1;
+    i = v7ea58s;
+    if (i == 2) {
+        for (i = 0; i <= 199; i++)
+            w7e730[i] = w7e584[i];
+    } else {
+        for (i = 0; i <= 199; i++)
+            w7e730[i] = w7e8c4[i];
+    }
+    v7ea5c = v7ed08;
 }

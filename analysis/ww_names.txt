@@ -466,3 +466,60 @@
 0x088b3c v88b3c       # SPECULATIVE
 0x088b3e v88b3e       # SPECULATIVE
 0x088b48 v88b48       # SPECULATIVE
+0x014d00 chat         # STRONGLY SUPPORTED: "PRESS ESC TO END CHAT MODE", two 38-char lines, ours and the net peer's
+0x07d58c oldkbd_off   # LIKELY: offset given to DOS set vector 9 (0x2509) when chat starts
+0x07d5a4 oldkbd_seg   # LIKELY: its selector
+0x032ba4 kbd_off      # SPECULATIVE: asm, called after int 9 is given back to the BIOS for chat
+0x032b14 kbd_on       # SPECULATIVE: asm, called when chat ends
+0x02dd30 net_key      # SPECULATIVE: (our key, flag, 0): exchanges chat keys with the peer, peer's in v88cef
+0x07ed34 v7ed34
+0x07ed20 v7ed20
+0x07ed1c v7ed1c
+0x088cf3 v88cf3
+0x088cf0 v88cf0
+0x088cef v88cef
+0x0155c0 menu         # STRONGLY SUPPORTED: every caller copies item strings to mnames, calls it, stores ax as the choice; draws names + cursor sprites; pumps net_key/chat; "REMOTE IS CONTROLLING MENU"
+0x07bc3c mnames       # LIKELY: menu item strings, 0x3c apart
+0x06a528 sp6a528      # SPECULATIVE: second cursor sprite table
+0x06a978 p6a978       # SPECULATIVE: back-buffer source for f375cd
+0x06a980 p6a980       # SPECULATIVE: back-buffer source for blit372c7 (+0x6400 = menu box area)
+0x07ecac v7ecac       # SPECULATIVE: "BOTH SIDES MUST USE SAME RATE" flag
+0x07ed0c v7ed0c       # SPECULATIVE: 1p idle counter, exits the menu at 500
+0x07ecc0 v7ecc0       # LIKELY: Enter/button pressed flag (sent as bit 0x40 of net_key's eax)
+0x07ecc4 v7ecc4       # LIKELY: menu loop iteration counter (clamped 2; slows v7ed20 after 1)
+0x07ea70 v7ea70       # LIKELY: loop timestamp (frame wait of 8 ticks)
+0x07d85c v7d85c       # SPECULATIVE: passed to f32cf8 when arg d != 0
+0x07d8ac v7d8ac       # SPECULATIVE: copied to 0x7d8a4 before ctl_setup(0)
+0x07d8a4 v7d8a4       # SPECULATIVE
+0x088bee v88bee       # SPECULATIVE: menu box rect
+0x088bf0 v88bf0       # SPECULATIVE
+0x088bf2 v88bf2       # SPECULATIVE
+0x088c00 v88c00       # SPECULATIVE
+0x088bb0 v88bb0       # LIKELY: game/mode selector choosing the initial cursor (5,0xd,0xe,0x10,1,6,2 seen)
+0x088b86 v88b86       # SPECULATIVE: cursor for v88bb0==5
+0x088bb6 v88bb6       # SPECULATIVE: cursor for v88bb0==2
+0x088bb8 v88bb8       # SPECULATIVE: cursor for v88bb0==1
+0x088c28 v88c28       # SPECULATIVE: cleared when the menu returns a choice
+0x088cf2 v88cf2       # SPECULATIVE: chat-request bit from the peer? (== 1 opens chat)
+0x01c068 fn_1c068     # ...
+0x0163fc detail_menu      # LIKELY: HIGH/MEDIUM/LOW DETAIL chooser -> v7ee58
+0x01647c detail2_menu     # LIKELY: same chooser -> v774de
+0x01650c baud_menu        # STRONGLY SUPPORTED: ' 9600  BAUD      ' .. ' LEAVE THIS MENU ', sets v7ebd4
+0x016664 zones_menu       # STRONGLY SUPPORTED: ' REGULAR ZONES/BONUS PACK ZONES ' choice -> v7ecb4=3
+0x0167d8 engines_menu     # STRONGLY SUPPORTED: ' FAST 12 HP ENGINES '/' SLOW 6 HP ENGINES ' -> v7ee5a, v7ea58
+0x016984 screen_menu      # STRONGLY SUPPORTED: single/split detail loop, save_config at the end
+0x0357ac fn_357ac         # SPECULATIVE: called with the engine choice
+0x07ee58 v7ee58          # LIKELY: detail level choice (single screen)
+0x0774de v774de          # LIKELY: detail level choice (second screen)
+0x088b9e v88b9e          # SPECULATIVE: "menu was aborted with Enter" flag
+0x088c80 v88c80          # LIKELY: menu(): initial cursor when v88bb0 in {0xd,0xe,0x10}
+0x07ebd4 v7ebd4          # LIKELY: modem baud (0x2580/0x4b00/0x9600/0xe100)
+0x07ec9c v7ec9c          # SPECULATIVE: net zones ready (==3)
+0x07eca0 v7eca0          # SPECULATIVE: local zones ready (==3)
+0x07edb0 v7edb0          # SPECULATIVE: engines locked (forces v7ee5a=2)
+0x07ecb8 v7ecb8          # SPECULATIVE: engine choice copy
+0x088c20 v88c20          # SPECULATIVE: copy of v7ee58 at screen_menu exit
+0x016aac pnames_init     # CONFIRMED: strcpy UNO..TIGI into pnames (0x7d228, 12-byte stride)
+0x016b38 pname_desc      # CONFIRMED: switch 0..7 copies camel name+tagline pair into mnames (jump table 0x16b18)
+0x016ca0 fn_16ca0         # SPECULATIVE: v88c20 -> v88c7c (40/36/32), /2 -> v88c7a, 200-word copy into 0x7e730 from 0x7e584 or 0x7e8c4
+0x07ea58 v7ea58s        # alias of v7ea58: short-typed extern in the game file that holds fn_16ca0

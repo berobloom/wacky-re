@@ -17,10 +17,23 @@ pointer to the finding, and leave it here so the number stays valid.
    the order the locals are declared in and with the parameter names (`p, q, baud, r` gives 0/+4/..), not with
    statement order or parameter types. What would settle it: learn Watcom 9.5's slot order (a symbol-table
    order: hash or declaration list?) from small probes, then pick names or declarations that give +8/+4/0.
-   Same open question in sounds_load, wtext, ents_show, voices_load (registers). Counter-evidence on types:
+   Same open question in sounds_load, wtext, ents_show, voices_load (registers). Data point (chat 0x14D00,
+   session 2026-08?): arrays `mine,theirs,blank,buf,ch` all `char[80]` got slots (low..high) ch@0, buf@0x50,
+   mine@0xa0, theirs@0xf0, blank@0x140; the game's same-named buffers sit mine@0, blank@0x50, theirs@0xa0,
+   buf@0xf0, ch@0x140. Neither declaration order nor reverse-of-first-use explains ours. Counter-evidence on types:
    print_at 0x148F4 got its slots (x +4, mode 0) only with `short x` instead of `int x`, while names did
    nothing there. So types of parameters do move slots in some functions; try `short` for each parameter
    that is only stored to a 16-bit global.
+   Data point (engines_menu 0x167D8): the game keeps a multi-assigned int local in EDX (xor edx / mov $1,edx /
+   movsx edx / mov edx,[esp]) while our compile spills it to slot 8 with identical C; `register` and declaration
+   order did not change it. screen_menu 0x16984 MATCHED only when the loop result got a second single-block
+   variable (`m = menu(...); sel = m;` then switch on m) — switching on the loop-carried variable made Watcom
+   reload from the slot instead of using EAX. Tree shape: `if (m == 3) break;` before `switch (m)` with two
+   cases gives cmp3/je + cmp1/jb/jbe; a 3-case switch probes 2 first (game probes 3 first, so 3 is NOT a case).
+   Also: functions the callers never read eax from are `void` (no xor eax at returns; zones/engines).
+   Data point (fn_16ca0 0x16CA0): every statement matches; the game's scheduler defers `sar eax,1` and
+   the v88c7a store across the independent movw $0x78, and homes the v7ea58s copy in DX (reused later as
+   the loop counter) while ours uses AX. Same flavor as engines_menu's EDX. Loop bodies byte-identical.
 
 ## Hypotheses
 
