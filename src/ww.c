@@ -1474,7 +1474,12 @@ void view2_out(void)
 
 extern int v7d998;
 extern short v88bb2;
-struct face { char *img[38]; };
+struct face {                 /* 0x98-byte DAT record (0x73C08) */
+    char *img[35];
+    short f8c, f8e;           /* img tail words if unused */
+    short f90, f92;           /* frame counts (0x73C98 / 0x73C9A) */
+    int f94;                  /* record byte size (0x73C9C) */
+};
 extern struct face faces[];
 void print_at(short x, int y, char *s, short mode);
 
@@ -2289,6 +2294,154 @@ long datsize(void)
 void readdat(void *buf, int n)
 {
     fread(buf, n, 1, datfile);
+}
+
+/* ---- my DAT player record load (0x173C4) */
+
+extern short v88b7e;
+extern short v88c4e, v88c50, v88c52;
+extern int v7d6c8, v7d868, v7d87c, v7d884, v7d888;
+extern char arr7bba0[];               /* per-player 12-byte DAT file names */
+extern char sp7b230b[], sp7b2d0b[], sp7b324b[], sp7b374b[];
+extern char sp7b418b[], sp7b448b[], sp7b4d8b[], sp7b518b[];
+extern char arr7418c[];
+void fn_173c4(void);
+
+void fn_173c4(void)
+{
+    short mp;
+    int *q;
+    int eax;                       /* byte cursor (name kept: matches game shape) */
+    int i;
+    int esi, edx;
+    char *p;
+    struct face *rec;
+
+    mp = myplayer;
+    q = (int *)(size_t)v7d868;
+    v7d884 = 0x70660;
+    v7d888 = 0x6e728;
+    if (v88b7e == 0) {
+        rec = &faces[mp];
+        datfind(arr7bba0 + mp * 0xc);
+        fread((void *)(size_t)v7d6c8, rec->f94, 1, datfile);
+        v7d87c = v7d884;
+    } else {
+        v7d87c = 0x6e728;
+        p = (char *)(size_t)v7d6c8 + 0x10a0;
+        datfind(arr7bba0 + mp * 0xc);
+        fread(p, 0x10a0, 1, datfile);
+        rec = &faces[mp];
+        eax = 0;
+        do {
+            eax += 4;
+            *(int *)(arr7418c + eax) = *(int *)((char *)rec + eax + 0x2c);
+            *(int *)(arr7418c + eax + 8) = *(int *)((char *)rec + eax + 0x34);
+        } while (eax != 8);
+        eax = 0;
+        do {
+            eax += 4;
+            *(int *)((char *)rec + eax + 0x2c) = (int)p;
+            p += 0x428;
+        } while (eax != 8);
+        eax = 0;
+        do {
+            eax += 4;
+            *(int *)((char *)rec + eax + 0x34) = (int)p;
+            p += 0x428;
+        } while (eax != 8);
+    }
+    rec = &faces[mp];
+    q = (int *)(size_t)v7d87c;
+    q[0] = rec->img[1];
+    q[2] = rec->img[2];
+    q[4] = rec->img[3];
+    q[6] = rec->img[5];
+    q[8] = rec->img[6];
+    q[10] = rec->img[7];
+    q = (int *)(size_t)v7d87c;
+    q += 10;
+    *(short *)((char *)q - 0x24) = 0x11;
+    *(short *)((char *)q - 0x1c) = 0xa;
+    *(short *)((char *)q - 0x14) = 0;
+    *(short *)((char *)q - 0xc) = 0x12;
+    *(short *)((char *)q - 4) = 8;
+    *(short *)((char *)q + 4) = 1;
+    eax = 0;
+    do {
+        eax += 4;
+        *(int *)(sp7b324b + eax) = *(int *)((char *)&faces[mp] + eax + 0x44);
+    } while (eax != 0x20);
+    v88c4e = faces[mp].f90;
+    i = 1;
+    eax = 4;
+    while (i <= v88c4e) {
+        eax += 4;
+        *(int *)(sp7b2d0b + eax) = *(int *)((char *)&faces[mp] + eax + 0x60);
+        i++;
+    }
+    v88c52 = faces[mp].f92;
+    esi = 0x10;
+    edx = 0;
+    do {
+        edx += 4;
+        *(int *)(sp7b374b + edx) = *(int *)((char *)&faces[mp] + esi);
+        esi -= 4;
+    } while (esi != -4);
+    i = 1;
+    esi = 4;
+    edx = 0;
+    while (i <= v88c52) {
+        esi += 4;
+        edx += 4;
+        *(int *)(sp7b374b + edx) = *(int *)((char *)&faces[mp] + esi + 0x68);
+        i++;
+    }
+    *(int *)(sp7b518b + v88b7e * 4) = faces[mp].img[12];   /* +0x30 */
+    *(int *)(sp7b518b + 8 + v88b7e * 4) = faces[mp].img[13];
+    *(int *)(sp7b518b + 0x10 + v88b7e * 4) = faces[mp].img[4];
+    *(int *)(sp7b518b + 0x18 + v88b7e * 4) = faces[mp].img[14];
+    *(int *)(sp7b518b + 0x20 + v88b7e * 4) = faces[mp].img[15];
+    *(int *)(sp7b4d8b + v88b7e * 4) = faces[mp].img[3];
+    *(int *)(sp7b4d8b + 8 + v88b7e * 4) = faces[mp].img[12];
+    *(int *)(sp7b4d8b + 0x10 + v88b7e * 4) = faces[mp].img[13];
+    *(int *)(sp7b4d8b + 0x18 + v88b7e * 4) = faces[mp].img[4];
+    *(int *)(sp7b4d8b + 0x20 + v88b7e * 4) = faces[mp].img[14];
+    *(int *)(sp7b4d8b + 0x28 + v88b7e * 4) = faces[mp].img[15];
+    *(int *)(sp7b518b + 0x30 + v88b7e * 4) = faces[mp].img[5];
+    v88c52 += 5;
+    eax = 4;
+    edx = 0;
+    do {
+        *(int *)(sp7b448b + edx + v88b7e * 4) = (int)faces[mp].img[eax];
+        if (++eax > 7)
+            eax = 0;
+        edx += 8;
+    } while (edx != 0x88);
+    *(int *)(sp7b418b + v88b7e * 4) = faces[mp].img[9];    /* +0x24 */
+    *(int *)(sp7b418b + 8 + v88b7e * 4) = faces[mp].img[8];
+    *(int *)(sp7b418b + 0x10 + v88b7e * 4) = faces[mp].img[4];
+    *(int *)(sp7b418b + 0x18 + v88b7e * 4) = faces[mp].img[10];
+    *(int *)(sp7b418b + 0x20 + v88b7e * 4) = faces[mp].img[11];
+    *(int *)(sp7b230b + v88b7e * 4) = faces[mp].img[8];
+    *(int *)(sp7b230b + 8 + v88b7e * 4) = faces[mp].img[9];
+    *(int *)(sp7b230b + 0x10 + v88b7e * 4) = faces[mp].img[8];
+    *(int *)(sp7b230b + 0x18 + v88b7e * 4) = faces[mp].img[4];
+    *(int *)(sp7b230b + 0x20 + v88b7e * 4) = faces[mp].img[10];
+    *(int *)(sp7b230b + 0x28 + v88b7e * 4) = faces[mp].img[11];
+    *(int *)(sp7b230b + 0x30 + v88b7e * 4) = faces[mp].img[10];
+    *(int *)(sp7b230b + 0x38 + v88b7e * 4) = faces[mp].img[4];
+    v88c50 = 8;
+    if (v88b7e != 0) {
+        eax = 0;
+        do {
+            *(int *)((char *)&faces[mp] + 0x30 + eax) = *(int *)(arr7418c + eax + 4);
+            *(int *)((char *)&faces[mp] + 0x38 + eax) = *(int *)(arr7418c + eax + 0xc);
+            eax += 4;
+        } while (eax != 8);
+    }
+    v7d868 = (int)q;
+    myplayer = mp;
 }
 
 /* ---- the menu pointers (0x73938) */

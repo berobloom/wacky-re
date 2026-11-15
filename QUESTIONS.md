@@ -40,7 +40,13 @@ pointer to the finding, and leave it here so the number stays valid.
    byte counter in EDX and indexes [edx+ebx+0x6aab6]; ours strength-reduces to [eax+disp]. (c) Loads of
    order_a[k]/order_b[k] are interleaved between stores in the game, before the f1c store. Struct player
    is now offset-complete (pack(1), size 0x68; an extra 2-byte field showed up as imul $0x6a in the
-   listing - the struct size is checkable via any imul $0x68 in matched callers).
+   listing - the struct size is checkable via any imul $0x68 in matched callers).   Data points (fn_173c4 0x173C4, near-miss 1080/1183): Watcom sinks `mp = myplayer; q = (int *)v7d868;`
+   below two later constant stores (game emits them first, both in declaration form and assignment form);
+   the game also keeps the local short `mp` homed in DI across calls while our build reloads [myplayer]
+   after every call (same for `q` = EBP loaded at entry, written back at exit). fread argument registers
+   EAX=ptr, EDX=size, EBX=count, ECX=stream CONFIRM the Watcom order arg1=EAX arg2=EDX arg3=EBX arg4=ECX
+   (findings/executables.md corrected).
+
 
 ## Hypotheses
 

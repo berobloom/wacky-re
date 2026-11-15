@@ -533,3 +533,13 @@
 0x07d7e0 order_b         # LIKELY: 8-entry start-order table (positions y)
 0x070720 v70720          # SPECULATIVE: myplayer copy at fn_16f90 net branch; indexed [0..7] into players[].f26
 0x016f90 fn_16f90        # LIKELY: pre-race player reset (per-player zeroing, start order tables, countdown/flag constants; net branch differs)
+0x0173c4 fn_173c4        # LIKELY: load myplayer DAT record (named per-player files via datfind, fread) and fan sprite/pointer tables
+0x07bba0 arr7bba0        # LIKELY: per-player 12-byte DAT entry names (myplayer*0xc)
+0x088c4e v88c4e          # SPECULATIVE: frame count from face rec +0x90
+0x088c50 v88c50          # SPECULATIVE: set to 8 in fn_173c4
+0x088c52 v88c52          # SPECULATIVE: frame count from face rec +0x92; += 5 in fn_173c4
+0x07d6c8 v7d6c8          # LIKELY: DAT read scratch pointer
+0x07d868 v7d868          # SPECULATIVE: scratch pointer saved across fn_173c4
+0x07d87c v7d87c          # SPECULATIVE: destination sprite/pointer block base
+0x07d884 v7d884          # SPECULATIVE: block base A (0x70660)
+0x07d888 v7d888          # SPECULATIVE: block base B (0x6E728)
