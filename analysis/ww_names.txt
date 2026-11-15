@@ -70,7 +70,7 @@
 0x0414e0 free         # CONFIRMED: clib nfree (libmatch)
 0x041450 strncmp      # CONFIRMED: clib (libmatch)
 0x041475 malloc       # CONFIRMED: clib nmalloc (libmatch)
-0x0684e4 cars         # SPECULATIVE: records of 0x104 bytes, first int the engine sound handle (field offset unknown)
+0x068420 cars         # SPECULATIVE: records of 0x104 bytes (base guessed; fields seen at +6 face, +0xC4 engine sound handle)
 0x0774da enginevol    # SPECULATIVE: volume for the engine sample
 0x07b0f8 sfxchans     # LIKELY: 16-byte records {active, handle, plays, pitch}
 0x07d890 sfxvol       # LIKELY: volume for FX_PlayVOC in sfx_play
@@ -92,3 +92,55 @@
 0x07ee5a v7ee5a
 0x07eca8 v7eca8
 0x07ea58 v7ea58
+0x010dd8 draw_faces   # SPECULATIVE: per player, sprite 0x7C0A4[car.face] at (293,178) through drawsprite
+0x010e58 modem        # LIKELY: init (modeminit, wait "OK") or hang up (DTR, "+++", modemhangup); message box
+0x01c068 fn_1c068
+0x01c0ac fn_1c0ac
+0x02a414 msgbox       # SPECULATIVE: draws a message (string, flag)
+0x036f14 setpalette   # SPECULATIVE: asm; called around the modem dialogue with 0x88B1A/1C/24 set
+0x036fd0 drawsprite   # SPECULATIVE: asm; uses sprptr and spr_x/y/w/h
+0x07c0a4 faceimgs     # SPECULATIVE: pointer table indexed by car.face
+0x07d704 sprptr       # SPECULATIVE: image pointer for drawsprite
+0x07eb80 playing      # SPECULATIVE: short per player
+0x07ebc0 connected    # LIKELY: set by modem() on success
+0x07ec64 ticks2       # SPECULATIVE: zeroed with ticks
+0x07ed30 p2offset     # SPECULATIVE: subtracted from spr_y for player 2
+0x07717c modeminit    # LIKELY: string sent by modem() before waiting for OK
+0x0771fc modemhangup  # LIKELY: string sent after "+++"
+0x088b04 save_a
+0x088b06 save_c
+0x088b12 save_b
+0x088b18 pal_d
+0x088b1a pal_c
+0x088b1c pal_b
+0x088b24 pal_a
+0x088b26 spr_w
+0x088b32 spr_x
+0x088b34 spr_y
+0x088b36 spr_h
+0x0110d4 net_end      # LIKELY: ends a link game (messages, modem hang-up, port closed), builds the CRC/timeout/overrun/noise lines
+0x02a268 showlines    # SPECULATIVE: shows netstats lines (count, ?, ?)
+0x042174 music_resume # SPECULATIVE: library; called when musicpaused is cleared
+0x042188 music_pause  # SPECULATIVE: library; before "MUSIC PAUSED"
+0x0425f9 itoa         # LIKELY: clib itoa module (0x4258E) entry; (value, buf, 10)
+0x07c818 netstats     # LIKELY: 5 lines of 60 chars
+0x07ec8c musicpaused  # LIKELY: set after "MUSIC PAUSED"
+0x07ecd4 linktype     # SPECULATIVE: 1 = modem (net_end hangs up)
+0x07ed64 net7ed64
+0x07ed68 net7ed68
+0x07ed78 net7ed78
+0x07ed7c timeouts     # LIKELY: printed after "TIMEOUTS ="
+0x07ed80 noise        # LIKELY: printed after "NOISE    ="
+0x07ed84 badcrc       # LIKELY: printed after "BAD CRC  ="
+0x07ee46 musicon      # SPECULATIVE: short; music is paused only when set
+0x088c0c netgame      # LIKELY: short; net_end does nothing when 0
+0x088c14 net88c14
+0x088c22 net88c22
+0x011404 drawsprite_clip # SPECULATIVE: clips spr_w rows at line 199 into clipy, then drawsprite2
+0x011480 frame_wait   # SPECULATIVE: waitretrace, then pausemenu while 'paused'
+0x0114a8 pal_shift    # LIKELY: 768 palette bytes << 2
+0x0114c8 pausemenu    # SPECULATIVE: called by frame_wait when paused
+0x03707e drawsprite2  # SPECULATIVE: asm sprite routine used with clipy
+0x037de0 waitretrace  # LIKELY: asm; polls port 0x3DA bit 3
+0x07d878 clipy        # SPECULATIVE: rows clipped at the bottom
+0x088ccd paused       # SPECULATIVE: char; frame_wait waits while set

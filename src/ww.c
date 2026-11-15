@@ -402,9 +402,15 @@ struct sfxchan {
     int pitch;
 };
 
+/* 0x104-byte records; the base 0x68420 is a guess (lowest field seen so far: 0x68426) */
 struct car {
+    char f00[6];
+    short face;
+    char f08[0xc4 - 8];
     int sndhandle;
-    char rest[0x100];
+    char fc8[0xd0 - 0xc8];
+    int fd0;
+    char fd4[0x104 - 0xd4];
 };
 
 extern int soundon;
@@ -487,4 +493,249 @@ void makepath(char *dst, char *src)
 {
     strcpy(dst, src);
     strcat(dst, pathext);
+}
+
+/* ---- HUD and modem dialogue */
+
+extern short spr_h, spr_w, spr_x, spr_y;
+extern short playing[2];
+extern char *faceimgs[];
+extern char *sprptr;
+extern short p2offset;
+void drawsprite(void);
+
+void draw_faces(void)
+{
+    int i;
+
+    spr_h = 26;
+    spr_w = 21;
+    spr_x = 293;
+    spr_y = 178;
+    for (i = 0; i <= 1; i++) {
+        if (playing[i] && cars[i].face) {
+            sprptr = faceimgs[cars[i].face];
+            if (i == 1)
+                spr_y -= p2offset;
+            drawsprite();
+        }
+    }
+}
+
+extern short pal_a, pal_b, pal_c, pal_d;
+extern short save_a, save_b, save_c;
+extern int connected;
+extern int ticks2;
+extern char modeminit[];
+extern char modemhangup[];
+void setpalette(void);
+void msgbox(char *s, int wait);
+void fn_1c068(void);
+void fn_1c0ac(void);
+
+/* differs: the game calls com_getc here instead of inlining it (com_waitfor inlines it; -oe=20 is right for
+   that); with com_getc not inlined (-oe=15) this function matches up to +443 */
+int modem(int hangup)
+{
+    char msg[40];
+    int ok;
+
+    save_a = pal_a;
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 48000;
+    pal_a = pal_d;
+    pal_b = pal_d;
+    setpalette();
+    if (hangup == 0)
+        strcpy(msg, "INITIALIZING MODEM");
+    else
+        strcpy(msg, "DISCONNECTING");
+    msgbox(msg, 0);
+    connected = 0;
+    sendfail = 0;
+    while (com_getc() != -1)
+        ;
+    sendfail = 0;
+    if (hangup) {
+        com_dtr_off();
+        ticks = 0;
+        ticks2 = 0;
+        do {
+            if (aborted == 1 && connected) {
+                sendfail = 1;
+                break;
+            }
+        } while (ticks < 0x110);
+        com_dtr_on();
+        sendstr("+++");
+        ticks = 0;
+        ticks2 = 0;
+        do {
+            if (aborted == 1 && connected) {
+                sendfail = 1;
+                break;
+            }
+        } while (ticks < 0x110);
+        sendstr(modemhangup);
+        ticks = 0;
+        ticks2 = 0;
+        do {
+            if (aborted == 1 && connected) {
+                sendfail = 1;
+                break;
+            }
+        } while (ticks < 0x110);
+        ok = 1;
+        for (;;) {
+            if (com_getc() == -1)
+                break;
+        }
+    } else {
+        sendstr(modeminit);
+        ok = com_waitfor("OK");
+    }
+    pal_b = 48000;
+    pal_a = pal_d;
+    pal_c = pal_d;
+    setpalette();
+    pal_b = save_b;
+    pal_c = save_c;
+    pal_a = save_a;
+    if (!ok) {
+        fn_1c068();
+        msgbox("MODEM NOT RESPONDING", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        return 0;
+    }
+    connected = 1;
+    return 1;
+}
+
+extern short netgame, net88c22, net88c14;
+extern short musicon;
+extern int musicpaused;
+extern int linktype;
+extern int net7ed78, net7ed64, net7ed68;
+extern char netstats[5][60];
+extern int badcrc, timeouts, noise;
+void music_pause(void);
+void music_resume(void);
+void showlines(int n, int a, int b);
+
+void net_end(int ok)
+{
+    char buf[20];
+    unsigned len;
+    int i;
+
+    if (!netgame)
+        return;
+    if (musicon && !musicpaused) {
+        music_pause();
+        fn_1c068();
+        msgbox("MUSIC PAUSED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        musicpaused = 1;
+    }
+    if (ok == 0) {
+        fn_1c068();
+        msgbox("CONNECTION TERMINATED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+    }
+    if (linktype == 1)
+        modem(1);
+    com_shutdown();
+    net88c22 = 0;
+    netgame = 0;
+    net7ed78 = 0;
+    cars[0].fd0 = net7ed64;
+    net88c14 = 0;
+    cars[1].fd0 = net7ed68;
+    if (musicpaused) {
+        musicpaused = 0;
+        music_resume();
+    }
+    strcpy(netstats[1], "BAD CRC  =");
+    strcpy(netstats[2], "TIMEOUTS =");
+    strcpy(netstats[3], "OVERRUNS =");
+    strcpy(netstats[4], "NOISE    =");
+    itoa(badcrc, buf, 10);
+    strcat(netstats[1], buf);
+    itoa(timeouts, buf, 10);
+    strcat(netstats[2], buf);
+    itoa(overruns, buf, 10);
+    strcat(netstats[3], buf);
+    itoa(noise, buf, 10);
+    strcat(netstats[4], buf);
+    len = strlen(netstats[1]);
+    for (i = 1; i < 5; i++)
+        if (strlen(netstats[i]) > len)
+            len = strlen(netstats[i]);
+    for (i = 1; i < 5; i++)
+        while (strlen(netstats[i]) < len)
+            strcat(netstats[i], " ");
+    showlines(4, 1, 0);
+}
+
+/* ---- drawing helpers */
+
+extern int clipy;
+extern volatile char paused;
+void drawsprite2(void);
+void waitretrace(void);
+void pausemenu(void);
+
+/* differs: the game keeps the widened height in a stack slot ([esp]) and computes the bottom from it */
+void drawsprite_clip(void)
+{
+    short h;
+    int last;
+
+    h = spr_w;
+    last = h;
+    clipy = 0;
+    if (spr_y + last - 1 > 199) {
+        clipy = (short)(h - 1 + spr_y - 199);
+        spr_w = h - clipy;
+    }
+    if (spr_w > 0)
+        drawsprite2();
+    clipy = 0;
+    spr_w = h;
+}
+
+void frame_wait(void)
+{
+    waitretrace();
+    if (paused) {
+        pausemenu();
+        while (paused)
+            ;
+    }
+}
+
+/* differs: i and v swap registers, and the game shifts the whole register (shl edx, not shl bl) */
+void pal_shift(unsigned char *p)
+{
+    short i;
+    short v;
+
+    for (i = 1; i <= 768; i++)
+        {
+        v = *p;
+        *p++ = v << 2;
+    }
 }
