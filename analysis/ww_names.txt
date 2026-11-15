@@ -523,3 +523,13 @@
 0x016b38 pname_desc      # CONFIRMED: switch 0..7 copies camel name+tagline pair into mnames (jump table 0x16b18)
 0x016ca0 fn_16ca0         # SPECULATIVE: v88c20 -> v88c7c (40/36/32), /2 -> v88c7a, 200-word copy into 0x7e730 from 0x7e584 or 0x7e8c4
 0x07ea58 v7ea58s        # alias of v7ea58: short-typed extern in the game file that holds fn_16ca0
+0x016d68 fn_16d68        # SPECULATIVE: players[] face/lap-stream plumbing (0x72350 8-byte face entries, 0x6aaac face idx)
+0x016eac fn_16eac        # SPECULATIVE: counts players[] place==2 && f56==4; bumps nplayers/v7eca4; calls fn_16f90
+0x016f24 fn_16f24        # SPECULATIVE: srand(max(racetime,v88b7a)); rand in [0,v88b7a]; fn_16d68(i,0x104,r)
+0x0430ac srand          # CONFIRMED: Watcom clib srand in WW.EXE
+0x043088 rand           # CONFIRMED: Watcom clib rand in WW.EXE
+0x06aa90 arr16           # SPECULATIVE: per-vehicle shorts base (same as players); countdown/lap constants written here
+0x07d7cc order_a         # LIKELY: 8-entry start-order table (positions x)
+0x07d7e0 order_b         # LIKELY: 8-entry start-order table (positions y)
+0x070720 v70720          # SPECULATIVE: myplayer copy at fn_16f90 net branch; indexed [0..7] into players[].f26
+0x016f90 fn_16f90        # LIKELY: pre-race player reset (per-player zeroing, start order tables, countdown/flag constants; net branch differs)

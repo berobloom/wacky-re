@@ -1411,18 +1411,27 @@ int map_cell(short x, short y)
 extern short v88b0a, v88b0e, v88c6e, v88c72, v88c76, v88ca2, v88ca6, v88c6a, v88b7e;
 extern int v7d898, v7d860, v7d840;
 
-struct player {                 /* 0x68 bytes; base 0x6AA90 is a guess (the most-used low address) */
-    char f00[0x16];
-    short x, y;
-    char f1a[0x20 - 0x1A];
-    unsigned short place;
-    short lap;
-    short cell;
-    short face;
-    char f28[0x50 - 0x28];
-    int pos;
-    char f54[0x68 - 0x54];
+#pragma pack(1)                 /* the game has int f5e at +0x5E: pack(1) confirmed */
+struct player {                 /* 0x68 bytes; base 0x6AA90 (CONFIRMED by menu sprptr code) */
+    short f00, f02, f04, f06, f08, f0a, f0c, f0e;
+    short f10, f12, f14;
+    short x, y;                 /* 0x16, 0x18 */
+    short f1a;                  /* 0x1A: set from [0x72356], then fn_16d68 table writes */
+    short f1c, f1e;
+    unsigned short place;       /* 0x20 */
+    short lap, cell, face;      /* 0x22, 0x24, 0x26 */
+    short f28[20];              /* 0x28-0x4F */
+    int pos;                    /* 0x50 */
+    short f54, f56, f58, f5a, f5c;
+    int f5e;                    /* 0x5E: animation cursor (fn_16d68) */
+    short f62, f64, f66;
 };
+#pragma pack()
+
+/* raw short/int at an absolute address (Watcom folds [reg+disp] like the game) */
+#define WS(a) (*(short *)((size_t)(size_t)(a)))
+#define WU(a) (*(unsigned short *)((size_t)(size_t)(a)))
+#define WI(a) (*(int *)((size_t)(size_t)(a)))
 
 extern struct player players[];
 extern struct kart *kart7d5bc, *kart7d5c0;
@@ -2912,10 +2921,12 @@ extern char *p6a978, *p6a980;
 extern char *sp6a528[];
 extern char mnames[];                    /* menu item names, 0x3c apart, from 0x7bc3c */
 
-extern short v88c7c, v88c7a, v88c54;
+extern short v88c7c, v88c7a, v88c54, v7e794, v88b84;
 extern short w7e730[], w7e584[], w7e8c4[];
 extern int v7ed08, v7ea5c;
-extern short v7ea58s;                     /* v7ea58 seen as short in another game source file */extern char *menu_buf6a518;              /* sp6a518 declared above */
+extern short v7ea58s;                     /* v7ea58 seen as short in another game source file */
+extern short v7ecb0, v88c04, v88c06, v88b7a, v88b72, v7ec14;
+extern int v7eca4;extern char *menu_buf6a518;              /* sp6a518 declared above */
 void f377ae(void);
 void fn_1c068(void);
 void fn_1c0ac(void);
@@ -3629,4 +3640,217 @@ void fn_16ca0(void)
             w7e730[i] = w7e8c4[i];
     }
     v7ea5c = v7ed08;
+}
+
+extern short arr16[];               /* 0x6AA90: per-vehicle state shorts (0x68 stride) */
+extern short order_a[], order_b[];  /* 0x7D7CC / 0x7D7E0: start order tables */
+extern short v70720[];              /* 0x70720 (indexed table) */
+
+void fn_1bf00(void);
+
+void fn_16f90(void)
+{
+    int k;
+    int j, d;
+    short bx;
+    int ax, dx, absy;
+
+    if (netvoices != 0) {
+        v70720[0] = myplayer;
+        for (v88b72 = 0; v88b72 <= 0x17; v88b72++) {
+            k = v88b72;
+            players[k].f04 = 2;
+            players[k].f62 = 0;
+            players[k].f54 = 0;
+            players[k].f56 = 0;
+            players[k].f12 = 0;
+            players[k].f5c = 0;
+            players[k].f58 = 0;
+            players[k].f00 = 0;
+            if (k <= 7) {
+                players[k].f1c = 0;
+                players[k].x = order_a[k];
+                players[k].y = order_b[k];
+                players[k].f1a = *(short *)0x72356;
+            }
+            j = 0;
+            do {
+                j += 2;
+                *(short *)(0x6aab6 + j + k * 0x68) = 0;
+                *(short *)(0x6aabe + j + k * 0x68) = 0;
+            } while (j != 4);
+            players[k].f02 = 0;
+            players[k].cell = 0;
+            players[k].place = 0;
+            players[k].lap = 0;
+            players[k].f08 = v7e794;
+        }
+        fn_16f24();
+        fn_1bf00();
+    } else {
+        if (twoplayer == 0) {
+            j = 4;
+            bx = order_a[0] + 0x50;
+            for (d = 1; d <= 8; d++) {
+                order_a[j] = bx;
+                order_b[j] = order_b[0];
+                bx -= 0x14;
+                j--;
+                if (j < 0)
+                    j = 7;
+            }
+        }
+        for (v88b72 = 0; v88b72 <= 7; v88b72++) {
+            k = v88b72;
+            players[k].f04 = 0;
+            players[k].f62 = 0;
+            players[k].f54 = 0;
+            players[k].f56 = 0;
+            players[k].f12 = 0;
+            players[k].f5c = 0;
+            players[k].f58 = 0;
+            players[k].f00 = 0;
+            j = 0;
+            do {
+                j += 2;
+                *(short *)(0x6aab6 + j + k * 0x68) = 0;
+                *(short *)(0x6aabe + j + k * 0x68) = 0;
+            } while (j != 4);
+            players[k].x = order_a[k];
+            players[k].y = order_b[k];
+            players[k].f1a = *(short *)0x72356;
+            ax = v88c06 - players[k].y;
+            if (ax < 0)
+                ax = -ax;
+            players[k].f1c = 0;
+            absy = ax;
+            dx = v88c04 - players[k].x;
+            if (dx < 0)
+                dx = -dx;
+            players[k].f10 = *(short *)0x72354 - absy;
+            players[k].f5e = *(int *)0x72350 + absy * 4;
+            if (players[k].x < v88c04)
+                players[k].f00 = 3;
+            if (players[k].x > v88c04)
+                players[k].f00 = 4;
+            players[k].f02 = 0;
+            players[k].cell = 0;
+            players[k].place = 0;
+            players[k].lap = 0;
+            players[k].f14 = 0;
+            players[k].face = v70720[k];
+        }
+        arr16[0x173] = 60;
+        arr16[0x13F] = 58;
+        arr16[0x10B] = 50;
+        arr16[0xD7] = 40;
+        arr16[0xA3] = 34;
+        arr16[0x6F] = 30;
+        arr16[0x3B] = 28;
+        arr16[7] = 22;
+        for (j = 7; j >= 0; j--) {
+            players[j].f08 = v88b84;
+            players[j].f0a = v88b84 + j * 10 - 10;
+        }
+        arr16[3] = 24;
+        arr16[0x37] = 24;
+        arr16[0x6B] = 24;
+        arr16[0x9F] = 24;
+        arr16[0xD3] = 24;
+        arr16[0x107] = 24;
+        arr16[0x13B] = 24;
+        arr16[0x16F] = 24;
+        for (v88b72 = 7; v88b72 >= 0; v88b72--) {
+            players[v88b72].f0c = v88b84 - 4 - 10 * (7 - v88b72);
+        }
+    }
+}
+
+void fn_16d68(int a, int b, int face)   /* arg regs: EAX, EDX, EBX */
+{
+    short *p8;
+    char *tbl = (char *)0x72350;
+    int i;
+    int idx;
+    short f = (short)face;
+
+    if (a <= 1) {
+        p8 = (short *)(tbl + f * 8);
+        WS(0x6ab14) = f;
+        WS(0x6ab12) = p8[3];
+        WS(0x6ab08) = p8[2];
+        WI(0x6ab56) = *(int *)((size_t)(size_t)p8);
+    } else {
+        idx = (a - 1) * 0x68;
+        p8 = (short *)(tbl + WS(0x6aaac + idx) * 8);
+        WS(0x6aaaa + a * 0x68) = p8[3];
+        WI(0x6aaee + a * 0x68) = WI(0x6aaee + idx);
+        WS(0x6aaa0 + a * 0x68) = WS(0x6aaa0 + idx);
+        WS(0x6aaac + a * 0x68) = WS(0x6aaac + idx);
+        for (i = 1; i <= b; i++) {
+            WS(0x6aaa6 + a * 0x68) = *(short *)WI(0x6aaee + a * 0x68);
+            WI(0x6aaee + a * 0x68) += 2;
+            WS(0x6aaa8 + a * 0x68) = *(short *)WI(0x6aaee + a * 0x68);
+            WI(0x6aaee + a * 0x68) += 2;
+            if (--WU(0x6aaa0 + a * 0x68) == 0) {
+                if (++WU(0x6aaac + a * 0x68) > WU(0x88b7a))
+                    WS(0x6aaac + a * 0x68) = 0;
+                p8 = (short *)(tbl + WS(0x6aaac + idx) * 8);
+                WS(0x6aaaa + idx) = p8[3];
+                WI(0x6aaee + idx) = *(int *)((size_t)(size_t)p8);
+                WS(0x6aaa0 + idx) = p8[2];
+            }
+        }
+    }
+    WI(0x7d7f8) = (int)(size_t)p8;
+}
+
+void fn_16f90(void);
+
+void fn_16eac(void)
+{
+    short n, cnt;
+    int i;
+
+    n = nplayers;
+    cnt = 0;
+    for (i = 1; i <= n; i++)
+        if (players[i].place == 2 && players[i].f56 == 4)
+            cnt++;
+    nplayers = n;
+    if (cnt >= n) {
+        n += 2;
+        v7eca4++;
+        nplayers = n;
+        if (n > 0x12) {
+            n = 0x12;
+            nplayers = n;
+        }
+        fn_16f90();
+        nplayers = nplayers;
+    }
+}
+
+void srand(unsigned);
+int rand(void);
+
+void fn_16f24(void)
+{
+    int r;
+    int m;
+    int i;
+
+    nplayers = v7ecb0;
+    m = racetime;
+    if (m < v88b7a)
+        m = v88b7a;
+    srand(m);
+    for (;;) {
+        do {
+            r = rand();
+        } while (r < 0 || r > v88b7a);
+        for (i = 1; i <= nplayers; i++)
+            fn_16d68(i, 0x104, r);
+        break;
+    }
 }

@@ -34,6 +34,13 @@ pointer to the finding, and leave it here so the number stays valid.
    Data point (fn_16ca0 0x16CA0): every statement matches; the game's scheduler defers `sar eax,1` and
    the v88c7a store across the independent movw $0x78, and homes the v7ea58s copy in DX (reused later as
    the loop counter) while ours uses AX. Same flavor as engines_menu's EDX. Loop bodies byte-identical.
+   Data points (fn_16f90 0x16F90, near-miss 1020/1075): (a) the game CSEs the immediate 0 into %cx and
+   stores it 8x as word (`mov %cx,0x6aaf2(%eax)` ...) while our -oneatx build emits `movw $0,disp` per
+   store; no C form found that makes Watcom keep a zero register. (b) The game's zeroing do-while keeps a
+   byte counter in EDX and indexes [edx+ebx+0x6aab6]; ours strength-reduces to [eax+disp]. (c) Loads of
+   order_a[k]/order_b[k] are interleaved between stores in the game, before the f1c store. Struct player
+   is now offset-complete (pack(1), size 0x68; an extra 2-byte field showed up as imul $0x6a in the
+   listing - the struct size is checkable via any imul $0x68 in matched callers).
 
 ## Hypotheses
 

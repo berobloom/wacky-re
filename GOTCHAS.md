@@ -56,3 +56,6 @@ it can be copied back into DREA.
 ## This project's traps
 
 (add entries here; tag generic ones `[generic]`)
+- Watcom defaults to natural struct packing; the game's structs are pack(1) (see findings/executables.md).
+  A port struct that is 2 bytes too big shows up as `imul $0x6a,%e..` where the game has `imul $0x68`.
+  Fix with `#pragma pack(1)` around the struct. [generic]
