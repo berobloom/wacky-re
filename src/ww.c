@@ -1936,7 +1936,7 @@ void frame_draw(void)
 
 extern char *anidata;
 extern int anidope, anitimer, anikick;
-extern int ani7eaf4, ani7eb18, ani7eb0c, ani7ea98, ani7ea8c, ani7ea94, anistart;
+extern int aniphase, aniframe, ani7eb0c, ani7ea98, ani7ea8c, ani7ea94, anistart;
 extern char *anip1, *anip2;
 void ani_dope(void);
 
@@ -1970,8 +1970,8 @@ void ani_dope(void)
             readdat(sfx2data, 0xD99);
         }
     }
-    ani7eaf4 = 0;
-    ani7eb18 = 0;
+    aniphase = 0;
+    aniframe = 0;
     ani7eb0c = 0xC7;
     ani7ea98 = 0x78;
     ani7ea8c = 0;
@@ -1980,6 +1980,74 @@ void ani_dope(void)
     anip2 = anidata + 0x2D00;
     anidope = 1;
     anistart = ticks2;
+}
+
+extern int ani7ea9c;
+void drawsprite_clip(void);
+
+void ani_draw(void)
+{
+    sprptr = anip1 + aniframe * (72 * 80);
+    spr_x = ani7ea98;
+    spr_w = 0x48;
+    spr_y = ani7eb0c;
+    spr_h = 0x50;
+    if (spr_y <= 199)
+        drawsprite_clip();
+    if (ani7ea8c) {
+        sprptr = anip2;
+        spr_x = ani7ea94;
+        spr_h = 0x19;
+        spr_y = ani7ea9c;
+        spr_w = 0xF;
+        if (ani7ea8c == 1) {
+            ani7ea8c = 2;
+            spr_x++;
+        } else {
+            ani7ea8c = 1;
+            spr_x--;
+        }
+        if (spr_y <= 199)
+            drawsprite_clip();
+        if (ani7ea9c == 0x6E) {
+            ani7ea8c = 0;
+        } else {
+            ani7ea9c -= 2;
+            if (ani7ea9c < 0x6E)
+                ani7ea9c = 0x6E;
+        }
+    }
+    switch (aniphase) {
+    case 0:
+        ani7eb0c -= 8;
+        if (ani7eb0c <= 0x70) {
+            ani7eb0c = 0x70;
+            aniphase = 1;
+            anistart = ticks2;
+        }
+        break;
+    case 1:
+        if (since2(anistart) >= 0x10) {
+            aniphase = 2;
+            anistart = ticks2;
+            aniframe = 1;
+            ani7ea8c = 1;
+            ani7ea9c = ani7eb0c + 0x25;
+            sfx_play2();
+        }
+        break;
+    case 2:
+        if (since2(anistart) >= 0x14) {
+            aniphase = 3;
+            aniframe = 0;
+        }
+        break;
+    case 3:
+        ani7eb0c += 4;
+        if (ani7eb0c > 0xC7)
+            anikick = 0;
+        break;
+    }
 }
 
 /* ---- the data file (these follow the code above; the calls before them are inlined) */
