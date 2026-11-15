@@ -1200,11 +1200,11 @@ void voices_load(void)
     datfind("AUDIOHED.FX");
     size = datsize();
     offs = malloc(size);
-    fread(offs, size, 1, datfile);
+    readdat(offs, size);
     datfind("AUDIOT.FX");
     size = datsize();
     voicedata = malloc(size);
-    fread(voicedata, size, 1, datfile);
+    readdat(voicedata, size);
     first = 0;
     if (fxcard == 2)
         first = 26;
