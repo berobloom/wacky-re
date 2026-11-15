@@ -10,7 +10,7 @@
 | Compiler | Watcom C/C++32 | CONFIRMED: run-time strings `WATCOM C/C++32 Run-Time system. (c) Copyright by WATCOM International Corp. 1988-1993` |
 | Version | **9.5b** (9.5 with patch levels A and B) | STRONGLY SUPPORTED: `tools/wc/libmatch.py ww` against CLIB3R.LIB of 9.5 / 9.5a / 9.5b: 72 / 84 / 93 modules found byte for byte (fixup bytes masked). 12 modules occur only from 9.5a on, 9 more only in 9.5b (`exit` 0x42C10, `fread` 0x42C68, `fseek` 0x42E91, `signal` 0x431FA, `scnf` 0x54651, `grownear`, `allocfp`, `grabfp87`, `sigsys`); none favours an older level. Not yet excluded: a later 9.5 patch or 10.0 (copyright 1988-1993 argues against 10.0) |
 | Model | flat, register calling convention (`3r` library) | LIKELY: the 3R library matches; function prologues save registers (`push ebx/ecx/edx/esi/edi`). CONFIRMED order: arg1=EAX, arg2=EDX, arg3=EBX, arg4=ECX (fn_173c4 fread call at 0x17405/0x17426: ptr/size/count/stream land in EAX/EDX/EBX/ECX; fn_16d68 3-arg probe agrees) |
-| Options | **`-s -3r -oailrt`**, possibly with `-oe`, `-om`, `-on` (Watcom's documented fastest setting `-oneatx` = `-onea` + `-ox` + `-t`, and `-oatx`, give the same bytes; `-oneatx` is LIKELY the command line) | STRONGLY SUPPORTED: `analysis/optpin/check.sh` compiles probe C for 11 game functions, all match byte for byte at their addresses (fixup bytes masked), and `src/` CRC code adds 3 more. Each flag is needed: without `-s` 2/4 of T1; without `-r` 7/11 (`-r` changes scheduling, e.g. `movzx` pairs before the shift); without `-l` find12 0x16A7C keeps a counter instead of a byte offset stepping by 12; without `-i` or `-t` sendstr 0x109D8 differs (153 instead of 188 bytes; `-t` keeps the hoisted constant 10 in `ebp`); without `-a` crchware 0x10260 stores its `static` loop counter every pass instead of keeping it in `esi`, and crcupdate 0x102CC allocates other registers. `-oi` also fits the whole program: 213 inline `repne scasb` (strlen) and 200 `rep movsd` in game code, and no game call to clib's `strlen`/`memcpy`/`strcpy`/`inp`/`outp`. `-5r`, `-os`, `-d2`, `-od` fail. Not yet told apart: `-oe`, `-om`, `-on`. Struct packing: **pack(1) CONFIRMED** for game structs: `players` has a dword field at +0x5E (misaligned for natural alignment; store at 0x1720B `mov %edx,0x6aaee(%eax)`), struct size 0x68; port uses `#pragma pack(1)` |
+| Options | **`-s -3r -oailrt`**, possibly with `-oe`, `-om`, `-on` (Watcom's documented fastest setting `-oneatx` = `-onea` + `-ox` + `-t`, and `-oatx`, give the same bytes; `-oneatx` is LIKELY the command line) | STRONGLY SUPPORTED: `analysis/optpin/check.sh` compiles probe C for 11 game functions, all match byte for byte at their addresses (fixup bytes masked), and `src/` CRC code adds 3 more. Each flag is needed: without `-s` 2/4 of T1; without `-r` 7/11 (`-r` changes scheduling, e.g. `movzx` pairs before the shift); without `-l` find12 0x16A7C keeps a counter instead of a byte offset stepping by 12; without `-i` or `-t` sendstr 0x109D8 differs (153 instead of 188 bytes; `-t` keeps the hoisted constant 10 in `ebp`); without `-a` crchware 0x10260 stores its `static` loop counter every pass instead of keeping it in `esi`, and crcupdate 0x102CC allocates other registers. `-oi` also fits the whole program: 213 inline `repne scasb` (strlen) and 200 `rep movsd` in game code, and no game call to clib's `strlen`/`memcpy`/`strcpy`/`inp`/`outp`. `-5r`, `-os`, `-d2`, `-od` fail. Not yet told apart: `-om`, `-on`. `-oe` CONFIRMED needed (see Open). Struct packing: **pack(1) CONFIRMED** for game structs: `players` has a dword field at +0x5E (misaligned for natural alignment; store at 0x1720B `mov %edx,0x6aaee(%eax)`), struct size 0x68; port uses `#pragma pack(1)` |
 | Code shape | 871 functions found, 282 KB of 310 KB decoded; 574 start with Watcom register saves, none with a stack check (`-s`); 12 large `pushad` routines (about 30 KB) in the asm block (Code layout below) | LIKELY: `tools/le/funcs.py ww`, prologue count. The 11 unaligned "functions" below 0x36A4E (0x1150B, 0x17126, ...) start mid-instruction: misdetections |
 
 ## Code layout (obj1)
@@ -34,9 +34,20 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
 
 ## Open
 
-- Options left open: `-oe` (inlining user functions), `-om`, `-on` (floating point), `-zp`. Each needs a game
-  function where it changes the code: `-oe` a small function called in its own module, `-zp` a struct with a hole.
-- `-oe`, `-om`, `-on`: settled by the first function that differs under one of them.
+- **`-oe` is CONFIRMED** (2025 session): the full-build function set matches only with `e`
+  (com_open 0x102F4 spill/frame pattern fails without it, 71 vs 82 identical). `e` inlines small
+  user functions (usage string in WCC386.EXE: `e[=<num>] -> expand user functions inline. <num>
+  controls max size`); every optinfo set that keeps com_open also inlines `readdat` into fn_17928,
+  while the game keeps `call 0x1424C` at 24 sites (0x18215, 0x18232, 0x18525, 0x194DB, 0x27C3A,
+  0x2CA3B, 0x345FB, ...). `-oae=N` with N<=4 stops readdat's inlining but loses com_open et al.
+  No pragma, aux form, declaration style or address-taken use suppresses it (all probed; 9.5b has
+  no inline-asm keyword). Open question: what in the game's source prevented it — fn_17928/fn_1832c
+  stay near-misses until found.
+- Optinfo letters accepted by 9.5b (usage line in WCC386.EXE): `a,c,d,e,f[+],i,l,m,n,o,p,r,s,t,u,x`;
+  `a`=relax aliasing, `d`=disable all, `c`=disable call-then-return->jump, `m` breaks com_open (never
+  needed), `i/l/r` also break com_open — full-build evidence shows the optpin probes for `-oi/-ol/-or`
+  were probe-context artifacts (sendstr/find12/crchware match under `-oneatx` in the full build).
+- `-om`, `-on` (floating point), `-zp` still open.
 - The paragraph-aligned library modules after 0x409EF: which belong to the Apogee Sound System, which to other
   libraries; whether the ASS source of a matching version is available (not found in a first search).
 - The assembler of 0x36A4E-0x409EE, and whether it is one module.

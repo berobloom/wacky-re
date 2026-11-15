@@ -521,7 +521,7 @@ extern short spr_h, spr_w, spr_x, spr_y;
 extern short playing[2];
 extern char *faceimgs[];
 extern char *sprptr;
-extern short p2offset;
+extern int p2offset;        /* dword stores at 0x1799c/0x179ba */
 void drawsprite(void);
 
 void draw_faces(void)
@@ -4023,5 +4023,322 @@ void fn_16f24(void)
         for (i = 1; i <= nplayers; i++)
             fn_16d68(i, 0x104, r);
         break;
+    }
+}
+
+/* differs: race-start setup (0x17928). Two compiler-side diffs (C shape tried extensively):
+ *  1. +819 (0x17C5B): the game binds itoa's eax (movsx v88b88) before the strcpy edi/esi setup,
+ *     we bind it after; all three compiler patch levels (95/95A/95B) and every source shape tried
+ *     (statement order, nesting, probe isolation) give our order.
+ *  2. ~0x18209/.18232: the game keeps `call readdat` (24 such sites game-wide); -oe in 9.5b always
+ *     inlines readdat's body (fread(ptr,n,1,datfile): +11 bytes per site). Everything from 0x18209
+ *     to the ret sits 22 bytes late in our object for that reason; semantics identical.
+ * See findings/executables.md "Open" and GOTCHAS.md. */
+
+extern short v88bd0, v88b88, v7eb82, v88bd6, v88b4a, v88c90;
+extern int v7ed98, v7ec80, v7eb00;
+extern char *v7eb54;
+extern char *lapdata;
+void fn_279e8(void);
+void fn_2754c(void);
+short fn_27920(int n);
+void fn_2b5e8(int n);
+void fn_32e60(void);
+void fn_36f55(void);              /* asm: writes 0x6400 bytes from v7eb54 to A000:7D00 */
+
+void fn_17928(void)
+{
+    char numbuf[0x50];            /* [esp]: itoa target */
+    char msg[0x50];               /* [esp+0x50]: loading message */
+    short bmcn;                   /* [esp+0xa0] */
+    int t;
+    short r;
+    int n, edx;
+    int eax;
+    short mp;
+
+    v7ecc4 = 0;
+    v7ed20 = 0x440;
+    v7ed1c = 0x2a8;
+    v7ed98 = 0;
+    if (twoplayer || splitscreen) {
+        v88bde = 1;
+        if (netgame)
+            v88bde = v88bd0;
+        if (v88bde) {
+            p2offset = 0x64;
+            v7eb80 = 1;
+            v7eb82 = 1;
+            goto setdone;
+        }
+        p2offset = 0;
+        if (netgame != 1) {
+            v7eb80 = 0;
+            v7eb82 = 1;
+            goto setdone;
+        }
+    } else {
+        p2offset = 0;
+        v88bde = 0;
+    }
+    v7eb80 = 1;      /* shared tail: 0x179f5 */
+    v7eb82 = 0;
+setdone:;
+    if (twoplayer == 0 && netvoices == 0) {
+        eax = v88bde ? (int)(size_t)lapdata + 0x166e : (int)(size_t)lapdata;
+        edx = 0;
+        do {
+            edx += 0x10;
+            WI(0x6e6e0 + edx) = eax;  eax += 0x27e;
+            WI(0x6e6e4 + edx) = eax;  eax += 0x27e;
+            WI(0x6e6e8 + edx) = eax;  eax += 0x27e;
+            WI(0x6e6ec + edx) = eax;  eax += 0x27e;
+        } while (edx != 0x20);
+    }
+    switch ((short)v88bb6 + v7ecb4 - 1) {
+    case 0:
+        strcpy((char *)0x80ace, "BRONZEM.SP");
+        v7ed98 = 1;
+        track = v88b88;
+        if (v7ec80) {
+            strcpy((char *)0x80ace, "SILVERM.SP");
+            track = 7;
+        }
+        break;
+    case 1:
+        strcpy((char *)0x80ace, "SILVERM.SP");
+        track = v88b88 + 5;
+        break;
+    case 2:
+        strcpy((char *)0x80ace, "GOLDM.SP");
+        track = v88b88 + 0xa;
+        break;
+    case 3:
+        strcpy((char *)0x80ace, "BONUSB.SP");
+        track = v88b88 + 0x15;
+        break;
+    case 4:
+        strcpy((char *)0x80ace, "BONUSS.SP");
+        track = v88b88 + 0x1a;
+        break;
+    case 5:
+        strcpy((char *)0x80ace, "BONUSG.SP");
+        track = v88b88 + 0x1f;
+        break;
+    }
+    fn_32e60();
+    if (twoplayer == 0 && netvoices == 0) {
+        if (v7d998) {
+            if (v7d998 == 3)
+                strcpy(msg, " LOADING DEMO ");
+            else
+                strcpy(msg, " LOADING ");
+        } else {
+            strcpy(msg, " LOADING");
+            if (v88b88 == 5) {
+                if (v7ec80) {
+                    strcat(msg, " BONUS! ");
+                    strcpy((char *)0x6aa68, "BONUS");
+                } else {
+                    strcat(msg, " FINAL ");
+                    strcpy((char *)0x6aa68, "FINAL");
+                }
+            } else {
+                itoa(v88b88, numbuf, 10);
+                strcpy((char *)0x6aa68, "RACE ");
+                strcat((char *)0x6aa68, numbuf);
+                strcat(msg, " RACE ");
+                strcat(msg, numbuf);
+                strcat(msg, (char *)0x600a0);
+            }
+        }
+    } else
+        strcpy(msg, "LOADING ZONE");
+    waitretrace();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    msgbox(msg, 0);
+    fn_279e8();
+    fn_2754c();
+    v88b7e = 0;
+    if (twoplayer == 0 && splitscreen == 0) {
+        fn_173c4();
+    } else {
+        fn_173c4();
+        v88b7e = 1;
+        mp = myplayer;            /* kept in dx across the call */
+        myplayer = v88c6a;
+        fn_173c4();
+        myplayer = mp;
+    }
+    if (v7d998 == 0 || v7d998 == 3) {
+        if (netvoices == 0) {
+            f27060((struct rec14 *)0x7eb6c, 2);
+            palptr = pal7d850;
+            getpalette();
+            f1bf94(pal7d850);
+            v88b4a = 0;
+            p7d714 = p6a980;
+            pal_a = 0;
+            f375cd();
+            pal_a = 0;
+        }
+        if (netvoices)
+            fn_2b5e8(0);
+        v88bd6 = datfind((char *)0x6a4b8);
+        fread(p6a980, 0x6400, 1, datfile);
+        if (v7d998 == 0 || v7d998 == 3) {
+            v7eb54 = p6a980;
+            fn_36f55();
+        }
+        pal_b = 0;
+        pal_c = 0x3e80;
+        setpalette();
+        pal_a = 0;
+        waitretrace();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        if (v7d998 != 3 && v7ec80 == 0)
+            f32cf8(p7d718);
+    }
+    v88b9e = 0;
+    if (v7d998)
+        goto demo;
+    if (v7ec80)
+        goto music;
+    if (netgame == 0) {
+        r = fn_27920(1);
+        v88b9e = r;
+        if (r)
+            return;
+        goto music;
+    }
+    save_a = pal_a;
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 0xbb80;
+    pal_a = pal_d;
+    pal_b = pal_d;
+    setpalette();
+    if (netgame == 1) {
+        msgbox("PRESS FIRE", 0);
+        r = fn_27920(1);
+        v88cf3 = 0;
+        v88b9e = r;
+        if (r)
+            v88cf0 = 0x7e;
+        else
+            v88cf0 = 1;
+        net88c14 = net_key(v88cf0, v88cf3, 0);
+        if (net88c14 == 0) {
+            t = ticks;
+            while (ticks - t < 0x3c)
+                ;
+            if (v88b9e)
+                return;
+        }
+    } else {
+        msgbox("WAITING FOR PLAYER ONE TO PRESS FIRE", 0);
+        net88c14 = net_key(0, 0, 0);
+        t = ticks;
+        while (ticks - t < 0x3c)
+            ;
+        if (v88cef == 0x7e && net88c14 == 0) {
+            pal_b = 0xbb80;
+            pal_a = pal_d;
+            pal_c = pal_d;
+            setpalette();
+            pal_b = save_b;
+            pal_c = save_c;
+            pal_a = save_a;
+            fn_1c068();
+            msgbox("REMOTE PRESSED ESCAPE", 0);
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks <= 0x12c)
+                ;
+            fn_1c0ac();
+            v88b9e = 1;
+            return;
+        }
+    }
+    pal_b = 0xbb80;
+    pal_a = pal_d;
+    pal_c = pal_d;
+    setpalette();
+    pal_b = save_b;
+    pal_c = save_c;
+    pal_a = save_a;
+    if (net88c14 == 0)
+        goto music;
+    fn_1c068();
+    msgbox("EXCESSIVE ERRORS!!", 0);
+    ticks = 0;
+    ticks2 = 0;
+    while (ticks <= 0x12c)
+        ;
+    fn_1c0ac();
+    v88b9e = 1;
+    return;
+demo:
+    if (v7d998 == 2 || v7d998 == 3) {
+        strcpy((char *)0x7d7b8, (char *)0x7d770);
+        strcat((char *)0x7d7b8, ".BMC");
+        datfind((char *)0x7d7b8);
+        readdat(&bmcn, 2);
+        readdat((char *)0x7d9a0, bmcn * 3);
+    }
+music:
+    if (musicon && v7d998 != 2) {
+        if (twoplayer || netvoices)
+            n = v88c90;
+        else {
+            n = v88b88 - 1;
+        }
+        datfind((char *)(0x7c530 + n * 0xe));
+        n = WI(0x6508e + datidx * 0x16);
+        if (cursong == v7eb00) {
+            if (MUSIC_SongPlaying())
+                MUSIC_StopSong();
+        }
+        fread((void *)(size_t)v7eb00, n, 1, datfile);
+    }
+}
+
+/* ---- dead code (0x182d0): no call, jmp or reference anywhere in the image
+   (CONFIRMED, names.txt); byte copy dst + k + i <- s + i, i = 1..3*a3 (short
+   compare). Reproduced byte for byte so the rebuild matches the module.
+   differs: the game has a dead register copy mov esi,ebx at 0x182d4 before
+   imul esi,ebx,3 (+2 bytes, then everything shifts); every C form tried
+   (t=a3 copy, comma, register, expression in both loops) gets folded by 9.5b,
+   so it may be a precompiled-library artifact. */
+
+void fn_182d0(char *dst, short a2, long a3, long a4, int a5)
+{
+    short lim = a3 * 3;
+    long k = a2 * 3;
+    char *d = dst + k;
+    char *s;
+    short i;
+
+    if (a4 != 0) {
+        s = (char *)(k + a5);
+        for (i = 1; i <= lim; i++)
+            *d++ = *s++;
+    } else {
+        s = dst;
+        i = 1;
+        while (i <= lim) {
+            *d++ = *s++;
+            i++;
+        }
     }
 }

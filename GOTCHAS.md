@@ -59,3 +59,13 @@ it can be copied back into DREA.
 - Watcom defaults to natural struct packing; the game's structs are pack(1) (see findings/executables.md).
   A port struct that is 2 bytes too big shows up as `imul $0x6a,%e..` where the game has `imul $0x68`.
   Fix with `#pragma pack(1)` around the struct. [generic]
+- **Watcom 9.5b `-oe` inlines small user functions and nothing turns it off while keeping `e`'s other
+  effects** (com_open's frame needs `e`; `-oae=N` N<=4 stops the inlining but also loses com_open and
+  ~11 other functions; no `class=`, `not_inlining`, `off` aux directive exists; 9.5b has no `asm`/`_asm`
+  keyword and `#pragma aux` strings never emit a body for a C-defined function). The game calls
+  seekdat/telldat/datsize/readdat directly at 24+ sites; our build inlines them (11 bytes extra per
+  readdat call). Write the C calls anyway; expect near-miss in fn_17928, fn_1832c, fn_357ac,
+  f27060, f2a92c, waitkey until the game's trick is found. [generic]
+- **optpin probes can mislead on flags**: `-oi/-ol/-or` were pinned from single-function probe files,
+  but in the full build each of them breaks com_open's bytes while sendstr/find12/crchware match
+  without them. Re-check every pinned letter against the whole-program match count. [generic]

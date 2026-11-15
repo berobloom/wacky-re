@@ -5,7 +5,7 @@
 0x012490 since2       # LIKELY: matching C (T1.C as fromscroll); ticks2 minus the argument
 0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
 0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
-0x01424c readdat      # LIKELY: matching C (T1.C); fread(buf, n, 1, datfile); inlined into callers before it (Watcom -oe sees the whole file)
+0x01424c readdat      # LIKELY: matching C (T1.C); fread(buf, n, 1, datfile); game CALLS it at 24 sites (e.g. 0x18215); our 9.5b -oe build always inlines it (unresolved compiler mystery, findings/executables.md Open)
 0x014238 datsize      # LIKELY: matching C (T2.C as get22); datdir[datidx].size; inlined into its callers
 0x016a7c find12       # SPECULATIVE: matching C (T2.C); name is a placeholder
 0x0248ac setvmode     # LIKELY: matching C (T1.C); int386 0x10, AH=0
@@ -547,3 +547,4 @@
 0x017928 fn_17928        # ?
 0x017928 fn_17928        # LIKELY: race-start setup monster (~2.4KB: mode flags v88bde/p2offset/view flags, lap-data pointers, net wait ("WAITING FOR PLAYER ONE..."), demo .BMC load, music load; single frame esp-0xa4 spans 0x17928-0x182cd)
 0x0182ce (dead)         # CONFIRMED dead: no call/jmp/dword reference anywhere in the image; byte copy dst+i*3 <- src+i*3 (ret 4, 5th arg on stack); must still be reproduced for byte-identical rebuild
+0x0182d0 fn_182d0       # the dead block's function; WRONG, corrected: the block starts at 0x182d0, the 8b c0 at 0x182ce is fn_17928's 4-byte align padding (starts.py list)

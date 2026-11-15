@@ -17,15 +17,18 @@ keep a session diary here.
 Take the first open item when QUEUE.md has none open. Mark items CLOSED or
 BLOCKED (with the reason) rather than deleting them.
 
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1790D (through fn_17888), 78 functions
-   byte-identical and ~20 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x182cd, 82 functions
+   byte-identical and ~27 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
    register/scheduling ones are QUESTIONS.md 2). Session 2026-08-05b added fn_16f90/fn_173c4/fn_17888,
    struct player pack(1) layout, struct face 0x98 record, calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX.
-   Next in address order: fn_17928 (2.4 KB setup monster, 0x17928-0x182cd, one frame, multiple internal rets),
-   dead block 0x182ce-0x18326 (no xrefs, still needs bytes), fn_1832c (~4 KB), then 0x19c68 / 0x19db8 / 0x19eac /
-   0x1a148 (lap menu, tractable). `src/ww.c` is ~4 K lines: grep, don't read whole. `tools/wc/starts.py ww LO HI` lists function starts (it can
-   also list loop bodies that follow a jmp). Watcom 9.5 `-oe` inlines functions defined later in the
-   file too: readdat/datsize/seekdat/since2/sfx_play2/view2_* calls show up inline. Functions after the
+   Session 2026-08-05c added fn_17928 (near miss: itoa arg-order swap at +819, and -oe inlines readdat
+   where the game calls it, +22 bytes) and fn_182d0 (dead code, +2-byte `mov esi,ebx` fold); and pinned
+   `-oe` (usage string in WCC386: `e[=num]` caps inline size). Optinfo letters `i,l,r,m` BREAK com_open
+   in the full build - the optpin probe evidence for them was a probe artifact. Next in address order:
+   fn_1832c (~4 KB, game calls datfind/telldat/datsize/seekdat/readdat at 0x18501-0x18525 - expect
+   inline near-miss), then 0x19c68 / 0x19db8 / 0x19eac / 0x1a148 (lap menu, tractable). `src/ww.c` is ~4.4 K lines: grep, don't read whole. `tools/wc/starts.py ww LO HI` lists function starts (it can
+   also list loop bodies that follow a jmp). Watcom 9.5 `-oe` inlines small user functions (later-defined
+   included); GOTCHAS.md. Functions after the
    data-file block (0x14128-0x14260) go at the end of the file.
 2. Inventory: archives and file formats (WACKY.DAT), strings.
 2. Get the original running under the harness; record the boot's segments or
