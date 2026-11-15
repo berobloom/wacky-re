@@ -1713,3 +1713,105 @@ void car_laps(void)
     }
     calc_places();
 }
+
+/* ---- status bar */
+
+extern char pnames[][12];
+extern short v88ca0, v88bde, v7eb80, netgame;
+extern int v7ec7c;
+extern char *img7eb5c, *img7eb3c, *img7d83c, *img7eb60, *img7d814, *img7d810;
+void blit372c7(void);
+
+/* differs: pnames[v88c6a] is built in esi (imul esi; add $pnames) in the game, via eax here, in every
+   strcpy that uses v88c6a; the v7eb80 ternary loads each index with movswl; 11 bytes short */
+void draw_status(void)
+{
+    char buf[80];
+
+    if (v7d998 != 0 && v7d998 != 3)
+        return;
+    if (v88ca0) {
+        spr_x = 0;
+        spr_y = 0x3C;
+        spr_h = 0x4E;
+        spr_w = 0x32;
+        sprptr = img7eb5c;
+        drawsprite();
+        if (v88ca0 == 1) {
+            sprptr = img7eb3c;
+            blit372c7();
+            v88ca0 = 2;
+        }
+    }
+    if (v88bde) {
+        spr_x = 4;
+        spr_y = 1;
+        strcpy(buf, pnames[v88c6a]);
+        print_at(spr_x, spr_y, buf, 0);
+        strcpy(buf, pnames[myplayer]);
+        spr_x = 4;
+        spr_y = 0x65;
+        print_at(spr_x, spr_y, buf, 0);
+    } else {
+        if (!twoplayer) {
+            spr_x = 4;
+            spr_y = 0x32;
+            strcpy(buf, pnames[v7eb80 ? myplayer : v88c6a]);
+            print_at(spr_x, spr_y, buf, 0);
+            spr_x = 0x11;
+            spr_y = 6;
+            spr_h = 0x26;
+            spr_w = 0x29;
+            sprptr = img7d83c;
+            drawsprite();
+            if (netvoices) {
+                spr_x = 0x1A;
+                spr_y = 0xE;
+                spr_h = 0x13;
+                spr_w = 0xE;
+                sprptr = img7eb60;
+                drawsprite();
+            }
+        }
+        if (!splitscreen && !netvoices) {
+            if (!twoplayer) {
+                spr_x = 0x44;
+                spr_y = 6;
+                spr_h = 0x41;
+                spr_w = 0x13;
+                sprptr = img7d814;
+                drawsprite();
+            } else {
+                spr_x = 4;
+                spr_y = 0xB;
+                if (netgame == 1)
+                    strcpy(buf, pnames[myplayer]);
+                else
+                    strcpy(buf, pnames[v88c6a]);
+                print_at(spr_x, spr_y, buf, 0);
+                spr_x = 0x4A;
+                print_at(spr_x, spr_y, "SCORE", 0);
+                spr_x = 4;
+                spr_y += 0x1E;
+                if (netgame == 1)
+                    strcpy(buf, pnames[v88c6a]);
+                else
+                    strcpy(buf, pnames[myplayer]);
+                print_at(spr_x, spr_y, buf, 0);
+                v7ec7c = spr_y;
+                spr_x = 0x4A;
+                print_at(spr_x, spr_y, "SCORE", 0);
+            }
+        }
+        spr_x = 0x92;
+        spr_y = 6;
+        spr_h = 0x3D;
+        spr_w = 0x13;
+        sprptr = img7d810;
+        drawsprite();
+    }
+    if (v7d998 == 3)
+        print_at(0xE8, 6, "DEMO MODE ", 0);
+    if (!twoplayer && !splitscreen && !netvoices && v88bb2 == 4)
+        print_at(0xE8, 6, "TIME TRIAL", 0);
+}

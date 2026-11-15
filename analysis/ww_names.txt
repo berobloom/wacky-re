@@ -295,3 +295,16 @@
 0x07e718 lastlap      # SPECULATIVE: racetime at the last lap
 0x07d358 laptimes     # SPECULATIVE: int[], laps 1..6 of a single-player time trial (v88bb2 == 4)
 0x02d67c car_finished # SPECULATIVE: called with the car index when its last lap starts and sound is on
+0x012f80 draw_status  # LIKELY: player names, SCORE labels, panels; "DEMO MODE " (v7d998 == 3), "TIME TRIAL"
+0x07d228 pnames       # LIKELY: char[12] player names, indexed by myplayer and v88c6a
+0x088ca0 v88ca0       # SPECULATIVE: short; 1 draws img7eb3c once, then 2
+0x088bde v88bde       # SPECULATIVE: short; draw_status shows two names at y 1 and 0x65
+0x07eb80 v7eb80       # SPECULATIVE: short; picks myplayer's name over v88c6a's
+0x07ec7c v7ec7c       # SPECULATIVE: y of the second SCORE line
+0x0372c7 blit372c7    # SPECULATIVE: asm, takes sprptr
+0x07eb5c img7eb5c     # SPECULATIVE
+0x07eb3c img7eb3c     # SPECULATIVE
+0x07d83c img7d83c     # SPECULATIVE
+0x07eb60 img7eb60     # SPECULATIVE
+0x07d814 img7d814     # SPECULATIVE
+0x07d810 img7d810     # SPECULATIVE
