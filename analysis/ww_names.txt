@@ -445,3 +445,24 @@
 0x088ce9 v88ce9       # SPECULATIVE: char, box colour for f371e4
 0x0373ee f373ee       # SPECULATIVE: asm sprite draw
 0x0371e4 f371e4       # SPECULATIVE: asm box fill (spr_x/y/h/w)
+0x014b00 ctl_setup    # LIKELY: (which) copies six control shorts from the config (cfg7ee1c+0x1C or cfg77128+8), keymaps 1/2/3 or 4/8/12, joy_detect
+0x014c10 center_x     # LIKELY: (320 - w) / 2
+0x014c24 center_y     # LIKELY: (200 - h) / 2
+0x014c38 wait_ticks3  # LIKELY: zeroes ticks3, waits until it reaches v7edbc
+0x07ea74 ticks3       # LIKELY: volatile int timer
+0x07edbc v7edbc       # SPECULATIVE: wait length for wait_ticks3
+0x014c64 delay        # LIKELY: waits n ticks
+0x014c7c wait_or_key  # LIKELY: zeroes ticks/ticks2, waits n ticks; key88cd0 == 1 ends it early when v7ebc0 (sets v7ebb0)
+0x088cd0 key88cd0     # SPECULATIVE: volatile char key state
+0x07ebc0 v7ebc0       # SPECULATIVE
+0x07ebb0 v7ebb0       # SPECULATIVE: set when wait_or_key was cut short
+0x014cc0 joy_reset    # SPECULATIVE: joyfound = 0, v88c8a = 0, joy_detect
+0x014cd8 joy_clear_y  # SPECULATIVE: joy88b40 = 0 when v7b6dd and v7b6dc is 0x48 or 0x50 (up/down scan codes)
+0x07b6dc v7b6dc       # SPECULATIVE: char, a scan code
+0x07b6dd v7b6dd       # SPECULATIVE: char
+0x088b5c v88b5c       # SPECULATIVE: control from the config
+0x088b5e v88b5e       # SPECULATIVE
+0x088b52 v88b52       # SPECULATIVE
+0x088b3c v88b3c       # SPECULATIVE
+0x088b3e v88b3e       # SPECULATIVE
+0x088b48 v88b48       # SPECULATIVE

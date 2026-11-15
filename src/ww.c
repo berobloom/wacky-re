@@ -2633,3 +2633,99 @@ void print_at(short x, int y, char *s, short mode)
         spr_x += 8;
     }
 }
+
+/* ---- controls, timing */
+
+extern short v88b5c, v88b5e, v88b52, v88b3c, v88b3e, v88b48;
+
+void ctl_setup(short which)
+{
+    v88c8a = 0;
+    if (joyfound)
+        v88c8a = 1;
+    if (which == 0) {
+        if (!v7ee4a)
+            v88c8a = 1;
+        v88b5c = ((short *)cfg7ee1c)[14];
+        v88b5e = ((short *)cfg7ee1c)[15];
+        v88b52 = ((short *)cfg7ee1c)[16];
+        v88b3c = ((short *)cfg7ee1c)[17];
+        v88b3e = ((short *)cfg7ee1c)[18];
+        v88b48 = ((short *)cfg7ee1c)[19];
+        keymap1 = 1;
+        keymap2 = 2;
+        keymap3 = 3;
+    } else {
+        if (((short *)cfg77128)[2])
+            v88c8a = 1;
+        v88b5c = ((short *)cfg77128)[4];
+        v88b5e = ((short *)cfg77128)[5];
+        v88b52 = ((short *)cfg77128)[6];
+        v88b3c = ((short *)cfg77128)[7];
+        v88b3e = ((short *)cfg77128)[8];
+        v88b48 = ((short *)cfg77128)[9];
+        keymap1 = 4;
+        keymap2 = 8;
+        keymap3 = 12;
+    }
+    joy_detect();
+}
+
+int center_x(int w)
+{
+    return (320 - w) / 2;
+}
+
+int center_y(int h)
+{
+    return (200 - h) / 2;
+}
+
+extern volatile int ticks3;
+extern int v7edbc;
+
+void wait_ticks3(void)
+{
+    ticks3 = 0;
+    while (ticks3 < v7edbc)
+        ;
+}
+
+void delay(int n)
+{
+    int start;
+
+    start = ticks;
+    while (ticks - start < n)
+        ;
+}
+
+extern volatile char key88cd0;
+extern int v7ebc0, v7ebb0;
+
+void wait_or_key(int n)
+{
+    ticks = 0;
+    ticks2 = 0;
+    do {
+        if (key88cd0 == 1 && v7ebc0) {
+            v7ebb0 = 1;
+            break;
+        }
+    } while (n > ticks);
+}
+
+void joy_reset(void)
+{
+    joyfound = 0;
+    v88c8a = 0;
+    joy_detect();
+}
+
+extern char v7b6dc, v7b6dd;
+
+void joy_clear_y(void)
+{
+    if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
+        joy88b40 = 0;
+}
