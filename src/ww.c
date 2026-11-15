@@ -2439,3 +2439,82 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
         }
     }
 }
+
+/* ---- text */
+
+extern short v88c2e, v88c10;
+
+/* differs: stack slots only: x, hw, hh are permuted (QUESTIONS 2) */
+void wtext(int x, int y, char *s, int scaled)
+{
+    int i, ok, c;
+    int hw, hh;
+    short sx, sy;
+
+    i = 0;
+    if (strlen(s) == 0)
+        return;
+    if (scaled) {
+        spr_h = v88c2e;
+        spr_w = v88c10;
+        hw = spr_h >> 1;
+        hh = spr_w >> 1;
+    } else {
+        spr_h = 0xF;
+        spr_w = 0xD;
+    }
+    spr_y = y;
+    spr_x = x;
+    for (; s[i] != 0; i++) {
+        if (s[i] >= 'A' && s[i] <= 'Z') {
+            c = s[i] - 'A';
+            ok = 1;
+        } else if (s[i] >= '0' && s[i] <= '9') {
+            c = s[i] - '0' + 26;
+            ok = 1;
+        } else {
+            ok = 1;
+            switch (s[i]) {
+            case '!':
+                c = 0x28;
+                break;
+            case '?':
+            case '~':
+                c = 0x29;
+                break;
+            case ' ':
+                c = 0x24;
+                break;
+            case '.':
+                c = 0x25;
+                break;
+            case '<':
+                c = 0x26;
+                break;
+            case '>':
+            case '#':
+                c = 0x27;
+                break;
+            default:
+                ok = 0;
+            }
+        }
+        if (!ok)
+            c = 0x24;
+        sprptr = sp6a888[c];
+        if (scaled) {
+            sx = spr_x;
+            sy = spr_y;
+            spr_x += 7;
+            spr_y += 6;
+            spr_x -= hw;
+            spr_y -= hh;
+            f37487();
+            spr_x = sx;
+            spr_y = sy;
+        } else {
+            drawsprite();
+        }
+        spr_x += 0xB;
+    }
+}
