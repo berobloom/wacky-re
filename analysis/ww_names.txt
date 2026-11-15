@@ -549,3 +549,25 @@
 0x0182ce (align)        # CONFIRMED: 8b c0 (mov eax,eax) is fn_17928's 4-byte align padding, not a function; the block at 0x182d0 below was mislabelled "dead code" - CORRECTED 2026-08-05d: xref.py finds ~22 real calls (all inside fn_1832c/fn_193a8)
 0x0182d0 fn_182d0       # palette-entry copier: if a4!=0 copy 3*a3 bytes at dst+3*a2 from palbase+a5+3*a2, else self-copy from dst+3*a2 (callers "flash" palette entries); callers pass a5=pal7d84c-palbase. CORRECTION: not dead code, 22 call sites
 0x01832c fn_1832c       # LIKELY: bonus-races menu ("PLEASE SEE MAIN MENU TO / FIND OUT HOW TO ORDER / THESE EXTRA RACES."); loads (B)SBn.PCX packs into pal7d84c, v88bb6 race 1-3, v88b88 sound card 1-5, net_key 1/2 exchange; called 0x1bdd9, 0x20063
+0x0193a8 fn_193a8     # LIKELY: the bonus-zones menu (sibling of fn_1832c): selection index v88c96 6..0xb, one PCX palette (B)SBCS.PCX, nav via key88cd5/key88cdd; called from 0x20286 and 0x2049e in fn_1f858
+0x07d848 pal7d848     # STRONGLY SUPPORTED: pointer to a 768-byte palette; fn_193a8 reads pal7d848[i] i=0..0x2ff and passes it as fn_182d0's 5th (stack) arg base
+0x07c854 str7c854     # CONFIRMED: 26-byte buffer, " PLEASE SEE MAIN MENU TO " copied in at 0x19421/0x18399
+0x07c890 str7c890     # CONFIRMED: 26-byte buffer, " FIND OUT HOW TO ORDER   "
+0x07c8cc str7c8cc     # CONFIRMED: 26-byte buffer, " THESE EXTRA ZONES.      " (races version in fn_1832c)
+0x088c96 v88c96       # LIKELY: short, bonus-zones menu selection, wrapped 6..0xb (0x19aa5/0x19b23), also read at 0x19591/0x197fe/0x19b91
+0x088cce v88cce       # LIKELY: char; set -> joy88b40 = 1 in the bonus menus (0x196c6, 0x19781)
+0x088cec v88cec       # LIKELY: char; menu "escape/exit chosen" flag, set by the 8-tick wait and by v88cef & 0x40
+0x088cd2 key88cd2     # LIKELY: char key state, sets key88cdd in the zone menu (0x19701)
+0x088cdb key88cdb     # LIKELY: char key state, sets key88cd5 (0x1971a)
+0x07b6d9 v7b6d9       # LIKELY: cfg7b6d8[1]; set -> key88cd5 = 1
+0x07b6db v7b6db       # LIKELY: cfg7b6d8[4]; set -> key88cdd = 1
+0x07c658 v7c658       # LIKELY: int, the song the menus switch to (compared with cursong, passed to music_start)
+0x07e574 v7e574       # LIKELY: int, nonzero = the bonus-zone voices are allowed (0x19b88)
+0x088b10 w88b10       # LIKELY: short, set to 1 by the bonus menus (palette/ent refresh flag)
+0x088b1e w88b1e       # LIKELY: short, the sound-card/sprite index the menus show (v88c96-1, card+4)
+0x088c58 v88c58       # LIKELY: short, set to 1 by both bonus menus
+0x026ec4 f26ec4       # SPECULATIVE: called with the dat palette block from both bonus menus
+0x0278c4 f278c4       # SPECULATIVE: called with 0 after f32cf8 in both bonus menus
+0x037cf1 f37cf1       # SPECULATIVE: called after each fn_182d0 palette flash (refreshes the palette)
+0x0377ae f377ae       # SPECULATIVE: called after ctl_setup(0) in the menu loops
+0x02da28 f2da28       # SPECULATIVE: netgame==1 menu branch, before net_key

@@ -11,6 +11,7 @@ check, do not re-derive; **OPEN** = work remains (say what).
 | Startup chain, main loop, frame timing | `game-loop.md` | OPEN |
 | Input: keyboard handler, key table, mouse | `input.md` | OPEN |
 | Video: mode, palette, blitter, back buffer, present | `video.md` | OPEN |
+| Menus: the bonus race / bonus zone order screens, palette flash | `menus.md` | OPEN |
 | Sound: driver, tracks, samples, music | `sound.md` | OPEN |
 
 Add a row per subsystem. Keep each file to what is true now; history lives in

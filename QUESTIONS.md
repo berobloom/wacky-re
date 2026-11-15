@@ -48,6 +48,18 @@ pointer to the finding, and leave it here so the number stays valid.
    (findings/executables.md corrected).
 
 
+Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps the global v7ebc0 in
+   EBP across the menu's loops (10 `mov 0x7ebc0,%ebp` at loop entries, 5 `mov %ebp,0x7ebc0` at exits;
+   wait_or_key 0x14c7c does the same in EDX and matches) while our 9.5b build of the same C emits
+   plain memory reads there - the promotion depends on the whole function, and no local-copy C form
+   reproduces it. (b) frame 0x32c vs our 0x310 with no [esp+0x30c..0x327] reference in the game's
+   code; an unused array we declare is dropped from the frame, so the 28 bytes are not filler.
+   (c) the game homes the loop counter in SI and the selection index in DI; ours puts them in EDI
+   and a stack slot, changing every [esp+disp] encoding around the fn_182d0 flash calls.
+   (d) `telldat() + datsize() - 0x300` accumulates in EDX for us, in EAX for the game (0x194c8).
+   Blocks that do match byte for byte (modulo the 6-byte shift): every input block, both nav blocks,
+   the net_key/error blocks, the message copies and the palette copy loops.
+
 ## Hypotheses
 
 - LIKELY: <claim>. For: <evidence>. Against / gap: <what is missing>.

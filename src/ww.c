@@ -4803,3 +4803,254 @@ joyretry:
     f37cf1();
     goto retry;
 }
+
+
+/* ---- the bonus-zones menu (0x193a8), called twice from fn_1f858 (0x20286, 0x2049e).
+   Same shape as fn_1832c but the selection is a zone number v88c96 (6..0xb, wrapped
+   at 0x19aa5/0x19b23) and the PCX is one file, "BSBCS.PCX" when v7ecb4 != 0 else
+   "SBCS.PCX", read from the dat at size-0x300 into the palette pal7d848 points at.
+   Navigation is through key88cd5/key88cdd (also fed from the cfg bytes v7b6d9/v7b6db
+   and from the peer's v88cef bits when netgame == 2) instead of key88cd3/key88cd6;
+   the entry voice for a bonus zone is 0x1a plus showlines(3) when v7e574 and v88c96 > 7.
+   Exits set p7d718 = the worked palette and v88b9e = 1, except the joy88b40 entry
+   path, which returns without them. The wait at 0x199c7 is wait_or_key's body, which
+   the game has inline here (no call to 0x14c7c anywhere in this function).
+   differs (near-miss): (a) the game's build caches the global v7ebc0 (connected) in EBP
+   across the menu's loops - 10 loads at loop entries and 5 stores at loop exits, ~90
+   bytes, none of which our 9.5b build emits for this function (it does the same dance
+   for wait_or_key itself, whose body this inlines); (b) frame 0x32c vs our 0x310 - 28
+   bytes of slots the game uses somewhere (no [esp+0x30c..0x327] reference appears in
+   its code, and an unused array we declare is dropped from the frame); (c) i lands in
+   EDI and idx in a stack slot for us (SI/DI in the game), so the flash-toggle slot
+   encodings at 0x19a19 differ; (d) the telldat/datsize/seekdat/readdat expression at
+   0x194bc accumulates in EAX in the game and in EDX for us; (e) the f375cd call loads
+   pal_a with a 16-bit partial load (mov 0x88b24,%dx) where our #pragma aux parm[edx]
+   forces mov+movzwl. Blocks that do reproduce the game's bytes: the three message
+   copies, the palette copy loops, the fn_182d0 flash loops, the input blocks for
+   netgame 0/1/2, the net_key/v7ecc4 block, the two error/escape blocks and the two
+   nav blocks. */
+
+extern char *pal7d848;
+extern short v88c96;
+extern char key88cd2, key88cdb;
+void f2da28(void);
+void f377ae(void);
+void f37cf1(void);
+
+void fn_193a8(void)
+{
+    char pal[0x300];            /* esp+0x000: working palette */
+    char name[0x0c];            /* esp+0x300: "(B)SBCS.PCX" */
+    int flash;                  /* esp+0x328: fn_182d0 a4 toggle */
+    short i, idx, enter;
+
+    v7ecc4 = 0;
+    v7ed20 = 0x550;
+    v7ed1c = 0x2a8;
+    if (cursong != v7c658)
+        music_start(v7c658, 1);
+    strcpy(str7c854, " PLEASE SEE MAIN MENU TO ");
+    strcpy(str7c890, " FIND OUT HOW TO ORDER   ");
+    v88c58 = 1;
+    palptr = pal7d850;
+    strcpy(str7c8cc, " THESE EXTRA ZONES.      ");
+    getpalette();
+    f1bf94(pal7d850);
+    pal_a = 0;
+    if (v7ecb4 != 0)
+        strcpy(name, "BSBCS.PCX");
+    else
+        strcpy(name, "SBCS.PCX");
+    datfind(name);
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal7d848, 0x300);
+    f26ec4(pal7d848);
+    f27060((struct rec14 *)name, 2);
+    v88b4a = 0;
+    p7d714 = p6a980;
+    pal_a = f375cd(p6a980, pal_a);
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    for (i = 0; i <= 0x2ff; i++)
+        pal[i] = pal7d848[i];
+    for (i = 5; i <= 0xa; i++)
+        fn_182d0(pal, i, 1, 0, (int)pal7d848);
+    fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
+    f32cf8(pal);
+    flash = 0;
+    f278c4(0);
+    v88b9e = 0;
+    ticks = 0;
+    ticks2 = 0;
+    w88b10 = 1;
+    palptr = pal;
+    if (netgame && net88c14) {
+        for (i = 0; i <= 0x2ff; i++)
+            p7d718[i] = pal[i];
+        v88b9e = 1;
+        return;
+    }
+mainloop:
+    ticks = 0;
+    ticks2 = 0;
+    v88cec = 0;
+    while (8 > ticks) {
+        if (key88cd0 == 1) {
+            v88cec = 1;
+            break;
+        }
+    }
+    v7d8a4 = v7d8ac;
+    ctl_setup(0);
+    f377ae();
+    if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
+        joy88b40 = 0;
+    if (netgame == 0) {
+        if (v88cce)
+            joy88b40 = 1;
+        if (v7b6d9)
+            key88cd5 = 1;
+        if (v7b6db)
+            key88cdd = 1;
+        if (key88cd3 || key88cd2)
+            key88cdd = 1;
+        if (key88cd6 || key88cdb)
+            key88cd5 = 1;
+        goto joined;
+    }
+    if (netgame == 1) {
+        if (v88cce)
+            joy88b40 = 1;
+        if (v7b6d9)
+            key88cd5 = 1;
+        if (v7b6db)
+            key88cdd = 1;
+        if (key88cd3 || key88cd2)
+            key88cdd = 1;
+        if (key88cd6 || key88cdb)
+            key88cd5 = 1;
+        if (netgame && v7ec9c == 1 && v88c96 > 7)
+            joy88b40 = 0;
+        f2da28();
+    } else {
+        key88cd5 = 0;
+        key88cdd = 0;
+        key88cd6 = 0;
+        key88cd3 = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+        v88cec = 0;
+        v88cf0 = 0;
+        v88cf3 = 0;
+    }
+    net88c14 = net_key(v88cf0, v88cf3, 0);
+    v7ecc4++;
+    if (v7ecc4 > 1) {
+        v7ecc4 = 2;
+        v7ed20 = 0x88;
+        v7ed1c = 0x220;
+    }
+    if (net88c14) {
+        fn_1c068();
+        msgbox("EXCESSIVE DATA ERRORS!", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        for (i = 0; i <= 0x2ff; i++)
+            p7d718[i] = pal[i];
+        v88b9e = 1;
+        return;
+    }
+    if (netgame == 2) {
+        key88cd5 = v88cef & 1;
+        key88cdd = v88cef & 2;
+        joy88b40 = v88cef & 4;
+        joy88b42 = v88cef & 8;
+        joy88b44 = v88cef & 0x10;
+        joy88b46 = v88cef & 0x20;
+        v88cec = v88cef & 0x40;
+    }
+joined:
+    if (key88cd5 || key88cdd || v88cec || joy88b40) {
+        ticks = 0;
+        ticks2 = 0;
+        do {
+            if (key88cd0 == 1 && v7ebc0) {
+                v7ebb0 = 1;
+                break;
+            }
+        } while (20 > ticks);
+    }
+    idx = v88c96 - 1;
+    i++;
+    w88b1e = idx;
+    if (i > 12) {
+        if (flash) {
+            fn_182d0(pal, idx, 1, 1, (int)pal7d848);
+            flash = 0;
+        } else {
+            fn_182d0(pal, idx, 1, 0, (int)pal7d848);
+            flash = 1;
+        }
+        f37cf1();
+        i = 0;
+    }
+    if (key88cd5) {
+        fn_182d0(pal, idx, 1, 0, (int)pal7d848);
+        flash = 0;
+        f37cf1();
+        v88c96--;
+        i = 0;
+        if (v88c96 < 6)
+            v88c96 = 0xb;
+        fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
+        w88b1e = v88c96 - 1;
+        f37cf1();
+    }
+    if (key88cdd) {
+        fn_182d0(pal, idx, 1, 0, (int)pal7d848);
+        flash = 0;
+        f37cf1();
+        v88c96++;
+        i = 0;
+        if (v88c96 > 0xb)
+            v88c96 = 6;
+        fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
+        w88b1e = v88c96 - 1;
+        f37cf1();
+    }
+    if (joy88b40) {
+        voice_play(0x12);
+        enter = 0;
+        if (netgame == 0 && v7e574 && v88c96 > 7) {
+            voice_play(0x1a);
+            showlines(3, 1, 0);
+            enter = 1;
+        }
+        if (enter == 0)
+            return;
+    }
+    if (v88cec == 0)
+        goto mainloop;
+    if (netgame) {
+        fn_1c068();
+        msgbox("ESCAPE PRESSED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+    }
+    for (i = 0; i <= 0x2ff; i++)
+        p7d718[i] = pal[i];
+    v88b9e = 1;
+}

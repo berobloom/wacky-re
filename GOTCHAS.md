@@ -80,6 +80,17 @@ it can be copied back into DREA.
   (voice_play at 0x18da1 loads EDX *before* the call because the following showlines() call wants it
   there), give the *next* call's extra arg via the aux-pragma'd function's parameter list instead. [generic]
 
+- **Watcom 9.5b promotes a global read inside a loop into a register, with a load at the loop
+  entry and a store at its exit** (wait_or_key 0x14c7c: `mov edx,[0x7ebc0]` at entry,
+  `mov [0x7ebc0],edx` before `ret`; fn_193a8 does it 10 times at loop entries and 5 at exits, ~90
+  bytes of the gap there). The same source written the same way only gets the dance in some
+  functions, so a size gap of 6-byte load/store pairs at loop boundaries is a compiler choice,
+  not a missing statement. Do not add a local copy of the global to force it - that changes the
+  body instead. [generic]
+- **Watcom drops never-used locals from the frame**: adding an array to pad a frame to the game's
+  `sub esp,N` does nothing (the slot disappears). A frame-size gap therefore means the game *used*
+  those slots - look for stack writes whose displacement changed because of a `push` of a stack
+  argument (see findings/menus.md Traps) before inventing locals. [generic]
 - **optpin probes can mislead on flags**: `-oi/-ol/-or` were pinned from single-function probe files,
   but in the full build each of them breaks com_open's bytes while sendstr/find12/crchware match
   without them. Re-check every pinned letter against the whole-program match count. [generic]
