@@ -197,7 +197,7 @@
 0x0775da ctl775da
 0x0775dc ctl775dc
 0x077128 cfg77128     # SPECULATIVE: 0x630 bytes saved by save_config
-0x07a9d8 voices       # LIKELY: 0x18-byte records {handle, busy, ...}
+0x07a9c8 voices       # LIKELY: 0x18-byte records {data, ?, pitch, priority, handle, plays}: voice_play passes them to FX_PlayVOC
 0x07b6d8 cfg7b6d8     # SPECULATIVE: 0x18 bytes saved by save_config
 0x07c0d8 cfgname      # LIKELY: the configuration file name
 0x07ecb4 v7ecb4
@@ -205,3 +205,42 @@
 0x07ee2a cfg7ee2a     # SPECULATIVE: short inside cfg7ee1c (+0xE); cleared by save_config(keep)
 0x07ee4e sfxon        # SPECULATIVE: short; voice functions do nothing when 0
 0x088c62 voicebusy    # LIKELY: set by voice_check
+0x011c04 voice_play   # LIKELY: FX_PlayVOC of voice n; other players' voices in a net game use sfx2data
+0x07ec74 netvoices    # SPECULATIVE: voice_play treats voices 0-7 of other players differently when set
+0x088b96 myplayer     # SPECULATIVE: short compared with the voice number in voice_play
+0x07ecd0 countplays   # SPECULATIVE: voice_play counts plays when set
+0x011c9c sound_init   # LIKELY: MUSIC_Init/FX_SetupCard/FX_Init with "Checking ... Hardware" messages
+0x088c8a v88c8a       # SPECULATIVE: short; set at the end of sound_init unless v7ee4a && v7ee44
+0x07ed4c musicready   # SPECULATIVE: set after MUSIC_Init succeeds
+0x07ed48 sfxsoft      # SPECULATIVE: copy of soundon after FX_Init
+0x07ee4c sfxready     # SPECULATIVE: short, cleared in sound_init
+0x077408 musiccard    # LIKELY: MUSIC_Init card; -1 = none; <=2 picks .KLM songs, else .MID
+0x077420 musicaddr    # LIKELY: MUSIC_Init address
+0x07742c musicvol     # LIKELY: MUSIC_SetVolume
+0x077404 fxcard       # LIKELY: FX_SetupCard/FX_Init card; -1 = none
+0x077414 fxvoices     # LIKELY: FX_Init voices
+0x077418 fxbits       # LIKELY: FX_Init sample bits
+0x077428 fxvol        # LIKELY: FX_SetVolume, copied to sfxvol
+0x07ecfc fxdevice     # LIKELY: fx_device FX_SetupCard fills
+0x088be4 keymap1      # SPECULATIVE: short = 1 in sound_init
+0x088be6 keymap2      # SPECULATIVE: short = 2
+0x088be8 keymap3      # SPECULATIVE: short = 3
+0x088c74 joyfound     # SPECULATIVE: short, cleared before joy_detect, tested after
+0x03784b joy_detect   # SPECULATIVE: asm routine called from sound_init; sets joyfound?
+0x07ee4a v7ee4a       # SPECULATIVE: short config flag cleared when joyfound
+0x07ee44 v7ee44       # SPECULATIVE: short config flag
+0x041fc8 MUSIC_Init   # LIKELY: ASS; returns MUSIC_Ok (0) or an error for MUSIC_ErrorString
+0x0420dc MUSIC_SetVolume # LIKELY: ASS
+0x041644 FX_SetupCard # LIKELY: ASS (card, fx_device *)
+0x041820 FX_Init      # LIKELY: ASS (card, voices, channels, bits, rate 11000)
+0x041550 FX_ErrorString # LIKELY: ASS
+0x041a0c FX_SetVolume # LIKELY: ASS
+0x011f98 voices_load  # LIKELY: reads AUDIOHED.FX (offsets) and AUDIOT.FX (samples) from the data file into voices
+0x01418c datfind      # LIKELY: looks a name up in datdir, sets datidx (Ghidra: strcmp loop, then fseek?)
+0x065080 datdir       # LIKELY: 0x16-byte entries {name[14], size, ?}; a 0 first byte ends it
+0x088b00 datidx       # LIKELY: short, the entry datfind found
+0x07eb14 voicedata    # LIKELY: AUDIOT.FX in memory
+0x042c68 fread        # LIKELY: clib (ptr, size, n, fp) with datfile
+0x012124 sounds_load  # LIKELY: loads GIG1-5.VOC, MOTOR.VOC, the 27 named voices (.VOC) and HORN1.VOC; voices_load for cards 2 and 7
+0x07d5c4 gigdata      # LIKELY: buffer GIG1-5.VOC are read into
+0x06a490 gigs         # LIKELY: 7 pointers into gigdata; 5 and 6 repeat 4

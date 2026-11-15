@@ -989,10 +989,13 @@ void flushkeys(void)
 
 /* ---- sound voices */
 
-struct voice {
+struct voice {                  /* 0x7A9C8, 27 of them */
+    char *data;
+    int f04;
+    int pitch;
+    int priority;
     int handle;
-    int busy;
-    char f08[0x18 - 8];
+    int plays;
 };
 
 extern short sfxon;
@@ -1009,11 +1012,11 @@ void voices_reset(void)
         FX_StopAllSounds();
         for (i = 0; i < 27; i++) {
             voices[i].handle = -1;
-            voices[i].busy = 0;
+            voices[i].plays = 0;
         }
         for (i = 0; i < 8; i++) {
             sfxchans[i].active = 0;
-            voices[i].busy = 0;
+            voices[i].plays = 0;
         }
     }
 }
@@ -1028,4 +1031,251 @@ void voice_check(int n)
         }
         voices[n].handle = -1;
     }
+}
+
+extern int netvoices;
+extern short myplayer;
+extern int countplays;
+
+void voice_play(int n)
+{
+    char *data;
+    int h;
+
+    if (sfxon) {
+        if (netvoices && n <= 7 && n != myplayer) {
+            if (!soundon)
+                return;
+            data = sfx2data;
+        } else {
+            if (n == 0xFF)
+                n = 3;
+            data = voices[n].data;
+        }
+        h = FX_PlayVOC(data, voices[n].pitch, sfxvol, sfxvol, sfxvol, voices[n].priority, 0);
+        if (h > 0) {
+            voices[n].handle = h;
+            if (countplays)
+                voices[n].plays++;
+        }
+    }
+}
+
+/* ---- sound and music setup */
+
+extern short v88c8a, sfxready, joyfound, v7ee4a, v7ee44;
+extern int musicready, sfxsoft;
+extern int musiccard, musicaddr, musicvol;
+extern int fxcard, fxvoices, fxbits, fxvol;
+extern char fxdevice[];
+extern short keymap1, keymap2, keymap3;
+int MUSIC_Init(int card, int address);
+char *MUSIC_ErrorString(int err);
+void MUSIC_SetVolume(int vol);
+int FX_SetupCard(int card, void *device);
+int FX_Init(int card, int voices, int channels, int bits, unsigned rate);
+char *FX_ErrorString(int err);
+void FX_SetVolume(int vol);
+void joy_detect(void);
+
+int sound_init(void)
+{
+    int status;
+
+    v88c8a = 0;
+    soundon = 0;
+    musicready = 0;
+    sfxsoft = 0;
+    sfxon = 0;
+    sfxready = 0;
+    musicon = 0;
+    strcpy(pathext, "");
+    if (musiccard != -1) {
+        printf("Checking Music Hardware....\n");
+        status = MUSIC_Init(musiccard, musicaddr);
+        if (status != 0) {
+            printf("%s\n", MUSIC_ErrorString(status));
+            waitkey();
+            return 0;
+        }
+        printf("OK\n");
+        musicon = 1;
+        if (musiccard <= 2)
+            strcpy(pathext, ".KLM");
+        else
+            strcpy(pathext, ".MID");
+        MUSIC_SetVolume(musicvol);
+        musicready = 1;
+    } else {
+        printf("No MUSIC selected....\n");
+    }
+    if (fxcard != -1) {
+        printf("Checking FX Hardware....\n");
+        status = FX_SetupCard(fxcard, fxdevice);
+        if (status != 0) {
+            printf("%s\n", FX_ErrorString(status));
+            waitkey();
+            return 0;
+        }
+        status = FX_Init(fxcard, fxvoices, 1, fxbits, 11000);
+        if (status != 0) {
+            printf("%s\n", FX_ErrorString(status));
+            waitkey();
+            return 0;
+        }
+        sfxon = 1;
+        if (fxcard != 7 && fxcard != 2)
+            soundon = 1;
+        printf("OK\n");
+        FX_SetVolume(fxvol);
+        sfxvol = fxvol;
+        sfxsoft = soundon;
+    } else {
+        printf("No SOUND FX selected....\n");
+    }
+    keymap1 = 1;
+    keymap2 = 2;
+    keymap3 = 3;
+    input_clear1();
+    joyfound = 0;
+    v88c8a = 0;
+    joy_detect();
+    input_clear1();
+    if (joyfound) {
+        v7ee4a = 0;
+        ((short *)cfg77128)[0] = 0;
+        ((short *)cfg77128)[1] = 0;
+        ((short *)cfg77128)[2] = 1;
+    }
+    if (!v7ee4a)
+        v7ee44 = 0;
+    else if (v7ee44)
+        return 1;
+    v88c8a = 1;
+    return 1;
+}
+
+/* ---- voice samples */
+
+struct datent {                 /* 0x65080: the data file's directory */
+    char name[14];
+    long size;
+    long offset;
+};
+
+extern struct datent datdir[];
+extern short datidx;
+extern FILE *datfile;
+extern char *voicedata;
+short datfind(char *name);
+
+/* differs: first and the priority counter swap ebx/ecx in the first loop (+110); bytes otherwise equal */
+void voices_load(void)
+{
+    long *offs;
+    long size;
+    int i, first;
+
+    datfind("AUDIOHED.FX");
+    size = datdir[datidx].size;
+    offs = malloc(size);
+    fread(offs, size, 1, datfile);
+    datfind("AUDIOT.FX");
+    size = datdir[datidx].size;
+    voicedata = malloc(size);
+    fread(voicedata, size, 1, datfile);
+    first = 0;
+    if (fxcard == 2)
+        first = 26;
+    for (i = 1; i < 27; i++) {
+        voices[i - 1].data = voicedata + offs[first + i - 1];
+        voices[i - 1].f04 = *(int *)voices[i - 1].data;
+        voices[i - 1].handle = -1;
+        voices[i - 1].pitch = 0;
+        voices[i - 1].plays = 0;
+        voices[i - 1].priority = 28 - i;
+    }
+    first = 20;
+    for (i = 0; i < 8; i++) {
+        voices[i].data = voices[first].data;
+        voices[i].f04 = voices[first].f04;
+    }
+    voices[26].data = voices[18].data;
+    voices[26].f04 = voices[18].f04;
+    voices[26].handle = voices[18].handle;
+    voices[26].priority = voices[18].priority;
+    voices[26].pitch = 0;
+    free(offs);
+}
+
+extern char *gigdata;
+extern char *gigs[7];
+
+/* differs: stack slots of i, pri and the loop temporaries (QUESTIONS 2); fread loads its pointer and datfile
+   in the other order for MOTOR.VOC and HORN1.VOC; same length */
+void sounds_load(void)
+{
+    char names[27][12] = {
+        "UNO", "SULTAN", "MORRIS", "PEGGLES", "RAZER", "RINGO", "BLOMBO", "TIGI", "PASS",
+        "BELL", "START", "GLASS", "WARP", "BOOM", "HORN", "SPLASH", "PLIP", "SKID", "PUF",
+        "FLAME", "HOG", "CLANG", "SWIPE", "DROP", "BACKFIRE", "STALL1", "NO"
+    };
+    char fname[16];
+    char num[16];
+    char *p, *q;
+    long len;
+    int i, pri;
+
+    if (!sfxon)
+        return;
+    if (fxcard == 7 || fxcard == 2) {
+        voices_load();
+        return;
+    }
+    pri = 27;
+    p = gigdata;
+    for (i = 0; i <= 4; i++) {
+        itoa(i + 1, num, 10);
+        strcpy(fname, "GIG");
+        strcat(fname, num);
+        strcat(fname, ".VOC");
+        datfind(fname);
+        len = datdir[datidx].size;
+        fread(p, (short)len, 1, datfile);
+        gigs[i] = p;
+        p = p + (short)len;
+    }
+    gigs[6] = gigs[5] = gigs[4];
+    q = voicedata;
+    datfind("MOTOR.VOC");
+    fread(enginedata, 0x942, 1, datfile);
+    for (i = 0; i < 27; i++) {
+        strcpy(fname, names[i]);
+        strcat(fname, ".VOC");
+        datfind(fname);
+        len = datdir[datidx].size;
+        fread(q, (short)len, 1, datfile);
+        voices[i].data = q;
+        voices[i].handle = -1;
+        voices[i].pitch = 0;
+        voices[i].plays = 0;
+        voices[i].priority = pri--;
+        q = q + (short)len;
+    }
+    voices[25].priority = 0x20;
+    voices[26].priority = voices[18].priority;
+    datfind("HORN1.VOC");
+    fread(sfxdata, 0xFE5, 1, datfile);
+    for (i = 0; i < 9; i++) {
+        sfxchans[i].active = 0;
+        sfxchans[i].plays = 0;
+    }
+    sfxchans[0].pitch = -650;
+    sfxchans[1].pitch = -300;
+    sfxchans[2].pitch = 200;
+    sfxchans[3].pitch = 750;
+    sfxchans[4].pitch = 0;
+    sfxchans[5].pitch = -300;
+    sfxchans[6].pitch = 750;
+    sfxchans[7].pitch = 200;
 }
