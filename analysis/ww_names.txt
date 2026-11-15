@@ -1,7 +1,7 @@
 # WW.EXE names: 0xADDR name  # LEVEL: why. LE image addresses (code object at 0x10000).
 0x0105fc com_putc     # LIKELY: byte into the transmit ring, sent at once when the UART is empty, then the comdelay wait
 0x0109d8 sendstr      # STRONGLY SUPPORTED: matching C in analysis/optpin/T6.C; sends a string, CR, LF with tick waits
-0x010b74 xalloc       # LIKELY: matching C (T2.C); malloc (clib nmalloc 0x41475), -1 on failure, else the block through a pointer
+0x010b74 xalloc       # LIKELY: malloc (clib nmalloc 0x41475), -1 on failure, else the block through a pointer
 0x012490 fromscroll   # SPECULATIVE: matching C (T1.C); global at the 'scrollpos' address minus the argument
 0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
 0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
@@ -58,3 +58,37 @@
 0x07edcc parityerrs   # LIKELY: LSR bit 2
 0x07edd0 framingerrs  # LIKELY: LSR bit 3
 0x07edfc breaks       # LIKELY: LSR bit 4
+0x010a94 com_waitfor  # LIKELY: reads lines from the serial port until one starts with the argument; 0 when aborted
+0x010b90 xfree        # LIKELY: free (clib nfree 0x414E0), -1 for NULL
+0x010c50 sfx_busy     # LIKELY: FX_SoundActive on a channel's handle; clears 'active' when done
+0x010c90 sfx_play     # LIKELY: FX_PlayVOC with the channel's pitch, priority 0x16
+0x010cec engine_clear # SPECULATIVE: sets the two per-car sound handles to -1
+0x010d04 engine_start # SPECULATIVE: FX_PlayVOC of the engine sample per player, priority 0x28, pitch -1800
+0x010d80 makepath     # LIKELY: strcpy + strcat of the global suffix 0x80ADC
+0x041bc8 FX_PlayVOC   # LIKELY: Apogee Sound System; 7 arguments (ptr, pitchoffset, vol, left, right, priority, callbackval)
+0x041dd4 FX_SoundActive # SPECULATIVE: Apogee Sound System; non-zero while the handle plays (sfx_busy)
+0x0414e0 free         # CONFIRMED: clib nfree (libmatch)
+0x041450 strncmp      # CONFIRMED: clib (libmatch)
+0x041475 malloc       # CONFIRMED: clib nmalloc (libmatch)
+0x0684e4 cars         # SPECULATIVE: records of 0x104 bytes, first int the engine sound handle (field offset unknown)
+0x0774da enginevol    # SPECULATIVE: volume for the engine sample
+0x07b0f8 sfxchans     # LIKELY: 16-byte records {active, handle, plays, pitch}
+0x07d890 sfxvol       # LIKELY: volume for FX_PlayVOC in sfx_play
+0x07eae0 sfxdata      # LIKELY: the sample sfx_play plays
+0x07eb10 enginedata   # SPECULATIVE: the sample engine_start plays
+0x07ecf8 soundon      # LIKELY: sound calls are skipped when 0
+0x080adc pathext      # LIKELY: the suffix makepath appends
+0x088bdc splitscreen  # SPECULATIVE: with 0x88BE2, makes engine_start start a second engine
+0x088be2 twoplayer    # SPECULATIVE: see splitscreen
+0x010ba4 get_7ee5a    # SPECULATIVE: copies the short 0x7EE5A to the int 0x7ECA8
+0x010bb4 set_7ee5a    # SPECULATIVE: copies 0x7ECA8 to 0x7EE5A and 0x7EA58
+0x010bcc com_shutdown # LIKELY: com_close when 0x7EDA8 is set, then clears it
+0x010be8 tick_task    # LIKELY: task-manager callback: ++*task->data
+0x010bf0 engine_stop  # SPECULATIVE: FX_StopSound of a car's engine handle, then -1
+0x010c20 sfx_play2    # SPECULATIVE: FX_PlayVOC of the sample at 0x7EAEC, priority 0x20
+0x041e24 FX_StopSound # LIKELY: Apogee Sound System; takes the engine handle, which is then set to -1
+0x07eaec sfx2data     # SPECULATIVE: sample for sfx_play2
+0x07eda8 comopen      # LIKELY: set while the serial port is open
+0x07ee5a v7ee5a
+0x07eca8 v7eca8
+0x07ea58 v7ea58

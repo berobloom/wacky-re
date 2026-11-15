@@ -9,6 +9,7 @@
 #include <dos.h>
 #include <i86.h>
 #include <string.h>
+#include <stdlib.h>
 
 /* ---- serial link: CRC (the public-domain table CRC: crchware / mk_crctbl / crcupdate) */
 
@@ -308,4 +309,182 @@ void sendstr(char *s)
     ticks = 0;
     while (ticks < 10)
         ;
+}
+
+int com_waitfor(char *s)
+{
+    char line[80];
+    int n;
+    int c;
+
+    sendfail = 0;
+    for (;;) {
+        n = 0;
+        for (;;) {
+            if (aborted == 1) {
+                sendfail = 1;
+                return 0;
+            }
+            c = com_getc();
+            if (c != -1) {
+                if (c == 10 || n == 79)
+                    break;
+                if (c >= ' ')
+                    line[n++] = c;
+            }
+        }
+        line[n] = 0;
+        if (strncmp(line, s, strlen(s)) == 0)
+            return 1;
+    }
+}
+
+int xalloc(void **p, int size)
+{
+    void *r;
+
+    r = malloc(size);
+    if (r == NULL)
+        return -1;
+    *p = r;
+    return 0;
+}
+
+int xfree(void *p)
+{
+    if (p == NULL)
+        return -1;
+    free(p);
+    return 0;
+}
+
+extern short v7ee5a;
+extern int v7eca8, v7ea58;
+extern int comopen;
+
+struct task {
+    struct task *next;
+    struct task *prev;
+    void (*service)(struct task *);
+    void *data;
+};
+
+void get_7ee5a(void)
+{
+    v7eca8 = v7ee5a;
+}
+
+void set_7ee5a(void)
+{
+    v7ee5a = v7eca8;
+    v7ea58 = v7eca8;
+}
+
+void com_shutdown(void)
+{
+    if (comopen) {
+        com_close();
+        comopen = 0;
+    }
+}
+
+void tick_task(struct task *t)
+{
+    ++*(int *)t->data;
+}
+
+/* ---- sound effects (Apogee Sound System FX_ calls) */
+
+struct sfxchan {
+    int active;
+    int handle;
+    int plays;
+    int pitch;
+};
+
+struct car {
+    int sndhandle;
+    char rest[0x100];
+};
+
+extern int soundon;
+extern struct sfxchan sfxchans[];
+extern char *sfxdata;
+extern char *enginedata;
+extern int sfxvol;
+extern int enginevol;
+extern short twoplayer, splitscreen;
+extern struct car cars[2];
+
+int FX_SoundActive(int handle);
+int FX_StopSound(int handle);
+int FX_PlayVOC(char *ptr, int pitchoffset, int vol, int left, int right, int priority, unsigned long callbackval);
+
+void engine_stop(int i)
+{
+    if (soundon) {
+        FX_StopSound(cars[i].sndhandle);
+        cars[i].sndhandle = -1;
+    }
+}
+
+extern char *sfx2data;
+
+void sfx_play2(void)
+{
+    if (soundon)
+        FX_PlayVOC(sfx2data, 0, sfxvol, sfxvol, sfxvol, 0x20, 0);
+}
+
+int sfx_busy(int ch)
+{
+    if (!soundon)
+        return 0;
+    if (!sfxchans[ch].active)
+        return 0;
+    if (FX_SoundActive(sfxchans[ch].handle))
+        return 1;
+    sfxchans[ch].active = 0;
+    return 0;
+}
+
+void sfx_play(int ch)
+{
+    if (soundon && sfx_busy(ch) == 0) {
+        sfxchans[ch].handle = FX_PlayVOC(sfxdata, sfxchans[ch].pitch, sfxvol, sfxvol, sfxvol, 0x16, 0);
+        if (sfxchans[ch].handle >= 0) {
+            sfxchans[ch].active = 1;
+            sfxchans[ch].plays++;
+        }
+    }
+}
+
+void engine_clear(void)
+{
+    cars[0].sndhandle = -1;
+    cars[1].sndhandle = -1;
+}
+
+void engine_start(void)
+{
+    int n;
+    int i;
+    int h;
+
+    if (soundon) {
+        n = (twoplayer || splitscreen) ? 1 : 0;
+        for (i = 0; i <= n; i++) {
+            h = FX_PlayVOC(enginedata, -1800, enginevol, enginevol, enginevol, 0x28, 0);
+            if (h > 0)
+                cars[i].sndhandle = h;
+        }
+    }
+}
+
+extern char pathext[];
+
+void makepath(char *dst, char *src)
+{
+    strcpy(dst, src);
+    strcat(dst, pathext);
 }
