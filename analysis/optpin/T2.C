@@ -11,7 +11,8 @@ unsigned short crctab[256];
 unsigned short crcstep(unsigned short crc, unsigned short b)
 {
     crcidx = (crc >> 8) ^ b;
-    return (crc << 8) ^ crctab[crcidx];
+    crc = (crc << 8) ^ crctab[crcidx];
+    return crc;
 }
 
 int xalloc(int *p, int x)

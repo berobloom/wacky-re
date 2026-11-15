@@ -1,8 +1,5 @@
 # WW.EXE names: 0xADDR name  # LEVEL: why. LE image addresses (code object at 0x10000).
-0x010260 crc_calc     # LIKELY: called 256 times by crc_init to fill the table at 0x7D380
-0x010298 crc_init     # LIKELY: fills the 256-word table at 0x7D380
-0x0102cc crcstep      # LIKELY: (crc >> 8) ^ b indexes the table at 0x7D380; result (crc << 8) ^ entry
-0x0105fc sendbyte     # SPECULATIVE: called per byte by sendstr; takes the byte in AL
+0x0105fc com_putc     # LIKELY: byte into the transmit ring, sent at once when the UART is empty, then the comdelay wait
 0x0109d8 sendstr      # STRONGLY SUPPORTED: matching C in analysis/optpin/T6.C; sends a string, CR, LF with tick waits
 0x010b74 xalloc       # LIKELY: matching C (T2.C); malloc (clib nmalloc 0x41475), -1 on failure, else the block through a pointer
 0x012490 fromscroll   # SPECULATIVE: matching C (T1.C); global at the 'scrollpos' address minus the argument
@@ -17,3 +14,47 @@
 0x07e720 ticks        # LIKELY: zeroed and polled by sendstr's waits
 0x07ebb0 sendfail     # LIKELY: set to 1 by sendstr when aborted (objmatch fixup check of T6.C)
 0x088cd0 aborted      # LIKELY: tested == 1 by sendstr, set by the asm interrupt handler near 0x409C0
+0x010260 crchware     # STRONGLY SUPPORTED: matching C in src/ww.c; the public-domain table-CRC bit loop
+0x010298 mk_crctbl    # STRONGLY SUPPORTED: matching C in src/ww.c
+0x0102cc crcupdate    # STRONGLY SUPPORTED: matching C in src/ww.c
+0x0102f4 com_open     # LIKELY: UART init (int 14h, divisor, FIFO probe, IRQ vector)
+0x0104fc com_dtr_off  # LIKELY: MCR bit 0 off
+0x01051c com_dtr_on   # LIKELY: MCR bit 0 on
+0x01053c com_close    # LIKELY: UART interrupts off, IRQ masked, old vector back
+0x0105b0 com_getc     # LIKELY: byte from the receive ring buffer, -1 when empty
+0x0106c8 com_isr      # LIKELY: the vector com_open sets without a FIFO
+0x010810 com_isr_fifo # LIKELY: the vector com_open sets with a 16550 FIFO
+0x0409eb disable_ints # LIKELY: asm 'cli; ret'
+0x0409ed enable_ints  # LIKELY: asm 'sti; ret'
+0x0409ef int386       # CONFIRMED: clib module (libmatch)
+0x040a0d _dos_getvect # CONFIRMED: clib module d_getvec (libmatch)
+0x040a44 _dos_setvect # CONFIRMED: clib module d_setvec (libmatch)
+0x040ff0 lib_40ff0    # SPECULATIVE: library function in the module at 0x40A80
+0x07d380 crctbl       # STRONGLY SUPPORTED: filled by mk_crctbl
+0x07ede0 comregs      # LIKELY: union REGS for int386(0x14)
+0x080aee oldcomvec    # LIKELY: _dos_getvect result (6-byte far pointer)
+0x080af4 txhead       # LIKELY: write index of txbuf (com_putc)
+0x080af6 txtail       # LIKELY: read index of txbuf (com_putc, the ISR)
+0x080af8 txcount      # LIKELY: bytes in txbuf (com_putc)
+0x084afa rxhead       # SPECULATIVE: zeroed by com_open
+0x084afc rxtail       # LIKELY: read index of rxbuf (com_getc)
+0x084afe rxcount      # LIKELY: bytes in rxbuf (com_getc)
+0x084b00 rxbuf        # LIKELY: 16 KB receive ring buffer
+0x07edbc comdelay     # LIKELY: ticks of 0x7EA74 com_putc waits after each byte; com_close calls lib_40ff0 when set
+0x07ee08 comtask      # SPECULATIVE: first argument of lib_40ff0 in com_close (a timer task?)
+0x088cba comport      # LIKELY: UART base port
+0x088cbc uarttype     # LIKELY: 1 = 16550 with FIFO, 2 = without
+0x088cbe comirq       # LIKELY: IRQ number
+0x088cc0 comvec       # LIKELY: comirq + 8
+0x088cf7 hasfifo      # LIKELY: FIFO probe result
+0x07ea74 comticks     # LIKELY: zeroed and polled by com_putc's wait
+0x080afa txbuf        # LIKELY: 16 KB transmit ring buffer
+0x010988 com_kick     # LIKELY: sends one byte from txbuf if any
+0x041448 __GETDS      # LIKELY: clib, called first by the __interrupt functions
+0x063d42 lsr          # LIKELY: last line status read by the ISRs (initialised data)
+0x07edc0 rxints       # LIKELY: receive interrupts counted by the ISRs
+0x07edc4 txints       # LIKELY: transmit-empty interrupts
+0x07edc8 overruns     # LIKELY: LSR bit 1
+0x07edcc parityerrs   # LIKELY: LSR bit 2
+0x07edd0 framingerrs  # LIKELY: LSR bit 3
+0x07edfc breaks       # LIKELY: LSR bit 4

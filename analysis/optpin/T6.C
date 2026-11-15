@@ -2,7 +2,7 @@
 extern int sendfail;
 extern char aborted;
 extern volatile int ticks;
-extern void sendbyte(char c);
+extern void com_putc(char c);
 
 void sendstr(char *s)
 {
@@ -14,16 +14,16 @@ void sendstr(char *s)
             sendfail = 1;
             return;
         }
-        sendbyte(s[i]);
+        com_putc(s[i]);
         ticks = 0;
         while (ticks < 10)
             ;
     }
-    sendbyte(13);
+    com_putc(13);
     ticks = 0;
     while (ticks < 10)
         ;
-    sendbyte(10);
+    com_putc(10);
     ticks = 0;
     while (ticks < 10)
         ;

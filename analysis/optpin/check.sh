@@ -1,14 +1,14 @@
 #!/bin/sh
 # Compile the probe sources with one option set and compare each function with WW.EXE at its address.
 #
-#   analysis/optpin/check.sh [wcc386 options]      default: -s -3r -oilrt
+#   analysis/optpin/check.sh [wcc386 options]      default: -s -3r -oailrt
 #
 # Needs .work/toolchains/inst/WC95B and .work/le/ww.* (findings/executables.md). Works in .work/optpin.
-# Expected with the default: 10 of 11 MATCH; crcstep_ differs (QUESTIONS.md 1). T1 and T2 collect functions
+# Expected with the default: 11 of 11 MATCH (crchware 0x10260 in the CRC module pins -oa). T1 and T2 collect functions
 # from all over the game, so their fixup check reports segment bases that disagree; T6 (one function) agrees.
 set -eu
 cd "$(dirname "$0")/../.."
-[ $# -gt 0 ] || set -- -s -3r -oilrt
+[ $# -gt 0 ] || set -- -s -3r -oailrt
 opts="$*"
 w=.work/optpin; mkdir -p $w; cp analysis/optpin/*.C $w/
 while read -r src addrs; do

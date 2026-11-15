@@ -4,7 +4,8 @@
 usage: objmatch.py PROG FILE.OBJ [0xADDR ...]
 
 Each public code symbol's bytes (up to the next public at a higher offset) are searched in PROG's code object with the bytes that
-fixups fill masked. With addresses (one per public, in offset order; 0 skips one) each function is compared at
+fixups fill masked. With addresses (one per public, in offset order; 0 skips one; none given: each public's address in
+analysis/PROG_names.txt, by its name without Watcom's _ decoration) each function is compared at
 its address: MATCH, or the first differing byte with both sides shown, so a near miss reads like a diff.
 Otherwise it is searched for (needs a run of 4 bytes no fixup touches): FOUND at the address(es), or not found.
 
@@ -80,9 +81,12 @@ def check_fixups(recs, pubs, placed, code, cbase, known):
     for name, addr in placed.items():
         seg, off = pubat[name]
         bases.setdefault(seg, {}).setdefault(addr - off, []).append(name)
+    segbytes = L.code_of(recs)
     for seg, at, loc, selfrel, kind, nm, disp in L.fixups_of(recs):
         if loc != 9:
             continue
+        if not selfrel:                            # Watcom keeps the addend in the data bytes
+            disp += struct.unpack_from('<i', bytes(segbytes[seg][0]), at)[0]
         fn = None
         for off, s2, name in funcs:
             if s2 == seg and off <= at:
@@ -131,6 +135,9 @@ def main():
     (_, recs), = list(L.modules(open(obj, 'rb').read()))
     segs = L.code_of(recs)
     pubs = sorted(p for p in publics(recs) if p[0] in segs)
+    known = names(prog)
+    if not want:                                   # no addresses given: the names file's, by function name
+        want = [known.get(plain(name), 0) for _, _, name in pubs]
     fi = 0
     placed = {}
     for i, (seg, off, name) in enumerate(pubs):
@@ -158,7 +165,7 @@ def main():
                 ' '.join('%02x' % code[a + k] for k in range(max(0, d - 4), min(len(b), d + 12)))))
         fi += 1
     if placed:
-        check_fixups(recs, pubs, placed, code, cbase, names(prog))
+        check_fixups(recs, pubs, placed, code, cbase, known)
     return 0
 
 
