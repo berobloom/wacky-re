@@ -1279,3 +1279,148 @@ void sounds_load(void)
     sfxchans[6].pitch = 750;
     sfxchans[7].pitch = 200;
 }
+
+/* ---- timers, error log */
+
+int since2(int t)
+{
+    return ticks2 - t;
+}
+
+int since(int t)
+{
+    return ticks - t;
+}
+
+extern FILE *errlog;
+
+void logerr(char *s)
+{
+    fprintf(errlog, "%s\n", s);
+    fclose(errlog);
+    errlog = fopen("ERR.LOG", "at+");
+}
+
+/* ---- per-track values */
+
+extern unsigned track;
+extern int trk7ebc8, trk7ec44, trk7ebc4, trk7ec40;
+
+/* differs: the game loads x before track (+8); otherwise equal */
+void track_setup(void)
+{
+    int x, y;
+
+    y = trk7ec44;
+    x = trk7ebc8;
+    switch (track) {
+    case 3:
+    case 4:
+    case 9:
+        trk7ebc4 = 0x528;
+        trk7ec40 = 0x618;
+        x = 0x528;
+        y = 0x618;
+        break;
+    case 6:
+    case 10:
+    case 13:
+    case 15:
+    case 25:
+        x = 0x348;
+        y = 0x438;
+        break;
+    case 24:
+    case 29:
+    case 35:
+        x = 0x528;
+        y = 0x618;
+        break;
+    }
+    trk7ebc8 = x;
+    trk7ec44 = y;
+}
+
+/* ---- zone test, map cells */
+
+struct kart {                   /* what curkart points at; layout still unknown */
+    char f00[0x0A];
+    short f0a;
+    char f0c[0xB4 - 0x0C];
+    short fb4;
+};
+
+extern struct kart *curkart;
+extern int curpos;
+
+int in_zone(void)
+{
+    int r = 0;
+
+    if (curkart->fb4) {
+        if (curpos >= trk7ebc8 && curpos <= trk7ec44)
+            r = 1;
+    } else if (curkart->f0a) {
+        if (curpos >= trk7ebc4 && curpos <= trk7ec40)
+            r = 1;
+    }
+    return r;
+}
+
+extern short *map;
+extern short *mapp;
+
+short map_at(short x, short y)
+{
+    x -= 0x400;
+    y -= 0x400;
+    if (x < 0 || x > 0x7FF || y < 0 || y > 0x7FF)
+        return 0;
+    mapp = map + (y >> 5) * 64 + (x >> 5);
+    return *mapp;
+}
+
+int map_cell(short x, short y)
+{
+    return (y >> 5) * 64 + (x >> 5);
+}
+
+/* ---- swapping the second player's view in and out */
+
+extern short v88b0a, v88b0e, v88c6e, v88c72, v88c76, v88ca2, v88ca6, v88c6a, v88b7e;
+extern int v7d898, v7d860, v7d840, v6ab48, v6aae0;
+extern struct kart *kart7d5bc, *kart7d5c0;
+
+void view2_in(void)
+{
+    v88c6e = v88b0a;
+    v88c72 = v88b0e;
+    v88c76 = myplayer;
+    v7d898 = v7d860;
+    curkart = kart7d5bc;
+    v88b0a = v88ca2;
+    v88b0e = v88ca6;
+    curpos = v6ab48;
+    myplayer = v88c6a;
+    v7d860 = v7d840;
+    v88b7e = 1;
+}
+
+void view2_save(void)
+{
+    v88ca2 = v88b0a;
+    v88ca6 = v88b0e;
+    v6ab48 = curpos;
+    v7d840 = v7d860;
+}
+
+void view2_out(void)
+{
+    v88b0a = v88c6e;
+    v88b0e = v88c72;
+    curpos = v6aae0;
+    myplayer = v88c76;
+    v7d860 = v7d898;
+    curkart = kart7d5c0;
+    v88b7e = 0;
+}

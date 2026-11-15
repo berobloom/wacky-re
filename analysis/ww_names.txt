@@ -2,7 +2,7 @@
 0x0105fc com_putc     # LIKELY: byte into the transmit ring, sent at once when the UART is empty, then the comdelay wait
 0x0109d8 sendstr      # STRONGLY SUPPORTED: matching C in analysis/optpin/T6.C; sends a string, CR, LF with tick waits
 0x010b74 xalloc       # LIKELY: malloc (clib nmalloc 0x41475), -1 on failure, else the block through a pointer
-0x012490 fromscroll   # SPECULATIVE: matching C (T1.C); global at the 'scrollpos' address minus the argument
+0x012490 since2       # LIKELY: matching C (T1.C as fromscroll); ticks2 minus the argument
 0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
 0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
 0x01424c readdat      # LIKELY: matching C (T1.C); fread on the same FILE*
@@ -244,3 +244,39 @@
 0x012124 sounds_load  # LIKELY: loads GIG1-5.VOC, MOTOR.VOC, the 27 named voices (.VOC) and HORN1.VOC; voices_load for cards 2 and 7
 0x07d5c4 gigdata      # LIKELY: buffer GIG1-5.VOC are read into
 0x06a490 gigs         # LIKELY: 7 pointers into gigdata; 5 and 6 repeat 4
+0x0124a0 since        # LIKELY: ticks minus the argument
+0x0124b0 logerr       # LIKELY: fprintf "%s\n" to errlog, then close and reopen ERR.LOG "at+" (flushes it)
+0x07eb64 errlog       # LIKELY: FILE* of ERR.LOG
+0x042dae fprintf      # LIKELY: clib, cdecl (stack args)
+0x0124e8 track_setup  # SPECULATIVE: switch on track sets trk7ebc8/trk7ec44 (0x348/0x438 or 0x528/0x618)
+0x07e728 track        # SPECULATIVE: unsigned (the switch compares unsigned); tracks 3..35 seen
+0x07ebc8 trk7ebc8     # SPECULATIVE
+0x07ec44 trk7ec44     # SPECULATIVE
+0x07ebc4 trk7ebc4     # SPECULATIVE
+0x07ec40 trk7ec40     # SPECULATIVE
+0x0125bc in_zone      # SPECULATIVE: curpos inside trk7ebc8..trk7ec44 (curkart->fb4) or trk7ebc4..trk7ec40 (curkart->f0a)
+0x07d5b0 curkart      # SPECULATIVE: pointer; view2_in/out switch it between kart7d5bc and kart7d5c0
+0x07d5d4 curpos       # SPECULATIVE: int; view2_in/out switch it
+0x01260c map_at       # LIKELY: short at map[(y-0x400)>>5][(x-0x400)>>5] of a 64x64 map, 0 outside; leaves mapp at it
+0x07d5fc map          # LIKELY: short* 64x64 cells of 32 units
+0x07d5e0 mapp         # LIKELY: the cell map_at read
+0x012660 map_cell     # LIKELY: (y>>5)*64 + (x>>5)
+0x012678 view2_in     # SPECULATIVE: saves player-1 globals, loads player 2's (split screen?)
+0x0126f4 view2_save   # SPECULATIVE: stores the player-2 copies
+0x012724 view2_out    # SPECULATIVE: restores player 1
+0x07d5bc kart7d5bc    # SPECULATIVE
+0x07d5c0 kart7d5c0    # SPECULATIVE
+0x088b0a v88b0a       # SPECULATIVE
+0x088b0e v88b0e       # SPECULATIVE
+0x088c6e v88c6e       # SPECULATIVE
+0x088c72 v88c72       # SPECULATIVE
+0x088c76 v88c76       # SPECULATIVE
+0x088ca2 v88ca2       # SPECULATIVE
+0x088ca6 v88ca6       # SPECULATIVE
+0x088c6a v88c6a       # SPECULATIVE
+0x088b7e v88b7e       # SPECULATIVE: 1 while player 2's view is in
+0x07d898 v7d898       # SPECULATIVE
+0x07d860 v7d860       # SPECULATIVE
+0x07d840 v7d840       # SPECULATIVE
+0x06ab48 v6ab48       # SPECULATIVE
+0x06aae0 v6aae0       # SPECULATIVE
