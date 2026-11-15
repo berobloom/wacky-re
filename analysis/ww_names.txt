@@ -427,3 +427,12 @@
 0x014324 ents_draw    # SPECULATIVE: draws n entries, 38x28 sprites
 0x073938 ents         # SPECULATIVE: 12-byte records {id, ?, x, y, ?, frame}; find12 (0x16A7C) searches 8 of them by x, y
 0x088b8e nents        # SPECULATIVE: short, 4 after ents_init
+0x014380 ents_show    # SPECULATIVE: (sel, n, animate, custom, skip) draws and animates the ents; faces or SPRITE.ATR sprites
+0x07d838 p7d838       # SPECULATIVE: short* sprite stream (h, w, ...)
+0x07d764 p7d764       # SPECULATIVE
+0x07d878 v7d878       # SPECULATIVE
+0x06e470 tab6e470     # SPECULATIVE: short* per sel (faces)
+0x06e560 tab6e560     # SPECULATIVE: short* per sel (custom)
+0x07d338 v7d338       # SPECULATIVE: int per ent; draws lp7d804 beside it
+0x088c68 v88c68       # SPECULATIVE: short ent index marked with gn7eae8
+0x037487 f37487       # SPECULATIVE: asm, draws the sprite stream

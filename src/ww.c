@@ -1465,7 +1465,7 @@ void view2_out(void)
 
 extern int v7d998;
 extern short v88bb2;
-struct face { char *img; char f04[0x98 - 4]; };
+struct face { char *img[38]; };
 extern struct face faces[];
 void print_at(int x, int y, char *s, int mode);
 
@@ -1491,7 +1491,7 @@ void show_place(short n)
     spr_y = 4 + (players[n].place - 1) * 0x1C;
     pal_a = 0;
     print_at(0xF0, spr_y, buf, 0);
-    sprptr = faces[players[n].face].img;
+    sprptr = faces[players[n].face].img[0];
     spr_x = 0x10E;
     spr_y = 4 + (players[n].place - 1) * 0x1C;
     spr_h = 0x26;
@@ -2334,5 +2334,108 @@ void ents_draw(int n)
         spr_h = 0x26;
         spr_w = 0x1C;
         drawsprite();
+    }
+}
+
+struct attr {                   /* SPRITE.ATR, 40 bytes */
+    char f00[4];
+    short w, h;
+    char f08[0x0E - 8];
+    short nframes;
+    char f10[0x24 - 0x10];
+    char *data;
+};
+
+extern short *p7d838, *p7d764;
+extern int v7d878;
+extern short *tab6e470[], *tab6e560[];
+extern int v7d338[];
+extern short v88c68;
+void f37487(void);
+
+/* differs: the game enters the loop with a jmp to the test at the bottom, we test at the top and duplicate
+   the epilogue (+10 bytes); n and the w temporary swap stack slots */
+void ents_show(short sel, int n, int animate, int custom, int skip)
+{
+    short i;
+    short id;
+    int two;
+
+    for (i = 0; i < n; i++) {
+        if (skip && (i == 1 || i == 3))
+            continue;
+        if (!custom) {
+            sprptr = faces[ents[i].id].img[ents[i].frame];
+        } else {
+            id = ents[i].id;
+            sprptr = ((struct attr *)sprattr)[id].data
+                + ents[i].frame * (((struct attr *)sprattr)[id].w * ((struct attr *)sprattr)[id].h);
+        }
+        if (animate) {
+            if (++ents[i].f8 > 1) {
+                if (!custom) {
+                    if (i < 2 || sel == -1) {
+                        if (++ents[i].frame > 7)
+                            ents[i].frame = 0;
+                    } else {
+                        if (--ents[i].frame < 0)
+                            ents[i].frame = 7;
+                    }
+                } else {
+                    if (++ents[i].frame == ((struct attr *)sprattr)[id].nframes)
+                        ents[i].frame = 0;
+                }
+                ents[i].f8 = 0;
+            }
+        }
+        spr_x = ents[i].x;
+        spr_y = ents[i].y;
+        if (sel != -1) {
+            if (!custom)
+                p7d838 = tab6e470[sel];
+            else
+                p7d838 = tab6e560[sel];
+            p7d764 = p7d838;
+            v7d878 = 0;
+            p7d838 += 2;
+            spr_h = *p7d764++;
+            spr_w = *p7d764;
+            if (!custom) {
+                spr_x += 0x13;
+                spr_y += 0xE;
+            } else {
+                spr_x += ((struct attr *)sprattr)[id].w >> 1;
+                spr_y += ((struct attr *)sprattr)[id].h >> 1;
+            }
+            spr_y -= spr_w >> 1;
+            spr_x -= spr_h >> 1;
+            f37487();
+        } else {
+            if (!custom) {
+                spr_h = 0x26;
+                spr_w = 0x1C;
+            } else {
+                spr_h = ((struct attr *)sprattr)[id].w;
+                spr_w = ((struct attr *)sprattr)[id].h;
+            }
+            drawsprite();
+        }
+        two = (twoplayer || splitscreen) ? 1 : 0;
+        if (sel == -1 && v7d338[i]) {
+            spr_h = 0x36;
+            spr_w = 9;
+            sprptr = lp7d804;
+            spr_x -= 0xB;
+            spr_y += 0x12;
+            drawsprite();
+            spr_h = 0x26;
+            spr_w = 0x1C;
+            spr_x += 0xB;
+            spr_y -= 0x12;
+        }
+        if (sel == -1 && two && v88b7e == 1 && i == v88c68) {
+            sprptr = gn7eae8;
+            drawsprite();
+        }
     }
 }
