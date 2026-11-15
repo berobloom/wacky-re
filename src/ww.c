@@ -2219,7 +2219,7 @@ void sprites_load(void)
     img7eb60 = p;
 }
 
-/* ---- the data file (these follow the code above; the calls before them are inlined) */
+/* ---- the data file (readdat, datsize and seekdat are inlined into callers before and after them) */
 
 int datopen(char *name)
 {
@@ -2280,4 +2280,59 @@ long datsize(void)
 void readdat(void *buf, int n)
 {
     fread(buf, n, 1, datfile);
+}
+
+/* ---- the menu pointers (0x73938) */
+
+struct ent {
+    short id;
+    short f2;
+    short x, y;
+    short f8;
+    short frame;
+};
+
+extern struct ent ents[8];
+extern short nents;
+
+void ents_init(void)
+{
+    short i;
+
+    nents = 4;
+    for (i = 0; i < 4; i++) {
+        ents[i].f2 = 0;
+        ents[i].id = i;
+        ents[i].f8 = 0;
+    }
+    ents[0].frame = 0;
+    ents[0].x = 0x1B;
+    ents[0].y = 0x10;
+    ents[1].frame = 0;
+    ents[1].x = 0x1B;
+    ents[1].y = 0xB8;
+    ents[2].frame = 7;
+    ents[2].x = 0x126;
+    ents[2].y = 0x10;
+    ents[3].frame = 7;
+    ents[3].x = 0x126;
+    ents[3].y = 0xB8;
+    for (i = 0; i <= 3; i++) {
+        ents[i].x -= 0x13;
+        ents[i].y -= 0xE;
+    }
+}
+
+void ents_draw(int n)
+{
+    int i;
+
+    for (i = 0; i < n; i++) {
+        sprptr = sp6a538[ents[i].frame];
+        spr_x = ents[i].x;
+        spr_y = ents[i].y;
+        spr_h = 0x26;
+        spr_w = 0x1C;
+        drawsprite();
+    }
 }

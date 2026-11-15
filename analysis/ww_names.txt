@@ -423,3 +423,7 @@
 0x014204 datclose     # LIKELY: fclose(datfile) if open
 0x042dd0 strupr       # LIKELY: clib
 0x042df0 strcmp       # LIKELY: clib
+0x014264 ents_init    # SPECULATIVE: four 12-byte entries at the screen corners (frames 0 and 7 of sp6a538)
+0x014324 ents_draw    # SPECULATIVE: draws n entries, 38x28 sprites
+0x073938 ents         # SPECULATIVE: 12-byte records {id, ?, x, y, ?, frame}; find12 (0x16A7C) searches 8 of them by x, y
+0x088b8e nents        # SPECULATIVE: short, 4 after ents_init
