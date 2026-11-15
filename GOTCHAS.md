@@ -66,6 +66,20 @@ it can be copied back into DREA.
   seekdat/telldat/datsize/readdat directly at 24+ sites; our build inlines them (11 bytes extra per
   readdat call). Write the C calls anyway; expect near-miss in fn_17928, fn_1832c, fn_357ac,
   f27060, f2a92c, waitkey until the game's trick is found. [generic]
+- **Watcom 9.5b stack-slot assignment for locals is neither declaration order nor first-use order**;
+  it is a decl+touch interaction (probes P15-P24: with 5 arrays + shorts, swapping the *touch* order of
+  two arrays flipped their slots, but mirroring the game's touch order did NOT reproduce the game's
+  slot map). Symptom: identical code with all `0x300/0x314/0x328/0x33c(%esp)` offsets permuted.
+  Tool: dump both listings and compare the esp-offset multiset; iterate declaration order. Not solved
+  for fn_1832c (pcx/card slots swapped => near miss). [generic]
+- **`#pragma aux f(value [edx])` is E1121 (invalid return register) in 9.5b, but `value [dx]` is
+  accepted and emits the full 32-bit EDX reads/ops** (`add $0x3e80,%edx`) - use it for asm routines
+  that return in EDX (e.g. this game's f375cd at 0x375cd). [generic]
+- **Call-site argument count must not contradict the definition**: Watcom 9.5b rejects 2-arg calls to a
+  1-param function (E1151) even K&R-style. When the game passes extra args that the callee ignores
+  (voice_play at 0x18da1 loads EDX *before* the call because the following showlines() call wants it
+  there), give the *next* call's extra arg via the aux-pragma'd function's parameter list instead. [generic]
+
 - **optpin probes can mislead on flags**: `-oi/-ol/-or` were pinned from single-function probe files,
   but in the full build each of them breaks com_open's bytes while sendstr/find12/crchware match
   without them. Re-check every pinned letter against the whole-program match count. [generic]

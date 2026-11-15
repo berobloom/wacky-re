@@ -645,7 +645,8 @@ extern char netstats[5][60];
 extern int badcrc, timeouts, noise;
 void music_pause(void);
 void music_resume(void);
-void showlines(int n, int a, int b);
+int showlines();                      /* game: ECX is arg4 and the return (pragma aux below) */
+#pragma aux showlines value [ecx] parm [eax] [edx] [ebx] [ecx] modify []
 
 void net_end(int ok)
 {
@@ -1056,9 +1057,11 @@ extern int netvoices;
 extern short myplayer;
 extern int countplays;
 
+void voice_play(int n);
+
 void voice_play(int n)
 {
-    char *data;
+    char *data;                                 /* v unused: game callers pass 1 or 2 args (EDX) */
     int h;
 
     if (sfxon) {
@@ -1846,7 +1849,8 @@ void getpalette(void);
 void setpalette(void);
 void f27060(struct rec14 *r, int n);
 void f1bf94(char *p);
-void f375cd(void);
+short f375cd();                     /* asm; the game passes (EAX, EDX) and reads the result in EDX */
+#pragma aux f375cd value [dx] parm [eax] [edx] modify []   /* 9.5b rejects value[edx]; [dx] gives the same bytes */
 void f28480(void);
 void f37e94(void);
 void f287ec(void);
@@ -3085,6 +3089,7 @@ void chat(void)
 extern short v88bb0, v88b86, v88bb6, v88bb8, v88c80, v88c28, v88cf2;
 extern short v88bee, v88bf0, v88bf2, v88c00;
 extern char v88ccd, v88cd2, v88cdb, v88cd3, v88cd5, v88cd6, v88cdd, v88cce;
+extern char key88cd2, key88cdb, v7b6d9, v7b6db;
 extern int v7ecc0, v7ecc4, v7ecac, v7ed0c, v7ea70;
 extern int v7d8ac, v7d8a4;
 extern char *v7d85c;
@@ -4313,9 +4318,12 @@ music:
     }
 }
 
-/* ---- dead code (0x182d0): no call, jmp or reference anywhere in the image
-   (CONFIRMED, names.txt); byte copy dst + k + i <- s + i, i = 1..3*a3 (short
-   compare). Reproduced byte for byte so the rebuild matches the module.
+/* ---- palette entry copier (0x182d0), used by the bonus menus: when a4 != 0
+   copy 3*a3 bytes at dst + 3*a2 from palbase + a5 + 3*a2, else self-copy from
+   dst + 3*a2 (the callers "flash" entries); callers pass a5 = pal7d84c base.
+   CORRECTION: the earlier "dead code, no reference anywhere" note was WRONG,
+   xref.py finds ~22 calls inside fn_1832c/fn_193a8; it is a real call in the
+   game's bytes (-oe does not inline it).
    differs: the game has a dead register copy mov esi,ebx at 0x182d4 before
    imul esi,ebx,3 (+2 bytes, then everything shifts); every C form tried
    (t=a3 copy, comma, register, expression in both loops) gets folded by 9.5b,
@@ -4341,4 +4349,457 @@ void fn_182d0(char *dst, short a2, long a3, long a4, int a5)
             i++;
         }
     }
+}
+
+
+/* ---- the bonus-races menu (0x1832c), called from 0x1bdd9 / 0x20063.
+   Shows " PLEASE SEE MAIN MENU TO / FIND OUT HOW TO ORDER / THESE EXTRA RACES. "
+   over the intro screen, loads SBn.PCX (B-prefixed when v7ecb4 != 0) and puts
+   each PCX's palette tail (offset size-0x300) into pal7d84c; v88bb6 picks the
+   race (1..3), v88b88 the sound card (1..5); netgame 1/2 exchange keys via
+   net_key. Returns with p7d718 = the worked palette and v88b9e set when the
+   player enters (joy88b40) or navigates out.
+   differs (near-miss): (a) stack slots - the game's 7 shorts occupy all of
+   0x350-0x368 (frame 0x36c) while ours spills only 4 of them (frame 0x368),
+   and the arrays' card/pcx slots swap; Watcom's spill/slot choice is driven by
+   its own liveness, declaration order and touch order probes (P15-P24) did not
+   pin the rule; (b) the game CALLS datfind/telldat/datsize/seekdat/readdat (0x1418c-
+   0x14260) while -oe inlines our wrappers (GOTCHAS); (c) loop counters use
+   different scratch registers in the 0x1839c init loop. Strings, palette and
+   net blocks reproduce the game's bytes. */
+
+extern int v7c658, v7ecf0, v7ec80, v7ec9c, v7e574;
+extern short w88b1e, w88b10, v88b88, v88c58;
+extern char v88cec;
+extern char *pal7d84c;
+extern char p6aaae[], p6847a[], p68426[];
+extern int v684e0, v685e4;
+extern char str7c854[], str7c890[], str7c8cc[];
+void f26ec4(char *p);
+void f278c4(int a);
+void f37cf1(void);
+void f2e4b8(int a, int b, int c);
+
+void fn_1832c(void)
+{
+    /* Watcom 9.5b's slot order for this use pattern is reproduced by declaring
+       them in THIS order: pal@0 pcx@0x300 num@0x314 card@0x328 fname@0x33c.
+       Probes P17-P19: 9.5b places arrays by a decl+first-use interaction, not
+       plain decl or use order; the order below is what makes the slots match. */
+    char pal[0x300];            /* esp+0x000: working palette */
+    char pcx[0x14];             /* esp+0x300: "SB1.PCX" dat name */
+    char num[0x14];             /* esp+0x314 */
+    char card[0x14];            /* esp+0x328: "B" or "" */
+    char fname[0x14];           /* esp+0x33c */
+    /* shorts: slot order in the game is s350@0x350 ... nav@0x368; declaring the
+       loop temporaries (i/up/down/ret) after the seven slot-locals reproduces it
+       (arrays above: declaration order alone fixes those slots) */
+    short s350, s354, s358, card_n, s360, s364, nav;
+    char *gp;
+    short i, up, down, ret;
+    int eight;
+
+    v7ecc4 = 0;
+    v7ed20 = 0x440;
+    v7ed1c = 0x2a8;
+    eight = 8;
+retry:
+    v7ec80 = 0;
+    s350 = 0;
+    v684e0 = 0;
+    v685e4 = 0;
+    for (i = 0; i <= 7; i++)
+        *(short *)(p6aaae + i * 0x68) = 0;
+    for (i = 0; i <= 1; i++) {
+        *(short *)(p6847a + i * 0x104) = 0;
+        *(short *)(p68426 + i * 0x104) = 0;
+    }
+    if (cursong != v7c658)
+        music_start(v7c658, 1);
+    strcpy(str7c854, " PLEASE SEE MAIN MENU TO ");
+    strcpy(str7c890, " FIND OUT HOW TO ORDER   ");
+    v88c58 = 1;
+    palptr = pal7d850;
+    strcpy(str7c8cc, " THESE EXTRA RACES.      ");
+    getpalette();
+    f1bf94(pal7d850);
+    v88b88 = 1;
+    pal_a = 0;
+    pcx[0] = 0;
+    if (v7ecb4 == 0)
+        strcpy(card, "");
+    else
+        strcpy(card, "B");
+    strcat(pcx, card);
+    strcat(pcx, "SB1.PCX");
+    datfind(pcx);
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pcx, 0x300);
+    for (card_n = 1; card_n <= 4; card_n++) {
+        f26ec4(pcx);
+        itoa(card_n, num, 10);
+        strcpy(fname, card);
+        strcat(fname, "SB");
+        strcat(fname, num);
+        strcat(fname, ".PCX");
+        f27060((struct rec14 *)fname, 2);
+        v88b4a = 0;
+        p7d714 = p6a980;
+        pal_a = f375cd(p6a980, pal_a);
+        pal_a = pal_a + 16000;
+    }
+    pal_a = (v88bb6 - 1) * 16000;
+    frame_wait();
+    gp = pal7d84c;
+    for (i = 0; i <= 0x2ff; i++)
+        pal[i] = gp[i];
+    fn_182d0(pal, 0xe9, 1, 0, (int)gp);
+    fn_182d0(pal, 0xec, 1, 0, (int)gp);
+    fn_182d0(pal, 0xef, 1, 0, (int)gp);
+    fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 1, (int)gp);
+    for (i = 5; i <= 9; i++)
+        fn_182d0(pal, i, 1, 0, (int)gp);
+    f32cf8(pal);
+    f278c4(0);
+    if (v88bb2 == 4 && v7ecf0 != -1) {
+        v88b88 = (short)v7ecf0;
+        palptr = pal;
+        w88b1e = v88b88 + 4;
+        fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
+        s354 = 1;
+        w88b10 = 1;
+        f37cf1();
+    }
+    if (netgame && net88c14) {
+        for (i = 0; i <= 0x2ff; i++)
+            p7d718[i] = pal[i];
+        v88b9e = 1;
+        return;
+    }
+    palptr = pal;
+    v88b9e = 0;
+    ticks = 0;
+    ticks2 = 0;
+    s354 = 0;
+    s364 = 0;
+mainloop:
+    ticks = 0;
+    pal_a = (v88bb6 - 1) * 16000;
+    frame_wait();
+    ticks2 = 0;
+    v88cec = 0;
+    while (eight > ticks) {
+        if (key88cd0 == 1) {
+            v88cec = 1;
+            break;
+        }
+    }
+    up = 0;
+    down = 0;
+    nav = 0;
+    v7d8a4 = v7d8ac;
+    ctl_setup(0);
+    f377ae();
+    joy_clear_y();
+    if (netgame == 0) {
+        if (v88cce)
+            joy88b40 = 1;
+        if (key88cd3 || key88cd2)
+            up = 1;
+        if (key88cd6 || key88cdb)
+            down = 1;
+        if (up || down)
+            nav = 1;
+        goto merged;
+    }
+    if (netgame == 1) {
+        if (v88cce)
+            joy88b40 = 1;
+        if (key88cd3 || key88cd2)
+            up = 1;
+        if (key88cd6 || key88cdb)
+            down = 1;
+        if (up || down)
+            nav = 1;
+        if (up)
+            key88cd3 = 1;
+        if (down)
+            key88cd6 = 1;
+        if (netgame && joy88b40 && v7ec9c == 1 && v88bb6 > 1)
+            joy88b40 = 0;
+        v88cf0 = 0;
+        v7ecc0 = v88cec;
+        if (key88cd6)
+            v88cf0 = 1;
+        if (key88cd3)
+            v88cf0 += 2;
+        if (joy88b40)
+            v88cf0 += 4;
+        if (v7ecc0)
+            v88cf0 += 0x40;
+        v88cf3 = 0;
+        net88c14 = net_key(v88cf0, v88cf3, 0);
+        v7ecc4++;
+        if (v7ecc4 > 1) {
+            v7ecc4 = 2;
+            v7ed20 = 0x88;
+            v7ed1c = 0x2a8;
+        }
+        if (net88c14) {
+            fn_1c068();
+            msgbox("EXCESSIVE DATA ERRORS!", 0);
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks <= 300)
+                ;
+            fn_1c0ac();
+            for (i = 0; i <= 0x2ff; i++)
+                p7d718[i] = pal[i];
+            v88b9e = 1;
+            return;
+        }
+    } else {
+        key88cd5 = 0;
+        key88cdd = 0;
+        key88cd6 = 0;
+        key88cd3 = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+        v88cec = 0;
+        v88cf0 = 0;
+        v88cf3 = 0;
+        v7ecc0 = 0;
+        up = 0;
+        down = 0;
+        nav = 0;
+        v88cf3 = 0;
+        net88c14 = net_key(v88cf0, v88cf3, 0);
+        v7ecc4++;
+        if (v7ecc4 > 1) {
+            v7ecc4 = 2;
+            v7ed20 = 0x88;
+            v7ed1c = 0x2a8;
+        }
+        if (net88c14) {
+            fn_1c068();
+            msgbox("EXCESSIVE DATA ERRORS!", 0);
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks <= 300)
+                ;
+            fn_1c0ac();
+            for (i = 0; i <= 0x2ff; i++)
+                p7d718[i] = pal[i];
+            v88b9e = 1;
+            return;
+        }
+    }
+    if (netgame == 2) {
+        key88cd6 = v88cef & 1;
+        key88cd3 = v88cef & 2;
+        joy88b40 = v88cef & 4;
+        v7ecc0 = v88cef & 0x40;
+        if (key88cd3)
+            up = 1;
+        if (key88cd6)
+            down = 1;
+        if (up || down)
+            nav = 1;
+        if (v7ecc0)
+            v88cec = 1;
+        else
+            v88cec = 0;
+    }
+merged:
+    if (joy88b40 || up || down || v88cec)
+        wait_or_key(20);
+    s354++;
+    if (s354 > 12) {
+        w88b1e = v88bb6 * 3 + 0xe6;
+        if (s364 == 0) {
+            fn_182d0(pal, w88b1e, 1, 0, (int)gp);
+            nav = 1;
+            s364 = 1;
+        } else {
+            fn_182d0(pal, w88b1e, 1, 1, (int)gp);
+            nav = 0;
+        }
+        s354 = 0;
+        w88b10 = 1;
+        palptr = pal;
+        f37cf1();
+    }
+    if (s350 != 0) {
+        joy88b40 = 1;
+        nav = 0;
+        up = 0;
+        down = 0;
+    }
+    if (joy88b40) {
+        voice_play(0x12);
+        if (v88bb2 != 4)
+            return;
+        ret = 0;
+        if (v7e574 && v88bb6 > 1) {
+            voice_play(0x1a);
+            ret = showlines(3, 1, 0, 1);
+        }
+        if (ret == 0)
+            goto joyopen;
+        s364 = 0;
+        s354 = 0;
+        w88b1e = v88bb6 * 3 + 0xe6;
+        w88b10 = 1;
+        fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 0, (int)gp);
+        f37cf1();
+        goto navevaluate;
+    }
+    if (nav == 0) {
+        if (v88cec == 0)
+            goto mainloop;
+        for (i = 0; i <= 0x2ff; i++)
+            p7d718[i] = pal[i];
+        v88b9e = 1;
+        return;
+    }
+    s364 = 0;
+    s354 = 0;
+    w88b1e = v88bb6 * 3 + 0xe6;
+    w88b10 = 1;
+    fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 0, (int)gp);
+    f37cf1();
+navevaluate:
+    if (up) {
+        v88bb6++;
+        if (v88bb6 > 3)
+            v88bb6 = 1;
+    }
+    if (down) {
+        v88bb6--;
+        if (v88bb6 < 1)
+            v88bb6 = 3;
+    }
+    if (nav != 0) {
+        w88b1e = v88bb6 * 3 + 0xe6;
+        fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 1, (int)gp);
+        f37cf1();
+    }
+    if (v88cec == 0)
+        goto mainloop;
+    for (i = 0; i <= 0x2ff; i++)
+        p7d718[i] = pal[i];
+    v88b9e = 1;
+    return;
+
+joyopen:
+    palptr = pal;
+    w88b1e = v88bb6 * 3 + 0xe6;
+    fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 1, (int)gp);
+    s364 = 0;
+    w88b10 = 1;
+    f37cf1();
+    w88b1e = v88b88 + 4;
+    fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
+    w88b10 = 1;
+    f37cf1();
+    f278c4(0);
+joyloop:
+    ticks = 0;
+    v7ecf0 = v88b88;
+    ticks = 0;
+    v7d8a4 = v7d8ac;
+    ticks2 = 0;
+    ctl_setup(0);
+    f377ae();
+    joy_clear_y();
+    if (v88cce)
+        joy88b40 = 1;
+    while (eight > ticks) {
+        if (key88cd0 == 1)
+            break;
+    }
+    while (key88cd0 == 1)
+        ;
+    palptr = pal;
+    s364 = 0;
+    w88b1e = v88b88 + 4;
+    fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+    w88b10 = 1;
+    f37cf1();
+    goto mainloop;
+
+/* the game jumps back to 0x19021 (joynav) from 0x1910f; C reaches it by fallthrough */
+    s358++;
+    if (s358 > 12) {
+        w88b1e = v88b88 + 4;
+        if (s360 == 0) {
+            fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
+            s360 = 1;
+        } else {
+            fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+            s360 = 0;
+        }
+        s354 = 0;
+        w88b10 = 1;
+        palptr = pal;
+        f37cf1();
+    }
+    up = 0;
+    down = 0;
+    nav = 0;
+    if (key88cd3 || key88cd2)
+        up = 1;
+    if (key88cd6 || key88cdb)
+        down = 1;
+    if (key88cd5 || v7b6d9)
+        down = 1;
+    if (key88cdd || v7b6db)
+        up = 1;
+    if (joy88b40 || up || down)
+        wait_or_key(20);
+    if (joy88b40)
+        goto joyretry;
+    if (nav)
+        goto navevaluate;
+    palptr = pal;
+    w88b1e = v88b88 + 4;
+    fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+    w88b10 = 1;
+    f37cf1();
+    if (down) {
+        v88b88--;
+        if (v88b88 < 1)
+            v88b88 = 5;
+        w88b1e = v88b88 + 4;
+        fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+        w88b10 = 1;
+        f37cf1();
+    }
+    if (up) {
+        v88b88++;
+        if (v88b88 > 5)
+            v88b88 = 1;
+        w88b1e = v88b88 + 4;
+        fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+        w88b10 = 1;
+        f37cf1();
+    }
+    goto joyloop;
+
+joyretry:
+    voice_play(0x12);
+    if (v88bb2 != 4)
+        return;
+    v88cec = 0;
+    f2e4b8(v88bb6 + v7ecb4, v88b88, 0);
+    if (v88cec == 0)
+        return;
+    palptr = pal;
+    w88b1e = v88b88 + 4;
+    fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+    w88b10 = 1;
+    f37cf1();
+    goto retry;
 }

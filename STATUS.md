@@ -22,11 +22,15 @@ BLOCKED (with the reason) rather than deleting them.
    register/scheduling ones are QUESTIONS.md 2). Session 2026-08-05b added fn_16f90/fn_173c4/fn_17888,
    struct player pack(1) layout, struct face 0x98 record, calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX.
    Session 2026-08-05c added fn_17928 (near miss: itoa arg-order swap at +819, and -oe inlines readdat
-   where the game calls it, +22 bytes) and fn_182d0 (dead code, +2-byte `mov esi,ebx` fold); and pinned
+   where the game calls it, +22 bytes) and fn_182d0 (+2-byte `mov esi,ebx` fold; the earlier "dead
+   code" call is CORRECTED: 22 real calls from fn_1832c/fn_193a8, it is a palette-entry copier); and pinned
    `-oe` (usage string in WCC386: `e[=num]` caps inline size). Optinfo letters `i,l,r,m` BREAK com_open
-   in the full build - the optpin probe evidence for them was a probe artifact. Next in address order:
-   fn_1832c (~4 KB, game calls datfind/telldat/datsize/seekdat/readdat at 0x18501-0x18525 - expect
-   inline near-miss), then 0x19c68 / 0x19db8 / 0x19eac / 0x1a148 (lap menu, tractable). `src/ww.c` is ~4.4 K lines: grep, don't read whole. `tools/wc/starts.py ww LO HI` lists function starts (it can
+   in the full build - the optpin probe evidence for them was a probe artifact.
+   Session 2026-08-05d added fn_1832c (bonus-races menu, near miss: pcx/card stack-slot swap +
+   the known dat-wrapper inlining; strings/palette/net blocks byte-equal) and fn_182d0's correction;
+   `#include <string.h>` now reproduces the game's 145 inline strcpy/strlen patterns, and
+   `#pragma aux f375cd value [dx]` matches the game's EDX-return call shape. Next in address order:
+   fn_193a8 (bonus zones menu, 0x193a8), then 0x19c68 / 0x19db8 / 0x19eac / 0x1a148 (lap menu, tractable). `src/ww.c` is ~4.4 K lines: grep, don't read whole. `tools/wc/starts.py ww LO HI` lists function starts (it can
    also list loop bodies that follow a jmp). Watcom 9.5 `-oe` inlines small user functions (later-defined
    included); GOTCHAS.md. Functions after the
    data-file block (0x14128-0x14260) go at the end of the file.

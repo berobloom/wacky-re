@@ -546,5 +546,6 @@
 0x017888 fn_17888        # LIKELY: center and double-print a string (pal_a 0 then 0x3E80), y defaults to 0x60
 0x017928 fn_17928        # ?
 0x017928 fn_17928        # LIKELY: race-start setup monster (~2.4KB: mode flags v88bde/p2offset/view flags, lap-data pointers, net wait ("WAITING FOR PLAYER ONE..."), demo .BMC load, music load; single frame esp-0xa4 spans 0x17928-0x182cd)
-0x0182ce (dead)         # CONFIRMED dead: no call/jmp/dword reference anywhere in the image; byte copy dst+i*3 <- src+i*3 (ret 4, 5th arg on stack); must still be reproduced for byte-identical rebuild
-0x0182d0 fn_182d0       # the dead block's function; WRONG, corrected: the block starts at 0x182d0, the 8b c0 at 0x182ce is fn_17928's 4-byte align padding (starts.py list)
+0x0182ce (align)        # CONFIRMED: 8b c0 (mov eax,eax) is fn_17928's 4-byte align padding, not a function; the block at 0x182d0 below was mislabelled "dead code" - CORRECTED 2026-08-05d: xref.py finds ~22 real calls (all inside fn_1832c/fn_193a8)
+0x0182d0 fn_182d0       # palette-entry copier: if a4!=0 copy 3*a3 bytes at dst+3*a2 from palbase+a5+3*a2, else self-copy from dst+3*a2 (callers "flash" palette entries); callers pass a5=pal7d84c-palbase. CORRECTION: not dead code, 22 call sites
+0x01832c fn_1832c       # LIKELY: bonus-races menu ("PLEASE SEE MAIN MENU TO / FIND OUT HOW TO ORDER / THESE EXTRA RACES."); loads (B)SBn.PCX packs into pal7d84c, v88bb6 race 1-3, v88b88 sound card 1-5, net_key 1/2 exchange; called 0x1bdd9, 0x20063
