@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "dosre": {
+      "type": "stdio",
+      "command": "/home/bjorn/projects/active/dos-re-suite/.venv/bin/python",
+      "args": ["/home/bjorn/projects/active/dos-re-suite/mcp/server.py"],
+      "env": {
+        "DOS_RE_GAME_DIR": "/home/bjorn/projects/active/wacky-re/.work/dos/C",
+        "DOS_RE_GAME_CONF": "/home/bjorn/projects/active/wacky-re/.work/dos/game.conf",
+        "DOS_RE_GAME_EXE": "WW",
+        "DOS_RE_GDB_PORT": "2161",
+        "DOS_RE_QMP_PORT": "4446",
+        "DOS_RE_CAPTURE_DIR": "/home/bjorn/projects/active/wacky-re/captures",
+        "DOS_RE_SERVER_NAME": "Wacky Wheels RE"
+      }
+    }
+  }
+}

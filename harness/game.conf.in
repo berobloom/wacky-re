@@ -1,4 +1,5 @@
-# DOSBox-X config for the dos-re-suite build (GDB stub 2159, QMP 4444).
+# DOSBox-X config for the dos-re-suite build (GDB stub 2161, QMP 4446: this project's
+# ports; 2159/4444 are re_cold's, 2160/4445 SAM's).
 # harness/install.sh fills in @C@ / @CD@ and writes .work/dos/game.conf.
 # The servers must be in [dosbox]; anywhere else they silently do nothing.
 
@@ -17,9 +18,9 @@ gdbserver=true
 # another project running at the same time: other ports here (dosrun.py reads
 # them from this file) and the same values in the MCP env's DOS_RE_GDB_PORT /
 # DOS_RE_QMP_PORT
-gdbserver port=2159
+gdbserver port=2161
 qmpserver=true
-qmpserver port=4444
+qmpserver port=4446
 
 [cpu]
 core=normal

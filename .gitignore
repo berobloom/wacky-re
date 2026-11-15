@@ -17,3 +17,8 @@ captures/*.bin
 captures/*.state
 captures/*.dmp
 captures/scratch/
+
+# overnight loop state
+overnight/runs/
+overnight/STOP
+overnight/.lock
