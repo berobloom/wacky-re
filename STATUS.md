@@ -17,10 +17,12 @@ keep a session diary here.
 Take the first open item when QUEUE.md has none open. Mark items CLOSED or
 BLOCKED (with the reason) rather than deleting them.
 
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x10DD7, 25 of 28 functions byte-identical
-   (`src/check.sh`; near misses marked `differs:` in the source, com_open is QUESTIONS.md 2). Next: continue
-   at 0x10DD8 in address order. `.work/le/ww_funcs.tsv` misses functions without a register-save prologue;
-   the `_TEXT` base line of `src/check.sh` shows where (two bases = missing bytes between them).
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1437C, 62 functions byte-identical and 15 near
+   misses (`src/check.sh`; near misses are marked `differs:` in the source, and the stack-slot ones are QUESTIONS.md 2).
+   Next: continue at 0x14380 in address order. `tools/wc/starts.py ww LO HI` lists function starts (it can
+   also list loop bodies that follow a jmp). Watcom 9.5 `-oe` inlines functions defined later in the
+   file too: readdat/datsize/seekdat/since2/sfx_play2/view2_* calls show up inline. Functions after the
+   data-file block (0x14128-0x14260) go at the end of the file.
 2. Inventory: archives and file formats (WACKY.DAT), strings.
 2. Get the original running under the harness; record the boot's segments or
    LE deltas and a first save state in `captures/`.
