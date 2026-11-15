@@ -10,6 +10,7 @@
 #include <i86.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /* ---- serial link: CRC (the public-domain table CRC: crchware / mk_crctbl / crcupdate) */
 
@@ -522,8 +523,8 @@ void draw_faces(void)
     }
 }
 
-extern short pal_a, pal_b, pal_c, pal_d;
-extern short save_a, save_b, save_c;
+extern unsigned short pal_a, pal_b, pal_c, pal_d;
+extern unsigned short save_a, save_b, save_c;
 extern int connected;
 extern int ticks2;
 extern char modeminit[];
@@ -693,10 +694,10 @@ void net_end(int ok)
 /* ---- drawing helpers */
 
 extern int clipy;
-extern volatile char paused;
+extern volatile char shotkey;
 void drawsprite2(void);
 void waitretrace(void);
-void pausemenu(void);
+void screenshot(void);
 
 /* differs: the game keeps the widened height in a stack slot ([esp]) and computes the bottom from it */
 void drawsprite_clip(void)
@@ -720,9 +721,9 @@ void drawsprite_clip(void)
 void frame_wait(void)
 {
     waitretrace();
-    if (paused) {
-        pausemenu();
-        while (paused)
+    if (shotkey) {
+        screenshot();
+        while (shotkey)
             ;
     }
 }
@@ -737,5 +738,294 @@ void pal_shift(unsigned char *p)
         {
         v = *p;
         *p++ = v << 2;
+    }
+}
+
+/* ---- screenshot (WACKnnn.PCX) */
+
+struct pcxhdr {
+    char manufacturer;
+    char version;
+    char encoding;
+    char bpp;
+    short xmin, ymin, xmax, ymax;
+    short hres, vres;
+    char pal16[48];
+    char reserved;
+    char nplanes;
+    short bytesperline;
+    short palinfo;
+    char filler[58];
+};
+
+extern unsigned char *palptr;
+void getpalette(void);
+void getline(void);
+
+/* differs: the game keeps &hdr in ebp and the palette pointer in [esp+0x50C]; ours swaps the pointer locals
+   (declaration order has no effect) */
+void screenshot(void)
+{
+    unsigned char palbuf[800];
+    unsigned char line[324];
+    struct pcxhdr hdr;
+    char name[20];
+    char digits[16];
+    unsigned char *lineptr;
+    unsigned char *pal;
+    short n;
+    short len, j;
+    short i;
+    short v;
+    short x, run;
+    short y;
+    char *hp;
+    FILE *f;
+
+    pal = palbuf;
+    lineptr = line;
+    n = 1;
+    sound(40);
+    for (;;) {
+        strcpy(name, "WACK");
+        itoa(n, line, 10);
+        strcpy(digits, "");
+        strcpy(digits, "000");
+        j = 2;
+        for (len = strlen(line); len >= 1; len--)
+            digits[j--] = line[len - 1];
+        strcat(name, digits);
+        strcat(name, ".PCX");
+        f = fopen(name, "rb");
+        if (f == NULL)
+            break;
+        fclose(f);
+        n++;
+    }
+    palptr = pal;
+    getpalette();
+    for (i = 1; i <= 768; i++) {
+        v = *pal;
+        *pal++ = v << 2;
+    }
+    pal = palptr;
+    hp = (char *)&hdr;
+    for (i = 1; i <= sizeof(hdr); i++)
+        *hp++ = 0;
+    hdr.manufacturer = 10;
+    hdr.version = 5;
+    hdr.encoding = 1;
+    hdr.bpp = 8;
+    hdr.xmin = 0;
+    hdr.ymin = 0;
+    hdr.xmax = 319;
+    hdr.ymax = 199;
+    hdr.hres = 320;
+    hdr.vres = 200;
+    hdr.nplanes = 1;
+    hdr.bytesperline = 320;
+    hdr.palinfo = 0;
+    f = fopen(name, "wb");
+    fwrite(&hdr, sizeof(hdr), 1, f);
+    for (y = 0; y <= 199; y++) {
+        spr_x = 0;
+        spr_h = 320;
+        spr_w = 1;
+        spr_y = y;
+        sprptr = lineptr;
+        getline();
+        x = 0;
+        do {
+            run = 0;
+            while (line[x + run] == line[x + run + 1] && x + run < 320 && run < 63)
+                run++;
+            if (run > 0) {
+                fputc(run | 0xc0, f);
+                fputc(line[x], f);
+                x += run;
+            } else {
+                if ((line[x] & 0xc0) == 0xc0)
+                    fputc(0xc1, f);
+                fputc(line[x], f);
+                x++;
+            }
+        } while (x < 320);
+    }
+    fputc(12, f);
+    fwrite(pal, 768, 1, f);
+    fclose(f);
+    nosound();
+}
+
+/* ---- music (Apogee Sound System MUSIC_ calls) */
+
+extern short music88bcc;
+extern int cursong;
+extern int menusong;
+int MUSIC_SongPlaying(void);
+int MUSIC_StopSong(void);
+int MUSIC_PlaySong(int song, int loop);
+char *MUSIC_ErrorString(int code);
+
+void music_play(int loop)
+{
+    union REGS r;
+
+    if (MUSIC_PlaySong(cursong, loop)) {
+        r.h.ah = 0;
+        r.h.al = 3;
+        int386(0x10, &r, &r);
+        printf("Error - %s\n", MUSIC_ErrorString(-1));
+        exit(1);
+    }
+}
+
+void music_start(int song, int loop)
+{
+    music88bcc = 0;
+    cursong = song;
+    if (musicon) {
+        if (MUSIC_SongPlaying())
+            MUSIC_StopSong();
+        music_play(loop);
+    }
+}
+
+/* differs: the game loads the inlined loop argument (edx) before the stores; an explicit copy does not help */
+void music_jingle(int song)
+{
+    music_start(song, 0);
+    while (MUSIC_SongPlaying())
+        ;
+    music_start(menusong, 1);
+}
+
+extern char key88cd5, key88cdd, key88cd6, key88cd3;
+extern short joy88b40, joy88b42, joy88b44, joy88b46;
+extern char key88cc3, key88ccc, key88cc4, key88cc5, key88cc6, key88cc7;
+
+void input_clear1(void)
+{
+    key88cd5 = 0;
+    key88cdd = 0;
+    key88cd6 = 0;
+    key88cd3 = 0;
+    joy88b40 = 0;
+    joy88b42 = 0;
+    joy88b44 = 0;
+    joy88b46 = 0;
+}
+
+void input_clear2(void)
+{
+    key88cc3 = 0;
+    key88ccc = 0;
+    key88cc4 = 0;
+    key88cc5 = 0;
+    key88cc6 = 0;
+    key88cc7 = 0;
+}
+
+/* ---- configuration file */
+
+extern int ctl775cc, ctl77558, ctl774e4;
+extern short ctl775d8, ctl775dc, ctl775d6, ctl775da;
+extern short v7ecb4;
+extern char cfgname[];
+extern char cfg7ee1c[0x492];
+extern short cfg7ee2a;
+extern char cfg7b6d8[0x18];
+extern char cfg77128[0x630];
+void waitkey(void);
+int save_config(short keep);
+
+int save_config(short keep)
+{
+    FILE *f;
+    union REGS r;
+
+    f = fopen(cfgname, "wb");
+    if (f == NULL) {
+        r.h.ah = 0;
+        r.h.al = 3;
+        int386(0x10, &r, &r);
+        printf("Cannot open %s for WRITE/UPDATE\n", cfgname);
+        printf("If you are running this game from a CD\n");
+        printf("You will need to set the APOGEECD enviroment label\n");
+        printf("To a writeable area of your system.\n");
+        printf("Example:  SET APOGEECD=C:\\WACKY\\ \n");
+        waitkey();
+        return 0;
+    }
+    if (keep && cfg7ee2a)
+        cfg7ee2a = 0;
+    fwrite(cfg7ee1c, 0x492, 1, f);
+    fwrite(cfg7b6d8, 0x18, 1, f);
+    fwrite(cfg77128, 0x630, 1, f);
+    fclose(f);
+    return 1;
+}
+
+int save_ctl(void)
+{
+    if (splitscreen) {
+        ctl775cc = splitscreen;
+        ctl775d8 = v7ee5a;
+        ctl77558 = 1;
+        ctl775dc = v7ecb4;
+    } else {
+        ctl775d6 = v7ee5a;
+        ctl774e4 = 1;
+        ctl775da = v7ecb4;
+    }
+    return save_config(0);
+}
+
+void flushkeys(void)
+{
+    while (kbhit())
+        getch();
+}
+
+/* ---- sound voices */
+
+struct voice {
+    int handle;
+    int busy;
+    char f08[0x18 - 8];
+};
+
+extern short sfxon;
+extern struct voice voices[27];
+extern short voicebusy;
+void FX_StopAllSounds(void);
+
+/* differs: edx/ebx constants swapped in the first unrolled loop (+27); statement order tried */
+void voices_reset(void)
+{
+    int i;
+
+    if (sfxon) {
+        FX_StopAllSounds();
+        for (i = 0; i < 27; i++) {
+            voices[i].handle = -1;
+            voices[i].busy = 0;
+        }
+        for (i = 0; i < 8; i++) {
+            sfxchans[i].active = 0;
+            voices[i].busy = 0;
+        }
+    }
+}
+
+void voice_check(int n)
+{
+    voicebusy = 0;
+    if (sfxon && voices[n].handle != -1) {
+        if (FX_SoundActive(voices[n].handle)) {
+            voicebusy = 1;
+            return;
+        }
+        voices[n].handle = -1;
     }
 }

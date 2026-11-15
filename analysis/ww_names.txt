@@ -9,7 +9,6 @@
 0x014238 get22        # SPECULATIVE: matching C (T2.C); name is a placeholder
 0x016a7c find12       # SPECULATIVE: matching C (T2.C); name is a placeholder
 0x0248ac setvmode     # LIKELY: matching C (T1.C); int386 0x10, AH=0
-0x0341d8 waitkey      # LIKELY: matching C (T2.C); prints "Press any key when ready.."
 0x07d584 datfile      # LIKELY: the FILE* seekdat/telldat/readdat use
 0x07e720 ticks        # LIKELY: zeroed and polled by sendstr's waits
 0x07ebb0 sendfail     # LIKELY: set to 1 by sendstr when aborted (objmatch fixup check of T6.C)
@@ -139,8 +138,70 @@
 0x011404 drawsprite_clip # SPECULATIVE: clips spr_w rows at line 199 into clipy, then drawsprite2
 0x011480 frame_wait   # SPECULATIVE: waitretrace, then pausemenu while 'paused'
 0x0114a8 pal_shift    # LIKELY: 768 palette bytes << 2
-0x0114c8 pausemenu    # SPECULATIVE: called by frame_wait when paused
+0x0114c8 screenshot   # LIKELY: writes WACKnnn.PCX (first free number); frame_wait calls it while 0x88CCD is set
 0x03707e drawsprite2  # SPECULATIVE: asm sprite routine used with clipy
 0x037de0 waitretrace  # LIKELY: asm; polls port 0x3DA bit 3
 0x07d878 clipy        # SPECULATIVE: rows clipped at the bottom
-0x088ccd paused       # SPECULATIVE: char; frame_wait waits while set
+0x088ccd shotkey      # SPECULATIVE: char; frame_wait takes a screenshot, then waits until it clears
+0x036cca getpalette   # SPECULATIVE: asm; reads the VGA palette to palptr
+0x0372c7 getline      # SPECULATIVE: asm; reads spr_h pixels of line spr_y to sprptr
+0x07d760 palptr       # SPECULATIVE: buffer pointer for getpalette
+0x042614 sound        # CONFIRMED: clib sound module
+0x042672 nosound      # LIKELY: in the clib sound module
+0x042826 fopen        # LIKELY: in the clib fopen module (0x42691)
+0x0428b9 fclose       # CONFIRMED: clib (libmatch)
+0x0429f9 fwrite       # CONFIRMED: clib (libmatch)
+0x042b53 fputc        # CONFIRMED: clib (libmatch)
+0x011834 music_play   # LIKELY: MUSIC_PlaySong(cursong, loop); on error text mode, prints MUSIC_ErrorString, exit(1)
+0x01180c music_start  # LIKELY: sets cursong; stops a playing song; music_play (tail call by fall-through)
+0x011884 music_jingle # LIKELY: plays a song once, waits, restarts menusong (music_start inlined twice)
+0x0118f8 input_clear1 # SPECULATIVE: zeroes four key bytes and four joystick shorts
+0x01193c input_clear2 # SPECULATIVE: zeroes six key bytes
+0x041f4c MUSIC_ErrorString # SPECULATIVE: Apogee Sound System; called with -1, result printed
+0x042160 MUSIC_SongPlaying # SPECULATIVE: Apogee Sound System; polled until 0
+0x04219c MUSIC_StopSong # SPECULATIVE: Apogee Sound System
+0x0421e0 MUSIC_PlaySong # SPECULATIVE: Apogee Sound System; (song, loop), non-zero = error
+0x042bec printf       # CONFIRMED: clib (libmatch)
+0x042c11 exit         # LIKELY: clib exit module (0x42C10) entry
+0x07c648 menusong     # SPECULATIVE: restarted by music_jingle
+0x07eaf0 cursong      # LIKELY: song pointer for MUSIC_PlaySong
+0x088bcc music88bcc
+0x088cd5 key88cd5
+0x088cdd key88cdd
+0x088cd6 key88cd6
+0x088cd3 key88cd3
+0x088b40 joy88b40
+0x088b42 joy88b42
+0x088b44 joy88b44
+0x088b46 joy88b46
+0x088cc3 key88cc3
+0x088ccc key88ccc
+0x088cc4 key88cc4
+0x088cc5 key88cc5
+0x088cc6 key88cc6
+0x088cc7 key88cc7
+0x0119d8 save_ctl     # SPECULATIVE: stores control settings per player mode, then save_config(0) (tail call by fall-through)
+0x011a38 save_config  # LIKELY: writes cfgname ("wb"): 0x492 + 0x18 + 0x630 bytes; CD hint on failure
+0x011ac8 flushkeys    # LIKELY: while (kbhit()) getch()
+0x011adc voices_reset # LIKELY: FX_StopAllSounds; voice handles -1
+0x011bbc voice_check  # LIKELY: voicebusy = FX_SoundActive(voice handle); handle -1 when done
+0x0341d8 waitkey      # LIKELY: matching C (T2.C); prints "Press any key when ready.."
+0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
+0x042c36 kbhit        # CONFIRMED: clib (libmatch)
+0x042c4d getch        # CONFIRMED: clib (libmatch)
+0x0774e4 ctl774e4
+0x077558 ctl77558
+0x0775cc ctl775cc
+0x0775d6 ctl775d6
+0x0775d8 ctl775d8
+0x0775da ctl775da
+0x0775dc ctl775dc
+0x077128 cfg77128     # SPECULATIVE: 0x630 bytes saved by save_config
+0x07a9d8 voices       # LIKELY: 0x18-byte records {handle, busy, ...}
+0x07b6d8 cfg7b6d8     # SPECULATIVE: 0x18 bytes saved by save_config
+0x07c0d8 cfgname      # LIKELY: the configuration file name
+0x07ecb4 v7ecb4
+0x07ee1c cfg7ee1c     # SPECULATIVE: 0x492 bytes saved by save_config
+0x07ee2a cfg7ee2a     # SPECULATIVE: short inside cfg7ee1c (+0xE); cleared by save_config(keep)
+0x07ee4e sfxon        # SPECULATIVE: short; voice functions do nothing when 0
+0x088c62 voicebusy    # LIKELY: set by voice_check
