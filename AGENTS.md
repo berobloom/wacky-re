@@ -95,6 +95,6 @@ Debug switches of the game: <e.g. /DEBUG writes DEBUG.TXT>.
 
 ## Commits
 
-Commit only when asked, or (unattended runs) after each finished deliverable,
-with explicit paths. Short subjects in the project's style
-(`Port: ...`, `Findings: ...`).
+Commit after each finished function (MATCH or near-miss decision), not at the
+end of a session; also when asked. Use explicit paths. Short subjects in the
+project's style (`Port: ...`, `Findings: ...`).
