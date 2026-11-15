@@ -5,8 +5,8 @@
 0x012490 since2       # LIKELY: matching C (T1.C as fromscroll); ticks2 minus the argument
 0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
 0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
-0x01424c readdat      # LIKELY: matching C (T1.C); fread on the same FILE*
-0x014238 get22        # SPECULATIVE: matching C (T2.C); name is a placeholder
+0x01424c readdat      # LIKELY: matching C (T1.C); fread(buf, n, 1, datfile); inlined into callers before it (Watcom -oe sees the whole file)
+0x014238 datsize      # LIKELY: matching C (T2.C as get22); datdir[datidx].size; inlined into its callers
 0x016a7c find12       # SPECULATIVE: matching C (T2.C); name is a placeholder
 0x0248ac setvmode     # LIKELY: matching C (T1.C); int386 0x10, AH=0
 0x07d584 datfile      # LIKELY: the FILE* seekdat/telldat/readdat use
@@ -342,3 +342,19 @@
 0x0261fc f261fc       # SPECULATIVE: called from frame_draw
 0x037de0 f37de0       # SPECULATIVE: called from frame_draw
 0x032cf8 f32cf8       # SPECULATIVE: called from frame_draw
+0x0136f8 ani_giggles  # LIKELY: loads GIGGLES.SP (0xB6E0) and QUACK.VOC into anidata/sfx2data, clears anidope
+0x01375c ani_tick     # SPECULATIVE: every 0x36 of anitimer: anikick = 1, ani_dope
+0x013780 ani_dope     # LIKELY: loads DOPE.SP (0x2E77) and BELCH.VOC unless loaded, starts the animation
+0x07ea90 anidata      # LIKELY: buffer of the .SP animation
+0x07ead8 anidope      # LIKELY: 1 while DOPE.SP is loaded (0 after GIGGLES.SP)
+0x07ed24 anitimer     # SPECULATIVE
+0x07ed40 anikick      # SPECULATIVE
+0x07eaf4 ani7eaf4     # SPECULATIVE
+0x07eb18 ani7eb18     # SPECULATIVE
+0x07eb0c ani7eb0c     # SPECULATIVE: 0xC7
+0x07ea98 ani7ea98     # SPECULATIVE: 0x78
+0x07ea8c ani7ea8c     # SPECULATIVE
+0x07ea94 ani7ea94     # SPECULATIVE: 0xB0
+0x07eb34 anip1        # SPECULATIVE: anidata
+0x07eb30 anip2        # SPECULATIVE: anidata + 0x2D00
+0x07ea80 anistart     # SPECULATIVE: ticks2 at the start

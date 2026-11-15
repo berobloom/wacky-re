@@ -1187,6 +1187,8 @@ extern short datidx;
 extern FILE *datfile;
 extern char *voicedata;
 short datfind(char *name);
+long datsize(void);
+void readdat(void *buf, int n);
 
 /* differs: first and the priority counter swap ebx/ecx in the first loop (+110); bytes otherwise equal */
 void voices_load(void)
@@ -1196,11 +1198,11 @@ void voices_load(void)
     int i, first;
 
     datfind("AUDIOHED.FX");
-    size = datdir[datidx].size;
+    size = datsize();
     offs = malloc(size);
     fread(offs, size, 1, datfile);
     datfind("AUDIOT.FX");
-    size = datdir[datidx].size;
+    size = datsize();
     voicedata = malloc(size);
     fread(voicedata, size, 1, datfile);
     first = 0;
@@ -1230,8 +1232,8 @@ void voices_load(void)
 extern char *gigdata;
 extern char *gigs[7];
 
-/* differs: stack slots of i, pri and the loop temporaries (QUESTIONS 2); fread loads its pointer and datfile
-   in the other order for MOTOR.VOC and HORN1.VOC; same length */
+/* differs: pri and the second loop's name pointer swap stack slots (0x168/0x16C; QUESTIONS 2); renaming
+   pri and reordering declarations do not move them */
 void sounds_load(void)
 {
     char names[27][12] = {
@@ -1242,7 +1244,7 @@ void sounds_load(void)
     char fname[16];
     char num[16];
     char *p, *q;
-    long len;
+    short len;
     int i, pri;
 
     if (!sfxon)
@@ -1259,32 +1261,32 @@ void sounds_load(void)
         strcat(fname, num);
         strcat(fname, ".VOC");
         datfind(fname);
-        len = datdir[datidx].size;
-        fread(p, (short)len, 1, datfile);
+        len = datsize();
+        readdat(p, len);
         gigs[i] = p;
-        p = p + (short)len;
+        p += len;
     }
     gigs[6] = gigs[5] = gigs[4];
     q = voicedata;
     datfind("MOTOR.VOC");
-    fread(enginedata, 0x942, 1, datfile);
+    readdat(enginedata, 0x942);
     for (i = 0; i < 27; i++) {
         strcpy(fname, names[i]);
         strcat(fname, ".VOC");
         datfind(fname);
-        len = datdir[datidx].size;
-        fread(q, (short)len, 1, datfile);
+        len = datsize();
+        readdat(q, len);
         voices[i].data = q;
         voices[i].handle = -1;
         voices[i].pitch = 0;
         voices[i].plays = 0;
         voices[i].priority = pri--;
-        q = q + (short)len;
+        q += len;
     }
     voices[25].priority = 0x20;
     voices[26].priority = voices[18].priority;
     datfind("HORN1.VOC");
-    fread(sfxdata, 0xFE5, 1, datfile);
+    readdat(sfxdata, 0xFE5);
     for (i = 0; i < 9; i++) {
         sfxchans[i].active = 0;
         sfxchans[i].plays = 0;
@@ -1928,4 +1930,76 @@ void frame_draw(void)
     pal_b = 16000;
     pal_c = 0;
     setpalette();
+}
+
+/* ---- the giggles / dope animations */
+
+extern char *anidata;
+extern int anidope, anitimer, anikick;
+extern int ani7eaf4, ani7eb18, ani7eb0c, ani7ea98, ani7ea8c, ani7ea94, anistart;
+extern char *anip1, *anip2;
+void ani_dope(void);
+
+void ani_giggles(void)
+{
+    datfind("GIGGLES.SP");
+    readdat(anidata, 0xB6E0);
+    if (soundon) {
+        datfind("QUACK.VOC");
+        readdat(sfx2data, 0xE3A);
+    }
+    anidope = 0;
+}
+
+void ani_tick(void)
+{
+    if (anitimer >= 0x36) {
+        anikick = 1;
+        ani_dope();
+        anitimer = 0;
+    }
+}
+
+void ani_dope(void)
+{
+    if (!anidope) {
+        datfind("DOPE.SP");
+        readdat(anidata, 0x2E77);
+        if (soundon) {
+            datfind("BELCH.VOC");
+            readdat(sfx2data, 0xD99);
+        }
+    }
+    ani7eaf4 = 0;
+    ani7eb18 = 0;
+    ani7eb0c = 0xC7;
+    ani7ea98 = 0x78;
+    ani7ea8c = 0;
+    anip1 = anidata;
+    ani7ea94 = 0xB0;
+    anip2 = anidata + 0x2D00;
+    anidope = 1;
+    anistart = ticks2;
+}
+
+/* ---- the data file (these follow the code above; the calls before them are inlined) */
+
+void seekdat(long ofs)
+{
+    fseek(datfile, ofs, SEEK_SET);
+}
+
+long telldat(void)
+{
+    return ftell(datfile);
+}
+
+long datsize(void)
+{
+    return datdir[datidx].size;
+}
+
+void readdat(void *buf, int n)
+{
+    fread(buf, n, 1, datfile);
 }
