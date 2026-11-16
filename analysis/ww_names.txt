@@ -579,3 +579,13 @@
 0x07712c cfg7712c      # SPECULATIVE: short inside cfg77128 (+4); ctl_label: 0 -> player 2 "JOYSTICK #n", nonzero -> "KEYBOARD"
 0x07ee4a v7ee4a        # LIKELY (supersedes the 0x07ee4a line above): short, player 1's control device 0 keyboard / 1 joystick / 2 gamepad (ctl_label 0x19cec-0x19d28)
 0x01a380 cars_menu     # LIKELY: the "CHOOSE VEHICLE" screen (pal_a, PLAYER ONE/TWO labels, ctl_label, 0x140-wide sprite row loop)
+0x019db8 fn_19db8      # CONFIRMED: from v88bb2 sets the class line cls_name, v7ece0 and v88b84; its jump table pins the cases (findings/classes.md)
+0x019da8 (jump table)  # CONFIRMED: fn_19db8's table for index v88bb2-1 = [0x19e02,0x19e37,0x19e6f,0x19dde]; the bodies are emitted for v88bb2 = 4,1,2,3, so read the table before guessing case labels
+0x019eac classes_menu  # LIKELY: the class/mode menu: 5 rows copied into mnames (" AMATEUR  CLASS ".." KID MODE "), v88bb0 = 6, and at v88bb2 == 5 the "THIS MODE IS FOR YOUNG CHILDREN" help (0x19fb2)
+0x088bb2 v88bb2        # LIKELY (supersedes the 0x088bb2 line above): the class/mode index 1 AMATEUR, 2 PRO, 3 CHAMPION, 4 TIME TRIAL, 5 KID MODE; menu() returns a 1-based index (zones_menu's r == 2 is the 2nd row); 4 = time trial confirms laptimes/calc_places
+0x07ece0 v7ece0        # LIKELY: int, per-class value 8 (AMATEUR) / 4 (PRO) / 1 (CHAMPION) / 20 (TIME TRIAL), added to (7 - eax) at 0x28b9f and 0x28de6
+0x088b84 v88b84        # LIKELY: short, 0x54, 0x59, 0x5a, 0x5c, 0x5e or 0x63; used as a signed index into the word table at 0x7e730 (0x28bb1, 0x28bbb); also set to 0x59 at 0x1e501
+0x07e730 tbl7e730      # SPECULATIVE: word[] indexed by v88b84 (0x28bbb); zero in the image, so filled at run time
+0x06aa40 cls_name      # LIKELY: char[], the class line: "" / "AMATEUR. " / "PRO. " / "CHAMPION. " (fn_19db8; also cleared at 0x1e58f)
+0x06094c (class lines) # CONFIRMED: fn_19db8's literals "AMATEUR. " 0x6094c, "PRO. " 0x60958, "CHAMPION. " 0x60960
+0x06096c (class rows)  # CONFIRMED: the 0x14-byte menu captions at 0x6096c/0x60980/0x60994/0x609a8/0x609bc: AMATEUR, PRO, CHAMPION, TIME TRIAL, KID MODE

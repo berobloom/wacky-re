@@ -65,6 +65,21 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    /`register` on the variable, an `int radix` local, an unused third parameter, `!(X && Y)`, the
    condition re-written with `||`, and the 9.5 / 9.5a compilers (9.5 is worse: 328 vs 321 bytes;
    9.5a identical to 9.5b). What would settle it: the same register-choice rule as question 1.
+   Data points (fn_19db8 0x19DB8, near-miss 45/153 bytes, 241 bytes = the game's length): the function
+   matches instruction for instruction except that the game homes the local that ends in v88b84 in EDX
+   (`mov dx,[0x88b84]` 0x19dbb, `mov edx,0x54` 0x19ded, `mov [0x88b84],dx`) and uses EAX as a temp for
+   the switch value (`mov ax,[0x88bb2]` 0x19dc2, `dec eax`, `cmp ax,3`, `movzx eax,ax`, table jump),
+   while our 9.5b homes that local in EAX and puts the switch value in EDX (`movzwl [0x88bb2],edx`,
+   `cmp dx,3`); the entry loads are also in the opposite order. Probed without change (probe files
+   under .work/probe19db8/, ~30 shapes): init before/after the switch, `switch (v88bb2)` on an
+   `unsigned short` global vs `switch ((unsigned short)(v88bb2 - 1))` (only the cast and the unsigned
+   global give the game's 16-bit `cmp ax,3`; a `short` global gives `movswl` + `cmp edx,3`), short /
+   unsigned short / int / long / char local, `register`, a comma expression inside the switch, an extra
+   unused local, an explicit empty default, per-case stores to the global instead of the local (then no
+   entry load at all and `movw $imm,disp`), both statement orders in the cases (only `v7ece0; value;
+   strcpy` gives the game's instruction order), ternary vs if/else (the game uses the arithmetic form
+   for 0x59 + (v7ee5a != 1) and the branch form for the other two), and every -o<letter> on top of
+   -oneatx. Same rule as question 1 and ctl_label: which pseudo gets the accumulator.
 
 ## Hypotheses
 

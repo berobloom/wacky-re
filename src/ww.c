@@ -1476,7 +1476,7 @@ void view2_out(void)
 /* ---- place display */
 
 extern int v7d998;
-extern short v88bb2;
+extern unsigned short v88bb2;
 struct face {                 /* 0x98-byte DAT record (0x73C08) */
     char *img[35];
     short f8c, f8e;           /* img tail words if unused */
@@ -5101,4 +5101,58 @@ void ctl_label(char *label, char *line)
         strcat(label, line);
     }
     strcpy(line, "PRESS F1 TO VIEW YOUR CONTROLS");
+}
+
+/* ---- the class line, score bonus and 0x7e730 index for the race (called from 0x3039e) */
+
+extern int v7ece0;
+extern short v88b84;
+extern char cls_name[];
+
+/* The game's jump table is at 0x19da8 (index v88bb2-1) and reads [0x19e02, 0x19e37, 0x19e6f, 0x19dde],
+ * i.e. the case bodies are emitted for v88bb2 = 4,1,2,3 - which pins the labels (findings/classes.md).
+ *
+ * differs: one register-home flip. The game homes the local that ends in v88b84 in EDX (`mov
+ * dx,[0x88b84]`, 0x19dbb) and uses EAX for the switch value (`mov ax,[0x88bb2]`, `dec eax`, `cmp
+ * ax,3`, 0x19dc2); our 9.5b homes that local in EAX and puts the switch value in EDX. Every other
+ * instruction of 0x19db8-0x19ea8 matches and both are 241 bytes; the swapped registers shift the jump
+ * displacements. Probed without change: the local's init before/after the switch, `switch (v88bb2)`
+ * with an unsigned-short global vs `(unsigned short)(v88bb2 - 1)`, short/unsigned short/int/long
+ * `keep`, `register`, a comma expression inside the switch, an extra unused local, an explicit empty
+ * default, per-case stores to v88b84 instead of the local (then 9.5b emits `movw $imm,disp` and no
+ * entry load), both statement orders in the cases, ternary vs if/else, and every -o<letter> on top of
+ * -oneatx. Same family as ctl_label's EBX-vs-EAX gap and question 1 (QUESTIONS.md 1, 2). */
+void fn_19db8(void)
+{
+    short keep = v88b84;
+
+    switch (v88bb2) {
+    case 4:                      /* TIME TRIAL (0x19eac's menu): no class line */
+        v7ece0 = 20;
+        keep = 0x54;
+        strcpy(cls_name, "");
+        break;
+    case 1:                      /* AMATEUR CLASS */
+        v7ece0 = 8;
+        keep = 0x59 + (v7ee5a != 1);
+        strcpy(cls_name, "AMATEUR. ");
+        break;
+    case 2:                      /* PRO CLASS */
+        v7ece0 = 4;
+        if (v7ee5a == 1)
+            keep = 0x5e;
+        else
+            keep = 0x5c;
+        strcpy(cls_name, "PRO. ");
+        break;
+    case 3:                      /* CHAMPION CLASS */
+        v7ece0 = 1;
+        if (v7ee5a == 1)
+            keep = 0x63;
+        else
+            keep = 0x5e;
+        strcpy(cls_name, "CHAMPION. ");
+        break;
+    }
+    v88b84 = keep;
 }

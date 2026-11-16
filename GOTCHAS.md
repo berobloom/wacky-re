@@ -111,3 +111,16 @@ it can be copied back into DREA.
   pooling puts that `""` on another literal's NUL - 0x600ac is the terminator of "WACK"/"ack" at
   0x600a4. Before naming a "global char" that many functions read, check whether its address falls
   inside a literal. [generic]
+- **A Watcom switch's jump table precedes the function and is not in body order**: 0x19da8 holds
+  [0x19e02, 0x19e37, 0x19e6f, 0x19dde] for the cases of 0x19db8's `switch (v88bb2)`, i.e. the source
+  wrote case 4 first and the bodies follow source order. Read those dwords before naming the cases -
+  assuming body order == label order mapped every class off by one. [generic]
+- **Which pseudo gets EAX is a coin flip we cannot pin**: 9.5b homes the *long-lived* local in EAX
+  (never saved) and puts short-lived temps in a pushed register, the game the other way round (fn_19db8
+  0x19dbb: game `mov dx,[0x88b84]` + `mov ax,[0x88bb2]`/`cmp ax,3`, ours the reverse; ~30 C shapes and
+  every -o<letter> did not change it). When the two entry values of a function swap registers, treat it
+  as understood, mark `differs:`, and move on - it is question 1/2, not a missing statement. [generic]
+- **Literals land at the game's CONST addresses as long as functions are added in address order**: our
+  "AMATEUR. "/"PRO. "/"CHAMPION. " got offsets 0x948/0x954/0x95c = 0x6094c/0x60958/0x60960 with the
+  base check.sh prints (`segment CONST base 0x060004`). If that line splits into two bases, a literal
+  is out of place - fix the source order before hand-patching addresses. [generic]
