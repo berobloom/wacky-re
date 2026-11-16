@@ -1929,7 +1929,7 @@ void shots_project(void);
 void sprites_draw(void);
 void f3c3e9(void);
 void f2a92c(void);
-void f29e0c(void);
+void hud_draw(void);
 void anim_tick(void);
 void f37de0(void);
 void f32cf8(char *p);
@@ -2000,7 +2000,7 @@ void frame_draw(void)
         v88ca0 = 1;
     draw_status();
     f2a92c();
-    f29e0c();
+    hud_draw();
     anim_tick();
     draw_faces();
     f37de0();
@@ -13044,6 +13044,135 @@ void kart_frame(void)
                     ANIM_RESET()
                 break;
             }
+        }
+    }
+}
+
+/* ---- 0x29e0c, 1114 bytes: the race HUD (callers 0x13684, 0x314f2, 0x3195d), not in split
+ * screen without v88bde, a v7d998 mode other than 0/3, or a net game. One player: the lives
+ * digit karts[v7eb80 ? 0 : 1].f6c at (0x76, 0xb); two players: both scores (v684e0/v685e4, the own
+ * one first by netgame) as two zero-padded digits from the font at 0x6e380 by character. With
+ * v88bde: the two 'SCORE' panels (f371e4) and in the full screen both scores at (0x107, 0x64)
+ * and (0x107, 0). Then, in a one-player race with no lives left (curkart->f6c), GAME OVER and
+ * the v7c650 tune to its end (or 500 ticks without music), then the menu song. */
+extern char *font6e380[];
+#pragma aux font6e380 "_arr6e380"
+extern int v7c650;
+void f37132(void);
+void music_start_c(int song, int loop);         /* music_start, called (not inlined) */
+#pragma aux music_start_c "music_start_"
+
+#define PAD2(b) { if ((b)[1] == 0) { c = (b)[0]; (b)[2] = 0; (b)[0] = '0'; (b)[1] = c; } }
+
+void hud_draw(void)
+{
+    char buf[4];
+    char c;
+
+    spr_h = 0xa;
+    spr_w = 9;
+    if (splitscreen && v88bde == 0)
+        return;
+    if (v7d998 != 0 && v7d998 != 3)
+        return;
+    if (netvoices)
+        return;
+    if (v88bde == 0) {
+        if (twoplayer == 0) {
+            spr_x = 0x76;
+            spr_y = 0xb;
+            sprptr = sp6e440[v7eb80 ? (int)karts[0].f6c : (int)karts[1].f6c];
+            f373ee();
+        } else {
+            v88ce9 = '.';
+            if (netgame == 1)
+                itoa(v684e0, buf, 10);
+            else
+                itoa(v685e4, buf, 10);
+            spr_x = 0x76;
+            spr_y = 0xb;
+            PAD2(buf)
+            spr_h = 0xa;
+            sprptr = font6e380[(unsigned char)buf[0]];
+            spr_w = 9;
+            f37132();
+            spr_x += 0xa;
+            sprptr = font6e380[(unsigned char)buf[1]];
+            f37132();
+            if (netgame == 1)
+                itoa(v685e4, buf, 10);
+            else
+                itoa(v684e0, buf, 10);
+            spr_x = 0x76;
+            spr_y = v7ec7c;
+            PAD2(buf)
+            sprptr = font6e380[(unsigned char)buf[0]];
+            f37132();
+            spr_x += 0xa;
+            sprptr = font6e380[(unsigned char)buf[1]];
+            f37132();
+        }
+    } else if (splitscreen) {
+        v88ce8 = '.';
+        v88ce9 = '.';
+        spr_y = 0x65;
+        spr_x = 0xdd;
+        spr_h = 0x26;
+        spr_w = 8;
+        f371e4();
+        spr_x = 0xdd;
+        spr_y = 1;
+        f371e4();
+    } else {
+        v88ce8 = '.';
+        v88ce9 = '.';
+        spr_y = 0x65;
+        spr_x = 0xdd;
+        spr_h = 0x26;
+        spr_w = 8;
+        f371e4();
+        print_at(spr_x, spr_y, "SCORE", 0);
+        spr_h = 0x26;
+        spr_w = 8;
+        spr_x = 0xdd;
+        spr_y = 1;
+        f371e4();
+        print_at(spr_x, spr_y, "SCORE", 0);
+        itoa(v684e0, buf, 10);
+        PAD2(buf)
+        spr_h = 0xa;
+        spr_w = 9;
+        spr_y = 0x64;
+        spr_x = 0x107;
+        sprptr = font6e380[(unsigned char)buf[0]];
+        f373ee();
+        spr_x += 0xa;
+        sprptr = font6e380[(unsigned char)buf[1]];
+        f373ee();
+        spr_x -= 0xa;
+        spr_y -= 0x64;
+        itoa(v685e4, buf, 10);
+        PAD2(buf)
+        sprptr = font6e380[(unsigned char)buf[0]];
+        f373ee();
+        spr_x += 0xa;
+        sprptr = font6e380[(unsigned char)buf[1]];
+        f373ee();
+        spr_x -= 0xa;
+        spr_y -= 0x64;
+    }
+    if (!twoplayer && !splitscreen && curkart->f6c == 0) {
+        fn_17888("GAME OVER", 0);
+        if (musicon) {
+            music_start_c(v7c650, 0);
+            while (MUSIC_SongPlaying())
+                ;
+            music_start_c(menusong, 1);
+        } else {
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks < 0x1f4)
+                ;
         }
     }
 }
