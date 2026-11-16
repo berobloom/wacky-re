@@ -330,3 +330,7 @@ it can be copied back into DREA.
   fixup names the real symbol, so the fixup check passes. For a function the game calls everywhere
   (readdat), `#define readdat readdat_x` right after its definition. Fixed dial, link_open, modem
   and kart_state's kart_anim2 calls.
+- **Switch case bodies are laid out in source order; the jump table tells you that order** (iter 14,
+  [generic]): main_menu 0x1f858 has case 7 at 0x20df5 before case 6 at 0x210ba. Writing case 6
+  first made fncompare misalign the whole tail (596 vs 360 instrdiffs). Sort the case labels by
+  their jump-table target address before writing the switch.
