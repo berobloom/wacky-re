@@ -7595,3 +7595,32 @@ void volume_menu(void)
     v88bda = 0;
     v88b9e = 0;
 }
+
+/* ---- 0x1eee4, 201 bytes: prints n centred credit lines from line `first` (1-based) at y 0x4c, 10
+ * apart, and records each line's box (x, y, right edge; 0 for an empty line) in cboxes[1..n]
+ * (callers 0x1f02b, 0x1f41c in 0x1efb0). `first` itself is the line counter: the game keeps the
+ * incremented parameter in esp+0 though nothing reads it, which a separate `i` does not give. */
+struct cbox { short x, y, x2; };     /* 6 bytes */
+extern char credits[][0x2c];          /* 0x632f0: "PROGRAMMING AND DESIGN", ... */
+extern struct cbox cboxes[];          /* 0x7b198, used from [1] */
+
+void credits_page(int n, int first)
+{
+    int k, w;
+    int x;                            /* EAX, kept for print_at's cwde (0x1ef60) */
+
+    spr_y = 0x4c;
+    for (k = 1; k <= n; k++) {
+        w = strlen(credits[first - 1]) * 8;
+        x = (0x140 - w) / 2;
+        spr_x = x;
+        cboxes[k].x = x;
+        cboxes[k].x2 = w - 1 + x;
+        cboxes[k].y = spr_y;
+        print_at(spr_x, spr_y, credits[first - 1], 0);
+        if (strlen(credits[first - 1]) == 0)
+            cboxes[k].x2 = 0;
+        first++;
+        spr_y += 10;
+    }
+}

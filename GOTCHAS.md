@@ -295,3 +295,7 @@ it can be copied back into DREA.
   into the first one's tail (`jg` rel32 out of the function) and scores 50 bytes short with a wrong
   diff count. Score up to the start of the common tail (demo_mode: 0x1e69f, not the `ret`), or make
   the tails differ.
+- **A stack slot the loop increments but never reads is a parameter used as the counter** (iter 14,
+  [generic]): credits_page 0x1eee4 stores its 2nd argument at esp+0 and does `inc dword [esp]` each
+  pass with no load; a separate `i = first` drops the slot (frame 4 not 8). Writing `first++` on the
+  parameter itself keeps it - 9.5b does not delete stores to a parameter's home.
