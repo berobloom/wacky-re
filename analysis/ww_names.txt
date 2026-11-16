@@ -734,6 +734,9 @@
 0x088bd4 v88bd4       # LIKELY: short, show the main menu once with the palette reloaded (main_menu)
 0x088c1e v88c1e       # SPECULATIVE: short, saved v88c20 around two-player/split races (main_menu)
 0x0237a8 pair_reset   # CONFIRMED (rebuild src/ww.c): no callers; clears v7e56c and v7e570 when both are set or both clear
+0x0237e4 kart_move    # CONFIRMED (rebuild src/ww.c): moves curkart one frame - kart_line, wall bounce and push-off with sparks, track drift v88b92/v88b90, surface record; caller 0x297e8
+0x0741f8 surfs        # STRONGLY SUPPORTED: 0x12e-byte records per map class v7e568: +0x120 int -> kart f36, +0x124 -> f3a, +0x126/+0x12a -> f60/f64 (kart_move)
+0x024834 f24834       # SPECULATIVE: called after a track drift with the side (0 left, 1 right) in EAX (kart_move)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

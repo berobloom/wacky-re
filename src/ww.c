@@ -1374,6 +1374,12 @@ void track_setup(void)
 /* ---- zone test, map cells */
 
 #pragma pack(1)
+struct surf {                   /* 0x741f8, 0x12e bytes per surface class v7e568 (kart_move) */
+    char f00[0x120];
+    int f120;                   /* -> kart f36 */
+    short f124;                 /* -> kart f3a */
+    int f126, f12a;             /* -> kart f60, f64 */
+};
 struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same records as cars[] (0x68420), seen
                                  * 0x10 earlier (cars[].sndhandle +0xc4 = +0xd4 here); curkart points in */
     short f00, f02, f04;
@@ -1391,16 +1397,22 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     short f46, f48;             /* 0x46: spark kind by side (kart_bump) */
     char *f4a;                  /* 0x4A: sparkdata (kart_bump) */
     int *f4e;                   /* 0x4E: &tb7b448[f1a][player] (shot_hit) */
-    char f52[0x5a - 0x52];
-    short f5a;
-    char f5c[0x6a - 0x5c];
+    short f52, f54;             /* 0x52/0x54: drift counters left/right, 0..4 or 0x10 in a spin (kart_move) */
+    int f56;                    /* 0x56: surface class v7e568 under the kart (kart_move) */
+    short f5a, f5c, f5e;
+    int f60, f64;               /* 0x60/0x64: from the surface record +0x126/+0x12a (kart_move) */
+    char f68[0x6a - 0x68];
     short f6a;                  /* 0x6A: counts up by 4 per pickup, at most 99 (kart_bump) */
-    char f6c[0x7c - 0x6c];
+    char f6c[0x76 - 0x6c];
+    struct surf *f76;           /* 0x76: &surfs[f56] (kart_move) */
+    char f7a[0x7c - 0x7a];
     short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
     short f7e;                  /* 0x7E: set by a shot hit in a human-player race (shot_hit) */
     char f80[0x8a - 0x80];
     int f8a;                    /* 0x8A: ticks2 stamp of f14 */
-    char f8e[0xB4 - 0x8E];
+    char f8e[0xaa - 0x8e];
+    short faa;                  /* 0xAA: 1 when the move hit something or f3c was set (kart_move) */
+    char fac[0xb4 - 0xac];
     short fb4;
     char fb6[0xd4 - 0xb6];
     int fd4;                    /* 0xD4: = cars[].sndhandle */
@@ -9926,5 +9938,284 @@ void pair_reset(void)
     if ((v7e56c && v7e570) || (!v7e56c && !v7e570)) {
         v7e56c = 0;
         v7e570 = 0;
+    }
+}
+
+/* ---- 0x237e4, 2740 bytes: moves curkart for one frame (caller 0x297e8 in 0x290a0). The asm track
+ * code works through globals: f283a4 sets the heading for v7d678, f37bb1 scales the vector
+ * (v7d5f8, v7d5f4) by v7d608 into (v7d610, v7d620), f37b04 classifies the map point (v7d7a4, v7d7a8)
+ * into v7e568, f37a21 maps the track pair at v7d690 to a point (v7d798/v7d79c, v7d7a4/v7d7a8).
+ * The kart line from (v88b0a, v88b0e) by speed v88b94 goes through kart_line; a wall (v88bae 1)
+ * bounces the heading by half a turn and probes both sides (v7e570/v7e56c, cleared together by
+ * the inlined pair_reset when both or neither hit) to push the kart 0x12 track steps off the wall
+ * with sparks; otherwise v88b92/v88b90 drift it along the track. Ends with the surface record.
+ * The push-off tail is written in both branches: the game has two copies (2740 bytes, one copy 2351).
+ * differs (near-miss, 511 vs 513 insns, 7 diff blocks): the game's frame is 4 bytes and every
+ * "movsx eax,X; mov [esp],eax; mov ebx,[esp]" temporary (first wall probe x and y, second probe x,
+ * the drift's curpos*8, the y of both side probes after a drift) uses that one slot; our build uses
+ * a second slot [esp+4] for the second probe's x and the post-drift x, and keeps the first probe's
+ * y in a register. The [esp+4] spill at 0x23eca is the compiler's own (no named temp there). Tried:
+ * one t, t+u, a name per use, no temps, short/int/register hit, five declaration orders (best 19
+ * instrdiffs). Same family as QUESTIONS 9/10/12. */
+extern int v7d614, v7d5e4, v7d608, v7d5f8, v7d5f4, v7d678, v7d61c, v7d5ec, v7d618, v7d5e8;
+extern int v7d768, v7d76c, v7d798, v7d79c;
+extern int *v7d690;
+extern char *v7d6a0;
+extern short v7d610, v7d620, v88b94, v88bd8;
+extern struct surf surfs[];
+extern struct surf *v7d89c, *v7d8a0;
+void f283a4(void);
+void f37bb1(void);
+void f37a21(void);
+void f24834(int side);
+
+#define VEC(a, b, n) { v7d5f8 = a; v7d608 = n; v7d5f4 = b; f37bb1(); }
+
+void kart_move(void)
+{
+    int t, hit, u;
+    short k;
+    struct surf *sp;
+
+    curkart->faa = 0;
+    if (v88c44 != 2)
+        v88b94 = 0;
+    f283a4();
+    VEC(v7d614, v7d5e4, 0x7c);
+    v88b68 = v7d610;
+    v88b6a = v7d620;
+    lx0 = v88b0a;
+    ly0 = v88b0e;
+    v7d608 = v88b94;
+    f37bb1();
+    lx1 = lx0 + v7d610;
+    v7e568 = 0;
+    ly1 = ly0 + v7d620;
+    v88bae = 0;
+    kart_line();
+    v88b0a = lx0;
+    v88b0e = ly0;
+    if (v88bae != 0 && curkart->f0a != 0) {
+        if (v88bae == 1)
+            curkart->f0a = 0;
+        else
+            v88bae = 0;
+    }
+    if (v88bae != 0 || curkart->f3c != 0)
+        curkart->faa = 1;
+    hit = v88bae;
+    if (v88bae == 1) {
+        if (curkart->f3c != 0) {
+            curkart->f3c = 0;
+            curkart->f42 = 0;
+        }
+        if (curkart->f20 != 0) {
+            curkart->f20 = 0;
+            curkart->f42 = 0;
+        }
+        v7d678 += 0x3c0;
+        if (v7d678 >= 0x780)
+            v7d678 -= 0x780;
+        f283a4();
+        VEC(v7d614, v7d5e4, 0x20);
+        v88b0a += v7d610;
+        v7e570 = 0;
+        v88b0e += v7d620;
+        v7e56c = 0;
+        VEC(v7d61c, v7d5ec, 0x7c);
+        t = v88b0a;
+        v7d7a4 = t + v7d610;
+        u = v88b0e;
+        v7d7a8 = u + v7d620;
+        f37b04();
+        if (v7e568 == 3)
+            v7e570 = 1;
+        VEC(v7d618, v7d5e8, 0x7c);
+        t = v88b0a;
+        v7d7a4 = t + v7d610;
+        v7d7a8 = v7d620 + v88b0e;
+        f37b04();
+        if (v7e568 == 3)
+            v7e56c = 1;
+        if (hit == 1)
+            pair_reset();
+        if (v7e570) {
+            if (curkart->f46 == 0) {
+                voice_play(0x15);
+                curkart->f46 = 4;
+                curkart->f48 = 0;
+                curkart->f4a = sparkdata;
+            }
+            curpos -= 0x12;
+            if (curpos < 0)
+                curpos += 0x780;
+            v7d678 = curpos;
+            f283a4();
+            VEC(v7d614, v7d5e4, 1);
+            v88b0a += v7d610;
+            v88b0e += v7d620;
+        }
+        if (v7e56c) {
+            if (curkart->f46 == 0) {
+                voice_play(0x15);
+                curkart->f46 = 3;
+                curkart->f48 = 0;
+                curkart->f4a = sparkdata;
+            }
+            curpos += 0x12;
+            if (curpos >= 0x780)
+                curpos -= 0x780;
+            v7d678 = curpos;
+            f283a4();
+            VEC(v7d614, v7d5e4, 1);
+            v88b0a += v7d610;
+            v88b0e += v7d620;
+        }
+        curkart->f42 = 0;
+    } else {
+        if (v88b92 > 0) {
+            f37a21();
+            v7d798 = v7d7a4;
+            v7d79c = v7d7a8;
+            if (curkart->f06 != 0)
+                curkart->f52 = 0x10;
+            else {
+                curkart->f52++;
+                if (curkart->f52 > 4)
+                    curkart->f52 = 4;
+            }
+            curpos -= v88b92;
+            if (curpos < 0)
+                curpos += 0x780;
+            t = curpos * 8;
+            v7d690 = (int *)(t + v7d6a0);
+            v7d5f8 = *v7d690++;
+            v7d5f4 = *v7d690--;
+            f37a21();
+            v7d768 = v7d798 - v7d7a4;
+            v7d76c = v7d79c - v7d7a8;
+            v7d798 = v7d7a4;
+            v7d79c = v7d7a8;
+            v88b0a += v7d768;
+            v88b0e += v7d76c;
+            f24834(0);
+        } else {
+            curkart->f52--;
+            if (curkart->f52 < 0)
+                curkart->f52 = 0;
+        }
+        if (v88b90 > 0) {
+            f37a21();
+            v7d798 = v7d7a4;
+            v7d79c = v7d7a8;
+            if (curkart->f06 != 0)
+                curkart->f54 = 0x10;
+            else {
+                curkart->f54++;
+                if (curkart->f54 > 4)
+                    curkart->f54 = 4;
+            }
+            curpos += v88b90;
+            if (curpos >= 0x780)
+                curpos -= 0x780;
+            v7d690 = (int *)(v7d6a0 + curpos * 8);
+            v7d5f8 = *v7d690++;
+            v7d5f4 = *v7d690--;
+            f37a21();
+            v7d768 = v7d798 - v7d7a4;
+            v7d76c = v7d79c - v7d7a8;
+            v7d798 = v7d7a4;
+            v7d79c = v7d7a8;
+            v88b0a += v7d768;
+            v88b0e += v7d76c;
+            f24834(1);
+        } else {
+            curkart->f54--;
+            if (curkart->f54 < 0)
+                curkart->f54 = 0;
+        }
+        v7e570 = 0;
+        v7e56c = 0;
+        f283a4();
+        VEC(v7d61c, v7d5ec, 0x7c);
+        v7d7a4 = v7d610 + v88b0a;
+        t = v88b0e;
+        v7d7a8 = t + v7d620;
+        f37b04();
+        if (v7e568 == 3)
+            v7e570 = 1;
+        VEC(v7d618, v7d5e8, 0x7c);
+        v7d7a4 = v7d610 + v88b0a;
+        t = v88b0e;
+        v7d7a8 = t + v7d620;
+        f37b04();
+        if (v7e568 == 3)
+            v7e56c = 1;
+        if (hit == 1)
+            pair_reset();
+        if (v7e570) {
+            if (curkart->f46 == 0) {
+                voice_play(0x15);
+                curkart->f46 = 4;
+                curkart->f48 = 0;
+                curkart->f4a = sparkdata;
+            }
+            curpos -= 0x12;
+            if (curpos < 0)
+                curpos += 0x780;
+            v7d678 = curpos;
+            f283a4();
+            VEC(v7d614, v7d5e4, 1);
+            v88b0a += v7d610;
+            v88b0e += v7d620;
+        }
+        if (v7e56c) {
+            if (curkart->f46 == 0) {
+                voice_play(0x15);
+                curkart->f46 = 3;
+                curkart->f48 = 0;
+                curkart->f4a = sparkdata;
+            }
+            curpos += 0x12;
+            if (curpos >= 0x780)
+                curpos -= 0x780;
+            v7d678 = curpos;
+            f283a4();
+            VEC(v7d614, v7d5e4, 1);
+            v88b0a += v7d610;
+            v88b0e += v7d620;
+        }
+    }
+    v7d690 = (int *)(curpos * 8 + v7d6a0);
+    v7d608 = 0x7c;
+    v7d5f8 = *v7d690++;
+    v7d5f4 = *v7d690--;
+    f37bb1();
+    v7d7a4 = v88b0a + v7d610;
+    v7d7a8 = v88b0e + v7d620;
+    f37b04();
+    v88b68 = v7d7a4;
+    v88b6a = v7d7a8;
+    curkart->f56 = v7e568;
+    sp = &surfs[v7e568];
+    curkart->f76 = sp;
+    curkart->f36 = sp->f120;
+    v7d89c = sp;
+    curkart->f3a = sp->f124;
+    if ((v7e568 == 6 || v7e568 == 0xf) && curkart->f0a == 0 && curkart->f44 == 0
+        && curkart->f7e == 0) {
+        voice_play(0xf);
+        k = v7e568;
+        v88bd8 = k;
+        players[v88b7e].f5c = 1;
+        players[v88b7e].f28[0] = 0;
+        players[v88b7e].f28[1] = 0;
+        curkart->f5a = 1;
+        curkart->f5c = 0;
+        curkart->f5e = 0;
+        curkart->f44 = 1;
+        v7d8a0 = &surfs[k];
+        curkart->f60 = v7d8a0->f126;
+        curkart->f64 = v7d8a0->f12a;
     }
 }
