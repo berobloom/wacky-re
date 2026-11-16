@@ -17358,3 +17358,15 @@ void fade_in(unsigned char *target)
     } while (!same);
 }
 
+/* ---- 0x32dd4, 115 bytes (no direct caller found): size of the DAT entry `name` + pathext (the
+ * music extension, .KLM / .MID); datfind seeks to it as a side effect. */
+long song_size(char *name)
+{
+    char buf[20];
+
+    strcpy(buf, name);
+    strcat(buf, pathext);
+    datfind(buf);
+    return datdir[datidx].size;
+}
+

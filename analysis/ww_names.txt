@@ -521,6 +521,7 @@
 0x032c50 kbd_restore  # CONFIRMED (rebuild src/ww.c): DOS 0x2509 with oldkbd_off/oldkbd_seg, then kbd_off; no direct caller found
 0x032c98 pic_show     # CONFIRMED (rebuild src/ww.c): f375cd with p7d714, v88b4a and a temporary pal_a; no direct caller found
 0x032cf8 fade_in      # CONFIRMED (rebuild src/ww.c): palette fade from black to the target, v88c46 per step, f37cf1 uploads
+0x032dd4 song_size    # CONFIRMED (rebuild src/ww.c): datfind(name + pathext), returns datdir[datidx].size; no direct caller found
 0x032b14 kbd_on       # CONFIRMED (rebuild src/ww.c): drains kbhit/getch, kbd_off, saves int 9 (0x3509) into oldkbd_seg/off, installs the asm handler 0x40907 (0x2509)
 0x02dd30 net_key      # CONFIRMED (rebuild src/ww.c): D/Z/W handshake exchanging the control bytes (peer's in v88cef / v88cf2); parks a half exchange in v7ed94; 1 after too many errors
 0x02df70 com_wait_byte # CONFIRMED (rebuild src/ww.c): com_getc until a byte, 0x110-tick timeout (net88c14 1) or key cd0 abort (2); no caller found
