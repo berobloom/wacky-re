@@ -17478,7 +17478,9 @@ void songs_pick(void)
  * SPACEY, ASHES (+ pathext) into malloc'd buffers menusongs[0..4] (0x7c648; menusong = [0]);
  * v7ebb8 sums the bytes. Returns 0 when a malloc fails, else 1.
  * differs: names[i] is built in EDX with the index in EAX (ours swaps them); tried index forms,
- * int i, a temp, declaration order. */
+ * int i, a temp, declaration order, and as makepath_x's 2nd argument: names[0] + i * 12,
+ * (char *)names + i * 12, &names[i][0], *(names + i), (char *)(names + i), i * 12 + (char *)names
+ * (all one swap), &names[0][0] + i * sizeof names[0] (worse). */
 extern int v7ebb8;
 extern char *menusongs[];
 #pragma aux menusongs "_menusong"

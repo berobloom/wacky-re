@@ -5,31 +5,60 @@ findings file.
 
 Do exactly this, in order:
 
-1. `git status --short` (an interrupted run may have left work behind). Read `QUEUE.md`; the task is
-   its first unticked, un-BLOCKED item. If QUEUE.md has none open, take the first numbered item
-   under `## Next` in `STATUS.md`. Obey the context-budget rules in `AGENTS.md`: grep before
-   reading, read line ranges, never read whole: `.work/ghidra/*.c`, `src/ww.c` (~4.4k lines,
-   grep it), `harness/TRAPS.md`, the port's main source.
+1. `git status --short` (an interrupted run may have left work behind: if `src/ww.c` is modified
+   and you did not write it in this pass, run `git checkout -- src/ww.c`). Read `QUEUE.md`; if it
+   has an open item (unticked, not BLOCKED, not READY FOR REVIEW), work that instead of step 2.
+   Obey the context-budget rules in `AGENTS.md`: grep before reading, read line ranges, never read
+   whole: `.work/ghidra/*.c`, `src/ww.c` (~19k lines, grep it), `harness/TRAPS.md`.
 
-2. Work that item. Prefer small, checkable steps; if the item is too big, do its first step and
-   put the rest back.
-   - Before re-deriving anything, grep `findings/` and `analysis/ww_names.txt`.
-   - Matching-rebuild work (the main line): take the next function in address order
-     (`tools/wc/starts.py ww LO HI` lists function starts), add it to `src/ww.c` with the game's
-     calling conventions (arg1=EAX arg2=EDX arg3=EBX arg4=ECX), then run `src/check.sh` and iterate
-     until it MATCHes or you understand the near miss. Near-miss budget: about 15 minutes or 20
-     scored variants per function (`tools/wc/variants.py` counts as one variant per spelling),
-     whichever comes first. Then stop probing: write the remaining causes in the function's
-     `differs:` note, add a register/slot question to `QUESTIONS.md` (or a line to an existing
-     one), commit, and take the next function. Coverage of new functions beats polishing old
-     ones; slot/register questions are saved for a dedicated probing session. When the match count rises, raise
-     `src/matched.baseline` in the same commit. Record names in `analysis/ww_names.txt`
-     (`0xADDR name  # LEVEL: why`).
-   - Live-harness work only when static analysis cannot answer: `tools/dosrun.py` (see
-     `harness/README.md`, `harness/MCP-GUIDE.md`, then grep `harness/TRAPS.md`). This project's
-     harness ports are gdb 2161 / QMP 4446; NEVER touch 2159/4444/2160/4445, another project's
-     emulator owns those. If the harness fails twice in a row, write BLOCKED under the item and
-     take the next one that works offline.
+2. NEAR-MISS NIGHT. The C rebuild covers every function; do NOT add new functions. Your job is to
+   turn near misses (functions `src/check.sh` reports as "differs from") into MATCHes.
+   The work list is `src/nearmiss.txt`, smallest diff first. Take its FIRST line with an empty
+   status. Do up to 3 functions this iteration, one at a time, each with its own commit.
+   For one function:
+   a. Read its `differs:` note in `src/ww.c` (grep the name) and its source (a line range). The
+      note lists what was already tried: do not repeat those.
+   b. `src/check.sh 2>&1 | grep -c " MATCH"` and write the number down (the baseline count).
+   c. See the difference: `src/check.sh >/dev/null 2>&1; .work/venv/bin/python tools/wc/fndiff.py
+      ww .work/src/WW.OBJ NAME 0xADDR | tail -40` (game left, ours right; `@` = an address, ignore).
+   d. Change ONE thing in the C, rerun step c, keep the change only if the diff count went down.
+      For many spellings at once use `tools/wc/variants.py` (one compile scores them all; the
+      probe file must `#include <string.h>` and the same prototypes as src/ww.c).
+   e. When the function MATCHes: run `src/check.sh 2>&1 | grep -c " MATCH"` again. It must be the
+      step-b count + 1 or more. If it is lower, your change broke another function (usually by
+      -oe inlining): fix that or revert. Raise `src/matched.baseline` to the new count, delete
+      the function's `differs:` note, write `MATCH` in its status column in `src/nearmiss.txt`,
+      commit.
+   f. Budget: about 20 minutes or 20 variants per function, whichever comes first. Then STOP
+      probing: `git checkout -- src/ww.c` (back to the committed version), write
+      `SKIP: <cause seen>; tried <what>` in its status column, add the new tries to its
+      `differs:` note (one line), commit both, and take the next open line.
+   ALWAYS end a function with a commit (MATCH or SKIP). A pass without a commit counts as stuck.
+   Never commit a src/ww.c that lowers the MATCH count; overnight/check.sh rejects it.
+
+   Levers that solved near misses in this project (GOTCHAS.md "This project's traps" has the
+   details; grep it for the keyword):
+   - The game CALLS a function that ours inlines (-oe): call it through an alias,
+     `void f_x(int a); #pragma aux f_x "f_"`, at that call site only (existing: waitkey_x,
+     makepath_x, setvmode_x, pal_6bit_x, track_setup_x, ...).
+   - The register a local gets follows where it is first DEFINED (GOTCHAS "first definition"):
+     move the first assignment, or split one local into two (main's two palette pointers needed
+     two locals to get ESI and ECX right).
+   - `short` vs `int` for a local or a loop counter; `char` vs `unsigned char`.
+   - A loop bound written `<= 199` gives `jle`, `< 200` gives `jl`: match the game's compare.
+   - Explicit stores in the game's order instead of an initializer; a temp variable
+     (`x = cond; if (!x)`) for `setne/movzx` shapes.
+   - A byte-loop strcpy from a literal: `strcpy(buf, &"LIT"[0])`; `strcpy(p, "")` is one byte.
+   - A function that returns `short` (`test ax, ax` in the caller) needs a `short` prototype,
+     also through an alias if the definition returns int.
+   Known dead ends (SKIP at once, cost 0 variants): a global the game keeps in a register across a
+   loop ("promoted", QUESTIONS 2), and stack-slot order of locals (QUESTIONS 9, 10) unless the
+   note says something new was found.
+
+   If you learn a NEW lever, add it to GOTCHAS.md "This project's traps" (and, if not
+   Wacky-specific, to ../DREA as in step 3) in the same commit as the MATCH.
+   Live-harness work is not needed tonight; do not start the emulator.
+
 3. Mark every claim CONFIRMED / STRONGLY SUPPORTED / LIKELY / SPECULATIVE with its evidence
    (addresses, capture files, the experiment). Facts go to `findings/<subsystem>.md` (+ INDEX row
    for new files); open questions to `QUESTIONS.md`; game traps to the findings file's `## Traps`;
@@ -49,7 +78,7 @@ Do exactly this, in order:
 5. Run `overnight/check.sh` after committing. If it fails, fix the cause and commit again until it
    prints OK. Never edit `overnight/` or `original/` to make it pass.
 
-6. Commit after each finished function or finding: `git add` only the files you changed, then
+6. Commit after each function (MATCH or SKIP): `git add` only the files you changed, then
    `git commit -m "iter N: <one-line summary>"` (N = iteration number, from the latest
    `git log --format=%s | grep -m1 -oE '^iter [0-9]+'` + 1).
 

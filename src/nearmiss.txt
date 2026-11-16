@@ -1,0 +1,108 @@
+# Near misses, smallest first (human- and agent-owned work list for near-miss nights)
+#
+# Columns: instruction diffs (tools/wc/fndiff.py, fixups masked), game address, function, status.
+# Regenerate the numbers with `tools/wc/nearmiss.sh` (keep the status column by hand).
+# Status: (empty) = open; MATCH = now byte-identical (baseline raised in the same commit);
+# SKIP: <causes, what was tried> = budget spent, take the next; LAYOUT: = not fixable in C.
+# Take the FIRST line with an empty status. Write the status in the same commit as the code.
+
+0    0x02e318 demo_rec               LAYOUT: call displacement only, our function sits elsewhere; not fixable in C
+1    0x032c98 pic_show               LAYOUT: code identical, only the padding after it differs (0x32cc1 is another function's tail)
+2    0x011884 music_jingle
+2    0x0124e8 track_setup
+2    0x019eac classes_menu
+3    0x0261fc anim_tick
+3    0x03360c songs_load
+4    0x0182d0 fn_182d0
+4    0x021f04 line_draw
+4    0x02a414 msgbox
+4    0x02db00 net_recv
+5    0x01c994 fn_1c994
+5    0x027060 pcx_load
+5    0x02e348 demo_play
+6    0x0106c8 com_isr
+6    0x0114a8 pal_shift
+6    0x0277b8 track_pics_load
+6    0x02f408 view_at_curpos
+7    0x0146d4 wtext
+7    0x034458 release_check
+8    0x010810 com_isr_fifo
+8    0x02dd30 net_key
+9    0x02df70 com_wait_byte
+9    0x02e008 com_expect
+10   0x016ca0 fn_16ca0
+10   0x026a3c self_project
+10   0x02d9e4 netkeys_out
+11   0x025e6c shot_step
+13   0x01be3c fn_1be3c
+13   0x01d13c race_records_menu
+13   0x02d4fc shots_clear
+13   0x02da28 netkeys_pack
+13   0x032cf8 fade_in
+15   0x024a08 in_sector
+15   0x02f4a8 net_input
+16   0x011404 drawsprite_clip
+17   0x016eac fn_16eac
+17   0x01e2e4 demo_mode
+17   0x024bcc kart_draw
+17   0x02602c shots_move
+18   0x019db8 fn_19db8
+18   0x0279e8 track_load
+18   0x02a268 showlines
+19   0x019c68 ctl_label
+20   0x011adc voices_reset
+20   0x0237e4 kart_move
+21   0x0348f4 intro
+22   0x012124 sounds_load
+22   0x01bf00 fn_1bf00
+22   0x01cb44 enter_name
+22   0x028b20 kart_catchup
+26   0x01d704 fn_1d704
+29   0x02d94c netkeys_in
+31   0x0283a4 track_around
+33   0x0102f4 com_open
+33   0x011f98 voices_load
+33   0x02a618 time_str
+34   0x0167d8 engines_menu
+35   0x0343a0 pic_at
+39   0x016f24 fn_16f24
+39   0x0218a4 shot_hit
+40   0x0224ec kart_state
+42   0x021554 line_points
+44   0x01efb0 credits_screen
+44   0x02a4ac minimap
+44   0x034208 players_ahead
+48   0x012f80 draw_status
+48   0x028038 kartsets_load
+49   0x014380 ents_show
+51   0x0114c8 screenshot
+53   0x01e760 volume_menu
+57   0x02d548 shot_fire
+58   0x016d68 fn_16d68
+67   0x01c0f4 fn_1c0f4
+67   0x02b5e8 duck_screen
+73   0x02b270 leaderboard
+75   0x021310 ent_sprites_load
+87   0x035ca4 main
+98   0x01ce14 scores_screen
+108  0x024364 kart_fire
+109  0x012b44 car_laps
+120  0x0266a8 lights_project
+125  0x022bf4 kart_bump
+138  0x0255d4 players_project
+142  0x02a92c overlay_draw
+158  0x02632c shots_project
+171  0x017928 fn_17928
+174  0x02e4b8 trial_book
+190  0x025a78 ents_project
+196  0x016f90 fn_16f90
+224  0x0173c4 fn_173c4
+247  0x02bff0 race_results
+255  0x014d00 chat
+379  0x01f858 main_menu
+385  0x0193a8 fn_193a8
+445  0x0155c0 menu
+487  0x01832c fn_1832c
+678  0x01a380 cars_menu
+698  0x02fd8c race_run
+746  0x0290a0 kart_frame
