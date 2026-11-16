@@ -41,7 +41,8 @@
       "\\.\\./(SAM|re_cold|cosmore)\\b"
     ],
     "allowWriteOutside": [
-      "/tmp"
+      "/tmp",
+      "/home/bjorn/projects/active/DREA"
     ],
     "protectedPaths": [
       "original",

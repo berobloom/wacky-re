@@ -55,6 +55,3 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
 9. Get the original running under the harness; record the boot's segments or LE deltas and a first
    save state in `captures/`. Cheap checks: eight cars selectable off-net when registered
    (`v7e574 == 0`), and a `tbl77758` record read (what the +6 stamp holds, LIKELY).
-10. BLOCKED (writes outside this repo): copy this session's GOTCHAS iter 13 entries (the `-oe`
-    if/else tail merge and AL/DL sizes, fndiff's count, the probe needs `#include <string.h>`) into
-    `../DREA/reference/DOS.md`.

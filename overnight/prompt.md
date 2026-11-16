@@ -17,7 +17,12 @@ Do exactly this, in order:
    - Matching-rebuild work (the main line): take the next function in address order
      (`tools/wc/starts.py ww LO HI` lists function starts), add it to `src/ww.c` with the game's
      calling conventions (arg1=EAX arg2=EDX arg3=EBX arg4=ECX), then run `src/check.sh` and iterate
-     until it MATCHes or you understand the near miss. When the match count rises, raise
+     until it MATCHes or you understand the near miss. Near-miss budget: about 15 minutes or 20
+     scored variants per function (`tools/wc/variants.py` counts as one variant per spelling),
+     whichever comes first. Then stop probing: write the remaining causes in the function's
+     `differs:` note, add a register/slot question to `QUESTIONS.md` (or a line to an existing
+     one), commit, and take the next function. Coverage of new functions beats polishing old
+     ones; slot/register questions are saved for a dedicated probing session. When the match count rises, raise
      `src/matched.baseline` in the same commit. Record names in `analysis/ww_names.txt`
      (`0xADDR name  # LEVEL: why`).
    - Live-harness work only when static analysis cannot answer: `tools/dosrun.py` (see
@@ -29,11 +34,17 @@ Do exactly this, in order:
    (addresses, capture files, the experiment). Facts go to `findings/<subsystem>.md` (+ INDEX row
    for new files); open questions to `QUESTIONS.md`; game traps to the findings file's `## Traps`;
    tooling/harness traps to `GOTCHAS.md` and, if they are not game-specific, to `../DREA` the same
-   session (AGENTS.md "Feeding DREA").
+   session (AGENTS.md "Feeding DREA"): append to the matching section of
+   `../DREA/harness/TRAPS.md` (Watcom traps: "Old compilers"), tagged `[wacky]`, after grepping it
+   for an existing entry. Commit there with explicit paths:
+   `git -C ../DREA add harness/TRAPS.md && git -C ../DREA commit -m "Traps: <what> (wacky)"`.
+   Only edit ../DREA's `harness/TRAPS.md`, `reference/DOS.md`, `METHOD.md` and `GOTCHAS.md`.
 
-4. Update `STATUS.md`: keep its shape, <= 60 lines, `## Next` as a numbered list of at least 3
+4. Update `STATUS.md`: keep its shape, <= 80 lines, `## Next` as a numbered list of at least 3
    small items doable in one iteration, items that failed moved to BLOCKED with the reason. Do not
-   keep a session diary.
+   keep a session diary. Rewrite the file whole with the write tool (read it, then write the new
+   version) instead of patching lines: partial edits of STATUS.md fail on whitespace and cost
+   extra commits. Check `wc -l STATUS.md` before committing.
 
 5. Run `overnight/check.sh` after committing. If it fails, fix the cause and commit again until it
    prints OK. Never edit `overnight/` or `original/` to make it pass.
@@ -56,5 +67,5 @@ How to not make the classic mistakes (GOTCHAS.md, harness/TRAPS.md):
 
 Hard rules: never push, never switch or create branches, never rewrite history (no reset, rebase,
 amend, checkout of other commits), never modify `original/` or `overnight/`, never write outside
-this repository (except /tmp), never kill processes by name (no pkill/killall): other projects'
+this repository (except /tmp and the ../DREA files named in step 3), never kill processes by name (no pkill/killall): other projects'
 DOSBox-X harnesses run on this machine.

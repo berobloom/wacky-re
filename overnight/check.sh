@@ -32,7 +32,7 @@ b=$(cat src/matched.baseline 2>/dev/null || echo 0)
 # 4. STATUS exists, stays bounded, and has numbered Next items
 [ -f STATUS.md ] || bad "STATUS.md missing"
 n=$(wc -l < STATUS.md 2>/dev/null || echo 999)
-[ "$n" -le 60 ] || bad "STATUS.md has $n lines (limit 60: history belongs in git, not STATUS)"
+[ "$n" -le 80 ] || bad "STATUS.md has $n lines (limit 80: history belongs in git, not STATUS)"
 grep -qE '^[0-9]+\. ' STATUS.md || bad "STATUS.md has no numbered 'Next' items"
 [ -f findings/INDEX.md ] || bad "findings/INDEX.md missing"
 
