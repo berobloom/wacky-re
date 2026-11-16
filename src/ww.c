@@ -15702,3 +15702,118 @@ void view_at_curpos(void)
     w6aaa8 = v7d7a8;
 }
 
+/* ---- 0x2f4a8, 632 bytes (caller 0x3105d in the race loop): one frame's controls in a net
+ * game. Reads the local controls, F1..F6 (scancodes 0x3b..0x40) give a gig 1..6 in v88ce0,
+ * packs them (netkeys_pack) and swaps them with the other machine (net_key with drawing). After
+ * the first two frames v7ed1c / v7ed20 get 0x2a8 / 0x16. Too many errors: the EXCESSIVE ERRORS
+ * box. Player one (netgame 1) keeps its own controls and takes the peer's into key88cc3..cc7 /
+ * v88cdf; player two moves its own there and takes the peer's as its kart controls, so both
+ * machines drive kart 0 with player one's input. Esc (v88cec) also comes from the peer.
+ * differs: 6 blocks of scheduling in the bit split (the game reads v88cef once per use, so it
+ * is volatile here); declaration orders, statement orders and plain reads tried. */
+extern int v7ed90;
+extern unsigned char v88cdf;
+extern short w774e0;
+#pragma aux w774e0 "_v774e0"
+extern volatile unsigned char ukey88cd0;
+#pragma aux ukey88cd0 "_key88cd0"
+
+extern volatile unsigned char vv88cef;
+#pragma aux vv88cef "_v88cef"
+
+void net_input(void)
+{
+    unsigned char b2, b4, b5, b3;
+
+    v7d8a4 = v7d8ac;
+    ctl_setup(0);
+    f377ae();
+    v88cec = ukey88cd0 == 1;
+    v7ed90 = ukey88cd0;
+    if (v7ed90 >= 0x3b && v7ed90 <= 0x40)
+        v88ce0 = v7ed90 - 0x3a;
+    else
+        v88ce0 = 0;
+    if (v7b6d9)
+        key88cd5 = 1;
+    if (v7b6db)
+        key88cdd = 1;
+    if (v7ee4a && w774e0) {
+        if (key88cd3 && !joy88b44)
+            joy88b44 = 1;
+        if (key88cd6 && !joy88b46)
+            joy88b46 = 1;
+    }
+    netkeys_pack();
+    v88cf3 = v88ce0;
+    net88c14 = net_key(v88cf0, v88cf3, 1);
+    v7ecc4++;
+    if (v7ecc4 > 1) {
+        v7ecc4 = 2;
+        v7ed1c = 0x2a8;
+        v7ed20 = 0x16;
+    }
+    if (net88c14) {
+        fn_1c068();
+        msgbox("EXCESSIVE ERRORS ABORTING!!!", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 0x12c)
+            ;
+        fn_1c0ac();
+        return;
+    }
+    b2 = vv88cef & 4;
+    b3 = vv88cef & 8;
+    b4 = vv88cef & 0x10;
+    b5 = vv88cef & 0x20;
+    if (netgame == 1) {
+        key88cc4 = b2;
+        key88cc3 = vv88cef & 1;
+        key88cc5 = b3;
+        key88ccc = vv88cef & 2;
+        key88cc6 = b4;
+        key88cc7 = b5;
+        v88cdf = v88cf2;
+    } else {
+        key88cc3 = key88cd5;
+        key88ccc = key88cdd;
+        key88cc4 = joy88b40;
+        key88cc5 = joy88b42;
+        key88cc6 = joy88b44;
+        key88cc7 = joy88b46;
+        v88cdf = v88ce0;
+        key88cd5 = vv88cef & 1;
+        key88cdd = vv88cef & 2;
+        joy88b40 = b2;
+        joy88b42 = b3;
+        joy88b44 = b4;
+        joy88b46 = b5;
+        v88ce0 = v88cf2;
+    }
+    if (!v88cec)
+        v88cec = vv88cef & 0x40;
+}
+
+/* ---- 0x2f720, 114 bytes (no caller found): view_box, the star field when v7eb80, then the
+ * sprite list as in sprites_build; v7ed6c = 1. */
+void view_sprites(void)
+{
+    v7ed6c = 1;
+    view_box();
+    if (v7eb80)
+        f37e94();
+    v88bf4 = 0;
+    v88b78 = 0;
+    p7d86c = arr79a28;
+    players_frames();
+    players_project();
+    ents_project();
+    self_project();
+    if (v88c38)
+        lights_project();
+    shots_project();
+    if (v88b78)
+        sprites_draw();
+}
+
