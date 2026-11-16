@@ -523,6 +523,7 @@
 0x02df70 com_wait_byte # CONFIRMED (rebuild src/ww.c): com_getc until a byte, 0x110-tick timeout (net88c14 1) or key cd0 abort (2); no caller found
 0x02e008 com_expect   # CONFIRMED (rebuild src/ww.c): com_getc until byte want (1), key cd0 abort (net88c14 2) or timeout (0)
 0x02e0a8 com_flush    # CONFIRMED (rebuild src/ww.c): drains the receive buffer
+0x02e0fc net_sync     # CONFIRMED (rebuild src/ww.c): link start: clears packet state, NO CARRIER text, 0x7f handshake (player one sends first); 1 if aborted
 0x07ed34 v7ed34
 0x07ed20 v7ed20
 0x07ed1c v7ed1c

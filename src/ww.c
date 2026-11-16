@@ -8069,7 +8069,7 @@ void f1bf80(void);
 void f327e0(void);
 void f328d4(void);
 void f35718(void);
-short f2e0fc(void);
+short net_sync(void);
 
 #define FADE() { m = pal_a; pal_a = 0x7d00; p7d714 = p6a978; f375cd(); pal_a = m; }
 #define WAIT300() { ticks = 0; ticks2 = 0; while (ticks <= 0x12c) ; }
@@ -8536,7 +8536,7 @@ void main_menu(void)
                 }
                 PALSAVE();
                 msgbox("SYNC IN PROGRESS", 0);
-                net88c14 = f2e0fc();
+                net88c14 = net_sync();
                 if (net88c14) {
                     PALREST();
                     fn_1c068();
@@ -15206,5 +15206,54 @@ void com_flush(void)
 {
     while (com_getc() != -1)
         ;
+}
+
+/* ---- 0x2e0fc, 315 bytes: starts a link (caller 0x20a86 in main_menu): clears the packet
+ * state and counters, sets the hang-up text NO CARRIER, drains the line, then player one
+ * (netgame 1) sends 0x7f until a 0x7f comes back (0x28-tick waits), the other side waits for
+ * 0x7f and answers it. Returns 1 when aborted (net88c14), else 0 with net7ed78 set. */
+extern short v88cac, v88cb2;
+extern char str7d2d8[];
+#pragma aux str7d2d8 "_arr7d2d8"
+
+short net_sync(void)
+{
+    int r;
+
+    v88cac = 0;
+    v88cb2 = 0;
+    v7ecc4 = 0;
+    v7ed94 = 0;
+    v7ed8c = 0;
+    v88cb0 = 0;
+    badcrc = 0;
+    timeouts = 0;
+    noise = 0;
+    net88c14 = 0;
+    v7ed60 = 0;
+    strcpy(str7d2d8, "NO CARRIER");
+    com_flush();
+    if (netgame == 1) {
+        do {
+            r = com_expect(0x7f, 0x28);
+            if (net88c14)
+                return 1;
+            if (!r) {
+                com_putc(0x7f);
+                r = com_expect(0x7f, 0x28);
+            }
+            if (net88c14)
+                return 1;
+        } while (!r);
+        com_flush();
+    } else {
+        com_expect(0x7f, 0);
+        if (net88c14)
+            return 1;
+        com_putc(0x7f);
+        com_flush();
+    }
+    net7ed78 = 1;
+    return 0;
 }
 
