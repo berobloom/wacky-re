@@ -1918,7 +1918,7 @@ short f375cd();                     /* asm; the game passes (EAX, EDX) and reads
 void f28480(void);
 void f37e94(void);
 void f287ec(void);
-void f255d4(void);
+void players_project(void);
 void f25a78(void);
 void f26a3c(void);
 void f266a8(void);
@@ -1962,7 +1962,7 @@ void frame_draw(void)
     v88b78 = 0;
     p7d86c = arr79a28;
     f287ec();
-    f255d4();
+    players_project();
     f25a78();
     f26a3c();
     if (v88c38)
@@ -1983,7 +1983,7 @@ void frame_draw(void)
         v88b78 = 0;
         p7d86c = arr79a28;
         f287ec();
-        f255d4();
+        players_project();
         f25a78();
         f26a3c();
         if (v88c38)
@@ -10516,7 +10516,7 @@ int isqrt(int n)
 extern short v88b20, v88b22;
 extern int v7d670, v7d674, tbl6e858[];
 
-int in_sector(void)
+short in_sector(void)
 {
     int dx, dy, a, b, q, r;
 
@@ -10866,3 +10866,145 @@ void sprites_draw(void)
             curkart->f4a += 0x5a;
     }
 }
+/* ---- 0x255d4, 1186 bytes: adds a sprite record for every other player in view (callers frame_draw
+ * 0x134e1, 0x135ea; 0x289b9): inside the box v88c16..v88c2a x v88c18..v88c2c and in_sector, rotated
+ * by v7d614/v7d5e4 into depth and side, screen x 160 - side*160/(depth*tan 30), distance scaled by
+ * tb6b7f8[x] picks the size step (tab6e470, 10 steps) and screen y tb6bd00[d]; sprite from the face
+ * (f38 per viewer, f5a while f58 == 1) or gn7c7f0[f56] for kind 2; the split-screen car frame
+ * override; clipped to 320x200. v7d800 walks players[].
+ * differs (near-miss, 265 vs ~258 insns, ~130 instrdiffs): the game promotes the global v7d800 into
+ * EBX for the whole loop (stored before in_sector/isqrt and at the exit, reloaded after them) and
+ * keeps y and dy in two stack slots (`sub esp,8`); our build reads v7d800 from memory at every use,
+ * which shifts the register allocation of the whole body. Bisecting the body down to the bounds test
+ * and in_sector still gives no promotion, so it is not one statement (QUESTIONS 2, fn_193a8 point a; the
+ * kart_fire family). Tried: loop forms (init order, increment order, explicit
+ * increment), sx int, sy int (best), four declaration orders. in_sector returns short (`test ax,ax`). */
+struct carv {                   /* the 0x104-byte car records seen from 0x68400 */
+    char f00[0x1a];
+    short f1a;
+    char f1c[0x20 - 0x1c];
+    short f20;
+    char f22[0x54 - 0x22];
+    short f54;
+    char f56[0x6e - 0x56];
+    short f6e;
+    char f70[0x74 - 0x70];
+    char *f74;
+    char f78[0x8e - 0x78];
+    short f8e;
+    char f90[0x104 - 0x90];
+};
+extern struct carv carv[];
+#pragma aux carv "_arr68400"
+extern short v88c16, v88c18, v88c2a, v88c2c, v88ca8;
+extern int tb6b7f8[];
+extern short tb6bd00[];
+extern char *gnspr[];
+#pragma aux gnspr "_gn7c7f0"
+
+void players_project(void)
+{
+    short dy, sx, k, c, h;
+    int sy, d, side, a, m, t;
+
+    for (v7d800 = players, v88b72 = 0; v88b72 <= nplayers; v7d800++, v88b72++) {
+        if (v88ca8 == 0 && v88b72 == v88b7e)
+            continue;
+        v88b20 = v7d800->x;
+        v88b22 = v7d800->y;
+        if (v88b20 < v88c16 || v88b20 > v88c2a || v88b22 < v88c18 || v88b22 > v88c2c)
+            continue;
+        if (in_sector() == 0)
+            continue;
+        sy = v88b22;
+        sx = v88b20 - v88b0a;
+        dy = v88b22 - v88b0e;
+        d = (v7d614 * sx + v7d5e4 * dy) >> 16;
+        a = (d * 0x93cd) >> 16;
+        side = (dy * v7d614 - sx * v7d5e4) >> 16;
+        if (dy < sy)
+            a = -a;
+        c = 0xa0;
+        if ((short)a != 0)
+            c = 0xa0 - side * 0xa0 / (short)a;
+        if (c < 0 || c > 0x13f)
+            continue;
+        d = isqrt(d * d + side * side);
+        m = tb6b7f8[c];
+        if (m) {
+            t = d * m;
+            d = t >> 14;
+            if (t - (d << 14) >= 0x1fa0)
+                d++;
+        }
+        if (d < 0x50 || d > 0x462)
+            continue;
+        k = (d - 0x7c) / 0x46;
+        if (k < 0)
+            k = 0;
+        if (k > 9)
+            k = 9;
+        spr_y = tb6bd00[d];
+        p7d838 = tab6e470[k];
+        if (v7d800->f02 == 2) {
+            if (v7d800->f56 > 3)
+                continue;
+            sprptr = gnspr[v7d800->f56];
+        } else if (v7d800->f58 != 0 && v7d800->f58 <= 1)
+            sprptr = faces[v7d800->face].img[v7d800->f5a];
+        else
+            sprptr = faces[v7d800->face].img[v7d800->f38[v88b7e]];
+        if ((twoplayer || splitscreen) && carv[v88b72].f54 && carv[v88b72].f8e == 0) {
+            p7d838 = tab6e560[k];
+            sprptr = carv[v88b72].f74 + carv[v88b72].f6e * 0x300;
+        }
+        p7d764 = p7d838;
+        h = *p7d764++;
+        spr_w = *p7d764;
+        spr_y -= spr_w;
+        p7d838 += 2;
+        spr_h = h;
+        if (carv[v88b72].f1a) {
+            spr_y -= carv[v88b72].f20;
+            if (spr_y < 0x6e)
+                spr_y = 0x6e;
+        }
+        if (spr_y > 0xc7)
+            continue;
+        c -= spr_h >> 1;
+        v7d878 = 0;
+        if (c < 0) {
+            c = -c;
+            spr_h -= c;
+            if (spr_h <= 0)
+                continue;
+            p7d838 = (short *)((char *)p7d838 + (short)(c * (spr_w + 1) * 4));
+            c = 0;
+        } else if (c + spr_h - 1 > 0x13f) {
+            spr_h -= spr_h - 1 + c - 0x13f;
+            if (spr_h <= 0)
+                continue;
+        }
+        if (spr_y + spr_w - 1 > 0xc7) {
+            spr_w -= spr_w - 1 + spr_y - 0xc7;
+            if (spr_w <= 0)
+                continue;
+            v7d878 = spr_w * 4;
+        }
+        p7d86c += 0x28;
+        CR->f24 = 1;
+        CR->f18 = v88b72;
+        CR->f1c = v7d800->f02;
+        CR->f04 = c;
+        CR->f10 = d;
+        CR->f1a = k;
+        CR->f00 = spr_h;
+        CR->f06 = spr_y;
+        CR->f02 = spr_w;
+        CR->f08 = p7d838;
+        CR->f0c = (int)sprptr;
+        v88b78++;
+        CR->f14 = v7d878;
+    }
+}
+

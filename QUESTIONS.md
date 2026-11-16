@@ -90,6 +90,11 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    tried, none keeps the imul. Same kind as fn_16f90 (b): is the game built without loop SR here?
    Data point (line_points 0x21554): the game keeps a short dx in ESI and the int count n on the stack;
    ours swaps them (n in EAX, dx spilled). Declaration orders, `register`, initializers do not move it.
+   Data point (players_project 0x255d4, near miss ~130 instrdiffs): the game promotes the global loop
+   pointer v7d800 (`for (v7d800 = players, v88b72 = 0; ...; v7d800++, v88b72++)`) into EBX, storing it
+   before the in_sector/isqrt calls and at the exit; kart_draw 0x24bcc gets the same promotion of v7d868
+   in our build, players_project does not, even cut down to the bounds test and the in_sector call, and
+   not with a local short counter (`v88b72 = i;` in the body) like kart_draw's either.
 3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
    `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
    and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;

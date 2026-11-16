@@ -330,12 +330,12 @@
 0x028480 f28480       # SPECULATIVE: called from frame_draw
 0x037e94 f37e94       # SPECULATIVE: called from frame_draw
 0x0287ec f287ec       # SPECULATIVE: called from frame_draw
-0x0255d4 f255d4       # SPECULATIVE: called from frame_draw
 0x025a78 f25a78       # SPECULATIVE: called from frame_draw
 0x026a3c f26a3c       # SPECULATIVE: called from frame_draw
 0x0266a8 f266a8       # SPECULATIVE: called from frame_draw
 0x02632c f2632c       # SPECULATIVE: called from frame_draw
 0x0253d8 sprites_draw # CONFIRMED (rebuild src/ww.c): depth-sorts the arr79a28 records by f10 and draws them (curkart via kart_draw); callers frame_draw 0x1350e, 0x13617
+0x0255d4 players_project # CONFIRMED (rebuild src/ww.c): projects the other players into the view and appends sprite records; callers frame_draw 0x134e1, 0x135ea
 0x03c3e9 f3c3e9       # SPECULATIVE: called from frame_draw
 0x02a92c f2a92c       # SPECULATIVE: called from frame_draw
 0x029e0c f29e0c       # SPECULATIVE: called from frame_draw
