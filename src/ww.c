@@ -17370,3 +17370,122 @@ long song_size(char *name)
     return datdir[datidx].size;
 }
 
+/* ---- 0x32e60, 1963 bytes (callers main_menu before each race / zone): fills the song table
+ * songs7c530[] (14-byte names + pathext; load_level reads entry v88b88 - 1, two-player and net
+ * entry v88c90). One-player: three songs a/b/c chosen by class + metal (v88bb6 + v7ecb4, 1..6)
+ * rotate through slots 0..3 (w88bce 1 -> a, 2 -> b, 3 -> c; it starts at 1), slot 4 is OVERDRIV.
+ * Two-player / net: fixed BANSHI, KARD, TURBO, BRICWALL, STARBRAI, FLIGHT. */
+extern char songs7c530[][14];
+#pragma aux songs7c530 "_arr7c530"
+extern char s61b34[];   /* "TURBO" */
+#pragma aux s61b34 "_s61b34"
+extern char s61b3c[];   /* "DANCE" */
+#pragma aux s61b3c "_s61b3c"
+extern char s61b44[];   /* "FLIGHT" */
+#pragma aux s61b44 "_s61b44"
+extern char s61b4c[];   /* "STARBRAI" */
+#pragma aux s61b4c "_s61b4c"
+extern char s61b58[];   /* "BASSATTK" */
+#pragma aux s61b58 "_s61b58"
+extern char s61b64[];   /* "KARD" */
+#pragma aux s61b64 "_s61b64"
+extern char s61b6c[];   /* "BANSHI" */
+#pragma aux s61b6c "_s61b6c"
+extern char s61b74[];   /* "BRICWALL" */
+#pragma aux s61b74 "_s61b74"
+extern char s61b80[];   /* "PUMPER" */
+#pragma aux s61b80 "_s61b80"
+extern char s61b88[];   /* "OVERDRIV" */
+#pragma aux s61b88 "_s61b88"
+
+void songs_pick(void)
+{
+    char a[16], b[16], c[16];
+    int i;
+
+    w88bce = 1;
+    if (!twoplayer && !netvoices) {
+        switch (v88bb6 + v7ecb4) {
+        case 1:
+            strcpy(a, s61b34);
+            strcat(a, pathext);
+            strcpy(b, s61b3c);
+            strcat(b, pathext);
+            strcpy(c, s61b44);
+            strcat(c, pathext);
+            break;
+        case 2:
+            strcpy(a, s61b4c);
+            strcat(a, pathext);
+            strcpy(b, s61b58);
+            strcat(b, pathext);
+            strcpy(c, s61b64);
+            strcat(c, pathext);
+            break;
+        case 3:
+            strcpy(a, s61b6c);
+            strcat(a, pathext);
+            strcpy(b, s61b4c);
+            strcat(b, pathext);
+            strcpy(c, s61b74);
+            strcat(c, pathext);
+            break;
+        case 4:
+            strcpy(a, s61b44);
+            strcat(a, pathext);
+            strcpy(b, s61b64);
+            strcat(b, pathext);
+            strcpy(c, s61b80);
+            strcat(c, pathext);
+            break;
+        case 5:
+            strcpy(a, s61b3c);
+            strcat(a, pathext);
+            strcpy(b, s61b58);
+            strcat(b, pathext);
+            strcpy(c, s61b34);
+            strcat(c, pathext);
+            break;
+        case 6:
+            strcpy(a, s61b6c);
+            strcat(a, pathext);
+            strcpy(b, s61b74);
+            strcat(b, pathext);
+            strcpy(c, s61b4c);
+            strcat(c, pathext);
+            break;
+        }
+        for (i = 0; i < 4; i++) {
+            switch (w88bce) {
+            case 1:
+                strcpy(songs7c530[i], a);
+                w88bce = 2;
+                break;
+            case 2:
+                strcpy(songs7c530[i], b);
+                w88bce = 3;
+                break;
+            case 3:
+                strcpy(songs7c530[i], c);
+                w88bce = 1;
+                break;
+            }
+        }
+        strcpy(songs7c530[4], s61b88);
+        strcat(songs7c530[4], pathext);
+    } else {
+        strcpy(songs7c530[0], s61b6c);
+        strcat(songs7c530[0], pathext);
+        strcpy(songs7c530[1], s61b64);
+        strcat(songs7c530[1], pathext);
+        strcpy(songs7c530[2], s61b34);
+        strcat(songs7c530[2], pathext);
+        strcpy(songs7c530[3], s61b74);
+        strcat(songs7c530[3], pathext);
+        strcpy(songs7c530[4], s61b4c);
+        strcat(songs7c530[4], pathext);
+        strcpy(songs7c530[5], s61b44);
+        strcat(songs7c530[5], pathext);
+    }
+}
+
