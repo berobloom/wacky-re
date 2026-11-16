@@ -8005,6 +8005,738 @@ void ent_sprites_load(void)
     }
 }
 
+/* ---- 0x1f858-0x2130c, 0x1ab5 bytes: the main menu dispatcher (no callers in the code: entered from
+ * the game's main loop setup). Loops forever around menu(9): 1 one player (cfgs[] restore, cars, the
+ * race loop), 3 two player, 4 the shoot-out (voices on), 5 the link (modem/serial, phonebook, SYNC and
+ * version check), 6 options (detail, volumes, race-screen toggles), 7 info (ordering, instructions,
+ * famous drivers, credits), 8 the demo, 9 return (the jump table sends 9 to engines_menu's identical
+ * epilogue at 0x16978: GOTCHAS cross-function epilogue merge). v88bd4 != 0 shows the menu once with
+ * the palette reloaded and item 1 forced.
+ * differs (near-miss, 1265 vs 1265 insns, 58 diff blocks; variants.py 360 instrdiffs, most of them
+ * one shifted alignment): (a) the game keeps the item count 9 in a short local in EDX (`mov edx,9`
+ * before ents_init, `movsx eax,dx` at the three menu(9) calls) and saves pal_a in the same DX around
+ * every f375cd fade; our build folds the 9 into `mov eax,9` and saves pal_a in BX (8 fade sites). One
+ * shared local m, separate locals, and six declaration orders (M00-M05) all fold it; (b) case 9's
+ * `return` is engines_menu's epilogue in the game (jump table entry 0x16978), our build emits its own
+ * (also with `goto leave` and with main_menu moved to its address position in the file);
+ * (c) `dec esi; cmp esi,8` switch vs our `lea eax,[esi-1]`; (d) the CHECK.PCX block of the race
+ * loop is laid out before the `v88b88++` block in the game, after it in ours (a goto/if-else shape
+ * makes 9.5b merge it into the first CHECK.PCX block instead). Case 7 before case 6 in the source
+ * gives the game's layout (360 vs 596 instrdiffs). */
+struct cfgp {                       /* 0x774e4, 0x74 bytes, [0] one-player and [1] split-screen saved game */
+    int on;
+    int myplayer, f08, laps, f10, f14, f18;
+    int f1c[8];                     /* -> players[i].f1e */
+    int f3c[8];                     /* -> v70720[i] */
+    int f5c, f60, f64, f68, f6c, f70;
+};
+struct pbook { int f00; char name[0x16]; char number[0x16]; };   /* 0x77284, 0x30 bytes, [1..6] */
+extern struct cfgp cfgs[];
+#pragma aux cfgs "_ctl774e4"
+extern struct pbook pbook[];
+extern int cfg77174, cfg77178, v7ebb4, v7ebd0, v7ebd8;
+extern short v88bd4, v88c1e, optmap, optclock, optspeed;
+extern char *v7d708;
+extern char str7c908[], str7c944[];
+void f1bf80(void);
+void f327e0(void);
+void f328d4(void);
+void f35718(void);
+short f2e0fc(void);
+
+#define FADE() { m = pal_a; pal_a = 0x7d00; p7d714 = p6a978; f375cd(); pal_a = m; }
+#define WAIT300() { ticks = 0; ticks2 = 0; while (ticks <= 0x12c) ; }
+#define PALSAVE() { save_a = pal_a; save_b = pal_b; save_c = pal_c; pal_c = 48000; pal_a = pal_d; pal_b = pal_d; setpalette(); }
+#define PALREST() { pal_b = 48000; pal_a = pal_d; pal_c = pal_d; setpalette(); pal_b = save_b; pal_c = save_c; pal_a = save_a; }
+
+void main_menu(void)
+{
+    short i, j, k, s7, s6, m;
+    int sel, a, t;
+
+    v88bda = 0;
+    net88c22 = 0;
+    for (;;) {
+        v7edb0 = 0;
+        v7ec60 = 0;
+        v7ed0c = 0;
+        v7d998 = 0;
+        v7ecb4 = 0;
+        anidope = 0;
+        v88ca0 = optmap;
+        w88c98 = 0;
+        if (cursong != menusong)
+            music_start(menusong, 1);
+        ticks = 0;
+        ticks2 = 0;
+        v88b9e = 0;
+        netvoices = 0;
+        v7ec90 = 0;
+        twoplayer = 0;
+        splitscreen = 0;
+        m = 9;
+        ents_init();
+        v88b88 = 1;
+        main_menu_names();
+        v88bb0 = 1;
+        if (v88bd4 == 0) {
+            if (netgame) {
+                for (;;) {
+                    if (net88c14 != 0 || net88c22 == 4) {
+                        main_menu_names();
+                        sel = menu(m, v88bda, 2, 0);
+                        v7ed0c = 0;
+                        net88c14 = 0;
+                        break;
+                    }
+                    link_menu();
+                    v7ed0c = 0;
+                    if (v88bda)
+                        v88bda = 0;
+                    if (net88c14 == 0 && net88c22 != 4) {
+                        sel = net88c22;
+                        break;
+                    }
+                }
+            } else {
+                main_menu_names();
+                sel = menu(m, v88bda, 0, 0);
+                if (v7ed0c >= 500) {
+                    demo_mode(3);
+                    continue;
+                }
+            }
+            if (v88bda)
+                v88bda = 0;
+        } else {
+            v88bd4 = 0;
+            palptr = pal7d850;
+            getpalette();
+            f1bf94(pal7d850);
+            sel = menu(m, 1, 0, 0);
+            if (v7ed0c >= 500) {
+                demo_mode(3);
+                continue;
+            }
+        }
+        splitscreen = 0;
+        v88bb8 = sel;
+        if (netgame == 0)
+            v7ed9c = 1;
+        if (sel == 2) {
+            sel = 1;
+            splitscreen = v7ed9c;
+        }
+        switch (sel) {
+        case 1:
+            net88c22 = 0;
+            w88bce = 0;
+            twoplayer = 0;
+            netvoices = 0;
+            v7ec90 = 0;
+            v88c58 = 0;
+            v88bb6 = 1;
+            v88b88 = 1;
+            v88b9e = 0;
+            v88b4a = 0;
+            FADE();
+            w88c98 = 0;
+            if (netgame == 0) {
+                if (splitscreen) {
+                    if (cfgs[1].on)
+                        w88c98 = 2;
+                } else if (cfgs[0].on)
+                    w88c98 = 1;
+            }
+            if (w88c98) {
+                v7ecb4 = 0;
+                v88c80 = 1;
+                strcpy(&mnames[0], " RESTORE SAVED GAME ");
+                v88b9e = 0;
+                strcpy(&mnames[0x3c], " START NEW GAME     ");
+                v88bb0 = 0xd;
+                v88c80 = menu(2, 0, 0, 0);
+                v88b4a = 0;
+                FADE();
+                if (v88c80 == 2) {
+                    cfgs[w88c98 - 1].on = 0;
+                    w88c98 = 0;
+                }
+            }
+            v88b7e = 0;
+            if (w88c98 == 0) {
+                if (splitscreen == 1 && netgame == 0) {
+                    v88c80 = 1;
+                    strcpy(&mnames[0], " RACE HEAD TO HEAD  ");
+                    v88b9e = 0;
+                    strcpy(&mnames[0x3c], " RACE WITH ALL CARS ");
+                    v88bb0 = 0xd;
+                    v88c80 = menu(2, 0, 0, 0);
+                    v88b4a = 0;
+                    FADE();
+                    if (v7ecc0)
+                        v88b9e = 1;
+                    if (v88b9e)
+                        continue;
+                    splitscreen = v88c80;
+                }
+                fn_1a2f8();
+                cars_menu();
+            } else {
+                v88c58 = 0;
+                v88b9e = 0;
+                if (splitscreen) {
+                    v88b9e = 1;
+                    splitscreen = ctl775cc;
+                }
+                if (v88b9e == 0) {
+                    v7ee5a = ctl775d6;
+                    v7ecb4 = ctl775da;
+                } else {
+                    v7ee5a = ctl775d8;
+                    v7ecb4 = ctl775dc;
+                }
+                myplayer = cfgs[v88b9e].myplayer;
+                v88c6a = cfgs[v88b9e].f08;
+                nlaps = cfgs[v88b9e].laps;
+                v88bb2 = cfgs[v88b9e].f10;
+                v88bb6 = cfgs[v88b9e].f14;
+                v88b88 = cfgs[v88b9e].f18;
+                for (i = 0; i <= 7; i++) {
+                    players[i].f1e = cfgs[v88b9e].f1c[i];
+                    v70720[i] = cfgs[v88b9e].f3c[i];
+                }
+                karts[0].f6a = cfgs[v88b9e].f5c;
+                karts[0].f16 = cfgs[v88b9e].f60;
+                v684e0 = cfgs[v88b9e].f64;
+                karts[1].f6a = cfgs[v88b9e].f68;
+                karts[1].f16 = cfgs[v88b9e].f6c;
+                v685e4 = cfgs[v88b9e].f70;
+                v88b9e = 0;
+                engines_menu(3);
+            }
+            if (splitscreen) {
+                v88c1e = v88c20;
+                if (v88b9e == 0 && w88c98 == 0) {
+                    v88b4a = 0;
+                    v88c68 = myplayer;
+                    FADE();
+                    v88b7e = 1;
+                    cars_menu();
+                    v88c6a = myplayer;
+                    myplayer = v88c68;
+                }
+            }
+            if (v88b9e) {
+                f27060((struct rec14 *)"CHECK.PCX", 0);
+                if (v88c58) {
+                    palptr = p7d718;
+                    pal_a = 0;
+                    f1bf80();
+                    v88bda = 1;
+                }
+            } else {
+                if (splitscreen) {
+                    if (netgame)
+                        v88c20 = w88cb8;
+                    else
+                        v88c20 = v774de;
+                }
+                if (w88c98 == 0)
+                    fn_1be3c();
+                for (;;) {
+                    v7d854 = v7d85c;
+                again:
+                    w88c08 = 0;
+                    fn_17928();
+                    if (v88b9e == 0) {
+                        w88c98 = 0;
+                        countplays = 1;
+                        f2fd8c();
+                        countplays = 0;
+                        voices_reset();
+                    }
+                    if (w88c08 != 3 || v88bb2 == 4) {
+                        v88b9e = 0;
+                        if (w88c98 == 0)
+                            fn_1832c();
+                        else {
+                            v88b9e = 1;
+                            w88c98 = 0;
+                        }
+                        if (v88b9e == 0)
+                            continue;
+                        f27060((struct rec14 *)"CHECK.PCX", 0);
+                        palptr = p7d718;
+                        pal_a = 0;
+                        f1bf80();
+                        v88bda = 1;
+                        break;
+                    }
+                    v88b88++;
+                    goto again;
+                }
+            }
+            if (splitscreen)
+                v88c20 = v88c1e;
+            if (anidope)
+                ani_giggles();
+            break;
+        case 3:
+            v7ea58 = 2;
+            net88c22 = 0;
+            v7eca8 = v7ee5a;
+            v7ee5a = 2;
+            w88bce = 1;
+            v88c96 = 6;
+            v88c58 = 0;
+            v88b9e = 0;
+            v88b4a = 0;
+            FADE();
+            v684e0 = 0;
+            v685e4 = 0;
+            twoplayer = 1;
+            v88c1e = v88c20;
+            if (netgame)
+                v88c20 = w88cb8;
+            else
+                v88c20 = v774de;
+            if (v88b9e == 0) {
+                v88b4a = 0;
+                FADE();
+                v88b7e = 0;
+                fn_1a2f8();
+                cars_menu();
+                if (v88b9e == 0) {
+                    v88b4a = 0;
+                    v88c68 = myplayer;
+                    FADE();
+                    v88b7e = 1;
+                    cars_menu();
+                    v88c6a = myplayer;
+                    myplayer = v88c68;
+                }
+            }
+            if (v88b9e == 0) {
+                for (;;) {
+                    v88b9e = 0;
+                    fn_193a8();
+                    if (v88b9e)
+                        break;
+                    v88c90 = v88c96 - 6;
+                    v88b88 = v88c96;
+                    v7d854 = v7d85c;
+                    fn_17928();
+                    if (v88b9e == 0) {
+                        fn_1be3c();
+                        w88bce = 1;
+                        music88bcc = 0;
+                        countplays = 1;
+                        f2fd8c();
+                        countplays = 0;
+                        voices_reset();
+                    }
+                }
+                f27060((struct rec14 *)"CHECK.PCX", 0);
+                palptr = pal7d850;
+                getpalette();
+                f1bf94(pal7d850);
+                pal_a = 0;
+                v88bda = 1;
+            }
+            v88bb6 = 1;
+            v88c20 = v88c1e;
+            v88b88 = 1;
+            v7ee5a = v7eca8;
+            twoplayer = 0;
+            v7ea58 = v7eca8;
+            break;
+        case 4:
+            twoplayer = 0;
+            splitscreen = 0;
+            v7ea58 = 2;
+            net88c22 = 0;
+            v88c20 = v7ee58;
+            v7eca8 = v7ee5a;
+            v7ee5a = 2;
+            w88bce = 1;
+            v88c96 = 6;
+            v88c58 = 0;
+            v88b9e = 0;
+            v88b4a = 0;
+            FADE();
+            v684e0 = 0;
+            v685e4 = 0;
+            netvoices = 1;
+            v7ec90 = 1;
+            if (v88b9e == 0) {
+                v88b4a = 0;
+                FADE();
+                v88b7e = 0;
+                fn_1a2f8();
+                cars_menu();
+            }
+            if (v88b9e == 0) {
+                f327e0();
+                for (;;) {
+                    v88b9e = 0;
+                    fn_193a8();
+                    if (v88b9e)
+                        break;
+                    v88c90 = v88c96 - 6;
+                    v88b88 = v88c96;
+                    v7d854 = v7d85c;
+                    fn_17928();
+                    if (v88b9e == 0) {
+                        w88bce = 1;
+                        music88bcc = 0;
+                        countplays = 1;
+                        f2fd8c();
+                        countplays = 0;
+                        voices_reset();
+                    }
+                }
+                f27060((struct rec14 *)"CHECK.PCX", 0);
+                palptr = pal7d850;
+                getpalette();
+                f1bf94(pal7d850);
+                datfind("CARS.SP");
+                fread(v7d708, 0x18f00, 1, datfile);
+                f328d4();
+                pal_a = 0;
+                v88bda = 1;
+            }
+            v88bb6 = 1;
+            v88b88 = 1;
+            f35718();
+            netvoices = 0;
+            v7ee5a = v7eca8;
+            v7ec90 = 0;
+            v7ea58 = v7eca8;
+            break;
+        case 5:
+            musicpaused = 0;
+            net88c22 = 0;
+            v7ebd0 = 0;
+            strcpy(&mnames[0], " MODEM           ");
+            v7ebd8 = 0;
+            strcpy(&mnames[0x3c], " SERIAL CABLE    ");
+            v88bb0 = 0xd;
+            v88c80 = 1;
+            v88bda = 0;
+            strcpy(&mnames[0x78], " LEAVE THIS MENU ");
+            v88b9e = 0;
+            v88c80 = menu(3, 0, 0, 0);
+            if (v7ecc0)
+                v88b9e = 1;
+            if (v88b9e == 0 && v88c80 != 3) {
+                v88b9e = 0;
+                linktype = v88c80;
+                v88c80 = 1;
+                if (linktype == 1) {
+                    strcpy(&mnames[0], " MAKE CALL     ");
+                    strcpy(&mnames[0x3c], " WAIT FOR CALL ");
+                } else {
+                    strcpy(&mnames[0], " MAKE CONNECTION      ");
+                    strcpy(&mnames[0x3c], " WAIT FOR CONNECTION  ");
+                }
+                v88bb0 = 0xe;
+                v88c80 = menu(2, v88bda, 0, 0);
+                if (v7ecc0)
+                    v88b9e = 1;
+                v88bb0 = 0xd;
+                if (v88b9e)
+                    goto out;
+                netgame = v88c80;
+                k = 0;
+                net88c14 = 0;
+                if (linktype == 1) {
+                    v7ec50 = cfg77178;
+                    if (netgame == 1) {
+                        for (;;) {
+                            for (j = 1; j <= 6; j++) {
+                                strcpy(mrows[j], " ");
+                                strcat(mrows[j], pbook[j].name);
+                                while (strlen(mrows[j]) < 20)
+                                    strcat(mrows[j], " ");
+                            }
+                            strcpy(mrows[7], " LEAVE THIS MENU");
+                            while (strlen(mrows[7]) < 20)
+                                strcat(mrows[7], " ");
+                            v88b9e = 0;
+                            v88c80 = 1;
+                            k = menu(7, v88bda, 0, 0);
+                            if (v7ecc0)
+                                v88b9e = 1;
+                            if (v88b9e || k == 7)
+                                goto out;
+                            strcpy(phone, pbook[k].number);
+                            if (phone[0])
+                                break;
+                            fn_1c068();
+                            msgbox("THIS ENTRY IS BLANK!", 0);
+                            WAIT300();
+                            fn_1c0ac();
+                        }
+                    }
+                } else
+                    v7ec50 = cfg77174;
+                if ((sendfail = baud_menu()) == 0)
+                    goto out;
+                sendfail = 0;
+                link_open();
+                if (net88c14)
+                    goto out;
+                sendfail = 0;
+                connected = 1;
+                v7ebb4 = pbook[k].f00;
+                if (linktype == 1) {
+                    if (modem(0) == 0)
+                        goto fail;
+                    fn_1c068();
+                    msgbox("MODEM INITIALIZED", 0);
+                    WAIT300();
+                    fn_1c0ac();
+                    if (netgame == 1) {
+                        if (dial() == 0) {
+                            modem(0);
+                            goto fail;
+                        }
+                    } else if (answer_call() == 0) {
+                        modem(1);
+                        goto fail;
+                    }
+                }
+                PALSAVE();
+                msgbox("SYNC IN PROGRESS", 0);
+                net88c14 = f2e0fc();
+                if (net88c14) {
+                    PALREST();
+                    fn_1c068();
+                    msgbox("COULD NOT SYNC!!!", 0);
+                    WAIT300();
+                    fn_1c0ac();
+                    if (linktype == 1)
+                        modem(1);
+                    goto fail;
+                }
+                PALREST();
+                connected = 0;
+                if (musicpaused) {
+                    music_resume();
+                    musicpaused = 0;
+                }
+                PALSAVE();
+                msgbox("CHECKING VERSION INFO", 0);
+                net88c14 = net_key(v7eca0 & 0xff, 0, 0);
+                t = ticks;
+                do
+                    ;
+                while (ticks - t < 0x46);
+                PALREST();
+                if (net88c14) {
+                    if (linktype == 1)
+                        modem(1);
+                    if (comopen) {
+                        com_close();
+                        comopen = 0;
+                    }
+                    net88c22 = 0;
+                    netgame = 0;
+                    net7ed78 = 0;
+                    break;
+                }
+                v7ec9c = v7eca0;
+                a = 0;
+                if (v88cef != v7ec9c)
+                    a = 1;
+                if (v88cef < v7eca0)
+                    v7ec9c = v88cef;
+                if (a) {
+                    strcpy(str7c854, " TWO DIFFERENT VERSIONS ARE    ");
+                    strcpy(str7c890, " PLAYING. THE GAME WILL SWITCH ");
+                    strcpy(str7c8cc, " TO THE LOWER VERSION WHICH IS ");
+                    strcpy(str7c908, "                               ");
+                    if (v7ec9c == 1)
+                        strcpy(str7c944, " A SHAREWARE VERSION           ");
+                    if (v7ec9c == 2)
+                        strcpy(str7c944, " A REGISTERED VERSION          ");
+                    if (v7ec9c == 3)
+                        strcpy(str7c944, " A REGISTERED AND UPGRADED     ");
+                    showlines(5, 0, 0x198);
+                }
+                net88c22 = 0;
+                net88c14 = 0;
+                break;
+            }
+            goto out;
+        fail:
+            if (comopen) {
+                com_close();
+                comopen = 0;
+            }
+        out:
+            if (musicpaused) {
+                music_resume();
+                musicpaused = 0;
+            }
+            net88c22 = 0;
+            netgame = 0;
+            net7ed78 = 0;
+            break;
+        case 7:
+            v88bda = 0;
+            s7 = 1;
+            for (;;) {
+                v88c80 = s7;
+                ents_init();
+                if (cursong != menusong)
+                    music_start(menusong, 1);
+                strcpy(&mnames[0], " ORDERING        ");
+                strcpy(&mnames[0x3c], " INSTRUCTIONS    ");
+                strcpy(&mnames[0x78], " FAMOUS DRIVERS  ");
+                strcpy(&mnames[0xb4], " CREDITS         ");
+                v88bb0 = 0xd;
+                strcpy(&mnames[0xf0], " LEAVE THIS MENU ");
+                v88b9e = 0;
+                v88c80 = menu(5, v88bda, 0, 0);
+                if (v7ecc0)
+                    v88b9e = 1;
+                if (v88bda)
+                    v88bda = 0;
+                if (v88b9e || v88c80 == 5)
+                    break;
+                s7 = v88c80;
+                switch (v88c80) {
+                case 1:
+                    demo_mode(1);
+                    v88bda = 1;
+                    break;
+                case 2:
+                    demo_mode(2);
+                    v88bda = 1;
+                    break;
+                case 3:
+                    v88c80 = 1;
+                    engines_menu(1);
+                    if (v88b9e) {
+                        v88b9e = 0;
+                        break;
+                    }
+                    zones_menu(0, 0);
+                    if (v88b9e) {
+                        v88b9e = 0;
+                        break;
+                    }
+                    for (;;) {
+                        strcpy(&mnames[0], " AMATEUR CLASS DRIVERS ");
+                        strcpy(&mnames[0x3c], " PRO CLASS DRIVERS     ");
+                        strcpy(&mnames[0x78], " CHAMP CLASS DRIVERS   ");
+                        strcpy(&mnames[0xb4], " TIME TRIAL DRIVERS    ");
+                        v88bb0 = 0xd;
+                        strcpy(&mnames[0xf0], " LEAVE THIS MENU       ");
+                        v88b9e = 0;
+                        v88c80 = menu(5, v88bda, 0, 0);
+                        if (v7ecc0)
+                            v88b9e = 1;
+                        if (v88c80 == 5)
+                            v88b9e = 1;
+                        if (v88b9e) {
+                            v88b9e = 0;
+                            break;
+                        }
+                        if (v88c80 == 4)
+                            trial_records_menu();
+                        else
+                            race_records_menu(v88c80);
+                    }
+                    break;
+                case 4:
+                    credits_screen();
+                    break;
+                }
+            }
+            v88bda = 0;
+            v88b9e = 0;
+            break;
+        case 6:
+            v88bda = 0;
+            s6 = 1;
+            for (;;) {
+                strcpy(&mnames[0], " GRAPHIC DETAIL LEVELS ");
+                strcpy(&mnames[0x3c], " VOLUME LEVELS         ");
+                strcpy(&mnames[0x78], " RACE SCREEN OPTIONS   ");
+                v88bb0 = 0xd;
+                v88c80 = s6;
+                strcpy(&mnames[0xb4], " LEAVE THIS MENU       ");
+                v88b9e = 0;
+                s6 = menu(4, 0, 0, 0);
+                if (v7ecc0)
+                    v88b9e = 1;
+                if (v88b9e || s6 == 4)
+                    break;
+                switch (s6) {
+                case 1:
+                    screen_menu();
+                    break;
+                case 2:
+                    volume_menu();
+                    break;
+                case 3:
+                    k = 1;
+                    for (;;) {
+                        v88b9e = 0;
+                        v88c80 = k;
+                        if (optmap)
+                            strcpy(&mnames[0], " OVERHEAD MAP  ON  ");
+                        else
+                            strcpy(&mnames[0], " OVERHEAD MAP  OFF ");
+                        if (optclock)
+                            strcpy(&mnames[0x3c], " CLOCK DISPLAY ON  ");
+                        else
+                            strcpy(&mnames[0x3c], " CLOCK DISPLAY OFF ");
+                        if (optspeed)
+                            strcpy(&mnames[0x78], " SPEEDOMETER   ON  ");
+                        else
+                            strcpy(&mnames[0x78], " SPEEDOMETER   OFF ");
+                        strcpy(&mnames[0xb4], " LEAVE THIS MENU   ");
+                        k = menu(4, 0, 0, 0);
+                        if (v7ecc0)
+                            v88b9e = 1;
+                        if (v88b9e || k == 4)
+                            break;
+                        if (k == 1) {
+                            if (optmap)
+                                optmap = 0;
+                            else
+                                optmap = 1;
+                        }
+                        if (k == 2) {
+                            if (optclock)
+                                optclock = 0;
+                            else
+                                optclock = 1;
+                        }
+                        if (k == 3) {
+                            if (optspeed)
+                                optspeed = 0;
+                            else
+                                optspeed = 1;
+                        }
+                    }
+                    break;
+                }
+            }
+            break;
+        case 8:
+            demo_mode(1);
+            break;
+        case 9:
+            return;
+        }
+    }
+}
+
 /* ---- 0x213f0, 159 bytes: per-entity flags after loading a level (caller 0x301b6 in f2fd8c). The
  * iterator is the global v7d7f4. ents[].f2 = -1 marks a kind >= 2 sprite in a one-player, off-line
  * KID MODE (v88bb2 4) race; with netvoices set, every kind > 2 entity becomes sprite v7eda4. */

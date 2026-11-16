@@ -223,3 +223,11 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     is the best): K&R definitions with `short which` / `int which` in either order, a short local
     copy before the strcat and before the switch, `(short)which` casts on an int, `int sx`, local
     declaration orders. Same family as 9 and 10. Test: 0x1d704 byte-identical (930 -> 955 bytes).
+
+13. **OPEN** (src/ww.c `main_menu`): why does the game's build keep a constant in a register
+    instead of folding it? 0x1f950 `mov edx,9` before `call ents_init`, then `movsx eax,dx` as
+    menu's first argument at 0x1f9b2, 0x1fa89 and 0x1fadf. The same DX saves pal_a around every
+    f375cd fade (0x1fb6f, 0x1fc43, ...). Our 9.5b build folds the 9 (`mov eax,9`) and saves pal_a in
+    BX. Tried and failed: one shared short local for both uses, separate locals, `int sel`, six
+    declaration orders. Possibly the same build difference as QUESTIONS 6 (calls the game keeps that
+    our `-oe` inlines). Test: 8 fade blocks and the three menu(9) calls in 0x1f858 match.
