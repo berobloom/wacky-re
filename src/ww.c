@@ -4456,7 +4456,7 @@ extern char p6aaae[];
 
 extern int v684e0, v685e4;
 extern char str7c854[], str7c890[], str7c8cc[];
-void f26ec4(char *p);
+void pal_6bit(unsigned char *p);
 void f278c4(int a);
 void f37cf1(void);
 void f2e4b8(int a, int b, int c);
@@ -4517,7 +4517,7 @@ retry:
     seekdat(telldat() + datsize() - 0x300);
     readdat(pcx, 0x300);
     for (card_n = 1; card_n <= 4; card_n++) {
-        f26ec4(pcx);
+        pal_6bit(pcx);
         itoa(card_n, num, 10);
         strcpy(fname, card);
         strcat(fname, "SB");
@@ -4945,7 +4945,7 @@ void fn_193a8(void)
     datfind(name);
     seekdat(telldat() + datsize() - 0x300);
     readdat(pal7d848, 0x300);
-    f26ec4(pal7d848);
+    pal_6bit(pal7d848);
     f27060((struct rec14 *)name, 2);
     v88b4a = 0;
     p7d714 = p6a980;
@@ -11646,5 +11646,57 @@ void self_project(void)
     CR->f0c = (int)sprptr;
     v88b78++;
     CR->f14 = v7d878;
+}
+
+/* ---- 0x26ec4, 37 bytes: palette 8-bit to 6-bit, 0x300 bytes in place (callers 0x18537, 0x194e7,
+ * 0x27c46; inlined in dat_pal and file_pal). */
+void pal_6bit(unsigned char *p)
+{
+    short i;
+
+    for (i = 1; i <= 0x300; i++) {
+        *p = (short)((short)*p >> 1) >> 1;
+        p++;
+    }
+}
+
+/* ---- 0x26eec, 118 bytes, no callers (dead code): the last 0x300 bytes of the WACKY.DAT entry name
+ * (a PCX palette) into buf, made 6-bit. The game inlines seekdat(telldat() + datsize() - 0x300);
+ * the two temps reproduce the inlined calls' order (the since2 pattern of car_laps). */
+void dat_pal(char *name, unsigned char *buf)
+{
+    long t, n;
+
+    datfind(name);
+    t = ftell(datfile);
+    n = datdir[datidx].size;
+    fseek(datfile, t + n - 0x300, SEEK_SET);
+    fread(buf, 0x300, 1, datfile);
+    pal_6bit(buf);
+}
+
+/* ---- 0x27028, 56 bytes: the length of an open file, keeping its position (inlined in file_pal). */
+long flength(FILE *f)
+{
+    long cur, n;
+
+    cur = ftell(f);
+    fseek(f, 0, SEEK_END);
+    n = ftell(f);
+    fseek(f, cur, SEEK_SET);
+    return n;
+}
+
+/* ---- 0x26f64, 140 bytes: the palette at the end of the PCX file name into buf, made 6-bit
+ * (caller 0x349cf in 0x348f4). */
+void file_pal(char *name, unsigned char *buf)
+{
+    FILE *f;
+
+    f = fopen(name, "rb");
+    fseek(f, flength(f) - 0x300, SEEK_SET);
+    fread(buf, 0x300, 1, f);
+    fclose(f);
+    pal_6bit(buf);
 }
 

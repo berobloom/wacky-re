@@ -332,6 +332,9 @@
 0x0287ec f287ec       # SPECULATIVE: called from frame_draw
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
+0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit
+0x026f64 file_pal     # CONFIRMED (rebuild src/ww.c): last 0x300 bytes of a PCX file into buf, 6-bit; caller 0x349cf
+0x027028 flength      # CONFIRMED (rebuild src/ww.c): ftell/fseek(END)/ftell/fseek - file length; inlined in file_pal
 0x0266a8 lights_project # CONFIRMED code, LIKELY meaning (rebuild src/ww.c): start-lights countdown (v88c44 1 -> 2, frame v88c5e) and projection; callers frame_draw 0x134fa, 0x13603
 0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608
 0x0253d8 sprites_draw # CONFIRMED (rebuild src/ww.c): depth-sorts the arr79a28 records by f10 and draws them (curkart via kart_draw); callers frame_draw 0x1350e, 0x13617
@@ -569,7 +572,7 @@
 0x088b10 w88b10       # LIKELY: short, set to 1 by the bonus menus (palette/ent refresh flag)
 0x088b1e w88b1e       # LIKELY: short, the sound-card/sprite index the menus show (v88c96-1, card+4)
 0x088c58 v88c58       # LIKELY: short, set to 1 by both bonus menus
-0x026ec4 f26ec4       # SPECULATIVE: called with the dat palette block from both bonus menus
+0x026ec4 pal_6bit     # CONFIRMED (rebuild src/ww.c): 0x300 palette bytes >> 2 in place; callers 0x18537, 0x194e7, 0x27c46
 0x0278c4 f278c4       # SPECULATIVE: called with 0 after f32cf8 in both bonus menus
 0x037cf1 f37cf1       # SPECULATIVE: called after each fn_182d0 palette flash (refreshes the palette)
 0x0377ae f377ae       # SPECULATIVE: called after ctl_setup(0) in the menu loops
