@@ -300,6 +300,8 @@
 0x02d94c netkeys_in   # CONFIRMED (rebuild src/ww.c): unpacks the received key byte v88cef into keys cd5/cdd, buttons b40-b46, v88cec
 0x02d9a8 netkeys_in1  # CONFIRMED (rebuild src/ww.c): v88cef into keys cd6/cd3, b40, v7ecc0; no caller found
 0x02d9e4 netkeys_out  # CONFIRMED (rebuild src/ww.c): packs keys cd6/cd3, b40, v7ecc0 into v88cf0; no caller found
+0x02da28 netkeys_pack # CONFIRMED (rebuild src/ww.c): packs keys cd5/cdd, buttons b40-b46, v88cec into v88cf0
+0x02da90 com_getc_wait # CONFIRMED (rebuild src/ww.c): com_getc retried until a byte or timeout ticks; -1
 0x012f80 draw_status  # LIKELY: player names, SCORE labels, panels; "DEMO MODE " (v7d998 == 3), "TIME TRIAL"
 0x07d228 pnames       # LIKELY: char[12] player names, indexed by myplayer and v88c6a
 0x088ca0 v88ca0       # SPECULATIVE: short; 1 draws img7eb3c once, then 2

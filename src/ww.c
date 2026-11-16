@@ -4918,7 +4918,7 @@ joyretry:
 extern char *pal7d848;
 extern short v88c96;
 extern char key88cd2, key88cdb;
-void f2da28(void);
+void netkeys_pack(void);
 void f377ae(void);
 void f37cf1(void);
 
@@ -5021,7 +5021,7 @@ mainloop:
             key88cd5 = 1;
         if (netgame && v7ec9c == 1 && v88c96 > 7)
             joy88b40 = 0;
-        f2da28();
+        netkeys_pack();
     } else {
         key88cd5 = 0;
         key88cdd = 0;
@@ -5688,7 +5688,7 @@ input:
             flip = 0;
             idle = 0;
         }
-        f2da28();
+        netkeys_pack();
         net88c14 = net_key(v88cf0, v88cf3, 0);
         v7ecc4++;
         if (v7ecc4 > 1) {                       /* 0x1ac6c: the second and later passes go fast */
@@ -14879,5 +14879,47 @@ void netkeys_out(void)
     if (v7ecc0)
         c += 0x40;
     v88cf0 = c;
+}
+
+/* ---- 0x2da28, 104 bytes: packs all local controls (keys cd5/cdd, buttons b40..b46, v88cec)
+ * into the byte v88cf0 to send (callers 0x19811, 0x1ac3f); v88cf3 cleared.
+ * differs: like netkeys_out, c in DL in the game, AL in ours. */
+void netkeys_pack(void)
+{
+    unsigned char c;
+
+    c = 0;
+    v88cf3 = c;
+    if (key88cd5)
+        c = 1;
+    if (key88cdd)
+        c += 2;
+    if (joy88b40)
+        c += 4;
+    if (joy88b42)
+        c += 8;
+    if (joy88b44)
+        c += 0x10;
+    if (joy88b46)
+        c += 0x20;
+    if (v88cec)
+        c += 0x40;
+    v88cf0 = c;
+}
+
+/* ---- 0x2da90, 111 bytes: com_getc (inlined) retried until a byte comes or timeout ticks
+ * pass; -1 on timeout. */
+short com_getc_wait(int timeout)
+{
+    int t0;
+    int c;
+
+    t0 = ticks;
+    do {
+        c = com_getc();
+        if (c != -1)
+            return c;
+    } while (ticks - t0 < timeout);
+    return -1;
 }
 
