@@ -12343,3 +12343,64 @@ void view_box(void)
     v7d5e4 = v7d5f4;
 }
 
+/* ---- 0x28668, 259 bytes: steps the two colour cycles while v88b60 runs (callers 0x2f7a0,
+ * 0x308e8): every v88b4c frames v88b38 (0..3) picks v7d6d0 + 12 * it for f37c84; v88b3a (0..8)
+ * picks v7d758 + 15 * it for f37c43 every v88b5a ticks of v88b60, but at 3 it waits v88b4e and
+ * jumps to 4. */
+extern short v88b38, v88b3a, v88b50;
+extern char *v7d744, *v7d758, *v7d6d0;
+void f37c84(void);
+void f37c43(void);
+
+void cycles_step(void)
+{
+    if (v88b60 == 0)
+        return;
+    if (v88b50 >= v88b4c) {
+        if (++v88b38 > 3)
+            v88b38 = 0;
+        v7d744 = v7d6d0 + v88b38 * 12;
+        f37c84();
+        v88b50 = 0;
+    }
+    if (v88b3a == 3 && v88b60 >= v88b4e) {
+        v88b3a = 4;
+        v88b60 = 0;
+        v7d744 = v7d758 + 0x3c;
+        f37c43();
+    } else if (v88b60 >= v88b5a && v88b3a != 3) {
+        if (++v88b3a > 8)
+            v88b3a = 0;
+        v88b60 = 0;
+        v7d744 = v7d758 + v88b3a * 15;
+        f37c43();
+    }
+    v88b60++;
+    v88b50++;
+}
+
+/* ---- 0x2876c, 128 bytes: v7d800's direction frame from its track position (caller 0x288bc in
+ * 0x287ec): v88c0e = pos / 0xf0, frame = v88c0e & 7, moved one on (wrapping 0..7) in the second
+ * half of a 0xf0 step - up when pos > v88c0e, else down; f1a = dirfr7d328[frame]. */
+extern short v88c0e, dirfr7d328[];
+#pragma aux dirfr7d328 "_arr7d328"
+
+void kart_dirframe(void)
+{
+    int pos;
+    short a, r;
+
+    pos = v7d800->pos;
+    v88c0e = pos / 0xf0;
+    r = pos % 0xf0;
+    a = v88c0e & 7;
+    if (r >= 0x78) {
+        if (pos > v88c0e) {
+            if (++a > 7)
+                a = 0;
+        } else if (--a < 0)
+            a = 7;
+    }
+    v7d800->f1a = dirfr7d328[a];
+}
+
