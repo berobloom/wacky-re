@@ -1665,13 +1665,16 @@ extern int laptimes[];
 void FX_StopSound(int handle);
 void car_finished(int i);
 
-/* differs: the game inlines since2(cars[i].f82) and we call it (cf. modem and -oe); laptimes index in eax
-   rather than edi (+203); the backward-lap score2 operands load in the other order */
+/* differs: laptimes index in eax rather than edi (+203) and EDI/EDX swapped in the later lap blocks;
+   the backward-lap score2 operands load in the other order. The game inlines since2(cars[i].f82)
+   (argument in EAX, ticks2 - t in EDX) where our -oe keeps the call: written out with a temp,
+   `(t = cars[i].f82, ticks2 - t)`, that site matches (12 -> 9 diff blocks). */
 void car_laps(void)
 {
     int n;
     int i;
     int c;
+    int t;
 
     n = splitscreen != 0;
     for (i = 0; i <= n; i++) {
@@ -1728,7 +1731,7 @@ void car_laps(void)
                 cars[i].f96 = 1;
             }
         } else if (cars[i].f96) {
-            if (curcell > cars[i].lastcell || since2(cars[i].f82) >= 10)
+            if (curcell > cars[i].lastcell || (t = cars[i].f82, ticks2 - t) >= 10)
                 cars[i].f96 = 0;
         }
         cars[i].lastcell = curcell;
