@@ -15037,7 +15037,7 @@ extern short v88cae;
 extern unsigned char v88cf1, v88cf4;
 extern unsigned char b88cf2;
 #pragma aux b88cf2 "_v88cf2"
-void f2f794(void);
+void race_frame2(void);
 void view_box_x(void);
 #pragma aux view_box_x "view_box_"
 void sprites_build_x(void);
@@ -15083,7 +15083,7 @@ short net_key(unsigned char key, unsigned char flag, int x)
                 sprites_build_x();
             }
             if (v7ed6c && !v7ed74)
-                f2f794();
+                race_frame2();
         }
         r = net_recv();
         if (v88cb0 < v88cae && r != 'N') {
@@ -15815,5 +15815,175 @@ void view_sprites(void)
     shots_project();
     if (v88b78)
         sprites_draw();
+}
+
+/* ---- 0x2f794, 1528 bytes (callers net_key 0x2de3f while it waits, the race loop 0x310c0):
+ * the rest of a race frame after the first view: cycles and turn bumps, the v88c8c curtain of
+ * three bars (tb80ae8: 1 slides them in to 0x72/0x80/0x8e, 2 out to 0xc7/0xc7/0xb1 setting
+ * v88c9e, 3 ends), the second view in split screen (view2_in .. view2_out, with the second
+ * player's controls from the keyboard: F1..F6 = scancodes 2..7 as gigs in v88cdf), the
+ * overlays, animations and faces, the crack, and the Pause key (scancode 0xc5) outside net
+ * games and demos: palette dimmed, music paused, PAUSED until a key. */
+extern int v7d8b0, v7ed70, v7ed88, v7d5dc;
+extern char v7b6e5, v7b6e7, v7b6e9, v7b6eb, v7b6ed, v7b6ef;
+extern short v88c56;
+extern short av7eb80[];
+#pragma aux av7eb80 "_v7eb80"
+void f36ec2(void);
+
+void race_frame2(void)
+{
+    int u;
+
+    v7ed74 = 1;
+    cycles_step();
+    bump_turn();
+    if (v88c8c) {
+        if (v88c8c == -1)
+            v88c8c = 1;
+        switch (v88c8c) {
+        case 1:
+            tb80ae8[0] -= 0x1e;
+            if (tb80ae8[0] < 0x72)
+                tb80ae8[0] = 0x72;
+            tb80ae8[1] -= 0x14;
+            if (tb80ae8[1] < 0x80)
+                tb80ae8[1] = 0x80;
+            tb80ae8[2] -= 0xa;
+            if (tb80ae8[2] < 0x8e)
+                tb80ae8[2] = 0x8e;
+            if (tb80ae8[0] == 0x72 && tb80ae8[1] == 0x80 && tb80ae8[2] == 0x8e)
+                v88c8c = 2;
+            break;
+        case 2:
+            tb80ae8[2] += 0x1e;
+            if (tb80ae8[2] > 0xb1)
+                tb80ae8[2] = 0xb1;
+            tb80ae8[1] += 0x14;
+            if (tb80ae8[1] > 0xc7)
+                tb80ae8[1] = 0xc7;
+            tb80ae8[0] += 0xa;
+            if (tb80ae8[0] > 0xc7)
+                tb80ae8[0] = 0xc7;
+            if (tb80ae8[2] == 0xb1)
+                v88c9e = 1;
+            if (tb80ae8[2] == 0xb1 && tb80ae8[1] == 0xc7 && tb80ae8[0] == 0xc7)
+                v88c8c = 3;
+            break;
+        case 3:
+            v88c8c = 0;
+            break;
+        }
+    }
+    players[0].pos = curpos;
+    if (twoplayer || splitscreen) {
+        view2_in();
+        view_box();
+        if (v7eb82) {
+            if (v88bde)
+                f3c3e9();
+            else
+                f37e94();
+        }
+        v88bf4 = 0;
+        v88b78 = 0;
+        p7d86c = arr79a28;
+        players_frames();
+        players_project();
+        ents_project();
+        self_project();
+        if (v88c38)
+            lights_project();
+        shots_project();
+        if (v88b78)
+            sprites_draw();
+        bump_turn();
+        v88ca2 = v88b0a;
+        v88ca6 = v88b0e;
+        players[1].pos = curpos;
+        v7d5dc = curpos;
+        view2_out();
+        if (!netgame) {
+            v7d8a4 = v7d8b0;
+            ctl_setup(1);
+            v7ed70 = (unsigned char)key88cd3;
+            v7ed88 = (unsigned char)key88cd6;
+            key88cc3 = key88cd5;
+            key88ccc = key88cdd;
+            if (v7b6e5)
+                key88cc3 = 1;
+            if (v7b6e7)
+                key88ccc = 1;
+            v7ed90 = ukey88cd0;
+            if (v7ed90 >= 2 && v7ed90 <= 7)
+                v88cdf = v7ed90 - 1;
+            else
+                v88cdf = 0;
+            if (cfg7712c) {
+                key88cc4 = v7b6e9;
+                key88cc5 = v7b6eb;
+            }
+            key88cc6 = v7b6ed;
+            key88cc7 = v7b6ef;
+        }
+    }
+    overlay_draw();
+    anim_tick();
+    if (netvoices)
+        fn_16eac();
+    if (twoplayer || splitscreen) {
+        spr_y = 0x2260;
+        for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+            if (v88b72 == 1)
+                spr_y -= p2offset * 0x50;
+            if (cars[v88b72].f04) {
+                if (av7eb80[v88b72] && v88bde)
+                    f36ec2();
+                u = *(int *)((char *)&cars[v88b72] + 0x7a);
+                if (ticks2 - u >= 0x12c)
+                    cars[v88b72].f04 = 0;
+            }
+        }
+    }
+    draw_faces();
+    if (anikick)
+        ani_draw();
+    if (v88c42 > 1) {
+        if (!v88c56) {
+            v88c56 = 1;
+            voice_play(0xb);
+        }
+        crack_draw();
+    }
+    if (!netgame && !v7d998 && ukey88cd0 == 0xc5) {
+        save_a = pal_a;
+        save_b = pal_b;
+        save_c = pal_c;
+        pal_c = 0xbb80;
+        pal_a = pal_d;
+        pal_b = pal_d;
+        setpalette();
+        if (musicon)
+            music_pause();
+        voices_reset();
+        msgbox("PAUSED", 0);
+        if (ukey88cd0 == 0xc5)
+            while (ukey88cd0 == 0xc5)
+                ;
+        ukey88cd0 = 0;
+        if (ukey88cd0 == 0)
+            while (ukey88cd0 == 0)
+                ;
+        pal_b = 0xbb80;
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+        if (musicon)
+            music_resume();
+        engine_start();
+    }
 }
 
