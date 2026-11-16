@@ -17374,29 +17374,11 @@ long song_size(char *name)
  * songs7c530[] (14-byte names + pathext; load_level reads entry v88b88 - 1, two-player and net
  * entry v88c90). One-player: three songs a/b/c chosen by class + metal (v88bb6 + v7ecb4, 1..6)
  * rotate through slots 0..3 (w88bce 1 -> a, 2 -> b, 3 -> c; it starts at 1), slot 4 is OVERDRIV.
- * Two-player / net: fixed BANSHI, KARD, TURBO, BRICWALL, STARBRAI, FLIGHT. */
+ * Two-player / net: fixed BANSHI, KARD, TURBO, BRICWALL, STARBRAI, FLIGHT.
+ * `&"NAME"[0]` gives the game's byte-loop strcpy (a plain literal gets movsd) and keeps the names
+ * in CONST at 0x61b34 (extern arrays matched the code but shifted every later CONST string). */
 extern char songs7c530[][14];
 #pragma aux songs7c530 "_arr7c530"
-extern char s61b34[];   /* "TURBO" */
-#pragma aux s61b34 "_s61b34"
-extern char s61b3c[];   /* "DANCE" */
-#pragma aux s61b3c "_s61b3c"
-extern char s61b44[];   /* "FLIGHT" */
-#pragma aux s61b44 "_s61b44"
-extern char s61b4c[];   /* "STARBRAI" */
-#pragma aux s61b4c "_s61b4c"
-extern char s61b58[];   /* "BASSATTK" */
-#pragma aux s61b58 "_s61b58"
-extern char s61b64[];   /* "KARD" */
-#pragma aux s61b64 "_s61b64"
-extern char s61b6c[];   /* "BANSHI" */
-#pragma aux s61b6c "_s61b6c"
-extern char s61b74[];   /* "BRICWALL" */
-#pragma aux s61b74 "_s61b74"
-extern char s61b80[];   /* "PUMPER" */
-#pragma aux s61b80 "_s61b80"
-extern char s61b88[];   /* "OVERDRIV" */
-#pragma aux s61b88 "_s61b88"
 
 void songs_pick(void)
 {
@@ -17407,51 +17389,51 @@ void songs_pick(void)
     if (!twoplayer && !netvoices) {
         switch (v88bb6 + v7ecb4) {
         case 1:
-            strcpy(a, s61b34);
+            strcpy(a, &"TURBO"[0]);
             strcat(a, pathext);
-            strcpy(b, s61b3c);
+            strcpy(b, &"DANCE"[0]);
             strcat(b, pathext);
-            strcpy(c, s61b44);
+            strcpy(c, &"FLIGHT"[0]);
             strcat(c, pathext);
             break;
         case 2:
-            strcpy(a, s61b4c);
+            strcpy(a, &"STARBRAI"[0]);
             strcat(a, pathext);
-            strcpy(b, s61b58);
+            strcpy(b, &"BASSATTK"[0]);
             strcat(b, pathext);
-            strcpy(c, s61b64);
+            strcpy(c, &"KARD"[0]);
             strcat(c, pathext);
             break;
         case 3:
-            strcpy(a, s61b6c);
+            strcpy(a, &"BANSHI"[0]);
             strcat(a, pathext);
-            strcpy(b, s61b4c);
+            strcpy(b, &"STARBRAI"[0]);
             strcat(b, pathext);
-            strcpy(c, s61b74);
+            strcpy(c, &"BRICWALL"[0]);
             strcat(c, pathext);
             break;
         case 4:
-            strcpy(a, s61b44);
+            strcpy(a, &"FLIGHT"[0]);
             strcat(a, pathext);
-            strcpy(b, s61b64);
+            strcpy(b, &"KARD"[0]);
             strcat(b, pathext);
-            strcpy(c, s61b80);
+            strcpy(c, &"PUMPER"[0]);
             strcat(c, pathext);
             break;
         case 5:
-            strcpy(a, s61b3c);
+            strcpy(a, &"DANCE"[0]);
             strcat(a, pathext);
-            strcpy(b, s61b58);
+            strcpy(b, &"BASSATTK"[0]);
             strcat(b, pathext);
-            strcpy(c, s61b34);
+            strcpy(c, &"TURBO"[0]);
             strcat(c, pathext);
             break;
         case 6:
-            strcpy(a, s61b6c);
+            strcpy(a, &"BANSHI"[0]);
             strcat(a, pathext);
-            strcpy(b, s61b74);
+            strcpy(b, &"BRICWALL"[0]);
             strcat(b, pathext);
-            strcpy(c, s61b4c);
+            strcpy(c, &"STARBRAI"[0]);
             strcat(c, pathext);
             break;
         }
@@ -17471,20 +17453,20 @@ void songs_pick(void)
                 break;
             }
         }
-        strcpy(songs7c530[4], s61b88);
+        strcpy(songs7c530[4], &"OVERDRIV"[0]);
         strcat(songs7c530[4], pathext);
     } else {
-        strcpy(songs7c530[0], s61b6c);
+        strcpy(songs7c530[0], &"BANSHI"[0]);
         strcat(songs7c530[0], pathext);
-        strcpy(songs7c530[1], s61b64);
+        strcpy(songs7c530[1], &"KARD"[0]);
         strcat(songs7c530[1], pathext);
-        strcpy(songs7c530[2], s61b34);
+        strcpy(songs7c530[2], &"TURBO"[0]);
         strcat(songs7c530[2], pathext);
-        strcpy(songs7c530[3], s61b74);
+        strcpy(songs7c530[3], &"BRICWALL"[0]);
         strcat(songs7c530[3], pathext);
-        strcpy(songs7c530[4], s61b4c);
+        strcpy(songs7c530[4], &"STARBRAI"[0]);
         strcat(songs7c530[4], pathext);
-        strcpy(songs7c530[5], s61b44);
+        strcpy(songs7c530[5], &"FLIGHT"[0]);
         strcat(songs7c530[5], pathext);
     }
 }
@@ -17526,6 +17508,424 @@ int songs_load(void)
             fread(menusongs[i], n, 1, datfile);
         }
     }
+    return 1;
+}
+
+/* ---- 0x336c8, 2832 bytes (caller 0x35ca4 at 0x363f3, start-up): allocates every fixed buffer:
+ * the voice / engine / horn sample buffers (only for fx cards other than -1, 2 and 7), the six kart
+ * sprite set names and sizes (kartsets[], 38X28 .. 18X13.INF), the level block v7d750 (0x4fa00 +
+ * v7d648 * v7d644 * 4 + the set sizes), the car pool, palettes, picture buffers, sprite sets and
+ * fonts. v7ebb8 sums the sizes; on a failure the request size goes to v7eb88, the message (the
+ * game's own names: "Car_pool", "posmap", "sel_pal", ...) to the log when v88bea, and it returns 0.
+ * Returns 1 after logging "tot malloc". */
+extern char *A_voicedata;
+#pragma aux A_voicedata "_voicedata"
+extern char *A_enginedata;
+#pragma aux A_enginedata "_enginedata"
+extern char *A_sfx2data;
+#pragma aux A_sfx2data "_sfx2data"
+extern char *A_gigdata;
+#pragma aux A_gigdata "_gigdata"
+extern char *A_sfxdata;
+#pragma aux A_sfxdata "_sfxdata"
+extern char *A_v7d750;
+#pragma aux A_v7d750 "_v7d750"
+extern char *A_v7d708;
+#pragma aux A_v7d708 "_v7d708"
+extern char *A_map;
+#pragma aux A_map "_map"
+extern char *A_pal7d848;
+#pragma aux A_pal7d848 "_pal7d848"
+extern char *A_pal7d84c;
+#pragma aux A_pal7d84c "_pal7d84c"
+extern char *A_pal7d850;
+#pragma aux A_pal7d850 "_pal7d850"
+extern char *A_v7d858;
+#pragma aux A_v7d858 "_v7d858"
+extern char *A_p6a978;
+#pragma aux A_p6a978 "_p6a978"
+extern char *A_p6a97c;
+#pragma aux A_p6a97c "_p6a97c"
+extern char *A_p6a980;
+#pragma aux A_p6a980 "_p6a980"
+extern char *A_icons;
+#pragma aux A_icons "_icons"
+extern char *A_hogdata;
+#pragma aux A_hogdata "_hogdata"
+extern char *A_crackdata;
+#pragma aux A_crackdata "_crackdata"
+extern char *A_v7eb20;
+#pragma aux A_v7eb20 "_v7eb20"
+extern char *A_v7d820;
+#pragma aux A_v7d820 "_v7d820"
+extern char *A_v7d710;
+#pragma aux A_v7d710 "_v7d710"
+extern char *A_p7d718;
+#pragma aux A_p7d718 "_p7d718"
+extern char *A_v7d758;
+#pragma aux A_v7d758 "_v7d758"
+extern char *A_v7d85c;
+#pragma aux A_v7d85c "_v7d85c"
+extern char *A_wfont;
+#pragma aux A_wfont "_wfont"
+extern char *A_ofont;
+#pragma aux A_ofont "_ofont"
+extern char *A_ofont3;
+#pragma aux A_ofont3 "_ofont3"
+extern char *A_anidata;
+#pragma aux A_anidata "_anidata"
+extern char *A_ofont2;
+#pragma aux A_ofont2 "_ofont2"
+extern char *A_ajdata;
+#pragma aux A_ajdata "_ajdata"
+extern char *A_pufdata;
+#pragma aux A_pufdata "_pufdata"
+extern char *A_handledata;
+#pragma aux A_handledata "_handledata"
+extern char *A_lapdata;
+#pragma aux A_lapdata "_lapdata"
+extern char *A_sparkdata;
+#pragma aux A_sparkdata "_sparkdata"
+extern char *A_genef;
+#pragma aux A_genef "_genef"
+extern char *A_img7eb5c;
+#pragma aux A_img7eb5c "_img7eb5c"
+extern char *A_img7eb3c;
+#pragma aux A_img7eb3c "_img7eb3c"
+extern char *A_v7ed14;
+#pragma aux A_v7ed14 "_v7ed14"
+extern char *A_v7ec98;
+#pragma aux A_v7ec98 "_v7ec98"
+extern int v7eb88, v7d62c, v7eba4, v7eba0;
+
+int mem_alloc(void)
+{
+    short i;
+    int n;
+
+    v7ebb8 = 0;
+    if (fxcard != -1 && fxcard != 7 && fxcard != 2) {
+        v7ebb8 += 0x29810;
+        A_voicedata = malloc(0x29810);
+        if (A_voicedata == NULL) {
+            if (v88bea)
+                logerr("VOC buffer failed");
+            v7eb88 = 0x29810;
+            return 0;
+        }
+        v7ebb8 += 0x942;
+        A_enginedata = malloc(0x942);
+        if (A_enginedata == NULL) {
+            if (v88bea)
+                logerr("Engine VOC failed");
+            v7eb88 = 0x942;
+            return 0;
+        }
+        v7ebb8 += 0xe3a;
+        A_sfx2data = malloc(0xe3a);
+        if (A_sfx2data == NULL) {
+            if (v88bea)
+                logerr("My VOC failed");
+            v7eb88 = 0xe3a;
+            return 0;
+        }
+        v7ebb8 += 0xa410;
+        A_gigdata = malloc(0xa410);
+        if (A_gigdata == NULL) {
+            if (v88bea)
+                logerr("Devil Voices Failed");
+            v7eb88 = 0xa410;
+            return 0;
+        }
+        A_sfxdata = malloc(0xfe5);
+        if (A_sfxdata == NULL) {
+            if (v88bea)
+                logerr("Horn voice failed");
+            v7eb88 = 0xfe5;
+            return 0;
+        }
+    }
+    kartsets[0].f00 = 0x519c;
+    strcpy(kartsets[0].name, "38X28.INF");
+    kartsets[1].f00 = 0x3c28;
+    strcpy(kartsets[1].name, "28X28.INF");
+    kartsets[2].f00 = 0x1e38;
+    strcpy(kartsets[2].name, "14X28.INF");
+    kartsets[3].f00 = 0x3a70;
+    strcpy(kartsets[3].name, "32X24.INF");
+    kartsets[4].f00 = 0xffc;
+    strcpy(kartsets[4].name, "15X13.INF");
+    v7d628 = 0;
+    kartsets[5].f00 = 0x1324;
+    strcpy(kartsets[5].name, "18X13.INF");
+    for (i = 0; i < 6; i++)
+        v7d628 += kartsets[i].f00;
+    v7d640 = 0x3c00;
+    v7d658 = 0x15e00;
+    v7d604 = 0x36000;
+    v7d62c = 0x2000;
+    v7d600 = v7d648 * v7d644 * 4;
+    n = 0x4fa00 + v7d600 + v7d628;
+    v7ebb8 += n;
+    A_v7d750 = malloc(n);
+    if (A_v7d750 == NULL) {
+        if (v88bea)
+            logerr("Buffer failed");
+        v7eb88 = n;
+        return 0;
+    }
+    v7ebb8 += 0x1f2c0;
+    A_v7d708 = malloc(0x1f2c0);
+    if (A_v7d708 == NULL) {
+        if (v88bea)
+            logerr("Car_pool failed");
+        v7eb88 = 0x1f2c0;
+        return 0;
+    }
+    v7ebb8 += v7d62c;
+    A_map = malloc(v7d62c);
+    if (A_map == NULL) {
+        if (v88bea)
+            logerr("posmap failed");
+        v7eb88 = v7d62c;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_pal7d848 = malloc(0x300);
+    if (A_pal7d848 == NULL) {
+        if (v88bea)
+            logerr("sel_combat_pal failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_pal7d84c = malloc(0x300);
+    if (A_pal7d84c == NULL) {
+        if (v88bea)
+            logerr("sel_pal failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_pal7d850 = malloc(0x300);
+    if (A_pal7d850 == NULL) {
+        if (v88bea)
+            logerr("spare_pal failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_v7d858 = malloc(0x300);
+    if (A_v7d858 == NULL) {
+        if (v88bea)
+            logerr("dum_pal failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0xfa00;
+    A_p6a978 = malloc(0xfa00);
+    if (A_p6a978 == NULL) {
+        if (v88bea)
+            logerr("Picbufs[0] Failed");
+        v7eb88 = 0xfa00;
+        return 0;
+    }
+    A_v7ed14 = A_p6a978;
+    A_v7ec98 = A_p6a978;
+    v7ebb8 += 0xabe0;
+    A_p6a97c = malloc(0xabe0);
+    if (A_p6a97c == NULL) {
+        if (v88bea)
+            logerr("picbufs[1] failed");
+        v7eb88 = 0xabe0;
+        return 0;
+    }
+    v7ebb8 += 0x13880;
+    A_p6a980 = malloc(0x13880);
+    if (A_p6a980 == NULL) {
+        if (v88bea)
+            logerr("Picbufs[2] Failed");
+        v7eb88 = 0x13880;
+        return 0;
+    }
+    v7ebb8 += 0x15c6;
+    A_icons = malloc(0x15c6);
+    if (A_icons == NULL) {
+        if (v88bea)
+            logerr("Icons sp Failed");
+        v7eb88 = 0x15c6;
+        return 0;
+    }
+    v7ebb8 += 0x1900;
+    A_hogdata = malloc(0x1900);
+    if (A_hogdata == NULL) {
+        if (v88bea)
+            logerr("Weapons sp Failed");
+        v7eb88 = 0x1900;
+        return 0;
+    }
+    v7ebb8 += 0x1458;
+    A_crackdata = malloc(0x1458);
+    if (A_crackdata == NULL) {
+        if (v88bea)
+            logerr("crack sp Failed");
+        v7eb88 = 0x1458;
+        return 0;
+    }
+    v7ebb8 += v7eba4;
+    A_v7eb20 = malloc(v7eba4);
+    if (A_v7eb20 == NULL) {
+        if (v88bea)
+            logerr("ingame sprites failed");
+        v7eb88 = v7eba4;
+        return 0;
+    }
+    v7ebb8 += v7eba0;
+    A_v7d820 = malloc(v7eba0);
+    if (A_v7d820 == NULL) {
+        if (v88bea)
+            logerr("effects Failed");
+        v7eb88 = v7eba0;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_v7d710 = malloc(0x300);
+    if (A_v7d710 == NULL) {
+        if (v88bea)
+            logerr("tmp_pal Failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_p7d718 = malloc(0x300);
+    if (A_p7d718 == NULL) {
+        if (v88bea)
+            logerr("pp Failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_v7d758 = malloc(0x300);
+    if (A_v7d758 == NULL) {
+        if (v88bea)
+            logerr("cpl Failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x300;
+    A_v7d85c = malloc(0x300);
+    if (A_v7d85c == NULL) {
+        if (v88bea)
+            logerr("menu_pal Failed");
+        v7eb88 = 0x300;
+        return 0;
+    }
+    v7ebb8 += 0x1ffe;
+    A_wfont = malloc(0x1ffe);
+    if (A_wfont == NULL) {
+        if (v88bea)
+            logerr("font1_ptr Failed");
+        v7eb88 = 0x1ffe;
+        return 0;
+    }
+    v7ebb8 += 0xf40;
+    A_ofont = malloc(0xf40);
+    if (A_ofont == NULL) {
+        if (v88bea)
+            logerr("font2_ptr Failed");
+        v7eb88 = 0xf40;
+        return 0;
+    }
+    v7ebb8 += 0x2240;
+    A_ofont3 = malloc(0x2240);
+    if (A_ofont3 == NULL) {
+        if (v88bea)
+            logerr("s_font Failed");
+        v7eb88 = 0x2240;
+        return 0;
+    }
+    v7ebb8 += 0xb6e0;
+    A_anidata = malloc(0xb6e0);
+    if (A_anidata == NULL) {
+        if (v88bea)
+            logerr("gigdat failed");
+        v7eb88 = 0xb6e0;
+        return 0;
+    }
+    v7ebb8 += 0xebc;
+    A_ofont2 = malloc(0xebc);
+    if (A_ofont2 == NULL) {
+        if (v88bea)
+            logerr("Logo failed");
+        v7eb88 = 0xebc;
+        return 0;
+    }
+    v7ebb8 += 0x10a0;
+    A_ajdata = malloc(0x10a0);
+    if (A_ajdata == NULL) {
+        if (v88bea)
+            logerr("aj Failed");
+        v7eb88 = 0x10a0;
+        return 0;
+    }
+    v7ebb8 += 0x10a0;
+    A_pufdata = malloc(0x10a0);
+    if (A_pufdata == NULL) {
+        if (v88bea)
+            logerr("puf Failed");
+        v7eb88 = 0x10a0;
+        return 0;
+    }
+    v7ebb8 += 0xe60;
+    A_handledata = malloc(0xe60);
+    if (A_handledata == NULL) {
+        if (v88bea)
+            logerr("handle Failed");
+        v7eb88 = 0xe60;
+        return 0;
+    }
+    v7ebb8 += 0x4c56;
+    A_lapdata = malloc(0x4c56);
+    if (A_lapdata == NULL) {
+        if (v88bea)
+            logerr("lap_sp Failed");
+        v7eb88 = 0x4c56;
+        return 0;
+    }
+    v7ebb8 += 0x168;
+    A_sparkdata = malloc(0x168);
+    if (A_sparkdata == NULL) {
+        if (v88bea)
+            logerr("orig_spark Failed");
+        v7eb88 = 0x168;
+        return 0;
+    }
+    v7ebb8 += 0x3964;
+    A_genef = malloc(0x3964);
+    if (A_genef == NULL) {
+        if (v88bea)
+            logerr("genef Failed");
+        v7eb88 = 0x3964;
+        return 0;
+    }
+    A_img7eb5c = malloc(0xf3c);
+    v7ebb8 += 0xf3c;
+    if (A_img7eb5c == NULL) {
+        if (v88bea)
+            logerr("Little maps failed");
+        v7eb88 = 0xf3c;
+        return 0;
+    }
+    A_img7eb3c = malloc(0xf3c);
+    v7ebb8 += 0xf3c;
+    if (A_img7eb3c == NULL) {
+        if (v88bea)
+            logerr("Little maps save SP failed");
+        v7eb88 = 0xf3c;
+        return 0;
+    }
+    if (v88bea)
+        fprintf(errlog, "tot malloc=%d\n", v7ebb8);
     return 1;
 }
 

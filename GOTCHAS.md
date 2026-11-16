@@ -357,3 +357,9 @@ it can be copied back into DREA.
   differ as `@`, so `mov [esp+0x10],bl` vs `mov [esp+0x14],bl` compares equal. net_send 0x2dc38 had
   0 diff blocks while check.sh said "differs at +13" (two locals' stack slots swapped; fixed by
   declaration order). Always confirm with check.sh before writing "byte-identical".
+- **A byte-loop strcpy from a constant address is still a literal** (iter 14, [generic]): Watcom
+  inlines `strcpy(buf, "TURBO")` as movsd/movsw/movsb; the game's songs_pick 0x32e60 has the generic
+  `mov al,[esi]` loop with `esi = 0x61b34`. Extern char arrays matched the code but took the names
+  out of CONST, so check.sh's `segment CONST` line went from "agree" to DISAGREES 0x60 bytes later
+  (a later function's strings). `strcpy(buf, &"TURBO"[0])` gives the loop and keeps the literal in
+  CONST. Watch the `segment CONST` line after every new string, not only the function's MATCH.
