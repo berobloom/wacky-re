@@ -263,5 +263,14 @@ it can be copied back into DREA.
 - **`tools/wc/fndiff.py`'s diff count is not the number of real differences** (iter 13, [generic]):
   it aligns only `min(len(ours), len(game))` instructions, so when ours is shorter its whole epilogue
   shows up as ours-only rows (`race_records_menu`: it printed 13 pairs where the real difference was
-  5 in one block, 8 were its own cut-off `add esp,4`/`pop`/`ret`). Read the blocks; count instructions
-  per range with `tools/le/disasm.py` before concluding anything from the number.
+  5 in one block, 8 were its own cut-off `add esp,4`/`pop`/`ret`). Read the blocks and the
+  instruction counts (`tools/wc/fncompare.py` prints both, plus pairs whose text agrees but whose
+  byte length differs, e.g. rel8 vs rel32) before concluding anything from the number.
+- **A `tools/wc/variants.py` probe file must `#include <string.h>` (and the same prototypes) or it
+  compiles a different function** (iter 13, [generic]): my probe of `race_records_menu` (six spellings,
+  no includes) gave 332-byte variants against the 514 bytes the same body produces inside `src/ww.c`,
+  because Watcom then emits real `strcat`/`strlen` calls instead of its inlines - so the probe's
+  scores and register choices were not the whole-file ones. Copy the includes/extern block over
+  verbatim, and confirm the probe's size is within a few bytes of the real one before believing a
+  ranking. For whole-file answers, edit `src/ww.c` and diff with `tools/wc/fncompare.py` (aligned
+  pairs, instruction counts per side, and pairs whose text agrees but whose length differs).

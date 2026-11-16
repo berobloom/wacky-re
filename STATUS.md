@@ -8,12 +8,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
   used); one C module, an asm block, libraries incl. the Apogee Sound System (findings/executables.md).
 - Classes/modes (findings/classes.md): `v88bb2` = 1 AMATEUR ... 5 KID MODE (a **signed** short),
   `classes_menu` 0x19eac is that screen; `laps_menu` 0x1a148 (identical) sets `nlaps` 6/8/10.
-- Car select (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b, one 6861-byte C function,
-  `ents[0..7]` car icons plus **`ents[8]` as the selection box** (0x73998); `v7d338[car]` = per-car
-  lock, shareware 0,1,5,6 (`v7e574`, 0x34463-0x344d4).
+- Car select (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b, one 6861-byte C function, `ents[0..7]`
+  car icons plus **`ents[8]` as the selection box** (0x73998); `v7d338[car]` = per-car lock (0x34463).
 - Race setup (findings/game-loop.md, both near misses): `fn_1be3c` builds the start grid
   `v70720[0..7]` (permutation of 0..7, `myplayer` first, `v88c6a` second in 2p, the rest `rand()`-drawn
-  or counting up under splitscreen); `fn_1bf00` sets `players[i].f64`/`.face`.
+  or counting up in splitscreen); `fn_1bf00` sets `players[i].f64`/`.face`.
 - Scores (findings/scores.md): `tbl77758` rows of 0x450 = 24 records of 0x2e (stamp +6 from
   `fn_1c994`, name +0x1a), row `v88bb6 + v7ecb4`; `fn_1cad0` picks one, `enter_name` 0x1cb44 (21 slot
   diffs), `scores_screen` 0x1ce14 (97 diffs) inserts `v7ed5c` among the group's first four - beating
@@ -22,8 +21,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
   puts its choice in `v88c80`; 1-3 call `race_records_menu` 0x1d13c (`fn_1d704(class, v7ecb4 +
   choice)`, near miss), 4 calls 0x1d340 (TRIALS + five "TRACK n" rows, not read); row names are
   `strcpy(prefix)` + `strcat(row)` + padding to the first row's width.
-- Menus/help (findings/menus.md): `fn_1c0f4` 0x1c0f4-0x1c88b = the F1 controls screen, its control
-  names in 84-byte records at 0x77432.
+- Menus/help (findings/menus.md): `fn_1c0f4` 0x1c0f4-0x1c88b = the F1 controls screen; control names
+  in 84-byte records at 0x77432.
 - Video (findings/video.md): `setpalette` 0x36f14 is **not** a palette op - asm `rep movsb` of
   0x3e80 bytes A0000+`pal_b` to A0000+`pal_c`; its flippers stay `extern` (-oe loses `net_end`,
   GOTCHAS); page flips are `if`/`else` pairs of stores, never ternaries.
@@ -39,14 +38,16 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
    `race_records_menu`'s body - its 0x1d378-0x1d3c6 name block is the tail-merged form ours already
    emits; scalars in slots esp+0x24/0x28/0x2c/0x30, a row buffer at esp+0x14), then `fn_1d704` (the
    score table screen, LEAD.PCX 0x1d71f; `starts.py` 0x1d6d0/0x1d6f0 need the padding rule).
-3. `race_records_menu` 0x1d13c, one block left: the game loads the pooled "" byte 0x600ac into EDX
-   and ours into EAX, which lets -oe tail-merge a store (GOTCHAS iter 13, six probes failed).
+3. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
+   0x600ac into EDX, ours into EAX, which lets -oe tail-merge a store (GOTCHAS iter 13 - and the six
+   probes in `.work/rrmv.c` were useless, that file has no `#include <string.h>`). Diff with
+   `tools/wc/fncompare.py` (instruction counts per side, unlike fndiff).
 4. Local-slot probes (QUESTIONS 9, 10): `enter_name` 21 diffs, all displacements; `scores_screen` 97
    diffs (five causes in its `differs:` note). Vary one lever per try (`short` vs `int`, etc.).
 5. `fn_1c0f4` (the help screen, near miss of exactly the game's size): 67 aligned diffs, five
    block-shape causes in its `differs:` note.
-6. The two-module experiment for QUESTIONS 6: the palette pair (and ideally `readdat`) from a second
-   OMF module so the calls survive `-oe`: matches `fn_1c068`/`fn_1c0ac`, 11 bytes off 24 `readdat`.
+6. The two-module experiment for QUESTIONS 6: the palette pair (and `readdat`) from a second OMF
+   module so the calls survive `-oe`: matches `fn_1c068`/`fn_1c0ac`, 11 bytes off 24 `readdat`.
 7. Two call-shape traps left (`v88bb2` is now `short`, which fixed 0x1d120): `f375cd`'s aux
    `parm [edx]` forces mov+movzwl over a 16-bit load (0x19506, 0x1ce57; `pal_a short` costs a match),
    and `telldat() + datsize() - 0x300` accumulates in the wrong register (0x194c8).
@@ -55,5 +56,6 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
 9. Get the original running under the harness; record the boot's segments or LE deltas and a first
    save state in `captures/`. Cheap checks: eight cars selectable off-net when registered
    (`v7e574 == 0`), and a `tbl77758` record read (what the +6 stamp holds, LIKELY).
-10. BLOCKED (writes outside this repo): copy GOTCHAS iter 13 (the `-oe` if/else tail merge and the
-    AL/DL encoding sizes, the fndiff min-length count) to `../DREA/reference/DOS.md`.
+10. BLOCKED (writes outside this repo): copy this session's GOTCHAS iter 13 entries (the `-oe`
+    if/else tail merge and AL/DL sizes, fndiff's count, the probe needs `#include <string.h>`) into
+    `../DREA/reference/DOS.md`.
