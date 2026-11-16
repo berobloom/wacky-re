@@ -265,6 +265,16 @@ it can be copied back into DREA.
   (`a0`/`a2`), EDX needs the 6-byte `8a 15`/`88 15` - so a near miss that is one load+N stores
   shorter, with AL where the game has DL, is this merge and not a wrong expression. Flipping the
   condition to `if (v7ecb4 != 0)` un-merges but turns the game's `jne` into `je`: two changes, not one.
+- **`-oe` sinks a zero argument constant into the following test but leaves a non-zero one alone**
+  (iter 15, [generic]): every inlined `music_start(song, 0)` in the game keeps `xor edx,edx` before the
+  inlined stores (0x11885 music_jingle, 0x2b6a3 duck_screen, 0x2cad6 race_results, 0x2e729 trial_book),
+  ours puts it after the `cursong` store - one moved instruction, 2 diffs, in all four functions.
+  The inlined `music_start(song, 1)`'s `mov edx,1` is early in both builds, so it is the *zero* that
+  moves. Tried and identical (116 bytes each, `tools/wc/variants.py` probe with the real music_play /
+  music_start bodies): `int lp = 0;` then `music_start(song, lp)`, `short lp`, `register int lp`, the
+  same local passed to both calls, an unused second parameter, spelling the inline out by hand,
+  swapping music_start's two stores, `#pragma aux music_start parm [eax] [edx]`. Cost 0 more variants
+  until someone finds what makes 9.5b define a zero early.
 - **`tools/wc/fndiff.py`'s diff count is not the number of real differences** (iter 13, [generic]):
   it aligns only `min(len(ours), len(game))` instructions, so when ours is shorter its whole epilogue
   shows up as ours-only rows (`race_records_menu`: it printed 13 pairs where the real difference was

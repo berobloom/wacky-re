@@ -8,7 +8,7 @@
 
 0    0x02e318 demo_rec               LAYOUT: call displacement only, our function sits elsewhere; not fixable in C
 1    0x032c98 pic_show               LAYOUT: code identical, only the padding after it differs (0x32cc1 is another function's tail)
-2    0x011884 music_jingle
+2    0x011884 music_jingle             SKIP: -oe sinks the zero loop-arg (xor edx,edx) below the inlined stores; int/short/register local, local in both calls, 2nd param, hand-spelled inline, store order in music_start, #pragma aux parm, for(;;) wait
 2    0x0124e8 track_setup
 2    0x019eac classes_menu
 3    0x0261fc anim_tick

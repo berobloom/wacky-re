@@ -918,7 +918,12 @@ void music_start(int song, int loop)
     }
 }
 
-/* differs: the game loads the inlined loop argument (edx) before the stores; an explicit copy does not help */
+/* differs: the game loads the inlined loop argument (edx) before the stores; an explicit copy does not help.
+ * Every inlined music_start(x, 0) in the game does this (0x11891, 0x2b6a3, 0x2cae2, 0x2e735) while an
+ * inlined music_start(x, 1) keeps mov edx,1 early in ours too, so -oe only sinks the zero constant.
+ * Tried: int/short/register local for the argument, local used by both calls, second (unused) parameter,
+ * spelling the inline out by hand, swapping the two stores in music_start, #pragma aux parm [eax] [edx],
+ * for(;;) wait loop - all produced the same 116 bytes with xor edx,edx after the cursong store. */
 void music_jingle(int song)
 {
     music_start(song, 0);
