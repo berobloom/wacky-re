@@ -14908,8 +14908,8 @@ void netkeys_pack(void)
 }
 
 /* ---- 0x2da90, 111 bytes: com_getc (inlined) retried until a byte comes or timeout ticks
- * pass; -1 on timeout. */
-short com_getc_wait(int timeout)
+ * pass; -1 on timeout. int, not short: net_recv uses the inlined result without a cwde. */
+int com_getc_wait(int timeout)
 {
     int t0;
     int c;
@@ -14921,5 +14921,69 @@ short com_getc_wait(int timeout)
             return c;
     } while (ticks - t0 < timeout);
     return -1;
+}
+
+/* ---- 0x2db00, 312 bytes: receives one packet (caller 0x2de44 in 0x2dd30): six values, the
+ * first 'Z', 'D' or 'W' (other leading bytes count as noise; after v7ed1c ticks of noise
+ * v7ed60 = v7ed34 and give up), each within v7ed20 ticks. Fewer than six: timeouts, 'N'. The
+ * CRC of the first four (crcupdate) must equal the bytes 4 and 5, else badcrc, 'N'. A 'D'
+ * packet carries v88cf6 / v88cf5; v88cb0 = value 3; returns the type. v7ed60 counts errors.
+ * differs: only the CRC accumulator's register (ECX in the game, EAX/EDX here); its
+ * declaration position and reusing n were tried. */
+extern int v7ed60;
+extern unsigned char v88cf6, v88cf5;
+extern short v88cb0;
+
+int net_recv(void)
+{
+    int buf[10];
+    unsigned short rcrc;
+    char *p;
+    unsigned short crc;
+    int n, t, c, k;
+
+    p = (char *)&rcrc;
+    n = 0;
+    t = ticks;
+    for (;;) {
+        c = com_getc_wait(v7ed20);
+        if (c == -1)
+            break;
+        if (n == 0 && c != 'Z' && c != 'D' && c != 'W') {
+            noise++;
+            if (ticks - t > v7ed1c) {
+                v7ed60 = v7ed34;
+                break;
+            }
+            continue;
+        }
+        t = ticks;
+        buf[n] = c;
+        if (n == 5)
+            break;
+        n++;
+    }
+    if (n < 5) {
+        timeouts++;
+        v7ed60++;
+        return 'N';
+    }
+    rcrc = 0;
+    crc = 0;
+    for (k = 0; k < 4; k++)
+        crc = crcupdate(crc, buf[k]);
+    *p++ = buf[4];
+    *p = buf[5];
+    if (crc != rcrc) {
+        badcrc++;
+        v7ed60++;
+        return 'N';
+    }
+    if (buf[0] == 'D') {
+        v88cf6 = buf[1];
+        v88cf5 = buf[2];
+    }
+    v88cb0 = buf[3];
+    return buf[0];
 }
 
