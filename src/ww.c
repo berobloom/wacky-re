@@ -17489,3 +17489,43 @@ void songs_pick(void)
     }
 }
 
+/* ---- 0x3360c, 185 bytes (caller 0x35ca4 at 0x36530, start-up): with music on, allocates the race
+ * song buffer v7eb00 (0xcb20 bytes) and loads the five menu songs MAINMENU, LEADRBRD, GAMEOVER,
+ * SPACEY, ASHES (+ pathext) into malloc'd buffers menusongs[0..4] (0x7c648; menusong = [0]);
+ * v7ebb8 sums the bytes. Returns 0 when a malloc fails, else 1.
+ * differs: names[i] is built in EDX with the index in EAX (ours swaps them); tried index forms,
+ * int i, a temp, declaration order. */
+extern int v7ebb8;
+extern char *menusongs[];
+#pragma aux menusongs "_menusong"
+
+void makepath_x(char *dst, char *src);
+#pragma aux makepath_x "makepath_"
+
+int songs_load(void)
+{
+    char names[5][12] = { "MAINMENU", "LEADRBRD", "GAMEOVER", "SPACEY", "ASHES" };
+    char path[20];
+    short i;
+    long n;
+
+    v7ebb8 = 0;
+    if (musicon) {
+        v7ebb8 = 0xcb20;
+        v7eb00 = (int)malloc(0xcb20);
+        if (!v7eb00)
+            return 0;
+        for (i = 0; i <= 4; i++) {
+            makepath_x(path, names[i]);
+            datfind(path);
+            n = datsize();
+            v7ebb8 += n;
+            menusongs[i] = malloc(n);
+            if (!menusongs[i])
+                return 0;
+            fread(menusongs[i], n, 1, datfile);
+        }
+    }
+    return 1;
+}
+

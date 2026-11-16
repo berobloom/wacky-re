@@ -523,6 +523,7 @@
 0x032cf8 fade_in      # CONFIRMED (rebuild src/ww.c): palette fade from black to the target, v88c46 per step, f37cf1 uploads
 0x032dd4 song_size    # CONFIRMED (rebuild src/ww.c): datfind(name + pathext), returns datdir[datidx].size; no direct caller found
 0x032e60 songs_pick   # CONFIRMED (rebuild src/ww.c): fills the song table 0x7c530 (3 songs by class+metal rotated via w88bce, OVERDRIV; fixed six in two-player/net)
+0x03360c songs_load   # CONFIRMED (rebuild src/ww.c): malloc v7eb00 0xcb20, loads the five menu songs into menusong[0..4], v7ebb8 = total; 0 on malloc failure
 0x032b14 kbd_on       # CONFIRMED (rebuild src/ww.c): drains kbhit/getch, kbd_off, saves int 9 (0x3509) into oldkbd_seg/off, installs the asm handler 0x40907 (0x2509)
 0x02dd30 net_key      # CONFIRMED (rebuild src/ww.c): D/Z/W handshake exchanging the control bytes (peer's in v88cef / v88cf2); parks a half exchange in v7ed94; 1 after too many errors
 0x02df70 com_wait_byte # CONFIRMED (rebuild src/ww.c): com_getc until a byte, 0x110-tick timeout (net88c14 1) or key cd0 abort (2); no caller found
