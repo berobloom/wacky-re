@@ -7143,3 +7143,63 @@ int dial(void)
     }
     return wait_connect();            /* 0x1e0e5 */
 }
+
+/* ---- 0x1e0f4, 471 bytes: answers a call (caller 0x20a11 in fn_1f858). "WAITING FOR CALL....",
+ * then com_waitfor("RING") until it succeeds or a wait is aborted (sendfail: "CANCELLED", 0);
+ * on RING "ANSWERING CALL...", sends "ATA" and returns wait_connect(). */
+int answer_call(void)
+{
+    save_a = pal_a;                   /* fn_1c068, inline */
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 48000;
+    pal_a = pal_d;
+    pal_b = pal_d;
+    setpalette();
+    msgbox("WAITING FOR CALL....", 0);
+    while (1) {                       /* `for (;;)` + `if (x)` costs one instruction */
+        if (com_waitfor("RING") != 0) {   /* 0x1e14a; the failed wait goes to 0x1e234, after the return */
+        pal_b = 48000;                    /* fn_1c0ac, inline */
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+        save_a = pal_a;                   /* fn_1c068, inline */
+        save_b = pal_b;
+        save_c = pal_c;
+        pal_c = 48000;
+        pal_a = pal_d;
+        pal_b = pal_d;
+        setpalette();
+        msgbox("ANSWERING CALL...", 0);   /* 0x1e1da */
+        sendstr("ATA");
+        pal_b = 48000;                    /* fn_1c0ac, inline */
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+        return wait_connect();
+        }
+        if (sendfail != 0)            /* 0x1e234 */
+            break;
+    }
+    pal_b = 48000;                    /* fn_1c0ac, inline (0x1e241) */
+    pal_a = pal_d;
+    pal_c = pal_d;
+    setpalette();
+    pal_b = save_b;
+    pal_c = save_c;
+    pal_a = save_a;
+    fn_1c068();
+    msgbox("CANCELLED", 0);
+    ticks = 0;
+    ticks2 = 0;
+    while (ticks <= 300)
+        ;
+    fn_1c0ac();
+    return 0;
+}

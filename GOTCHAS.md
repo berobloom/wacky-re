@@ -285,3 +285,8 @@ it can be copied back into DREA.
   `cmp word`), but `void fn_1d704(short, int);` made both callers add a `movsx` (race_records_menu
   504 -> 472 bytes). Declaring it `void fn_1d704();` (no parameter list) and defining it with
   `short which` keeps both callers and gives the callee its word compares.
+- **A retry loop whose success path returns: write `while (1) { if (x != 0) {...return} if (y != 0)
+  break; }`** (iter 14, [generic]): answer_call 0x1e0f4 has the failed wait's test and the cancel
+  block after the success path's `ret`. `while (!x) { if (y) {cancel} }` emits the cancel inline (54
+  diffs); `for (;;)`/`do ... while (!y)` with the same body leave one instruction off; `while (1)`
+  with explicit `!= 0` tests is byte-identical.
