@@ -195,6 +195,8 @@
 0x035324 trial_write  # CONFIRMED (rebuild src/ww.c): trial70730 (0xe10 bytes) to <0x7c158>WACKY<n>.TIM
 0x03542c scores_write # CONFIRMED (rebuild src/ww.c): tbl77758 + 0x450 (0x19e0 bytes) to <0x7c158>WACKY<n>.HI
 0x035534 duckfame_load # CONFIRMED (rebuild src/ww.c): reads WACKY.DTT into the Duck Shoot hall of fame duckfame 0x6e768; writes defaults SHAUN 16, ANDY 12, NUGGET 8, RUEBEN 6 if missing
+0x035718 duckfame_write # CONFIRMED (rebuild src/ww.c): duckfame (0x60) to <savedir>WACKY.DTT
+0x0357ac records_load # CONFIRMED (rebuild src/ww.c): WACKY<n>.TIM into trial70730 and WACKY<n>.HI into tbl77758 + 0x450, created from WAC<n>.OTT / .HTT in the DAT when missing
 0x07c158 savedir      # LIKELY: directory prefix of the .TIM / .HI save files
 0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
@@ -593,7 +595,6 @@
 0x016664 zones_menu       # STRONGLY SUPPORTED: ' REGULAR ZONES/BONUS PACK ZONES ' choice -> v7ecb4=3
 0x0167d8 engines_menu     # STRONGLY SUPPORTED: ' FAST 12 HP ENGINES '/' SLOW 6 HP ENGINES ' -> v7ee5a, v7ea58
 0x016984 screen_menu      # STRONGLY SUPPORTED: single/split detail loop, save_config at the end
-0x0357ac fn_357ac         # SPECULATIVE: called with the engine choice
 0x07ee58 v7ee58          # LIKELY: detail level choice (single screen)
 0x0774de v774de          # LIKELY: detail level choice (second screen)
 0x088b9e v88b9e          # SPECULATIVE: "menu was aborted with Enter" flag

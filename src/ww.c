@@ -3576,7 +3576,7 @@ short menu(short n, short d, short mode, short c)
 
 extern short v7ee58, v774de, v88b9e, v88c80, v88c20;
 extern int v7ebd4, v7ec9c, v7eca0, v7edb0, v7ecb8;
-extern void fn_357ac(int v);
+void records_load(int n);
 
 void detail_menu(void)
 {
@@ -3763,7 +3763,7 @@ domenu:
         return;
 setr:
     v7ecb8 = edxv;
-    fn_357ac(edxv);
+    records_load(edxv);
     if (p)
         edxv = t;
     v7ee5a = edxv;
@@ -8076,7 +8076,7 @@ extern char str7c908[], str7c944[];
 void f1bf80(void);
 void digger_load(void);
 void faces_reset(void);
-void f35718(void);
+void duckfame_write(void);
 short net_sync(void);
 
 #define FADE() { m = pal_a; pal_a = 0x7d00; p7d714 = p6a978; f375cd(); pal_a = m; }
@@ -8443,7 +8443,7 @@ void main_menu(void)
             }
             v88bb6 = 1;
             v88b88 = 1;
-            f35718();
+            duckfame_write();
             netvoices = 0;
             v7ee5a = v7eca8;
             v7ec90 = 0;
@@ -18555,6 +18555,72 @@ void duckfame_load(void)
         f = fopen(name, "rb");
     }
     fread(duckfame, 0x60, 1, f);
+    fclose(f);
+}
+
+/* ---- 0x35718, 148 bytes (caller main_menu 0x20585): writes the Duck Shoot hall of fame to
+ * <savedir>WACKY.DTT. */
+void duckfame_write(void)
+{
+    char name[0x80];
+    FILE *f;
+
+    strcpy(name, savedir);
+    strcat(name, "WACKY.DTT");
+    f = fopen(name, "wb");
+    fwrite(duckfame, 0x60, 1, f);
+    fclose(f);
+}
+
+/* ---- 0x357ac, 970 bytes (callers detail_menu 0x... and start-up, n = the save slot v7ee5a):
+ * reads <savedir>WACKY<n>.TIM into trial70730 (0xe10) and WACKY<n>.HI into tbl77758 + 0x450
+ * (0x19e0); a missing file is first created from the DAT's defaults WAC<n>.OTT / WAC<n>.HTT. */
+void records_load(int n)
+{
+    char name[0x80];
+    char dname[0x50];
+    char num[0x28];
+    FILE *f;
+
+    strcpy(name, savedir);
+    itoa(n, num, 10);
+    strcat(name, "WACKY");
+    strcat(name, num);
+    strcat(name, ".TIM");
+    f = fopen(name, "rb");
+    if (!f) {
+        itoa(n, num, 10);
+        strcpy(dname, "WAC");
+        strcat(dname, num);
+        strcat(dname, ".OTT");
+        datfind(dname);
+        fread(trial70730, 0xe10, 1, datfile);
+        f = fopen(name, "wb");
+        fwrite(trial70730, 0xe10, 1, f);
+        fclose(f);
+        f = fopen(name, "rb");
+    }
+    fread(trial70730, 0xe10, 1, f);
+    fclose(f);
+    strcpy(name, savedir);
+    itoa(n, num, 10);
+    strcat(name, "WACKY");
+    strcat(name, num);
+    strcat(name, ".HI");
+    f = fopen(name, "rb");
+    if (!f) {
+        itoa(n, num, 10);
+        strcpy(dname, "WAC");
+        strcat(dname, num);
+        strcat(dname, ".HTT");
+        datfind(dname);
+        fread(tbl77758 + 0x450, 0x19e0, 1, datfile);
+        f = fopen(name, "wb");
+        fwrite(tbl77758 + 0x450, 0x19e0, 1, f);
+        fclose(f);
+        f = fopen(name, "rb");
+    }
+    fread(tbl77758 + 0x450, 0x19e0, 1, f);
     fclose(f);
 }
 
