@@ -7981,3 +7981,26 @@ void ents_flags(void)
         v7d7f4->f2 = f;
     }
 }
+
+/* ---- 0x21490, 165 bytes: loads the level's entity list (caller 0x27f1d in 0x279e8): finds the DAT
+ * entry named in entname (copied from 0x7d770 by the caller), reads nents and ents[], clears each
+ * f2, moves x and y by 0x400, then loads their sprites. A missing entry is logged when v88bea is set. */
+extern char entname[];
+extern short v88bea;
+
+void ents_load(void)
+{
+    int i;
+
+    v88bd6 = datfind(entname);
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr(entname);
+    fread(&nents, 2, 1, datfile);
+    fread(ents, nents * 12, 1, datfile);
+    for (i = 0; i < nents; i++) {
+        ents[i].f2 = 0;
+        ents[i].x += 0x400;
+        ents[i].y += 0x400;
+    }
+    ent_sprites_load();
+}

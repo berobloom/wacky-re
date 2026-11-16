@@ -31,10 +31,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x21310-0x2148e, 97
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x21310-0x21534, 98
    functions identical and 47 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: `fn_1f858` (the main menu dispatcher, big), then 0x21490 (`ent_sprites_load` 0x21310 is a near miss by loop SR, QUESTIONS 2;
+2. Next in address order: `fn_1f858` (the main menu dispatcher, big), then 0x21538 (`ent_sprites_load` 0x21310 is a near miss by loop SR, QUESTIONS 2;
    `credits_screen` 0x1efb0 is a near miss, slots; `volume_menu` 0x1e760 is
    a near miss by one frame-wait load; `demo_mode` 0x1e2e4 is a
    near miss, 3 causes in its note; `dial`
