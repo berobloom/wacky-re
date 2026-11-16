@@ -17929,3 +17929,63 @@ int mem_alloc(void)
     return 1;
 }
 
+/* ---- 0x341d8, 48 bytes (callers sound setup 0x1127, 0x1146, ...; T2.C): drains the key buffer,
+ * prints "Press any key when ready.." and waits for a key. */
+void waitkey(void)
+{
+    while (kbhit())
+        getch();
+    printf("    \n");
+    printf("Press any key when ready..\n");
+    getch();
+}
+
+/* ---- 0x34208, 408 bytes (no direct caller found): draws every player with f00 == 1 straight ahead
+ * of the camera (no turn, no side offset: spr_x centred on 0xa0) with the 4th face frame
+ * (img[4]) at the scale of its distance |v88b0e - y|; a player more than 1000 away gets f00 = 2.
+ * A cut-down players_project; LIKELY the start-line view of the karts in front.
+ * differs: the game keeps v7d800 in ECX (stored back each iteration, reloaded after the idiv and
+ * the call), the same promotion players_project misses (QUESTIONS 2); 18 blocks follow from it. */
+void players_ahead(void)
+{
+    short c, k, h;
+    int d;
+
+    for (v7d800 = players, v88b72 = 0; v88b72 <= 7; v7d800++, v88b72++) {
+        if (v7d800->f00 != 1)
+            continue;
+        d = abs(v88b0e - v7d800->y);
+        c = 0xa0;
+        if (d > 1000) {
+            v7d800->f00 = 2;
+            continue;
+        }
+        k = (d - 0x7c) / 0x46;
+        if (k < 0)
+            k = 0;
+        if (k > 9)
+            k = 9;
+        spr_y = tb6bd00[d];
+        p7d838 = tab6e470[k];
+        sprptr = faces[v88b72].img[4];
+        p7d764 = p7d838;
+        h = *p7d764++;
+        spr_w = *p7d764;
+        p7d838 += 2;
+        spr_h = h;
+        spr_y -= spr_w;
+        if (spr_y > 0xc7)
+            continue;
+        c -= spr_h >> 1;
+        v7d878 = 0;
+        if (spr_w - 1 + spr_y > 0xc7) {
+            spr_w -= (short)(spr_w - 1 + spr_y - 0xc7);
+            if (spr_w <= 0)
+                continue;
+            v7d878 = (short)(spr_w - 1 + spr_y - 0xc7) * 4;
+        }
+        spr_x = c;
+        f37487();
+    }
+}
+
