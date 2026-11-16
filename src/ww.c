@@ -9987,7 +9987,7 @@ extern char *v7d6a0;
 extern short v7d610, v7d620, v88b94, v88bd8;
 extern struct surf surfs[];
 extern struct surf *v7d89c, *v7d8a0;
-void f283a4(void);
+void track_around(void);
 void f37bb1(void);
 void f37a21(void);
 void f24834(int side);
@@ -10003,7 +10003,7 @@ void kart_move(void)
     curkart->faa = 0;
     if (v88c44 != 2)
         v88b94 = 0;
-    f283a4();
+    track_around();
     VEC(v7d614, v7d5e4, 0x7c);
     v88b68 = v7d610;
     v88b6a = v7d620;
@@ -10039,7 +10039,7 @@ void kart_move(void)
         v7d678 += 0x3c0;
         if (v7d678 >= 0x780)
             v7d678 -= 0x780;
-        f283a4();
+        track_around();
         VEC(v7d614, v7d5e4, 0x20);
         v88b0a += v7d610;
         v7e570 = 0;
@@ -10073,7 +10073,7 @@ void kart_move(void)
             if (curpos < 0)
                 curpos += 0x780;
             v7d678 = curpos;
-            f283a4();
+            track_around();
             VEC(v7d614, v7d5e4, 1);
             v88b0a += v7d610;
             v88b0e += v7d620;
@@ -10089,7 +10089,7 @@ void kart_move(void)
             if (curpos >= 0x780)
                 curpos -= 0x780;
             v7d678 = curpos;
-            f283a4();
+            track_around();
             VEC(v7d614, v7d5e4, 1);
             v88b0a += v7d610;
             v88b0e += v7d620;
@@ -10159,7 +10159,7 @@ void kart_move(void)
         }
         v7e570 = 0;
         v7e56c = 0;
-        f283a4();
+        track_around();
         VEC(v7d61c, v7d5ec, 0x7c);
         v7d7a4 = v7d610 + v88b0a;
         t = v88b0e;
@@ -10187,7 +10187,7 @@ void kart_move(void)
             if (curpos < 0)
                 curpos += 0x780;
             v7d678 = curpos;
-            f283a4();
+            track_around();
             VEC(v7d614, v7d5e4, 1);
             v88b0a += v7d610;
             v88b0e += v7d620;
@@ -10203,7 +10203,7 @@ void kart_move(void)
             if (curpos >= 0x780)
                 curpos -= 0x780;
             v7d678 = curpos;
-            f283a4();
+            track_around();
             VEC(v7d614, v7d5e4, 1);
             v88b0a += v7d610;
             v88b0e += v7d620;
@@ -12247,5 +12247,44 @@ void data_load(void)
     fread(&v88b80, 2, 1, datfile);
     fread(arr7b548, v88b80 * 4 + 4, 1, datfile);
     kartsets_load(1);
+}
+
+/* ---- 0x283a4, 168 bytes: the track pairs around the heading (callers in kart_move): v7d678's
+ * pair -> (v7d614, v7d5e4); the one 0x12 steps behind curpos (wrapping at 0x780) -> (v7d618,
+ * v7d5e8), its index v7d5cc; the one 0x12 ahead -> (v7d61c, v7d5ec), index v7d5c8; v7d690 left
+ * at the last pair's second word.
+ * differs (near-miss, 44 vs 45 insns, 5 blocks): the game loads curpos after the first pair's
+ * stores (`mov eax,[curpos]; lea ebx,[eax-0x12]`) and holds the behind index in EBX, the ahead one in
+ * ECX; ours hoists curpos into ECX for the behind index. Tried: locals b/c (both orders, register,
+ * store orders), assignment-in-condition, `x = curpos; x -= 0x12`, <= -1 / > 0x77f, int alias of
+ * v7d6a0 with both operand orders, pair reads as [0] / *++p. */
+extern int v7d5c8, v7d5cc;
+
+void track_around(void)
+{
+    v7d690 = (int *)(v7d6a0 + v7d678 * 8);
+    v7d614 = *v7d690++;
+    v7d5e4 = *v7d690;
+    v7d5cc = curpos - 0x12;
+    if (v7d5cc < 0)
+        v7d5cc += 0x780;
+    v7d690 = (int *)(v7d6a0 + v7d5cc * 8);
+    v7d618 = *v7d690++;
+    v7d5e8 = *v7d690;
+    v7d5c8 = curpos + 0x12;
+    if (v7d5c8 >= 0x780)
+        v7d5c8 -= 0x780;
+    v7d690 = (int *)(v7d6a0 + v7d5c8 * 8);
+    v7d61c = *v7d690++;
+    v7d5ec = *v7d690;
+}
+
+/* ---- 0x2844c, 52 bytes: curpos's track pair -> (v7d5f8, v7d5f4), v7d690 pointing at it (caller
+ * 0x305cd in 0x2fd8c). Index first and the int alias of v7d6a0: the char * form loads v7d6a0 first. */
+void track_here(void)
+{
+    v7d690 = (int *)(curpos * 8 + a6a0);
+    v7d5f8 = *v7d690++;
+    v7d5f4 = *v7d690--;
 }
 

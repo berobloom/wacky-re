@@ -343,6 +343,8 @@
 0x0279e8 track_load   # CONFIRMED (rebuild src/ww.c): loads track `track` (.POS map, .SIN, .M rows, palette, pictures, ents, .RD lines); caller 0x17d6a
 0x028038 kartsets_load # LIKELY (rebuild src/ww.c): (int one) fills tab6e470 with the 10-frame sets (ACTION.SP + 251X6.INF, or the six kartsets[] names at 0x7d8b4+4)
 0x028180 data_load    # CONFIRMED (rebuild src/ww.c): MAP.XY, WACKY.SDX surfs, TRIG.DAT, NDIST, CARS.SP, GIG.MOV, kartsets_load(1); carves the v7d750 block
+0x0283a4 track_around # CONFIRMED (rebuild src/ww.c): pairs of v7d678 and curpos -/+ 0x12 into v7d614/5e4, v7d618/5e8, v7d61c/5ec; indexes v7d5cc/v7d5c8
+0x02844c track_here   # CONFIRMED (rebuild src/ww.c): curpos pair into v7d5f8/v7d5f4, v7d690 at it
 0x027028 flength      # CONFIRMED (rebuild src/ww.c): ftell/fseek(END)/ftell/fseek - file length; inlined in file_pal
 0x0266a8 lights_project # CONFIRMED code, LIKELY meaning (rebuild src/ww.c): start-lights countdown (v88c44 1 -> 2, frame v88c5e) and projection; callers frame_draw 0x134fa, 0x13603
 0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608
