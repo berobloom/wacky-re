@@ -51,7 +51,8 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
 6. The two-module experiment for QUESTIONS 6: the palette pair (and `readdat`) from a second OMF
    module so the calls survive `-oe`: matches `fn_1c068`/`fn_1c0ac`, 11 bytes off 24 `readdat`.
 7. Two call-shape traps left (`v88bb2` is now `short`, which fixed 0x1d120): `f375cd`'s aux
-   `parm [edx]` forces mov+movzwl over a 16-bit load (0x19506, 0x1ce57; `pal_a short` costs a match),
+   `parm [edx]` forces mov+movzwl over a 16-bit load (0x19506, 0x1ce57, 0x1d73e, 0x1e472, 0x1e816;
+   `pal_a short` costs a match, `parm [eax] [dx]` adds instructions in all four near misses),
    and `telldat() + datsize() - 0x300` accumulates in the wrong register (0x194c8).
 8. Inventory: archives and formats (WACKY.DAT), strings - the `42.GAM`/`20.GAM` dat records
    (`v7eca0` 1/2/3, 0x34463-0x344d4, `v88bd6` = `datfind`'s index), "BSBCS.PCX", `tbl77758`'s writer.
