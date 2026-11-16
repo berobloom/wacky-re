@@ -393,3 +393,20 @@ it can be copied back into DREA.
   out of CONST, so check.sh's `segment CONST` line went from "agree" to DISAGREES 0x60 bytes later
   (a later function's strings). `strcpy(buf, &"TURBO"[0])` gives the loop and keeps the literal in
   CONST. Watch the `segment CONST` line after every new string, not only the function's MATCH.
+- **A `for` tail with two increments is rescheduled; the game's order comes from a guard clause with
+  the pointer step at the body's end** (iter 16, [generic]): anim_tick 0x261fc ends its ents loop with
+  `add ebx,0xc; inc ecx; cmp cx,[nents]; jl`, ours with the two increments swapped. Every spelling of
+  the `for` tail failed (`p++, i++`, `i++, p++`, `++p, ++i`, `i++` in the body, `while`, `do`, a cast
+  step `v7d7f4 = (struct ent *)((char *)v7d7f4 + 0xc)`) - 9.5b sorts the pair by its own dependency
+  order, source order is ignored. What matched (3 diffs -> 1, and that 1 is the masked-fixup artifact
+  below): the inverted test as a guard clause with the step after the body,
+  `for (i = 0; i < nents; i++) { if (p->f2 == -1) { p++; continue; } ...stores...; p++; }`, so the step
+  sits at the branch target (the game's `je 0x26247` -> `add ebx,0xc`) and only the counter stays in
+  the tail. The same shape is already used in ents_flags 0x213f0 for other reasons.
+- **A masked fixup disp prints as a fake `[reg - 0x6f6f6f70]` pair in fndiff.py** (iter 16, [generic]):
+  masked bytes become 0x90, so a 4-byte displacement fixup reads back as a negative number and
+  fndiff shows a `[edx - @]` vs `[edx + @]` row on a function objmatch calls MATCH. Treat that row as
+  noise; the MATCH line is the verdict. `tools/wc/variants.py` also counted our *whole* function
+  against the `[ADDR,END)` slice of the game (only the game side was cut), so its scores were
+  dominated by the unaligned tail; both sides are cut now (iter 16) - re-run old probes before
+  trusting a saved ranking.

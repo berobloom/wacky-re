@@ -11278,21 +11278,23 @@ void shots_move(void)
  * first unless split) step the kind-2 sprite f56 up to 4 or the face frame f5a (0-7) while f58 == 1;
  * f02 other than 2 drops to 0, f54 counts 0-3 and f62 steps when set; cars 0/1 f8c cleared.
  * The game keeps twoplayer in DI (written back at the exit), v7d7f4 in EBX, v7d800 in EDX; so do we.
- * differs (near-miss, 85 vs 85 insns, 1 pair): at the end of the ents loop the game steps the pointer
- * before the counter (`add ebx,0xc; inc ecx`), ours the other way round. Tried: increment order in the
- * for, the increment in the body, continue vs if-block, separate counters, declaration orders. */
+ * The ents loop is a guard clause with the pointer step at its tail (the game's `je 0x26247` targets
+ * `add ebx,0xc`, the counter step sits after it): see GOTCHAS "a for tail reschedules". */
 void anim_tick(void)
 {
     short on, i;
 
     v7d7f4 = ents;
-    for (i = 0; i < nents; v7d7f4++, i++) {
-        if (v7d7f4->f2 != -1) {
-            v7d7f4->f2 = 0;
-            v7d7f4->frame++;
-            if (v7d7f4->frame == attrs[v7d7f4->id].nframes)
-                v7d7f4->frame = 0;
+    for (i = 0; i < nents; i++) {
+        if (v7d7f4->f2 == -1) {
+            v7d7f4++;
+            continue;
         }
+        v7d7f4->f2 = 0;
+        v7d7f4->frame++;
+        if (v7d7f4->frame == attrs[v7d7f4->id].nframes)
+            v7d7f4->frame = 0;
+        v7d7f4++;
     }
     for (v7d800 = players, i = 1; i <= 8; v7d800++, i++) {
         on = 1;

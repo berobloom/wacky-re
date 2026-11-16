@@ -48,7 +48,7 @@ for name in want:
     end = next((q[1] for q in pubs if q[0] == seg and q[1] > off), len(segs[seg][0]))
     buf, mask = segs[seg]
     ours = bytes(b if not mask[off + k] else 0x90 for k, b in enumerate(buf[off:end]))
-    A = dis(ours, addr, addr + len(ours))
+    A = dis(ours, addr, endg)          # cut both sides at END, as the docstring says (iter 16)
     sm = difflib.SequenceMatcher(None, [t[2] for t in A], [t[2] for t in game])
     n = sum(max(i2 - i1, j2 - j1) for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag != 'equal')
     sz = sum(1 for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag == 'equal'
