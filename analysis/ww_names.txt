@@ -642,6 +642,9 @@
 0x01ce14 scores_screen   # CONFIRMED (rebuild src/ww.c): the record book - loads LEAD.PCX, runs enter_name, shifts and inserts the run score v7ed5c in this mode's group of tbl77758, then fn_1d704 draws the table; only caller 0x2d227 in 0x2bff0
 0x01d704 fn_1d704       # CONFIRMED (rebuild src/ww.c, near miss): the record table screen for (short which = class 1-3, int row = tbl77758 group); LEAD.PCX, msgbox "<CLASS> 12 HP"/"6 HP" (v7ecb8 == 1), four records of tbl77758[row] + (which-1)*0x170: name, face sprite, stamp, metal sprite sp7c800[(row-v7ecb4-1)*2], two-digit score; callers scores_screen 0x1d12d, race_records_menu 0x1d321
 0x068426 tbl68426     # STRONGLY SUPPORTED (rebuild src/ww.c): struct rec104[2], 0x104 bytes each, shorts at +0 and +0x54 (0x6847a) cleared together; only a struct-array spelling puts the inc between the two stores (fn_1dac0 0x1dad5, fn_1832c 0x183b0). The record may start below 0x68426
+0x01dae8 link_open    # CONFIRMED (rebuild src/ww.c): opens the serial link - MUSIC PAUSED box, "INTERBYTE DELAY IS SET TO n" when comdelay, com_open(comports[v7ec50].port, .irq, v7ebd4, v7ec50), wait_or_key(0x88), drain com_getc, comopen = 1; caller 0x20943
+0x077240 comports     # LIKELY: struct {int port; int irq; int f08;} per COM number, indexed by v7ec50 (link_open 0x1db4b)
+0x07ec50 v7ec50       # LIKELY: COM port number, comports index and com_open 4th arg (link_open 0x1dc2e)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

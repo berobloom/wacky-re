@@ -143,6 +143,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    in another one, where a call is forced), and `#pragma on(off)/inlining`.
    Test: compile `src/ww.c` as two modules (the palette pair in its own) and see whether the 11
    call sites come back without losing the 84.
+   `com_getc` 0x105b0 is the same case: called at `link_open` 0x1dc7f (the only difference left
+   in that function) and at the `net_end` family, while `com_waitfor` inlines it.
 
 7. **OPEN** (findings/scores.md): what are the 46-byte records of `tbl77758`
    (0x77758, row 1 at 0x77ba8), who fills them, and are the two strings at +6 and

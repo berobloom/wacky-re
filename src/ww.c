@@ -6962,3 +6962,54 @@ void fn_1dac0(void)
         tbl68426[i].f00 = 0;
     }
 }
+
+/* differs: near miss, the game calls com_getc at 0x1dc7f where -oe inlines ours (the com_getc trap
+ * at net_end above, QUESTIONS 6); everything before it is identical. */
+/* ---- 0x1dae8, 437 bytes: opens the serial link (caller 0x20943 in fn_1f858). Pauses the music with
+ * a "MUSIC PAUSED" box, shows "INTERBYTE DELAY IS SET TO n" when comdelay is set (then
+ * lib_40ff0(comtask, 1000)), opens COM v7ec50 with the port/IRQ of its comports[] record and the
+ * baud v7ebd4, waits 0x88 ticks (wait_or_key, inlined), drains the receiver and sets comopen. */
+struct comport { int port; int irq; int f08; };   /* 12 bytes, 0x77240 (0x1db4b-0x1db61) */
+extern struct comport comports[];
+extern int v7ec50;                    /* the COM port number: index of comports, com_open's 4th arg */
+
+void link_open(void)
+{
+    char num[0x2c];                   /* esp+0x00: itoa's buffer */
+    char msg[0x28];                   /* esp+0x2c */
+    int port, irq;                    /* esp+0x54, esp+0x58: dword loads and stores (0x1db52-0x1db69),
+                                     * the movsx word at 0x1dc24 is com_open's short parameters */
+
+    if (musicon) {                    /* 0x1daf0 */
+        musicpaused = 1;
+        music_pause();
+        fn_1c068();
+        msgbox("MUSIC PAUSED", 0);    /* 0x60048 */
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+    }
+    port = comports[v7ec50].port;     /* 0x1db4b-0x1db69 */
+    irq = comports[v7ec50].irq;
+    itoa(v7ec50, num, 10);            /* 0x1db72, overwritten below when comdelay is set */
+    if (comdelay) {                   /* 0x1db77 */
+        itoa(comdelay, num, 10);
+        strcpy(msg, "INTERBYTE DELAY IS SET TO ");
+        strcat(msg, num);
+        fn_1c068();
+        msgbox(msg, 0);               /* 0x1dbdf */
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        lib_40ff0(comtask, 1000);     /* 0x1dc1f */
+    }
+    com_open(port, irq, v7ebd4, v7ec50);   /* 0x1dc3c */
+    wait_or_key(0x88);                /* 0x1dc41-0x1dc7d, inlined */
+    while (com_getc() != -1)          /* 0x1dc7f */
+        ;
+    comopen = 1;                      /* 0x1dc8a */
+}
