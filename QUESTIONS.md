@@ -243,3 +243,15 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     BX. Tried and failed: one shared short local for both uses, separate locals, `int sel`, six
     declaration orders. Possibly the same build difference as QUESTIONS 6 (calls the game keeps that
     our `-oe` inlines). Test: 8 fade blocks and the three menu(9) calls in 0x1f858 match.
+
+14. **OPEN** (src/ww.c `fn_182d0`, findings/menus.md): what makes the game's build keep a dead copy
+    of an incoming register? 0x182d4 `mov esi,ebx` is overwritten two bytes later by
+    `imul esi,ebx,3` (0x182d6) and ESI is only ever read as the word `si` (0x182f4 `cmp si,bx`), so the
+    copy feeds nothing. CONFIRMED: the two instructions and their addresses (WW.EXE code object,
+    `.work/le/ww.obj1.bin`); SPECULATIVE: that it is the same build difference as the
+    `xor edx,edx` of music_jingle 0x11884, the two hoisted loads of track_setup 0x124e8 and
+    QUESTIONS 13. Tried and byte-identical: 12 spellings over two sessions (`t = a3`, comma,
+    `register`, the expression in both loops, `lim = a3;` then `lim *= 3;`, `lim = lim * 3`,
+    `lim = (short)(a3*3)`, a `long n = a3` read by `if (n == a3)`, a `long t = a3` as both loop
+    bounds, an `int` counter, two limit locals). Test that would settle it: any build option or
+    front-end (WPP386 vs WCC386, `-ox`?) that makes one of these copies appear.
