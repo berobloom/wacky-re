@@ -7900,3 +7900,19 @@ void link_menu(void)
     v7ed20 = 0x440;
     v7ed1c = 0x2a8;
 }
+
+/* ---- 0x1f760, 196 bytes: fills the main menu's nine rows (callers 0x1f963, 0x1f9a1, 0x1fa7d in
+ * fn_1f858). " COMM#BAT~ PLAY" is the game's own spelling of the row text (0x61118). */
+void main_menu_names(void)
+{
+    strcpy(&mnames[0], " SINGLE PLAYER RACING ");
+    strcpy(&mnames[0x3c], " TWO PLAYER RACE      ");
+    strcpy(&mnames[0x78], " TWO PLAYER SHOOT OUT ");
+    strcpy(&mnames[0xb4], " WACKY DUCK SHOOT     ");
+    strcpy(&mnames[0xf0], " COMM#BAT~ PLAY       ");
+    strcpy(&mnames[0x12c], " GAME OPTIONS         ");
+    strcpy(&mnames[0x168], " WACKY WHEELS INFO    ");
+    strcpy(&mnames[0x1a4], " ORDERING INFO        ");
+    v88bb0 = 1;                       /* 0x1f812, inside the last copy's unit */
+    strcpy(&mnames[0x1e0], " LEAVE GAME           ");
+}
