@@ -132,7 +132,7 @@ it can be copied back into DREA.
   statements *after* that strcpy puts the first inside the unit and the rest after the copy. So a
   store that sits between the setup movs and the `rep movsd` is a source-position fact to check,
   not a mystery: generate one probe file with the statement at every position around the copy and
-  compare (`.work/cmpmany.py`, one compile for 40 variants, ~4 s). [generic]
+  compare (`tools/wc/variants.py`, one compile for 40 variants, ~4 s). [generic]
 - **But not every store placement is reachable**: with `v88bb2 = 1; v7edb0 = 1;` 9.5b hoists the
   first of the pair into the eighth help line's unit (0x1a054, like the game) and sinks the second
   to just before the following call (0x1a080), where the game has it at 0x1a05d; swapping the two

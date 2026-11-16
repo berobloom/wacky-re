@@ -30,8 +30,8 @@ BLOCKED (with the reason) rather than deleting them.
    Functions after the data-file block (0x14128-0x14260) go at the end of the file. Next in address
    order: **0x1a148** (the lap/round part of the same screen: checks twoplayer/netvoices, sets
    `v88b9e`, and at 0x1a178 sets `nlaps` when `v7edb0 != 0`), then 0x1a188, then 0x1a380 `cars_menu`.
-2. Probe statement placement with one compile per batch instead of guessing: `.work/cmpmany.py OBJ ww
-   0x19eac 0x1a147 name...` scores ~40 variants of one function in 4 s (see GOTCHAS "Watcom slides
+2. Probe statement placement with one compile per batch instead of guessing: `tools/wc/variants.py
+   WW.OBJ ww 0x19eac 0x1a147 name...` scores ~40 variants of one function in 4 s (see GOTCHAS "Watcom slides
    global stores across an inline strcpy's string-op unit"). Use it for the two store-schedule near
    misses (classes_menu 0x1a05d, fn_19db8's four stores) before re-probing types or -o letters.
 3. The register-home rule (QUESTIONS.md 2): the home follows the position of the first definition

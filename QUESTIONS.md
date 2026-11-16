@@ -90,7 +90,7 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;
    the other store of the pair, `v88bb2 = 1`, does land at 0x1a054 like the game's. What was
    probed without change (72 placements, four probe compiles, `.work/probe5`, `probe6`, `probe8`,
-   `probe9`; compare with `.work/cmpmany.py`): the pair before each of the last six help strcpy's
+   `probe9`; score the variants with `tools/wc/variants.py`): the pair before each of the last six help strcpy's
    and after all nine, both statement orders; the second store wrapped in `if (v88bb2)`, `if (1)`, a
    folded `if/else` and plain braces (a branch the optimizer deletes, in case a block boundary pins
    it); and `v7edb0 = v88bb2` to make the store depend on the first store. In every case exactly one
