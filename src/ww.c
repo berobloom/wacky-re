@@ -409,7 +409,7 @@ struct sfxchan {
 
 /* 0x104-byte records; the base 0x68420 is a guess (lowest field seen so far: 0x68426) */
 struct car {
-    char f00[6];
+    short f00, f02, f04;        /* 0x02/0x04 cleared per race (shots_clear 0x2d4fc) */
     short face;
     char f08[0x1a - 8];
     int score;
@@ -10281,7 +10281,7 @@ void kart_boost(void)
  * the fire key: held for 20 ticks2 without a weapon it makes the driver's call and sets weapon 8.
  * The weapon is f16 (0: from the fe0 bits) or the ammo count f6a; nothing: voice 0x1a. Each kind
  * sets the shot sprite v7eb04, its mode v88bc0 and the shot's track position v7eb9c (read by
- * f2d548 from memory) and launches f2d548(kind, player); then the weapon voice and f16 = 0 or
+ * shot_fire from memory) and launches shot_fire(kind, player); then the weapon voice and f16 = 0 or
  * f6a--. players[].f12 blocks firing until the shot is gone.
  * differs (near-miss, 254 vs 229 insns, 22 diff blocks): the game's build keeps the global v7eb9c in ECX for the
  * whole function (load at entry, a store before every call and every exit, a reload after each
@@ -10291,7 +10291,7 @@ void kart_boost(void)
 extern int v7eb9c;
 extern char *v7eb04;
 extern short v88bc0;
-void f2d548(short kind, short player);
+void shot_fire(short kind, short player);
 
 void kart_fire(void)
 {
@@ -10338,7 +10338,7 @@ void kart_fire(void)
             v88bc0 = 3;
             v7eb04 = hm7d740;
             v7eb9c = 0;
-            f2d548(0, v88b7e);
+            shot_fire(0, v88b7e);
             players[v88b7e].f12 = 1;
             v = 0x14;
             break;
@@ -10346,13 +10346,13 @@ void kart_fire(void)
             v88bc0 = 1;
             v7eb04 = hm7d73c;
             v7eb9c = 0;
-            f2d548(0, v88b7e);
+            shot_fire(0, v88b7e);
             v88bc0 = 1;
             v7eb04 = hm7d73c;
             v7eb9c = 1;
-            f2d548(0, v88b7e);
+            shot_fire(0, v88b7e);
             v7eb9c = 2;
-            f2d548(0, v88b7e);
+            shot_fire(0, v88b7e);
             players[v88b7e].f12 = 3;
             v = 0x13;
             break;
@@ -10370,7 +10370,7 @@ void kart_fire(void)
                 }
                 v88bc0 = 1;
                 v7eb04 = hm7d738;
-                f2d548(1, v88b7e);
+                shot_fire(1, v88b7e);
             }
             players[v88b7e].f12 = 0;
             break;
@@ -10381,7 +10381,7 @@ void kart_fire(void)
                 v7eb9c = curpos - 0x3c0;
             v88bc0 = 1;
             v7eb04 = hm7d734;
-            f2d548(2, v88b7e);
+            shot_fire(2, v88b7e);
             players[v88b7e].f12 = 0;
             break;
         case 6:
@@ -10391,7 +10391,7 @@ void kart_fire(void)
                 v7eb9c = curpos - 0x3c0;
             v88bc0 = 1;
             v7eb04 = hm7d730;
-            f2d548(3, v88b7e);
+            shot_fire(3, v88b7e);
             players[v88b7e].f12 = 0;
             break;
         case 7:
@@ -10401,14 +10401,14 @@ void kart_fire(void)
                 v7eb9c = curpos - 0x3c0;
             v88bc0 = 1;
             v7eb04 = hm7d72c;
-            f2d548(4, v88b7e);
+            shot_fire(4, v88b7e);
             players[v88b7e].f12 = 0;
             break;
         case 8:
             v88bc0 = 3;
             v7eb04 = hm7d728;
             v7eb9c = 0;
-            f2d548(5, v88b7e);
+            shot_fire(5, v88b7e);
             v = 0x14;
             players[v88b7e].f12 = 0;
             break;
@@ -14663,5 +14663,71 @@ void bump_turn(void)
             curkart->f42 = 0;
     }
     v88bf4 = 0;
+}
+
+/* ---- 0x2d4fc, 73 bytes: clears cars[0..1].f02/f04 and every shot's live flag f04 (caller
+ * 0x300fb); v7d874 is left past the table.
+ * differs: registers only (game i in EDX, p in EBX): the game keeps the global v7d874 itself in
+ * EBX as the pointer and stores it once at the end (GOTCHAS "promotes a global"). */
+void shots_clear(void)
+{
+    short i;
+    struct shot *p;
+
+    p = shots;
+    for (i = 0; i <= 1; i++) {
+        cars[i].f02 = 0;
+        cars[i].f04 = 0;
+    }
+    for (i = 0; i <= 0x3c; i++) {
+        (p++)->f04 = 0;
+    }
+    v7d874 = p;
+}
+
+/* ---- 0x2d548, 223 bytes: launches a shot of kind for player (callers in 0x24364): the
+ * first free slot (f04 0) gets speed 0x10 for kinds 1 and 6 (else 0xa), range 0x3e8, the
+ * direction v7eb9c and position (v88b68, v88b6a); shot_step(0) moves it off the kart, then
+ * the animation (v7eb04, v88bc0 frames of 0xea). v7d874 ends on the shot (or past the table).
+ * differs: the game walks the slots with v7d874 promoted into EDX (stored before shot_step,
+ * reloaded after, stored again at both exits), so its stores are scheduled differently; kind
+ * and player in ECX/ESI vs ours EBX/ECX (GOTCHAS "promotes a global"). */
+void shot_fire(short kind, short player)
+{
+    short i;
+    struct shot *p;
+
+    p = shots;
+    for (i = 0; i <= 0x3c; i++, p++) {
+        if (p->f04 == 0) {
+            if (kind == 1)
+                p->speed = 0x10;
+            else
+                p->speed = 0xa;
+            if (kind == 6)
+                p->speed = 0x10;
+            p->f08 = 1;
+            p->f06 = 0;
+            p->f04 = 1;
+            p->range = 0x3e8;
+            p->kind = kind;
+            p->owner = player;
+            v7d874 = p;
+            p->dir = v7eb9c;
+            p->x = v88b68;
+            v7d5d0 = curpos;
+            p->y = v88b6a;
+            shot_step(0);
+            p = v7d874;
+            p->dist = 0;
+            p->frame = 0;
+            p->fsize = 0xea;
+            p->spr = v7eb04;
+            p->nframes = v88bc0;
+            v7d874 = p;
+            return;
+        }
+    }
+    v7d874 = p;
 }
 
