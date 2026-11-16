@@ -310,3 +310,7 @@ it can be copied back into DREA.
   but unused, 11 forms tried); the rest of the body used them. Before calling a near miss, run
   `xref.py` on the "after-ret" address: no caller, but a jump from the function above, means it is
   still the same function.
+- **Repeated `store; pop...; ret` tails are one shared `store; return;` the compiler duplicated**
+  (iter 14, [generic]): shot_hit 0x218a4 has `mov word [v88bae],3` + epilogue six times. Writing
+  `v88bae = 3; return;` in each branch lets 9.5b schedule the store above the branch's last store;
+  letting every branch fall into one common `v88bae = 3; return;` keeps it last (38 -> 33 scored).

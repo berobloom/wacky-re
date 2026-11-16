@@ -693,6 +693,12 @@
 0x07ed10 linep        # STRONGLY SUPPORTED: short *, output cursor of line_points
 0x0216a0 kart_hit     # CONFIRMED (rebuild src/ww.c): 0x216a0-0x218a3; f37b04 map class 10 (f0a + voice 12) or 3, else touch of an entity or another player within |dx|+|dy| < 14 (v88bae 2/3, curkart->f7c = 1); callers in 0x21de0
 0x07d800 v7d800       # STRONGLY SUPPORTED: struct player *, global iterator of kart_hit's player loop
+0x0218a4 shot_hit     # CONFIRMED (rebuild src/ww.c): what the shot v7d874 at (lx0,ly0) hits - map class 3, entity <14, player <18 (v88bae 1/2/3); callers in 0x22230
+0x068410 karts        # STRONGLY SUPPORTED: struct kart[], 0x104 bytes = cars[] seen 0x10 earlier; shot_hit sets curkart = &karts[i] (0x21cde) and tests karts[i].f0a/.f7e/.fd4 (=cars[i].sndhandle)
+0x07d874 v7d874       # LIKELY: struct shot *, the projectile being moved (owner, kind, +8 armed, +0xa x, +0xc y)
+0x07b448 tb7b448      # SPECULATIVE: int[][2], kart animation table; shot_hit stores &tb7b448[f1a][player] in kart +0x4e
+0x07d5ac v7d5ac       # STRONGLY SUPPORTED: struct kart *, curkart saved across shot_hit's hit animation
+0x088b02 v88b02       # STRONGLY SUPPORTED: short, v88b7e saved across the same
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

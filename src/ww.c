@@ -1370,19 +1370,36 @@ void track_setup(void)
 
 /* ---- zone test, map cells */
 
-struct kart {                   /* what curkart points at; layout still unknown */
+#pragma pack(1)
+struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same records as cars[] (0x68420), seen
+                                 * 0x10 earlier (cars[].sndhandle +0xc4 = +0xd4 here); curkart points in */
     char f00[0x0A];
     short f0a;
     short f0c, f0e, f10;        /* 0x0C-0x10: set to 8, 0x28, 8 by kart_hit 0x216a0 */
-    char f12[0x44 - 0x12];
-    short f44;
-    char f46[0x5a - 0x46];
+    short f12, f14, f16, f18, f1a, f1c, f1e, f20;
+    char f22[0x32 - 0x22];
+    int f32;                    /* 0x32: ticks2 stamp (shot_hit) */
+    char f36[0x3c - 0x36];
+    short f3c;
+    char f3e[0x42 - 0x3e];
+    short f42, f44;
+    char f46[0x4e - 0x46];
+    int *f4e;                   /* 0x4E: &tb7b448[f1a][player] (shot_hit) */
+    char f52[0x5a - 0x52];
     short f5a;
     char f5c[0x7c - 0x5c];
     short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
-    char f7e[0xB4 - 0x7E];
+    short f7e;                  /* 0x7E: set by a shot hit in a human-player race (shot_hit) */
+    char f80[0x8a - 0x80];
+    int f8a;                    /* 0x8A: ticks2 stamp of f14 */
+    char f8e[0xB4 - 0x8E];
     short fb4;
+    char fb6[0xd4 - 0xb6];
+    int fd4;                    /* 0xD4: = cars[].sndhandle */
+    char fd8[0x104 - 0xd8];
 };
+#pragma pack()
+extern struct kart karts[];
 
 extern struct kart *curkart;
 extern int curpos;
@@ -1433,7 +1450,9 @@ struct player {                 /* 0x68 bytes; base 0x6AA90 (CONFIRMED by menu s
     short f1c, f1e;
     unsigned short place;       /* 0x20 */
     short lap, cell, face;      /* 0x22, 0x24, 0x26 */
-    short f28[20];              /* 0x28-0x4F */
+    short f28[8];               /* 0x28-0x37 */
+    short f38[10];              /* 0x38: per-player values, [v88b7e] (shot_hit) */
+    int f4c;                    /* 0x4C: ticks2 stamp of f58 (shot_hit) */
     int pos;                    /* 0x50 */
     short f54, f56, f58, f5a, f5c;
     int f5e;                    /* 0x5E: animation cursor (fn_16d68) */
@@ -8154,6 +8173,170 @@ void kart_hit(void)
             curkart->f7c = 1;
             v88bae = 3;
             v7d800->f02 = 1;
+            return;
+        }
+        v7d800++;
+    }
+}
+
+/* differs: near miss, 1329 of 1338 bytes (323 vs 324 instructions), two causes:
+ * 1. the AI path's flag lives in EDX in the game (the dead `kind` register), EBX in ours, so
+ *    `f66 = 1` stores BX instead of an immediate (0x21aad-0x21aee); 24 declaration orders and using
+ *    `kind` itself as the flag (much worse) do not fix it.
+ * 2. `f5a = f38[v88b7e]`: the game loads the index first as `lea edx,[eax*2]` + `[edx+eax+0x38]`,
+ *    ours `[eax+edx*2+0x38]`; six spellings (byte arithmetic, `i[a]`, a struct element) do not move it.
+ * Levers that mattered: `kind != 5` / `kind != 4` arms first, and every branch falling into one
+ * `v88bae = 3; return;` (the compiler duplicates the tail; per-branch stores get scheduled early). */
+/* ---- 0x218a4, 1338 bytes: what the shot at (lx0, ly0) hits (callers in 0x22230); v7d874 is the shot
+ * (owner, kind, f08 armed flag, x, y). Map class 3: v88bae 1. A live entity within |dx|+|dy| < 14:
+ * v88bae 2. Else the first player (i <= nplayers) not out (f02 != 2) whose kart f0a is clear, within
+ * 18 - not the owner unless the shot is armed and of kind 1-4 - is hit (v88bae 3): the shot stops at
+ * the player. Computer drivers (ai) spin (kind 5) or lose f64 / start f58; humans in a two-player race
+ * with kind <= 2 are knocked out (f02 = 2, engine sound stopped), kind 4 sets kart f14, kind 5 spins,
+ * and the rest run the hit animation on that player's kart (f1a = 7, table tb7b448). */
+struct shot {
+    short owner, kind, f04, f06, f08, x, y;
+};
+extern struct shot *v7d874;
+extern int tb7b448[][2];
+extern struct kart *v7d5ac;
+extern short v88b02;
+
+void shot_hit(void)
+{
+    short i, flag, kind, ai, hit;
+
+    v7d7a4 = lx0;
+    v7d7a8 = ly0;
+    f37b04();
+    if (v7e568 == 3) {
+        v88bae = 1;
+        return;
+    }
+    v7d7f4 = ents;
+    for (i = 0; i < nents; i++) {
+        if (v7d7f4->f2 == -1) {
+            v7d7f4++;
+            continue;
+        }
+        if ((short)(abs(v7d7f4->x - v7d7a4) + abs(v7d7f4->y - v7d7a8)) < 0xe) {
+            v88bae = 2;
+            return;
+        }
+        v7d7f4++;
+    }
+    if (v88bae != 0)
+        return;
+    v7d800 = players;
+    for (i = 0; i <= nplayers; i++) {
+        hit = 0;
+        if (v7d800->f02 == 2 || karts[i].f0a != 0) {
+            v7d800++;
+            continue;
+        }
+        if ((short)(abs(v7d800->x - v7d7a4) + abs(v7d800->y - v7d7a8)) < 0x12)
+            hit = 1;
+        if (i == v7d874->owner) {
+            if (hit) {
+                if (v7d874->f08 != 0 || v7d874->kind == 0 || v7d874->kind == 5)
+                    hit = 0;
+            } else if (v7d874->f08 != 0)
+                v7d874->f08 = 0;
+        }
+        if (hit) {
+            if (v7d800->f58 == 0 && v7d800->f02 != 2) {
+                v7d874->x = v7d800->x;
+                v7d874->y = v7d800->y;
+                ai = 1;
+                if (twoplayer || splitscreen) {
+                    ai = 0;
+                    if (i > 1)
+                        ai = 1;
+                } else if (i == 0)
+                    ai = 0;
+                kind = v7d874->kind;
+                if ((twoplayer || netvoices) && kind == 5)
+                    kind = 0;
+                if (ai) {
+                    if (kind != 5) {
+                        flag = 1;
+                        if (netvoices == 0) {
+                            voice_play(0xff);
+                            if (v7d800->face == *(int *)&v7ec6c) {
+                                v7d800->f66 = 1;
+                                v7d800->f64--;
+                                flag = 0;
+                                if (v7d800->f64 < 0)
+                                    flag = 1;
+                            }
+                        }
+                        if (flag) {
+                            if (netvoices == 0)
+                                voice_play(0x11);
+                            v7d800->f58 = 1;
+                            v7d800->f5a = v7d800->f38[v88b7e];
+                            v7d800->f4c = ticks2;
+                        }
+                    } else {
+                        v7d800->f58 = 2;
+                        v7d800->f4c = ticks2;
+                        voice_check(0x19);
+                        if (voicebusy == 0)
+                            voice_play(0x19);
+                    }
+                } else if (karts[i].f7e == 0) {
+                    flag = 0;
+                    if (twoplayer && kind <= 2)
+                        flag = 1;
+                    if (flag) {
+                        voice_play(0xd);
+                        v7d800->f56 = 0;
+                        v7d800->f58 = 0;
+                        v7d800->f5c = 0;
+                        v7d800->f02 = 2;
+                        if (soundon) {
+                            FX_StopSound(karts[i].fd4);
+                            karts[i].fd4 = -1;
+                        }
+                        karts[i].f7e = 1;
+                        karts[i].f44 = 0;
+                        karts[i].f20 = 0;
+                        karts[i].f3c = 0;
+                        karts[i].f18 = 0;
+                        karts[i].f42 = 0;
+                    } else if (kind != 4) {
+                        if (kind == 5) {
+                            v7d800->f58 = 2;
+                            v7d800->f4c = ticks2;
+                            voice_check(0x19);
+                            if (voicebusy == 0)
+                                voice_play(0x19);
+                        } else {
+                            v7d5ac = curkart;
+                            v88b02 = v88b7e;
+                            v88b7e = i;
+                            curkart = &karts[i];
+                            voice_play(0x11);
+                            sfx_play(v7d800->face);
+                            curkart->f1a = 7;
+                            curkart->f3c = 0;
+                            curkart->f20 = 1;
+                            curkart->f1e = 0;
+                            curkart->f18 = 1;
+                            curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                            curkart->f32 = ticks2;
+                            curkart = v7d5ac;
+                            v88b7e = v88b02;
+                        }
+                    } else {
+                        if (karts[i].f14 == 0) {
+                            karts[i].f14 = 1;
+                            karts[i].f8a = ticks2;
+                        }
+                    }
+                }
+            }
+            v88bae = 3;
             return;
         }
         v7d800++;
