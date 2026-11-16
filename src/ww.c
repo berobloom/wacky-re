@@ -424,10 +424,11 @@ struct car {
     short lastcell;
     short backward;
     short lap;
-    char fa4[0xc0 - 0xa4];
+    char fa4[0xb0 - 0xa4];
+    int fb0, fb4, fb8, fbc;     /* 0xb0-0xbc: the second banner, as fd4/fe0/fe4/fe8 (overlay_draw) */
     int fc0;                    /* 0xc0: v684e0 / v685e4 for cars 0 and 1 */
     int sndhandle;
-    char fc8[0xd0 - 0xc8];
+    int fc8, fcc;               /* 0xc8/0xcc: that banner's sound handle and playing flag */
     int fd0;
     int fd4;
     int fd8;
@@ -1928,7 +1929,7 @@ void lights_project(void);
 void shots_project(void);
 void sprites_draw(void);
 void f3c3e9(void);
-void f2a92c(void);
+void overlay_draw(void);
 void hud_draw(void);
 void anim_tick(void);
 void f37de0(void);
@@ -1999,7 +2000,7 @@ void frame_draw(void)
     if (v88ca0)
         v88ca0 = 1;
     draw_status();
-    f2a92c();
+    overlay_draw();
     hud_draw();
     anim_tick();
     draw_faces();
@@ -13441,6 +13442,303 @@ void lap_banner(void)
             }
         }
         cars[i].fe4 = f;
+    }
+}
+
+/* ---- 0x2a92c, 2370 bytes: the race overlay (callers 0x1367f, 0x2fb6e): the minimap; in a
+ * one-player race the clock (racetime, v7eccc while v88c3c; reset unless v88c44 is 2) when
+ * optclock or v88bb2 4; in a net game the countdown v7ec88 - racetime (v7ec84 set at 0) and the
+ * count v7edb4; the v88c48 message; in two-player / split screen the second banner (cars[].fb0,
+ * like lap_banner at x 0x8d, but shown where v7eb80 is clear); per player the engine pitch from the speed karts[].f26 and the
+ * speedometer needle f28 (shown with optspeed: icon ic7ea84 and two digits of 0x7c118) easing
+ * toward 2 * f26; the place icons (0x6e6ec); the pickup counts karts[].f6a; the blinking light
+ * f96/f98 (lp6e720/lp6e724); in v7d998 modes 2/3 the ofont2 panel instead of the rest; else
+ * lap_banner and LAP n / LAST LAP! / FINISHED! (v88c3c) while f94, unless banner fd4 runs.
+ * differs: 22 blocks, register / stack-slot choice only: the banner's 3 - f temp (EAX vs EBX),
+ * the loop counters (game i in EBP / ESI swapped vs ours in the speedometer loop; EDX/ECX in
+ * the place, pickup and light loops). Declaration order down, up put up on the stack as the
+ * game does. */
+extern int v7eccc, v7ec88, v7ec84;
+extern short v88c48, v88b66;
+extern char str6aa18[];
+#pragma aux str6aa18 "_arr6aa18"
+extern char *font7c118[], *sp6e6ec[];
+#pragma aux font7c118 "_arr7c118"
+#pragma aux sp6e6ec "_arr6e6ec"
+void f2d628(int i);
+void FX_SetPitch(int handle, int pitchoffset);
+
+void overlay_draw(void)
+{
+    char str[0x14];
+    char buf[0x14];
+    int one, lim, i, n, f, k, t, down, up, s, v;
+
+    minimap();
+    one = 1;
+    if (twoplayer || (v7d998 != 0 && v7d998 != 3) || netvoices)
+        one = 0;
+    if (one) {
+        if (v88c44 != 2)
+            racetime = 0;
+        t = racetime;
+        if (v88c3c)
+            t = v7eccc;
+        time_str(t, str);
+        if (optclock || v88bb2 == 4) {
+            time_draw(0x108, 0x70, str);
+            if (v88bde)
+                time_draw(0x108, 0xc, str);
+        }
+    }
+    if (netvoices) {
+        t = racetime;
+        t = v7ec88 - t;
+        if (t <= 0) {
+            v7ec84 = 1;
+            t = 0;
+        }
+        time_str(t, str);
+        time_draw(0x108, 0x70, str);
+        spr_h = 0xa;
+        spr_w = 9;
+        itoa(v7edb4, buf, 10);
+        if (buf[1] == 0) {
+            buf[2] = 0;
+            buf[1] = buf[0];
+            buf[0] = '0';
+        }
+        spr_y = 0x20;
+        spr_x = 0x1a;
+        sprptr = font6e380[(unsigned char)buf[0]];
+        f373ee();
+        spr_x += 0xa;
+        sprptr = font6e380[(unsigned char)buf[1]];
+        f373ee();
+        spr_x -= 0xa;
+    }
+    if (v88c48)
+        print_at(v88b66, 0x64, str6aa18, 1);
+    if (twoplayer || splitscreen) {
+        spr_x = 0x8d;
+        for (i = 0; i <= 1; i++) {
+            n = cars[i].fb0;
+            if (n == 0)
+                continue;
+            if (soundon && cars[i].fcc && !FX_SoundActive(cars[i].fc8))
+                f2d628(i);
+            n--;
+            f = cars[i].fb8;
+            if (cars[i].fb4)
+            {
+                k = f + 3 - (f + f);
+                sprptr = sp6a538[k];
+            }
+            else
+                sprptr = sp7b210[n] + f * 0x688;
+            if (v88bde) {
+                n = 1;
+                if (i == 0)
+                    spr_y = 0x78 - p2offset;
+                else
+                    spr_y = 0x78;
+            } else {
+                spr_y = 0x78;
+                if (!viewer7eb80[i])
+                    n = 1;
+                else
+                    n = 0;
+            }
+            if (n) {
+                spr_h = 0x26;
+                k = cars[i].fbc;
+                if (cars[i].fb4) {
+                    spr_w = 0x1c;
+                    spr_y += 8;
+                } else
+                    spr_w = 0x2c;
+                spr_x = 0x8d + gig7b548[k].x;
+                spr_y += gig7b548[k].y;
+                drawsprite();
+            }
+            if (cars[i].fb4 != 1 && ++cars[i].fbc > v88b80) {
+                cars[i].fbc = 0;
+                cars[i].fb4 = 1;
+                cars[i].fb8 = 0;
+            }
+            if (++f > 3) {
+                f = 0;
+                if (cars[i].fb4) {
+                    if (soundon && cars[i].fcc) {
+                        FX_StopSound(cars[i].fc8);
+                        cars[i].fcc = f;
+                    }
+                    cars[i].fb0 = 0;
+                }
+            }
+            cars[i].fb8 = f;
+        }
+    }
+    spr_y = 0xb5;
+    if (twoplayer || splitscreen)
+        lim = 1;
+    else
+        lim = 0;
+    for (i = 0; i <= lim; i++) {
+        if (v88c44 == 2) {
+            up = 2;
+            down = 4;
+        } else {
+            up = 4;
+            down = 0xa;
+        }
+        if (soundon)
+            FX_SetPitch(cars[i].sndhandle, (karts[i].f26 - 0x5a) * 0x14);
+        if (viewer7eb80[i] && !netvoices && !twoplayer && !v7d998 && optspeed) {
+            v = karts[i].f28;
+            if (v > 0x63)
+                v = 0x63;
+            if (v88c44 != 2)
+                v = 0;
+            itoa(v, buf, 10);
+            if (i == 1)
+                spr_y -= p2offset;
+            if (buf[1] == 0) {
+                buf[2] = 0;
+                buf[1] = buf[0];
+                buf[0] = '0';
+            }
+            spr_x = 0;
+            spr_h = 0x2a;
+            sprptr = ic7ea84;
+            spr_w = 0x13;
+            f373ee();
+            spr_h = 0xa;
+            spr_w = 0xf;
+            spr_x += 3;
+            sprptr = font7c118[(unsigned char)buf[0]];
+            spr_y += 2;
+            f373ee();
+            sprptr = font7c118[(unsigned char)buf[1]];
+            spr_x += 0xc;
+            f373ee();
+            spr_y -= 2;
+        }
+        s = karts[i].f26 + karts[i].f26;
+        if (karts[i].f28 < s) {
+            karts[i].f28 += up;
+            if (karts[i].f28 > s)
+                karts[i].f28 = s;
+        } else if (karts[i].f28 > s) {
+            karts[i].f28 -= down;
+            if (karts[i].f28 < s)
+                karts[i].f28 = s;
+        }
+    }
+    if (one) {
+        spr_h = 0x16;
+        spr_w = 0x1d;
+        spr_x = 0x19;
+        if (v88bde)
+            spr_y = 0x6f;
+        else
+            spr_y = 0xc;
+        for (i = 0; i <= 1; i++) {
+            if (viewer7eb80[i]) {
+                sprptr = sp6e6ec[cars[i].place];
+                if (i == 1)
+                    spr_y -= p2offset;
+                if (v88bde) {
+                    spr_x = 4;
+                    drawsprite();
+                } else
+                    f373ee();
+            }
+        }
+    }
+    if (v88bde) {
+        spr_x = 0x9a;
+        spr_y = 0x64;
+    } else {
+        spr_x = 0xb5;
+        spr_y = 0xb;
+    }
+    spr_h = 0xa;
+    spr_w = 9;
+    for (i = 0; i <= 1; i++) {
+        if (viewer7eb80[i]) {
+            itoa(karts[i].f6a, buf, 10);
+            if (buf[1] == 0) {
+                buf[2] = 0;
+                buf[1] = buf[0];
+                buf[0] = '0';
+            }
+            if (v7d998 == 0 || v7d998 == 3) {
+                if (i == 1)
+                    spr_y -= p2offset;
+                sprptr = font6e380[(unsigned char)buf[0]];
+                f373ee();
+                spr_x += 0xa;
+                sprptr = font6e380[(unsigned char)buf[1]];
+                f373ee();
+                spr_x -= 0xa;
+            }
+        }
+    }
+    if (twoplayer || netvoices)
+        return;
+    spr_h = 0x50;
+    spr_w = 0x11;
+    spr_x = 0x78;
+    spr_y = 0xb6;
+    for (i = 0; i <= 1; i++) {
+        if (cars[i].f96) {
+            if (cars[i].f98) {
+                sprptr = lp6e724;
+                cars[i].f98 = 0;
+            } else {
+                sprptr = lp6e720;
+                cars[i].f98 = 1;
+            }
+            if (viewer7eb80[i]) {
+                if (i == 1)
+                    spr_y -= p2offset;
+                if (v7d998 == 0)
+                    drawsprite();
+            }
+        }
+    }
+    if (v7d998 == 2 || v7d998 == 3) {
+        spr_y = 0x9b;
+        spr_x = 4;
+        spr_h = 0x5c;
+        sprptr = ofont2;
+        spr_w = 0x29;
+        drawsprite();
+        return;
+    }
+    lap_banner();
+    spr_y = 0xa4;
+    for (i = 0; i <= 1; i++) {
+        if (cars[i].f94 == 0)
+            continue;
+        if (cars[i].lap >= nlaps) {
+            if (v88c3c)
+                strcpy(str, "FINISHED!");
+            else
+                strcpy(str, "LAST LAP!");
+        } else {
+            strcpy(str, "LAP ");
+            itoa(cars[i].lap, buf, 10);
+            strcat(str, buf);
+        }
+        if (viewer7eb80[i]) {
+            spr_x = 4;
+            if (i == 1)
+                spr_y -= p2offset;
+            if (cars[i].fd4 == 0)
+                print_at(spr_x, spr_y, str, 0);
+        }
     }
 }
 
