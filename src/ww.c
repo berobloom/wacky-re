@@ -1393,7 +1393,8 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     short f0c, f0e, f10;        /* 0x0C-0x10: set to 8, 0x28, 8 by kart_hit 0x216a0 */
     short f12, f14, f16, f18, f1a, f1c, f1e, f20, f22, f24;
     short f26;                  /* 0x26: speed, decays by f36 (16.16) each call (kart_state) */
-    char f28[0x32 - 0x28];
+    short f28, f2a, f2c;
+    int f2e;                    /* 0x2E: race progress, compared with karts[0] (kart_catchup) */
     int f32;                    /* 0x32: ticks2 stamp (shot_hit) */
     int f36;
     short f3a, f3c, f3e, f40;   /* 0x3A-0x40: charge threshold, phase, doubled threshold, countdown */
@@ -1420,7 +1421,8 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     int f8e;                    /* 0x8E: ticks2 when fire was pressed (kart_fire) */
     char f92[0xaa - 0x92];
     short faa;                  /* 0xAA: 1 when the move hit something or f3c was set (kart_move) */
-    char fac[0xb4 - 0xac];
+    short fac;                  /* 0xAC: 1..3 picks the catch-up step (kart_catchup) */
+    char fae[0xb4 - 0xae];
     short fb4;
     short fb6;                  /* 0xB6: set to 0x10 with fb4 (kart_boost) */
     char fb8[0xd4 - 0xb8];
@@ -12517,6 +12519,79 @@ void hit_timer(void)
                 v7edb4++;
             if (v7edb4 > 0x63)
                 v7edb4 = 0x63;
+        }
+    }
+}
+
+/* ---- 0x28b20, 380 bytes: catch-up for the computer kart in place n (caller 0x28da9 in 0x28cac),
+ * single-player races only (not split screen, net voices or v7edb0). From place 4 on, while
+ * v7d800->f04 is not 0 or 1: a kart more than 7 - n + v7ece0 behind karts[0] (f2e) goes to state
+ * 3 with f0e 0x7d00 and speed f0a = tbl7e730[v88b84] + 0x10/0x1c/0x24/0x28 for places 4..7; a
+ * close one leaves state 3 for 2. From place 5 on, curkart->fac 1..3 adds to v88c24.
+ * Written on v88c24 directly: the game holds it in CX for the whole function (and our build does
+ * the same); d is an int (movsx load).
+ * differs (near-miss, 1 real block): after `f0a = d` the game reloads `mov cx,[ebx+0xa]` for
+ * v88c24, ours copies EDX. Tried: a local c (6 declaration orders, register), short d, chained
+ * assignment, volatile read, a local struct pointer, a different lvalue for the read. */
+extern short v88c24;
+
+void kart_catchup(int n)
+{
+    int gap, d;
+
+    if (!splitscreen && !netvoices && !v7edb0) {
+        gap = karts[0].f2e - karts[n].f2e;
+        if (n >= 4 && v7d800->f04 != 1 && v7d800->f04 != 0) {
+            if (7 - n + v7ece0 <= gap) {
+                if (v7d800->f04 != 3) {
+                    d = tbl7e730[v88b84];
+                    switch (n) {
+                    case 7:
+                        d += 0x28;
+                        break;
+                    case 6:
+                        d += 0x24;
+                        break;
+                    case 5:
+                        d += 0x1c;
+                        break;
+                    case 4:
+                        d += 0x10;
+                        break;
+                    }
+                    v7d800->f04 = 3;
+                    v7d800->f0e = 0x7d00;
+                    v7d800->f0a = d;
+                    v88c24 = v7d800->f0a;
+                }
+            } else if (v7d800->f04 == 3)
+                v7d800->f04 = 2;
+            if (n >= 5 && curkart->fac <= 3) {
+                switch (curkart->fac) {
+                case 1:
+                    if (n == 7)
+                        v88c24 += 5;
+                    if (n == 6)
+                        v88c24 += 4;
+                    if (n == 5)
+                        v88c24 += 3;
+                    break;
+                case 2:
+                    if (n == 7)
+                        v88c24++;
+                    if (n == 6)
+                        v88c24 += 2;
+                    if (n == 5)
+                        v88c24 += 3;
+                    break;
+                case 3:
+                    if (n == 6)
+                        v88c24++;
+                    if (n == 5)
+                        v88c24 += 2;
+                    break;
+                }
+            }
         }
     }
 }
