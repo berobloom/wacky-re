@@ -143,6 +143,12 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    in another one, where a call is forced), and `#pragma on(off)/inlining`.
    Test: compile `src/ww.c` as two modules (the palette pair in its own) and see whether the 11
    call sites come back without losing the 84.
+   New evidence (iter 14), LIKELY: the pair is not inlined by the compiler at all. `wait_connect`
+   0x1dca0 (byte-identical) has the pair's body five times and calls it twice, the calls only in
+   the escape branch (0x1de6b/0x1dea6), and `modem` has the same mix. Both rebuild byte-identical
+   with the bodies written out and `fn_1c068`/`fn_1c0ac` kept `extern`. That reads as a source-level
+   copy (a macro or pasted code) next to real calls, not an inline budget. If so, the question is
+   only why our `-oe` inlines a *defined* `fn_1c068`, and the two-module test settles it.
    `com_getc` 0x105b0 is the same case: called at `link_open` 0x1dc7f (the only difference left
    in that function) and at the `net_end` family, while `com_waitfor` inlines it.
 

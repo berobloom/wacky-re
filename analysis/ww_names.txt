@@ -645,6 +645,7 @@
 0x01dae8 link_open    # CONFIRMED (rebuild src/ww.c): opens the serial link - MUSIC PAUSED box, "INTERBYTE DELAY IS SET TO n" when comdelay, com_open(comports[v7ec50].port, .irq, v7ebd4, v7ec50), wait_or_key(0x88), drain com_getc, comopen = 1; caller 0x20943
 0x077240 comports     # LIKELY: struct {int port; int irq; int f08;} per COM number, indexed by v7ec50 (link_open 0x1db4b)
 0x07ec50 v7ec50       # LIKELY: COM port number, comports index and com_open 4th arg (link_open 0x1dc2e)
+0x01dca0 wait_connect # CONFIRMED (rebuild src/ww.c): "WAITING FOR CONNECT", com_waitfor("CONNECT"); 1 after "CONNECTED" + wait_or_key(0x88), 0 after "ESCAPE CANCELLED WAIT"; callers 0x1e0e5, 0x1e22d
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

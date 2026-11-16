@@ -7013,3 +7013,72 @@ void link_open(void)
         ;
     comopen = 1;                      /* 0x1dc8a */
 }
+
+/* ---- 0x1dca0, 527 bytes: waits for the modem's CONNECT (callers 0x1e0e5 in 0x1deb0, 0x1e22d in
+ * 0x1e0f4). Returns 1 after a "CONNECTED" box, 0 with "ESCAPE CANCELLED WAIT" when the wait was
+ * aborted. Like modem() above, the game has the fn_1c068/fn_1c0ac pair inline five times here
+ * (0x1dca1, 0x1dd03, 0x1dd47, 0x1ddc9, 0x1de25) and calls it at 0x1de6b and 0x1dea6. */
+int wait_connect(void)
+{
+    int ok;
+
+    save_a = pal_a;                   /* fn_1c068, inline */
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 48000;
+    pal_a = pal_d;
+    pal_b = pal_d;
+    setpalette();
+    msgbox("WAITING FOR CONNECT", 0);
+    ok = com_waitfor("CONNECT");      /* 0x1dcf6 */
+    if (ok) {
+        pal_b = 48000;                /* fn_1c0ac, inline */
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+        save_a = pal_a;               /* fn_1c068, inline */
+        save_b = pal_b;
+        save_c = pal_c;
+        pal_c = 48000;
+        pal_a = pal_d;
+        pal_b = pal_d;
+        setpalette();
+        msgbox("CONNECTED", 0);       /* 0x1dd86 */
+        ticks = 0;
+        ticks2 = 0;
+        do {
+            if (aborted == 1 && connected) {
+                sendfail = 1;
+                break;
+            }
+        } while (ticks < 0x88);
+        pal_b = 48000;                /* fn_1c0ac, inline */
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+        return 1;
+    }
+    if (sendfail || !ok) {            /* 0x1de14-0x1de1f */
+        pal_b = 48000;                /* fn_1c0ac, inline */
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+        fn_1c068();
+        msgbox("ESCAPE CANCELLED WAIT", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+    }
+    return 0;
+}
