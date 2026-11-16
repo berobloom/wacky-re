@@ -6682,7 +6682,7 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
  * insert slot is the first j with v7ed5c >= sc[j] (0x1cf77); when the run beats none of the four
  * entries 0x1cf51-0x1cf57 lowers sc[3] to score-1, which puts the run in the last slot. */
 extern int v7ed5c;                    /* 0x7ed5c: the score of the run just finished */
-void fn_3542c(int n);                 /* 0x3542c: builds a "WACKY" file name (strcat of 0x7c158,
+void scores_write(int n);                /* 0x3542c: builds a "WACKY" file name (strcat of 0x7c158,
                                      * itoa(n) and "WACKY"); called with v7ee5a at 0x1d0d0 */
 void fn_1d704();                      /* 0x1d704: (short which = eax, int row = edx); no parameter list,
                                      * like the game's callers (see the differs: note at 0x1d704) */
@@ -6787,7 +6787,7 @@ void scores_screen(void)
             break;                    /* 0x1d0b7 */
         }
     }
-    fn_3542c(v7ee5a);                 /* 0x1d0c9-0x1d0d0 */
+    scores_write(v7ee5a);                 /* 0x1d0c9-0x1d0d0 */
     if (cursong != menusong)          /* 0x1d0d5-0x1d0e0 */
         music_start(menusong, 1);     /* 0x1d0e2-0x1d114, inlined by -oe like the game's */
     fn_1d704(v88bb2, v88bb6 + v7ecb4);                        /* 0x1d119-0x1d12d */
@@ -15365,7 +15365,7 @@ struct trialrec {
 };
 extern struct trialrec trial70730[];
 #pragma aux trial70730 "_arr70730"
-void f35324(int n);
+void trial_write(int n);
 void print_at_s(short x, short y, char *s, short mode);
 #pragma aux print_at_s "print_at_"
 
@@ -15562,7 +15562,7 @@ void trial_book(int a, int b, int show)
     }
     pal_a = 0;
     if (entered)
-        f35324(v7ee5a);
+        trial_write(v7ee5a);
     if (cursong != v7c658)
         music_start(v7c658, 1);
     pal_b = 0;
@@ -18481,5 +18481,44 @@ int vga_check(void)
     r.w.ax = 0x1a00;
     int386(0x10, &r, &r);
     return r.h.al == 0x1a;
+}
+
+/* ---- 0x35324, 261 bytes (caller trial_book 0x2f01b): writes the time-trial book trial70730
+ * (0xe10 bytes) to <savedir>WACKY<n>.TIM. */
+extern char savedir[];                  /* 0x7c158: directory prefix of the save files */
+#pragma aux savedir "_arr7c158"
+
+void trial_write(int n)
+{
+    char name[0x80];
+    char num[0x28];
+    FILE *f;
+
+    strcpy(name, savedir);
+    itoa(n, num, 10);
+    strcat(name, "WACKY");
+    strcat(name, num);
+    strcat(name, ".TIM");
+    f = fopen(name, "wb");
+    fwrite(trial70730, 0xe10, 1, f);
+    fclose(f);
+}
+
+/* ---- 0x3542c, 261 bytes (caller 0x1d0d0, the high-score entry): writes the score rows from
+ * tbl77758 + 0x450 (0x19e0 bytes, six rows of 0x450) to <savedir>WACKY<n>.HI. */
+void scores_write(int n)
+{
+    char name[0x80];
+    char num[0x28];
+    FILE *f;
+
+    strcpy(name, savedir);
+    itoa(n, num, 10);
+    strcat(name, "WACKY");
+    strcat(name, num);
+    strcat(name, ".HI");
+    f = fopen(name, "wb");
+    fwrite(tbl77758 + 0x450, 0x19e0, 1, f);
+    fclose(f);
 }
 
