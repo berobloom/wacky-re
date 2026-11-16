@@ -520,6 +520,7 @@
 0x032ba4 kbd_off      # SPECULATIVE: asm, called after int 9 is given back to the BIOS for chat
 0x032b14 kbd_on       # SPECULATIVE: asm, called when chat ends
 0x02dd30 net_key      # CONFIRMED (rebuild src/ww.c): D/Z/W handshake exchanging the control bytes (peer's in v88cef / v88cf2); parks a half exchange in v7ed94; 1 after too many errors
+0x02df70 com_wait_byte # CONFIRMED (rebuild src/ww.c): com_getc until a byte, 0x110-tick timeout (net88c14 1) or key cd0 abort (2); no caller found
 0x07ed34 v7ed34
 0x07ed20 v7ed20
 0x07ed1c v7ed1c

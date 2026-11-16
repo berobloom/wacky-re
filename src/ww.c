@@ -15138,3 +15138,36 @@ short net_key(unsigned char key, unsigned char flag, int x)
     }
 }
 
+/* ---- 0x2df70, 152 bytes (no caller found): com_getc until a byte comes; without esc gives up
+ * after 0x110 ticks (net88c14 = 1), with esc when key 0xcd0 is 1 (net88c14 = 2); 0 then. The
+ * start time is left in v7ea68.
+ * differs: registers only (game esc in EDX, t0 in EBX; ours the reverse); local order, the d
+ * temp, do/goto form and short / char esc tried. */
+extern int v7ea68;
+
+int com_wait_byte(int esc)
+{
+    int t0, c, d;
+
+    t0 = ticks;
+    for (;;) {
+        c = com_getc();
+        if (c != -1)
+            break;
+        if (!esc) {
+            d = ticks - t0;
+            if (d >= 0x110) {
+                net88c14 = 1;
+                c = 0;
+                break;
+            }
+        } else if (key88cd0 == 1) {
+            net88c14 = 2;
+            c = 0;
+            break;
+        }
+    }
+    v7ea68 = t0;
+    return c;
+}
+
