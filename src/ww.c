@@ -4463,7 +4463,7 @@ extern char str7c854[], str7c890[], str7c8cc[];
 void pal_6bit(unsigned char *p);
 void wait_release(short flag);
 void f37cf1(void);
-void f2e4b8(int a, int b, int c);
+void trial_book(int a, int b, int show);
 
 void fn_1832c(void)
 {
@@ -4878,7 +4878,7 @@ joyretry:
     if (v88bb2 != 4)
         return;
     v88cec = 0;
-    f2e4b8(v88bb6 + v7ecb4, v88b88, 0);
+    trial_book(v88bb6 + v7ecb4, v88b88, 0);
     if (v88cec == 0)
         return;
     palptr = pal;
@@ -6847,7 +6847,7 @@ extern char mrows[][0x3c];       /* 0x7bc00: the menu rows indexed from 1, mrows
 /* 0x1d340, 0x3c4 bytes: the TIME TRIAL record books. Called from fn_1f858 at 0x2107e (the
  * drivers-by-class menu's choice 4). The metal menu is race_records_menu's with TRIALS rows; a metal
  * choice opens a second menu of five "<metal> TRACK n" rows plus LEAVE, and a track choice runs
- * f2e4b8(metal + v7ecb4, track, 0) between two v88cec = 0, then reloads CHECK.PCX. */
+ * trial_book(metal + v7ecb4, track, 0) between two v88cec = 0, then reloads CHECK.PCX. */
 void trial_records_menu(void)
 {
     char num[0x14];                           /* esp+0x00: itoa's buffer (0x1d590, 0x1d5e7) */
@@ -6910,7 +6910,7 @@ void trial_records_menu(void)
             if (track == 6)                         /* 0x1d6a8 -> 0x1d35c */
                 break;
             v88cec = 0;                             /* 0x1d6c3 */
-            f2e4b8(sel + v7ecb4, track, 0);         /* 0x1d6b3-0x1d6ca */
+            trial_book(sel + v7ecb4, track, 0);         /* 0x1d6b3-0x1d6ca */
             v88cec = 0;                             /* 0x1d6cf */
             v88bda = 1;                             /* 0x1d6dd */
             pcx_load("CHECK.PCX", 0); /* 0x1d6d6-0x1d6e6 */
@@ -15336,5 +15336,346 @@ void rows_pad(int a, int n)
     for (i = 1; i <= n; i++)
         while (strlen(mrows[i]) < len)
             strcat(mrows[i], " ");
+}
+
+/* ---- 0x2e4b8, 4080 bytes: the TIME TRIAL hall of fame for track b of group a (1..3 bronze /
+ * silver / gold, 4..6 bonus). With show set (after a time trial, caller 0x31e98) the six lap
+ * times of the run (laptimes) and the race time v7eccc are shown first; a best lap that makes
+ * the top four, or a race time at least as good as the record, asks for a name (enter_name)
+ * and goes into the book, trial70730[(a - 1) * 5 + b - 1]. Records are marked with a blinking
+ * pointer (gn7eae4) until fire / Esc / a joystick button. The menu calls (0x1911f, 0x1d6ca)
+ * only show the book.
+ * differs: 21 blocks, same length: the record-row loop keeps its row pointer in EBP where the
+ * game keeps j there; the blink offsets (ox, oy) swap EBX/EDX; the f1bf94 call after
+ * enter_name is scheduled before the idx load; the rest are fixup-only. Arrays declared as
+ * title, name, buf, num give the game's stack layout. */
+struct trialrec {
+    char lapname[4][20];
+    int lap[4];
+    char racename[20];
+    int race;
+};
+extern struct trialrec trial70730[];
+#pragma aux trial70730 "_arr70730"
+void f35324(int n);
+void print_at_s(short x, short y, char *s, short mode);
+#pragma aux print_at_s "print_at_"
+
+void trial_book(int a, int b, int show)
+{
+    char title[0x50];
+    char name[20];
+    char buf[0x50];
+    char num[0x50];
+    int y, ly, i, j, k, idx, pos, best, entered, first, blink, oy, ox, done;
+    int newrace, newlap, bestlap, mx, my, nx, ny, rx, ry, my2;
+
+    pcx_load("ORDER.PCX", 0);
+    palptr = pal7d850;
+    getpalette();
+    entered = 0;
+    f1bf94(pal7d850);
+    v88b4a = 0;
+    pal_a = 0;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = 0;
+    switch (a) {
+    case 1:
+        strcpy(title, "BRONZE WHEELS. TRACK ");
+        idx = b;
+        break;
+    case 2:
+        strcpy(title, "SILVER WHEELS. TRACK ");
+        idx = b + 5;
+        break;
+    case 3:
+        strcpy(title, "GOLD WHEELS. TRACK ");
+        idx = b + 10;
+        break;
+    case 4:
+        strcpy(title, "BONUS BRONZE . TRACK ");
+        idx = b + 15;
+        break;
+    case 5:
+        strcpy(title, "BONUS SILVER. TRACK ");
+        idx = b + 20;
+        break;
+    case 6:
+        strcpy(title, "BONUS GOLD. TRACK ");
+        idx = b + 25;
+        break;
+    }
+    idx--;
+    itoa(b, num, 10);
+    strcat(title, num);
+    if (v7ecb8 == 1)
+        strcat(title, ". 12HP");
+    else
+        strcat(title, ". 6HP");
+    pos = -1;
+    newrace = pos;
+    newlap = pos;
+    bestlap = pos;
+    if (show) {
+        best = laptimes[0];
+        for (i = 0; i <= 5; i++) {
+            if (best > laptimes[i]) {
+                bestlap = i;
+                best = laptimes[i];
+            }
+        }
+        for (j = 0; j <= 3; j++) {
+            if (best <= trial70730[idx].lap[j]) {
+                pos = j;
+                break;
+            }
+        }
+        if (pos == -1) {
+            bestlap = pos;
+            if (v7eccc <= trial70730[idx].race)
+                pos = 6;
+        }
+        if (pos != -1) {
+            music_start(v7c64c, 0);
+            enter_name(name, "TIME TRIAL - HALL OF FAME!", 15);
+            palptr = pal7d850;
+            getpalette();
+            f1bf94(pal7d850);
+            v88b4a = 0;
+            pal_a = 0;
+            p7d714 = p6a978;
+            f375cd();
+            entered = 1;
+            pal_a = 0;
+            if (v7eccc <= trial70730[idx].race) {
+                trial70730[idx].race = v7eccc;
+                strcpy(trial70730[idx].racename, name);
+                newrace = 1;
+            }
+            if (pos != 6) {
+                for (j = 0; j <= 3; j++) {
+                    if (best <= trial70730[idx].lap[j]) {
+                        if (j != 3)
+                        for (k = 3; k >= j + 1; k--) {
+                            trial70730[idx].lap[k] = trial70730[idx].lap[k - 1];
+                            strcpy(trial70730[idx].lapname[k], trial70730[idx].lapname[k - 1]);
+                        }
+                        newlap = j;
+                        trial70730[idx].lap[j] = best;
+                        strcpy(trial70730[idx].lapname[j], name);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    pal_a = 0;
+    y = 8;
+    spr_x = center_x(strlen(title) * 11);
+    wtext(spr_x, y, title, 0);
+    y += 20;
+    if (show) {
+        my2 = 0x12;
+        for (i = 0; i <= 5; i++) {
+            strcpy(buf, "LAP ");
+            itoa(i + 1, num, 10);
+            strcat(buf, num);
+            strcat(buf, " - ");
+            time_str(laptimes[i], num);
+            strcat(buf, num);
+            print_at_s(center_x(strlen(buf) * 8), y, buf, 0);
+            if (i == bestlap) {
+                mx = spr_x + 2;
+                my = my2;
+            }
+            my2 += 10;
+            y += 10;
+        }
+        strcpy(buf, "RACE - ");
+        time_str(v7eccc, num);
+        strcat(buf, num);
+        y += 6;
+        print_at_s(center_x(strlen(buf) * 8), y, buf, 0);
+        y += 16;
+    }
+    strcpy(buf, "TIME TRIAL HALL OF FAME");
+    spr_x = center_x(strlen(buf) * 11);
+    wtext(spr_x, y, buf, 0);
+    y += 20;
+    if (!show) {
+        strcpy(buf, "TOP FOUR LAP TIMES");
+        spr_x = center_x(strlen(buf) * 11);
+        wtext(spr_x, y, buf, 0);
+        y += 20;
+    }
+    ly = y - 10;
+    for (j = 0; j <= 3; j++) {
+        strcpy(buf, trial70730[idx].lapname[j]);
+        strcat(buf, " ");
+        time_str(trial70730[idx].lap[j], num);
+        strcat(buf, num);
+        spr_x = center_x(strlen(buf) * 8);
+        print_at_s(spr_x, y, buf, 0);
+        if (j == newlap) {
+            nx = spr_x + 2;
+            ny = ly;
+        }
+        ly += 10;
+        y += 10;
+    }
+    y += 10;
+    if (!show) {
+        strcpy(buf, "BEST TIME FOR ENTIRE RACE");
+        spr_x = center_x(strlen(buf) * 11);
+        wtext(spr_x, y, buf, 0);
+        y += 20;
+        strcpy(buf, "");
+    } else {
+        strcpy(buf, "RACE - ");
+    }
+    strcat(buf, trial70730[idx].racename);
+    strcat(buf, " ");
+    time_str(trial70730[idx].race, num);
+    strcat(buf, num);
+    spr_x = center_x(strlen(buf) * 8);
+    print_at_s(spr_x, y, buf, 0);
+    rx = spr_x + 2;
+    ry = y - 10;
+    if (!show) {
+        strcpy(buf, "SEE IF YOU CAN BEAT THESE!");
+        y = 0x9e;
+        spr_x = center_x(strlen(buf) * 8);
+        print_at_s(spr_x, y, buf, 0);
+        strcpy(buf, "PRESS FIRE");
+        y = 0xb4;
+        spr_x = center_x(strlen(buf) * 8);
+        print_at_s(spr_x, y, buf, 0);
+    }
+    pal_a = 0;
+    if (entered)
+        f35324(v7ee5a);
+    if (cursong != v7c658)
+        music_start(v7c658, 1);
+    pal_b = 0;
+    pal_c = 0x7d00;
+    first = 1;
+    setpalette();
+    blink = 0;
+    pal_b = 0x7d00;
+    wait_release(0);
+    do {
+        ticks = 0;
+        pal_c = pal_a;
+        setpalette();
+        if (blink) {
+            ox = oy = 2;
+            blink = 0;
+        } else {
+            blink = 1;
+            ox = oy = 0;
+        }
+        spr_h = 12;
+        spr_w = 13;
+        sprptr = gn7eae4;
+        if (newlap != -1) {
+            spr_x = nx - ox;
+            spr_y = ny + oy;
+            drawsprite();
+        }
+        if (bestlap != -1) {
+            spr_x = mx - ox;
+            spr_y = my + oy;
+            drawsprite();
+        }
+        if (newrace != -1) {
+            spr_x = rx - ox;
+            spr_y = ry + oy;
+            drawsprite();
+        }
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        if (first) {
+            first = 0;
+            v7d854 = v7d85c;
+            f32cf8(v7d85c);
+            if (newlap == 0) {
+                strcpy(title, "YOU HAVE THE BEST LAP TIME EVER!");
+                fn_1c068();
+                msgbox(title, 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 0x12c)
+                    ;
+                fn_1c0ac();
+                if (newrace != -1) {
+                    strcpy(title, "AND THE BEST RACE TIME EVER!");
+                    fn_1c068();
+                    msgbox(title, 0);
+                    ticks = 0;
+                    ticks2 = 0;
+                    while (ticks <= 0x12c)
+                        ;
+                    fn_1c0ac();
+                }
+            } else if (newrace != -1) {
+                strcpy(title, "YOU HAVE THE BEST RACE TIME EVER!");
+                fn_1c068();
+                msgbox(title, 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 0x12c)
+                    ;
+                fn_1c0ac();
+            }
+        }
+        if (pal_a == 0)
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        do {
+            v88cec = 0;
+            done = 0;
+            joy88b40 = 0;
+            joy88b42 = 0;
+            joy88b44 = 0;
+            joy88b46 = 0;
+            v7d8a4 = v7d8ac;
+            f377ae();
+            if (v88cce)
+                done = 1;
+            if (key88cd0 == 1) {
+                done = 1;
+                v88cec = 1;
+            }
+            if (key88ccd) {
+                screenshot();
+                if (key88ccd)
+                    while (key88ccd)
+                        ;
+            }
+            if (joy88b40 || joy88b42 || joy88b44 || joy88b46)
+                done = 1;
+        } while (ticks < 0x22 && !done);
+    } while (!done);
+    while (key88cd0 == 1)
+        ;
+    wait_release(0);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    pal_a = 0;
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
 }
 

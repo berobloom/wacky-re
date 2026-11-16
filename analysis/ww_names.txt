@@ -529,6 +529,8 @@
 0x02e318 demo_rec     # CONFIRMED (rebuild src/ww.c): netkeys_pack, appends v88cf0 to the .MAC file
 0x02e348 demo_play    # CONFIRMED (rebuild src/ww.c): control bits of the current run into key88cd5/cdd, joy88b40..46, v88cec; v88cef = byte
 0x02e3f4 rows_pad     # CONFIRMED (rebuild src/ww.c): pads mrows[1..n] with spaces to strlen(mrows[a])
+0x02e4b8 trial_book   # CONFIRMED (rebuild src/ww.c): TIME TRIAL hall of fame (ORDER.PCX) for (group, track, show); show: run laps + entry of new records (enter_name); records 0x78 bytes each at 0x70730
+0x070730 trial70730   # CONFIRMED (0x2e4b8): struct { char lapname[4][20]; int lap[4]; char racename[20]; int race; } [30], (group-1)*5 + track-1
 0x07ed34 v7ed34
 0x07ed20 v7ed20
 0x07ed1c v7ed1c
