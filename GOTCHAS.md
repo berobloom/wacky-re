@@ -299,3 +299,8 @@ it can be copied back into DREA.
   [generic]): credits_page 0x1eee4 stores its 2nd argument at esp+0 and does `inc dword [esp]` each
   pass with no load; a separate `i = first` drops the slot (frame 4 not 8). Writing `first++` on the
   parameter itself keeps it - 9.5b does not delete stores to a parameter's home.
+- **`movsx r,word [mem]` + `cmp r,N` is a short read into an int local; `cmp word [mem],N` is a direct
+  compare** (iter 14, [generic]): ents_flags 0x213f0 tests `sprattr[id].kind >= 2` as
+  `movsx eax,...; cmp eax,2`. Writing the compare on the field gives `cmp word ptr [eax],2` and costs a
+  register, which pushed a local onto the stack; `k = ...kind; if (k >= 2)` matched. Also: a pointer
+  stepped in the `for` header (`v7d7f4++, i++`) puts the store before the step, unlike `p++` in the body.

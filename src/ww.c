@@ -2525,7 +2525,8 @@ void ents_draw(int n)
 }
 
 struct attr {                   /* SPRITE.ATR, 40 bytes */
-    char f00[4];
+    short kind;                 /* 2 and up: see ents_flags / ent_sprites_load */
+    short f02;
     short w, h;
     char f08[0x0E - 8];
     short nframes;
@@ -7944,11 +7945,39 @@ void ent_sprites_load(void)
                 a->data = v7eb4c;
                 datfind(a->f10);
                 fread(a->data, size, 1, datfile);
-                if (*(short *)a->f00 == 2 && v7eda4 == -1)
+                if (a->kind == 2 && v7eda4 == -1)
                     v7eda4 = i;
                 v7eb4c += size;
                 break;
             }
         }
+    }
+}
+
+/* ---- 0x213f0, 159 bytes: per-entity flags after loading a level (caller 0x301b6 in f2fd8c). The
+ * iterator is the global v7d7f4. ents[].f2 = -1 marks a kind >= 2 sprite in a one-player, off-line
+ * KID MODE (v88bb2 4) race; with netvoices set, every kind > 2 entity becomes sprite v7eda4. */
+extern struct ent *v7d7f4;
+
+void ents_flags(void)
+{
+    short i;
+    short f;
+    int k;
+
+    v7d7f4 = ents;
+    for (i = 0; i < nents; v7d7f4++, i++) {
+        f = 0;
+        if (twoplayer == 0 && v7d998 == 0 && netvoices == 0 && v88bb2 == 4) {
+            k = ((struct attr *)sprattr)[v7d7f4->id].kind;
+            if (k >= 2)
+                f = -1;
+        }
+        if (netvoices != 0) {
+            k = ((struct attr *)sprattr)[v7d7f4->id].kind;
+            if (k > 2)
+                v7d7f4->id = v7eda4;
+        }
+        v7d7f4->f2 = f;
     }
 }

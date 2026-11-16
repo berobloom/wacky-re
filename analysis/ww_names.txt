@@ -679,6 +679,8 @@
 0x07eb20 v7eb20       # LIKELY: char *, start of the entity sprite buffer (sprites_load)
 0x07eb4c v7eb4c       # LIKELY: char *, running end of that buffer
 0x07eda4 v7eda4       # LIKELY: int, first SPRITE.ATR record of kind 2, -1 none (sprites_load; 0x21462 copies it into ents[].id)
+0x0213f0 ents_flags   # CONFIRMED (rebuild src/ww.c): ents[].f2 = -1 for kind>=2 sprites in 1p off-line KID MODE; netvoices swaps kind>2 entities to v7eda4; caller 0x301b6
+0x07d7f4 v7d7f4       # STRONGLY SUPPORTED: struct ent *, the global iterator of ents_flags (left one past the end)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
