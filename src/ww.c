@@ -1911,7 +1911,7 @@ extern char *p7d86c;
 extern char *palptr;
 void getpalette(void);
 void setpalette(void);
-void f27060(struct rec14 *r, int n);
+void pcx_load(char *name, int n);
 void f1bf94(char *p);
 short f375cd();                     /* asm; the game passes (EAX, EDX) and reads the result in EDX */
 #pragma aux f375cd value [dx] parm [eax] [edx] modify []   /* 9.5b rejects value[edx]; [dx] gives the same bytes */
@@ -1934,7 +1934,7 @@ void f32cf8(char *p);
 void frame_draw(void)
 {
     if (v7d998 == 2)
-        f27060(&rec7c208[v88c8e], 1);
+        pcx_load(rec7c208[v88c8e].f00, 1);
     for (v88b72 = 0; v88b72 <= 1; v88b72++) {
         cars[v88b72].f96 = 0;
         cars[v88b72].f98 = 0;
@@ -4263,7 +4263,7 @@ setdone:;
     }
     if (v7d998 == 0 || v7d998 == 3) {
         if (netvoices == 0) {
-            f27060((struct rec14 *)0x7eb6c, 2);
+            pcx_load((char *)0x7eb6c, 2);
             palptr = pal7d850;
             getpalette();
             f1bf94(pal7d850);
@@ -4523,7 +4523,7 @@ retry:
         strcat(fname, "SB");
         strcat(fname, num);
         strcat(fname, ".PCX");
-        f27060((struct rec14 *)fname, 2);
+        pcx_load(fname, 2);
         v88b4a = 0;
         p7d714 = p6a980;
         pal_a = f375cd(p6a980, pal_a);
@@ -4946,7 +4946,7 @@ void fn_193a8(void)
     seekdat(telldat() + datsize() - 0x300);
     readdat(pal7d848, 0x300);
     pal_6bit(pal7d848);
-    f27060((struct rec14 *)name, 2);
+    pcx_load(name, 2);
     v88b4a = 0;
     p7d714 = p6a980;
     pal_a = f375cd(p6a980, pal_a);
@@ -6720,7 +6720,7 @@ void scores_screen(void)
     int better;                       /* 0x1cf2f/0x1cf44/0x1cf4d: the game's temp is ECX, not CX */
     struct score *dst, *src, *p;
 
-    f27060((struct rec14 *)"LEAD.PCX", 2);     /* 0x1ce1c-0x1ce26, the string 0x60dc4 */
+    pcx_load("LEAD.PCX", 2);     /* 0x1ce1c-0x1ce26, the string 0x60dc4 */
     palptr = pal7d850;                /* 0x1ce2b-0x1ce30 */
     getpalette();                     /* 0x1ce35 */
     f1bf94(pal7d850);                 /* 0x1ce3a-0x1ce44 */
@@ -6909,7 +6909,7 @@ void trial_records_menu(void)
             f2e4b8(sel + v7ecb4, track, 0);         /* 0x1d6b3-0x1d6ca */
             v88cec = 0;                             /* 0x1d6cf */
             v88bda = 1;                             /* 0x1d6dd */
-            f27060((struct rec14 *)"CHECK.PCX", 0); /* 0x1d6d6-0x1d6e6 */
+            pcx_load("CHECK.PCX", 0); /* 0x1d6d6-0x1d6e6 */
         }
     }
     v88c80 = saved;                                 /* 0x1d6f0-0x1d6f4 */
@@ -6938,7 +6938,7 @@ void fn_1d704(short which, int row)
                                                * game's register order (21 -> 17 diffs) */
     short sx;                                 /* esp+0x8c */
 
-    f27060((struct rec14 *)"LEAD.PCX", 2);    /* 0x1d71f-0x1d72b */
+    pcx_load("LEAD.PCX", 2);    /* 0x1d71f-0x1d72b */
     v88b4a = 0;
     p7d714 = p6a980;
     pal_a = f375cd(p6a980, pal_a);            /* 0x1d739-0x1d758 */
@@ -7392,7 +7392,7 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
         palptr = pal7d850;
         getpalette();
         f1bf94(pal7d850);
-        f27060((struct rec14 *)"CHECK.PCX", 0);   /* 0x1e615 */
+        pcx_load("CHECK.PCX", 0);   /* 0x1e615 */
         if (v7ec68 != 0)              /* 0x1e61a */
             break;
         if (++v7ec58 > 5)             /* 0x1e626 */
@@ -7722,7 +7722,7 @@ void credits_screen(void)
     page = 1;
     first = 1;
     save = pal_a;
-    f27060((struct rec14 *)"CHECK.PCX", 2);   /* 0x1efd9 */
+    pcx_load("CHECK.PCX", 2);   /* 0x1efd9 */
     v88b4a = 0;
     pal_a = 0x7d00;
     p7d714 = p6a980;
@@ -8251,7 +8251,7 @@ void main_menu(void)
                 }
             }
             if (v88b9e) {
-                f27060((struct rec14 *)"CHECK.PCX", 0);
+                pcx_load("CHECK.PCX", 0);
                 if (v88c58) {
                     palptr = p7d718;
                     pal_a = 0;
@@ -8289,7 +8289,7 @@ void main_menu(void)
                         }
                         if (v88b9e == 0)
                             continue;
-                        f27060((struct rec14 *)"CHECK.PCX", 0);
+                        pcx_load("CHECK.PCX", 0);
                         palptr = p7d718;
                         pal_a = 0;
                         f1bf80();
@@ -8360,7 +8360,7 @@ void main_menu(void)
                         voices_reset();
                     }
                 }
-                f27060((struct rec14 *)"CHECK.PCX", 0);
+                pcx_load("CHECK.PCX", 0);
                 palptr = pal7d850;
                 getpalette();
                 f1bf94(pal7d850);
@@ -8419,7 +8419,7 @@ void main_menu(void)
                         voices_reset();
                     }
                 }
-                f27060((struct rec14 *)"CHECK.PCX", 0);
+                pcx_load("CHECK.PCX", 0);
                 palptr = pal7d850;
                 getpalette();
                 f1bf94(pal7d850);
@@ -11698,5 +11698,64 @@ void file_pal(char *name, unsigned char *buf)
     fread(buf, 0x300, 1, f);
     fclose(f);
     pal_6bit(buf);
+}
+
+/* ---- 0x26ff0, 56 bytes: reads a CR-terminated line from f into s (the LF after it is read over),
+ * NUL-terminated (callers 0x27205, 0x27215, 0x27225 in 0x271ce). */
+void read_line(char *s, FILE *f)
+{
+    for (;;) {
+        fread(s, 1, 1, f);
+        if (*s == '\r')
+            break;
+        s++;
+    }
+    fread(s, 1, 1, f);
+    *s = 0;
+}
+
+/* ---- 0x27060, 124 bytes: the picture data of the WACKY.DAT entry name (after the 128-byte PCX
+ * header, without the 0x300-byte palette) into the screen buffer p6a978[n] (callers frame_draw
+ * 0x133fe, 0x17dee, 0x18625, the menus).
+ * differs (near-miss, 33 vs 33 insns, n and size swap ESI/EDI): tried declaration orders, five
+ * parameter-name pairs, short n, the seek as one expression, a pointer temp. size - 0x380 up front
+ * (the game's `sub edi,0x380` before the header read) is right. */
+extern char *p6a978s[];
+#pragma aux p6a978s "_p6a978"
+
+void pcx_load(char *name, int n)
+{
+    char hdr[200];
+    long t, size;
+
+    datfind(name);
+    t = ftell(datfile);
+    size = datdir[datidx].size - 0x380;
+    fseek(datfile, t, SEEK_SET);
+    fread(hdr, 0x80, 1, datfile);
+    fread(p6a978s[n], size, 1, datfile);
+}
+
+/* ---- 0x270dc, 160 bytes: the same from the PCX file name; 0 when it does not open or its data
+ * is over 64000 bytes, else 1 (caller 0x349b7 in 0x348f4). */
+int pcxfile_load(char *name, int n)
+{
+    char hdr[200];
+    FILE *f;
+    long size;
+
+    f = fopen(name, "rb");
+    if (f == NULL)
+        return 0;
+    size = flength(f);
+    size -= 0x380;
+    fread(hdr, 0x80, 1, f);
+    if (size > 0xfa00) {
+        fclose(f);
+        return 0;
+    }
+    fread(p6a978s[n], size, 1, f);
+    fclose(f);
+    return 1;
 }
 
