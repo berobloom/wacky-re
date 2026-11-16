@@ -304,3 +304,9 @@ it can be copied back into DREA.
   `movsx eax,...; cmp eax,2`. Writing the compare on the field gives `cmp word ptr [eax],2` and costs a
   register, which pushed a local onto the stack; `k = ...kind; if (k >= 2)` matched. Also: a pointer
   stepped in the `for` header (`v7d7f4++, i++`) puts the store before the step, unlike `p++` in the body.
+- **A `ret` is not a function's end; check that the next address has a caller** (iter 14, [generic]):
+  kart_hit 0x216a0 returns at 0x2175e from one branch and continues at 0x2175f, which `starts.py`
+  lists as "after-ret". Rebuilt to that ret it looked like a register-choice near miss (EBX/ECX pushed
+  but unused, 11 forms tried); the rest of the body used them. Before calling a near miss, run
+  `xref.py` on the "after-ret" address: no caller, but a jump from the function above, means it is
+  still the same function.

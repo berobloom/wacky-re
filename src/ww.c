@@ -1378,7 +1378,9 @@ struct kart {                   /* what curkart points at; layout still unknown 
     short f44;
     char f46[0x5a - 0x46];
     short f5a;
-    char f5c[0xB4 - 0x5C];
+    char f5c[0x7c - 0x5c];
+    short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
+    char f7e[0xB4 - 0x7E];
     short fb4;
 };
 
@@ -8087,20 +8089,22 @@ int line_points(void)
     return n;
 }
 
-/* differs: near miss, 183 of 191 bytes, same statements: the game computes the sums in EBX and keeps
- * curkart in ECX (pushing EBX/ECX/EDX, never using EDX), ours uses EAX/EDX and pushes only EDX. No
- * arguments at the callers; f37b04 is asm with pushad. Eleven forms tried (operand and statement
- * order, a kart local, int temporaries, `!f0a`, early return): none moves it. QUESTIONS 2. */
-/* ---- 0x216a0, 191 bytes: tests the point (lx0 + v88b68, ly0 + v88b6a) with f37b04 (callers in
- * 0x21de0). Result 10 on a kart whose f0a is clear: sets f0a, clears f44 (and the player's f5c and
- * the kart's f5a when f44 was set), plays voice 12 and sets f0c/f10 = 8, f0e = 0x28, v88bae = 4.
- * Result 3: v88bae = 1. */
-extern short v88b68, v88b6a, v88bae;
+/* ---- 0x216a0, 516 bytes: what the kart at (lx0 + v88b68, ly0 + v88b6a) hits (callers in 0x21de0).
+ * f37b04 classifies the map point into v7e568: 10 on a kart whose f0a is clear sets f0a, clears f44
+ * (and the player's f5c and the kart's f5a when f44 was set), plays voice 12 and sets f0c/f10 = 8,
+ * f0e = 0x28, v88bae = 4; 3 sets v88bae = 1. Otherwise a kart with f0a clear touches the first live
+ * entity (f2 != -1) within Manhattan distance 13 (v88bae 2), else any other player whose f02 is not
+ * 2 (v88bae 3): curkart->f7c and the touched f2/f02 become 1. The iterators are the globals v7d7f4
+ * and v7d800. */
+extern short v88b68, v88b6a, v88bae, nplayers;
 extern int v7d7a4, v7d7a8, v7e568;
+extern struct player *v7d800;
 void f37b04(void);
 
 void kart_hit(void)
 {
+    short i;
+
     v7d7a4 = lx0 + v88b68;
     v7d7a8 = ly0 + v88b6a;
     f37b04();
@@ -8116,6 +8120,42 @@ void kart_hit(void)
         curkart->f10 = 8;
         v88bae = 4;
         curkart->f0e = 0x28;
-    } else if (v7e568 == 3)
+        return;
+    }
+    if (v7e568 == 3) {
         v88bae = 1;
+        return;
+    }
+    if (curkart->f0a != 0)
+        return;
+    v7d7f4 = ents;
+    for (i = 0; i < nents; i++) {
+        if (v7d7f4->f2 == -1) {
+            v7d7f4++;
+            continue;
+        }
+        if ((short)(abs(v7d7f4->x - v7d7a4) + abs(v7d7f4->y - v7d7a8)) < 0xe) {
+            curkart->f7c = 1;
+            v88bae = 2;
+            v7d7f4->f2 = 1;
+            return;
+        }
+        v7d7f4++;
+    }
+    if (v88bae != 0)
+        return;
+    v7d800 = players;
+    for (i = 0; i <= nplayers; i++) {   /* <=: the game's bound (0x2189e jle) */
+        if (i == v88b7e || v7d800->f02 == 2) {
+            v7d800++;
+            continue;
+        }
+        if ((short)(abs(v7d800->x - v7d7a4) + abs(v7d800->y - v7d7a8)) < 0xe) {
+            curkart->f7c = 1;
+            v88bae = 3;
+            v7d800->f02 = 1;
+            return;
+        }
+        v7d800++;
+    }
 }
