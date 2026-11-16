@@ -337,6 +337,7 @@
 0x0253d8 sprites_draw # CONFIRMED (rebuild src/ww.c): depth-sorts the arr79a28 records by f10 and draws them (curkart via kart_draw); callers frame_draw 0x1350e, 0x13617
 0x0255d4 players_project # CONFIRMED (rebuild src/ww.c): projects the other players into the view and appends sprite records; callers frame_draw 0x134e1, 0x135ea
 0x025e6c shot_step    # CONFIRMED (rebuild src/ww.c): (short move) one step of the shot v7d874 along its heading; shot_line when moving; callers 0x26090, 0x2d5d3
+0x02602c shots_move   # CONFIRMED (rebuild src/ww.c): moves the 61 shots at 0x7f2b0 (animation, shot_step, bounce, range, hit explosion); caller 0x327a0
 0x03c3e9 f3c3e9       # SPECULATIVE: called from frame_draw
 0x02a92c f2a92c       # SPECULATIVE: called from frame_draw
 0x029e0c f29e0c       # SPECULATIVE: called from frame_draw

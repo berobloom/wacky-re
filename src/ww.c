@@ -8975,13 +8975,19 @@ void kart_hit(void)
  * the player. Computer drivers (ai) spin (kind 5) or lose f64 / start f58; humans in a two-player race
  * with kind <= 2 are knocked out (f02 = 2, engine sound stopped), kind 4 sets kart f14, kind 5 spins,
  * and the rest run the hit animation on that player's kart (f1a = 7, table tb7b448). */
+#pragma pack(1)
 struct shot {
     short owner, kind, f04, f06, f08, x, y;
-    short f0e, f10, f12, f14;
+    short frame, nframes, fsize;    /* 0x0E-0x12: animation (shots_move) */
+    short range;                /* 0x14: kinds 0/5 stop when dist reaches it */
     short speed;                /* 0x16: -> v7d608 (shot_step) */
-    short f18, f1a, f1c;
+    short dist;                 /* 0x18 */
+    char *spr;                  /* 0x1A */
     int dir;                    /* 0x1E: track direction 0..0x77f (shot_step) */
 };
+#pragma pack()
+extern struct shot shots[61];   /* 0x7F2B0, 0x22 bytes each */
+#pragma aux shots "_arr7f2b0"
 extern struct shot *v7d874;
 extern int tb7b448[][2];
 extern struct kart *v7d5ac;
@@ -11179,5 +11185,68 @@ void shot_step(short move)
     }
     v7d874->x = lx1;
     v7d874->y = ly1;
+}
+
+/* ---- 0x2602c, 462 bytes: moves the active shots (caller 0x327a0): animation f0e of f10 frames
+ * (an exploding shot, f06 == 0xff, ends with it), shot_step from the owner's track position;
+ * kind 1 bounces back (dir + 0x3c0) on v88bae 1 or 2, kinds 0 and 5 run out after range. A hit
+ * (v88bae) plays voice 0x12, releases one of the owner's shots (players[].f12) and turns the shot
+ * into the 3-frame hogdata explosion. v7d874 is kept in ECX (by our build too).
+ * differs (near-miss, 109 vs 109 insns, 7 blocks): the bounce's vector load - the game puts dir*8 in
+ * EDX and the base in EBX, reads both words before storing; ours swaps EBX/EDX and stores each in turn.
+ * Tried: five forms of the load, three of the base+index, statement order. Found on the way: the kind
+ * test is `kind != 1` first (kind-1 block in the else), `(int *)v7d6a0 + dir * 2` gives the game's
+ * `imul edx,[ecx+0x1e],8`, `x = x + v7d610` its load/add/store. */
+void shots_move(void)
+{
+    short i;
+
+    for (v7d874 = shots, i = 0; i <= 0x3c; v7d874++, i++) {
+        if (v7d874->f04 == 0)
+            continue;
+        v7d874->frame++;
+        if (v7d874->frame >= v7d874->nframes) {
+            v7d874->frame = 0;
+            if (v7d874->f06 == 0xff)
+                v7d874->f04 = 0;
+        }
+        if (v7d874->f06 == 0xff)
+            continue;
+        v7d5d0 = players[v7d874->owner].pos;
+        shot_step(1);
+        if (v7d874->kind != 1) {
+            if (v7d874->kind == 0 || v7d874->kind == 5) {
+                v7d874->speed = 100;
+                v7d874->dist += v7d608;
+                if (v7d874->dist >= v7d874->range)
+                    v88bae = 1;
+            }
+        } else {
+            if (v88bae == 2 || v88bae == 1) {
+                v7d874->dir += 0x3c0;
+                if (v7d874->dir >= 0x780)
+                    v7d874->dir -= 0x780;
+                v7d690 = (int *)v7d6a0 + v7d874->dir * 2;
+                v7d608 = v7d874->speed;
+                v7d5f8 = *v7d690++;
+                v7d5f4 = *v7d690;
+                f37bb1();
+                v7d874->x = v7d874->x + v7d610;
+                v7d874->y = v7d874->y + v7d620;
+                v88bae = 0;
+            }
+        }
+        if (v88bae) {
+            voice_play(0x12);
+            players[v7d874->owner].f12--;
+            if (players[v7d874->owner].f12 < 0)
+                players[v7d874->owner].f12 = 0;
+            v7d874->f06 = 0xff;
+            v7d874->nframes = 3;
+            v7d874->fsize = 0xea;
+            v7d874->frame = 0;
+            v7d874->spr = hogdata;
+        }
+    }
 }
 
