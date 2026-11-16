@@ -288,6 +288,11 @@ it can be copied back into DREA.
   `lim *= 3;`, `lim = lim * 3`, `lim = (short)(a3*3)`, a `long n = a3` read by `if (n == a3)`, a
   `long t = a3` as both loop bounds, an `int` counter, two limit locals) all compile the copy-free
   88 bytes (iter 16). Treat "the game has one dead copy of an incoming register" as LAYOUT-ish.
+  The same unreachable tie-break for the *home register of a loop-carried local*: net_recv 0x2db00's
+  `crc` (game ECX: `movzx eax,cx` at the loop top, `mov ecx,eax` at its end; ours EAX with
+  `mov edx,eax`) stays put through 21 spellings - zero-store order, chained zeroing, a short/int temp
+  per call, loop forms, argument casts, declaration order, init order (iter 17). `int crc` does move
+  the home to ECX but adds the zero-extensions the game does not need, 4 rows -> 5.
 - **`tools/wc/fndiff.py`'s diff count is not the number of real differences** (iter 13, [generic]):
   it aligns only `min(len(ours), len(game))` instructions, so when ours is shorter its whole epilogue
   shows up as ours-only rows (`race_records_menu`: it printed 13 pairs where the real difference was

@@ -14962,7 +14962,15 @@ int com_getc_wait(int timeout)
  * CRC of the first four (crcupdate) must equal the bytes 4 and 5, else badcrc, 'N'. A 'D'
  * packet carries v88cf6 / v88cf5; v88cb0 = value 3; returns the type. v7ed60 counts errors.
  * differs: only the CRC accumulator's register (ECX in the game, EAX/EDX here); its
- * declaration position and reusing n were tried. */
+ * declaration position and reusing n were tried. Iter 17 (21 spellings, two probe compiles): the
+ * zero-assignment order (`crc = 0;` first, `crc = rcrc = 0;`, `rcrc = crc = 0;`), a `unsigned short`
+ * / `int` temp around each crcupdate call, `k != 4` / `k = k + 1` / `while`, casts on the argument
+ * (`(unsigned short)`, `(short)`, `& 0xffff`), a merged `rcrc, crc` declaration, `crc` declared last
+ * and `p` first, an `if (k == 3) break;` guard and swapping `n = 0; t = ticks;` all give the same
+ * 4 rows. `int crc` does move the home to ECX (the loop-carried value then needs a widening move):
+ * `movzx ecx,ax` + `movzx eax,cx` where the game has `movzx eax,ax` (the value stays in EAX for the
+ * 2nd arg) + `mov ecx,eax`, so the whole file goes 4 rows -> 5. No spelling tried moves crc's home
+ * register without some other change. */
 extern int v7ed60;
 extern unsigned char v88cf6, v88cf5;
 extern short v88cb0;
