@@ -15,10 +15,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Compiler levers that worked (GOTCHAS "This project's traps"): a constant stored through a register
   = an **`int` local assigned inside that arm** (msgbox 0x2a414); a pointer the game re-materialises
   three times = a **second local re-armed at the loop body's end** (fn_1c994); a `for` tail with two
-  increments is rescheduled, so put the pointer step in the body (anim_tick). Not reachable so far:
-  the home register of a loop-carried local (net_recv, 21 spellings), a dead incoming-register copy
+  increments is rescheduled, so put the pointer step in the body (anim_tick). Not reachable so far: a
+  loop-carried local's home register (net_recv, 21 spellings), a dead incoming-register copy
   (fn_182d0), one moved load (track_setup, music_jingle), the v88bb2/v7edb0 store pair
-  (classes_menu), the int shift into `err`'s own register (line_draw).
+  (classes_menu), the int shift into `err`'s register (line_draw).
 - Classes/modes (findings/classes.md): `v88bb2` = 1 AMATEUR ... 5 KID MODE (a **signed** short),
   `classes_menu` 0x19eac is that screen; `laps_menu` 0x1a148 (identical) sets `nlaps` 6/8/10.
 - Car select (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b, one 6861-byte C function, `ents[0..7]`
@@ -76,7 +76,6 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
    its `differs:` note. Where a probe's low score looks like a win, first check *which register's
    value* the instruction reads (GOTCHAS iter 16 false-friend entry).
 8. Inventory: archives and formats (WACKY.DAT), strings - the `42.GAM`/`20.GAM` dat records
-   (`v7eca0` 1/2/3, 0x34463-0x344d4, `v88bd6` = `datfind`'s index), "BSBCS.PCX", `tbl77758`'s writer.
-9. Get the original running under the harness: the boot's segments or LE deltas and a first save
-   state in `captures/`; cheap checks - eight cars selectable off-net when registered (`v7e574 == 0`)
-   and a `tbl77758` record read (what the +6 stamp holds, LIKELY).
+   (`v7eca0` 1/2/3, 0x34463-0x344d4, `v88bd6` = `datfind`'s index), "BSBCS.PCX", `tbl77758`'s writer;
+   and the original running under the harness (boot segments/LE deltas, one save state in
+   `captures/`, eight cars selectable off-net when `v7e574 == 0`).
