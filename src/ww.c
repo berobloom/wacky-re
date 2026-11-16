@@ -1923,7 +1923,7 @@ void f25a78(void);
 void f26a3c(void);
 void f266a8(void);
 void f2632c(void);
-void f253d8(void);
+void sprites_draw(void);
 void f3c3e9(void);
 void f2a92c(void);
 void f29e0c(void);
@@ -1969,7 +1969,7 @@ void frame_draw(void)
         f266a8();
     f2632c();
     if (v88b78)
-        f253d8();
+        sprites_draw();
     if (twoplayer || splitscreen) {
         view2_in();
         f28480();
@@ -1990,7 +1990,7 @@ void frame_draw(void)
             f266a8();
         f2632c();
         if (v88b78)
-            f253d8();
+            sprites_draw();
         view2_out();
     }
     if (v88ca0)
@@ -9655,9 +9655,9 @@ struct crec {
     short f00, f02, f04, f06;
     short *f08;
     int f0c;                    /* sprite */
-    char f10[0x14 - 0x10];
+    int f10;                    /* depth: sprites_draw sorts records 1..v88b78 by it */
     int f14;
-    short f18, f1a, f1c, f1e, f20, f22, f24;
+    short f18, f1a, f1c, f1e, f20, f22, f24;   /* f18 player, f24 > 0 marks a kart */
     char f26[0x28 - 0x26];
 };
 struct sndrec18 { int n; char f04[0x18 - 4]; };
@@ -10797,4 +10797,72 @@ void kart_draw(void)
     }
     if (curkart->f0a == 3)
         curkart->f0a = 0;
+}
+
+/* ---- 0x253d8, 506 bytes: draws the scene's sprite records (callers 0x1350e, 0x13617 in frame_draw;
+ * 0x289e4 jumps here): v88be0 = draw flag of player v88b7e (v7eb80/v7eb82), bubble sort of records
+ * 1..v88b78 by f10 through f36f8c (swaps *v7d88c and *v7d880), kart_bump, then each record: record
+ * v88c12 is curkart (kart_draw); the others drawn plainly, except that with netvoices a kart record's
+ * player f66 toggles and a set f66 hides it. Then the spark animation f46/f48/f4a of curkart. */
+extern int v7d864;
+extern struct crec *v7d894, *v7d88c, *v7d880;
+void f36f8c(void);
+
+void sprites_draw(void)
+{
+    short two, i, j, hide;
+
+    v88be0 = (&v7eb80)[v88b7e];
+    v7d864 = 10;
+    if (twoplayer || splitscreen)
+        two = 1;
+    else
+        two = 0;
+    v7d894 = crecs;
+    for (i = 1; i <= v88b78 - 1; i++)
+        for (j = i + 1; j <= v88b78; j++)
+            if (crecs[i].f10 < crecs[j].f10) {
+                v7d88c = &crecs[i];
+                v7d880 = &crecs[j];
+                f36f8c();
+            }
+    kart_bump();
+    p7d86c = (char *)&crecs[1];
+    for (i = 1; i <= v88b78; i++) {
+        if (i == v88c12)
+            kart_draw();
+        else if (v88be0) {
+            hide = 0;
+            if (netvoices && CR->f24 > 0) {
+                v7d800 = &players[CR->f18];
+                if (v7d800->f64 == 0) {
+                    if (v7d800->f66) {
+                        hide = 1;
+                        v7d800->f66 = 0;
+                    } else
+                        v7d800->f66 = 1;
+                }
+            }
+            spr_h = CR->f00;
+            spr_w = CR->f02;
+            spr_x = CR->f04;
+            spr_y = CR->f06;
+            if (v88b7e && two)
+                spr_y -= p2offset;
+            p7d838 = CR->f08;
+            sprptr = (char *)CR->f0c;
+            v7d878 = CR->f14;
+            if (hide == 0)
+                f37487();
+        }
+        p7d86c += 0x28;
+    }
+    if (curkart->f46 != 0) {
+        curkart->f48++;
+        if (curkart->f48 == 4) {
+            curkart->f46 = 0;
+            curkart->f4a = sparkdata;
+        } else
+            curkart->f4a += 0x5a;
+    }
 }
