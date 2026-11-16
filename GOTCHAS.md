@@ -282,7 +282,12 @@ it can be copied back into DREA.
   declaration order (that changes the register choice, 13 diffs), `register`, `unsigned` and switching
   on a local copy all give the same bytes. `-3` instead of `-3r` is not the cause either - the whole
   object comes out byte-identical (182 MATCH either way), so do not re-litigate the reorder flag for a
-  moved load.
+  moved load. The same dead-copy shape at a function entry: fn_182d0 0x182d0 opens with
+  `mov esi,ebx` (a copy of the EBX parameter) right before its own `imul esi,ebx,3`, and 12 spellings
+  over two sessions (`t = a3`, comma, `register`, the expression in both loops, `lim = a3;` then
+  `lim *= 3;`, `lim = lim * 3`, `lim = (short)(a3*3)`, a `long n = a3` read by `if (n == a3)`, a
+  `long t = a3` as both loop bounds, an `int` counter, two limit locals) all compile the copy-free
+  88 bytes (iter 16). Treat "the game has one dead copy of an incoming register" as LAYOUT-ish.
 - **`tools/wc/fndiff.py`'s diff count is not the number of real differences** (iter 13, [generic]):
   it aligns only `min(len(ours), len(game))` instructions, so when ours is shorter its whole epilogue
   shows up as ours-only rows (`race_records_menu`: it printed 13 pairs where the real difference was

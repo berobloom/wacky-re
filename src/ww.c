@@ -4425,12 +4425,20 @@ music:
    CORRECTION: the earlier "dead code, no reference anywhere" note was WRONG,
    xref.py finds ~22 calls inside fn_1832c/fn_193a8; it is a real call in the
    game's bytes (-oe does not inline it).
-   differs: the game has a dead register copy mov esi,ebx at 0x182d4 before
-   imul esi,ebx,3 (+2 bytes, then everything shifts); every C form tried
-   (t=a3 copy, comma, register, expression in both loops) gets folded by 9.5b,
-   so it may be a precompiled-library artifact. */
+   differs (near-miss, 3 rows, 1 real): the game has a dead register copy
+   mov esi,ebx at 0x182d4 before imul esi,ebx,3 (+2 bytes, then everything
+   shifts); every C form gets folded by 9.5b - t=a3 copy, comma, register,
+   expression in both loops, plus (iter 16, one compile, 8 spellings) lim=a3
+   then lim*=3, lim=a3 then lim=lim*3, short lim=(short)(a3*3), a long n=a3
+   used in an `if (n == a3)` guard, long t=a3 as the bound in both loops, an
+   int counter, two limit locals in the two loops. Same family as
+   music_jingle/track_setup (GOTCHAS "sinks a zero argument constant").
+   a4 is a WORD in the game (`test cx,cx` 0x182e9), which is why the prototype
+   says short a4: that took the function from 4 diff rows to 3 with all ~24
+   callers unchanged (they pass 0/1 literals). The third row is the 88-vs-92
+   byte tail artifact, not a difference. */
 
-void fn_182d0(char *dst, short a2, long a3, long a4, int a5)
+void fn_182d0(char *dst, short a2, long a3, short a4, int a5)
 {
     short lim = a3 * 3;
     long k = a2 * 3;

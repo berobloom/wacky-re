@@ -29,6 +29,12 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
 - CONFIRMED (code 0x18326): fn_182d0's 5th argument (the palette base) is pushed
   by the caller and popped by the callee, `ret 4`; the call sites therefore have
   no `add esp,4`, in the game and in our build.
+- CONFIRMED (code 0x182e9 `test cx,cx`, 0x182d6 `imul esi,ebx,3`, 0x182d9-0x182e3
+  `movsx edx,dx; lea eax,[edx*4]; sub eax,edx`): fn_182d0's 4th argument is a **word** (tested as a
+  word; our `long a4` gave `test ecx,ecx`), its 3rd arrives in EBX and only ever used as the copy
+  count `3*a3` (`cmp si,bx`/`cmp bx,si`), and its 2nd is a short sign-extended into EDX and times 3
+  as `x*4-x`. Declaring `short a4` reproduced the test and left all ~24 caller bodies byte-identical
+  (iter 16, WW.OBJ 183 MATCH), so the callers pass literals 0/1 in both builds.
 - CONFIRMED (code 0x1956e-0x195a7, 0x19a19-0x19b63): the flash loop resets
   palette entries 5..0xa (fn_182d0 with a4=0, self-copy), then highlights entry
   v88c96-1 with a4=1 (copy from pal7d848). Inside the menu loop the entry under
