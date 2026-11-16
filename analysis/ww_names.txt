@@ -684,6 +684,7 @@
 0x021490 ents_load    # CONFIRMED (rebuild src/ww.c): reads nents and ents[] from the DAT entry entname, x/y += 0x400, then ent_sprites_load; caller 0x27f1d
 0x06a508 entname      # LIKELY: char[16], DAT entry name of the level's entity list (filled at 0x27b09 from 0x7d770)
 0x088bea v88bea       # SPECULATIVE: short, log missing DAT entries (ents_load 0x214a8)
+0x021538 swap16       # CONFIRMED (rebuild src/ww.c): swaps two shorts; no callers (dead code)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

@@ -8004,3 +8004,13 @@ void ents_load(void)
     }
     ent_sprites_load();
 }
+
+/* ---- 0x21538, 27 bytes: swaps two shorts; no caller in WW.EXE (dead code). */
+void swap16(short *a, short *b)
+{
+    short t;
+
+    t = *a;
+    *a = *b;
+    *b = t;
+}
