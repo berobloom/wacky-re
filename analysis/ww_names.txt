@@ -340,6 +340,7 @@
 0x0274a4 ytab_init    # CONFIRMED (rebuild src/ww.c): tb6bd00[i] = ground screen row at distance i; caller 0x3677a
 0x02754c effects_load # CONFIRMED (rebuild src/ww.c): surface animations of the track from EFFECTS.SP into v7d80c, shared by offset; caller 0x17d6f
 0x0277b8 track_pics_load # CONFIRMED (rebuild src/ww.c): pcx_load of the four .GAM pictures, copied by asm 0x376d7 into v7d75c; caller 0x27f18
+0x0279e8 track_load   # CONFIRMED (rebuild src/ww.c): loads track `track` (.POS map, .SIN, .M rows, palette, pictures, ents, .RD lines); caller 0x17d6a
 0x027028 flength      # CONFIRMED (rebuild src/ww.c): ftell/fseek(END)/ftell/fseek - file length; inlined in file_pal
 0x0266a8 lights_project # CONFIRMED code, LIKELY meaning (rebuild src/ww.c): start-lights countdown (v88c44 1 -> 2, frame v88c5e) and projection; callers frame_draw 0x134fa, 0x13603
 0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608

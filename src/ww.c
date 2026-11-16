@@ -12006,3 +12006,142 @@ int wait_input(short mode)
     }
 }
 
+/* ---- 0x279e8, 1614 bytes: loads track `track` (caller 0x17d6a in 0x17928): its picture set from
+ * 0x80ace (0xf3c bytes per v88b88; 2 while v7ec80, then 5) unless v88ca0/v88bde; the names
+ * SHRINK<n>.PCX, <n>.SPW (entname), <n>.PAR, <n>.RD; gam_load; the palette of str7d784 into p7d718;
+ * <n>.POS: the 0x2000-byte map and ncells (v88ba0 = ncells / 4); <n>.SIN: 0x6c 8-byte records at
+ * 0x7ad88 (each after a skipped dword); screen 1 from gam6a4e0 unless v7d998 is 1 or 2; f37a06;
+ * <n>.M: rows 0x20..0x5f of v7d6a4 (v7d648 dwords each), 0x40 tile pointers v7d75c + b * 0x400 from
+ * offset 0x80; track_pics_load; ents_load; <n>.RD: v88b7a + 1 lines of 14 bytes, each a segment
+ * (+0x400) whose points line_points appends at linep (trklines[i]: points, count, f0a).
+ * Most DAT reads here are the inlined seekdat/readdat/telldat (the _in copies), the palette ones
+ * real calls, pal_6bit a call (alias).
+ * differs (near-miss, 471 vs 471 insns): the 0x80ace offset - the game keeps ftell's result in EDX,
+ * ours in ECX (five placements/forms tried); the .SIN loop - the game holds its end pointer in EDI
+ * and the constant 1 in EBP for the fread arguments, ours compares with a constant and loads 1 each
+ * time (end-pointer variable tried, no change). */
+struct trkline { short *pts; short n, f06; };
+struct rdrec { short x0, y0, x1, y1, f08, f0a, f0c; };
+extern struct trkline trklines[];
+#pragma aux trklines "_arr72350"
+extern struct rdrec rd7ee0c;
+#pragma aux rd7ee0c "_arr7ee0c"
+extern char str7eb6c[], str6a4b8[], sin7ad88[0x6c][8];
+#pragma aux str7eb6c "_arr7eb6c"
+#pragma aux str6a4b8 "_arr6a4b8"
+#pragma aux sin7ad88 "_arr7ad88"
+extern char *v7d870, *v7d64c, *v7d6a4;
+extern int v7d648, *v7d688;
+extern short *v7ed14, v88ba0;
+void f37a06(void);
+
+/* The DAT helpers as the game inlines them at some sites (the seekdat/readdat/telldat macros
+ * above name non-inlinable aliases); pal_6bit called, not inlined. */
+static void seekdat_in(long ofs)
+{
+    fseek(datfile, ofs, SEEK_SET);
+}
+static long telldat_in(void)
+{
+    return ftell(datfile);
+}
+static void readdat_in(void *buf, int n)
+{
+    fread(buf, n, 1, datfile);
+}
+void pal_6bit_x(unsigned char *p);
+#pragma aux pal_6bit_x "pal_6bit_"
+
+void track_load(void)
+{
+    char name[20];
+    int skip;
+    unsigned char c;
+    char *pal;
+    char (*sp)[8];
+    int row, j;
+    long t;
+    short i;
+
+    itoa(track, str7d770, 10);
+    if (v88ca0 && v88bde == 0) {
+        datfind((char *)0x80ace);
+        t = telldat_in();
+        if (v7ec80)
+            v88b88 = 2;
+        seekdat_in(t + (v88b88 - 1) * 0xf3c);
+        readdat_in(img7eb5c, 0xf3c);
+        if (v7ec80)
+            v88b88 = 5;
+    }
+    strcpy(str7eb6c, "SHRINK");
+    strcat(str7eb6c, str7d770);
+    strcat(str7eb6c, ".PCX");
+    strcpy(entname, str7d770);
+    strcat(entname, ".SPW");
+    strcpy(str6a4b8, str7d770);
+    strcat(str6a4b8, ".PAR");
+    strcpy(name, str7d770);
+    strcat(name, ".RD");
+    gam_load();
+    pal = p7d718;
+    datfind(str7d784);
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+    path_join(".POS");
+    v88bd6 = datfind(str7d7b8);
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr(str7d7b8);
+    readdat_in(map, 0x2000);
+    readdat_in(&ncells, 2);
+    v88ba0 = ncells / 4;
+    path_join(".SIN");
+    v88bd6 = datfind(str7d7b8);
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr(str7d7b8);
+    for (sp = sin7ad88; sp != sin7ad88 + 0x6c; sp++) {
+        readdat_in(&skip, 4);
+        readdat_in(sp, 8);
+    }
+    v7d870 = (char *)sin7ad88;
+    if (v7d998 == 0 || v7d998 == 3)
+        pcx_load(gam6a4e0, 1);
+    v7d64c = v7d75c;
+    f37a06();
+    path_join(".M");
+    v88bd6 = datfind(str7d7b8);
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr(str7d7b8);
+    for (row = 0x20; row != 0x60; row++) {
+        v7d688 = (int *)v7d6a4 + v7d648 * row;
+        v7d688 += 0x20;
+        for (j = 1; j <= 0x40; j++) {
+            readdat_in(&c, 1);
+            *v7d688++ = (int)v7d75c + (c << 10);
+        }
+    }
+    track_pics_load();
+    ents_load();
+    v88bd6 = datfind(name);
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr(name);
+    readdat_in(&v88b7a, 2);
+    linep = v7ed14;
+    v88b7a--;
+    for (i = 0; i <= v88b7a; i++) {
+        readdat_in(&rd7ee0c, 0xe);
+        lx0 = rd7ee0c.x0 + 0x400;
+        lx1 = rd7ee0c.x1 + 0x400;
+        ly0 = rd7ee0c.y0 + 0x400;
+        ly1 = rd7ee0c.y1 + 0x400;
+        if (i == 0) {
+            v88c06 = ly0;
+            v88c04 = lx0;
+        }
+        trklines[i].f06 = rd7ee0c.f0a;
+        trklines[i].pts = linep;
+        trklines[i].n = line_points();
+    }
+}
+
