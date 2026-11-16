@@ -415,3 +415,16 @@ it can be copied back into DREA.
   against the `[ADDR,END)` slice of the game (only the game side was cut), so its scores were
   dominated by the unaligned tail; both sides are cut now (iter 16) - re-run old probes before
   trusting a saved ranking.
+- **A variant that scores well may be a different program: read which value the instruction reads**
+  (iter 16, [generic]): line_draw 0x21f04 wants `movsx edx,cx` before its `mov eax,ebx; mov ebx,ecx;
+  mov ecx,eax` dx/dy rotation. Writing the rotation first and `err = dy >> 1` after it reproduces the
+  game's instruction text at the game's addresses - and multiplies the wrong half, because ECX now
+  holds the old dx. Score a candidate only after checking, register by register, that the def reads
+  the value the game's def reads. Same probe, same shape, wrong program.
+- **A local's shift form (through EAX or into its own register) depends on code far away**
+  (iter 16, [generic]): with `err` homed in EDX, `err = dx; err >>= 1;` compiles `mov edx,ebx; sar
+  dx,1` while `err = dx >> 1;` compiles `movsx eax,bx; sar eax,1; mov edx,eax`; in a 10-variant probe
+  the *same* source line took EAX or EDX depending on how the OTHER branch was spelled (the probe's
+  EDX form did not survive the whole file: 4 diff rows became 13). Probes rank spellings for one
+  function in isolation; before keeping one, compile the whole file and diff (GOTCHAS iter 13, "the
+  probe's scores are not the whole-file ones").

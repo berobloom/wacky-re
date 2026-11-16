@@ -14,7 +14,7 @@
 3    0x0261fc anim_tick             MATCH
 3    0x03360c songs_load             MATCH
 3    0x0182d0 fn_182d0               SKIP: the game's dead a3 copy `mov esi,ebx` (0x182d4) is folded by 9.5b in every form; 8 more spellings probed in one compile (lim=a3 then *=3, lim=lim*3, (short)(a3*3), n=a3 in an if(n==a3) guard, long t as both loop bounds, int counter, two limit locals). Kept: a4 is a word (`test cx,cx` 0x182e9) -> `short a4`, 4 rows to 3
-4    0x021f04 line_draw
+4    0x021f04 line_draw              SKIP: the game's `movsx edx,bx; sar edx,1` (int shift into err's own register) is not reachable: the two-statement form gives `mov edx,ebx; sar dx,1`, every one-statement/`(int)` form routes the shift through EAX (+`mov edx,eax`), and the else branch's register choice depends on the if branch's spelling. 10 probe variants + 2 whole-file tries; the probe's best (2 rows, swaps before `err = dy >> 1`) is wrong code - it takes the post-swap (minor) half
 4    0x02a414 msgbox
 4    0x02db00 net_recv
 5    0x01c994 fn_1c994
