@@ -711,6 +711,12 @@
 0x07b518 tb7b518      # SPECULATIVE: int[][2], second kart animation table (kart_anim2)
 0x088b90 v88b90       # SPECULATIVE: short, cleared by kart_anim2r
 0x088b92 v88b92       # SPECULATIVE: short, cleared by kart_anim2r
+0x0224ec kart_state   # CONFIRMED (rebuild src/ww.c): per-frame kart state - spin (f06), animation 7/9 (f20), charge phase (f3c), speed decay (f26 by f36); caller 0x297c9
+0x07b4d8 tb7b4d8      # SPECULATIVE: int[] by player, charge animation 1 frames (kart_state)
+0x07b508 tb7b508      # SPECULATIVE: int[] by player, charge animation 2 frames (kart_state)
+0x088c44 v88c44       # SPECULATIVE: short, kart_state runs only when 2 (race phase?)
+0x088b8c v88b8c       # SPECULATIVE: short, side flag selecting v88b92 (kart_state)
+0x088b98 v88b98       # SPECULATIVE: short, side flag selecting v88b90 (kart_state)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

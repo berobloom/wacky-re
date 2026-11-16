@@ -159,6 +159,10 @@ short com_getc(void)
     return c;
 }
 
+short com_getc_x(void);               /* com_getc under another name, for the call sites the game does not
+                                       * inline: -oe cannot inline a body it does not see */
+#pragma aux com_getc_x "com_getc_"
+
 void com_putc(char c)
 {
     short out;
@@ -556,8 +560,7 @@ void msgbox(char *s, int wait);
 void fn_1c068(void);
 void fn_1c0ac(void);
 
-/* differs: the game calls com_getc here instead of inlining it (com_waitfor inlines it; -oe=20 is right for
-   that); with com_getc not inlined (-oe=15) this function matches up to +443 */
+/* The game calls com_getc in here (0x10ee6, 0x1100a) while com_waitfor inlines it: com_getc_x. */
 int modem(int hangup)
 {
     char msg[40];
@@ -577,7 +580,7 @@ int modem(int hangup)
     msgbox(msg, 0);
     connected = 0;
     sendfail = 0;
-    while (com_getc() != -1)
+    while (com_getc_x() != -1)
         ;
     sendfail = 0;
     if (hangup) {
@@ -611,7 +614,7 @@ int modem(int hangup)
         } while (ticks < 0x110);
         ok = 1;
         for (;;) {
-            if (com_getc() == -1)
+            if (com_getc_x() == -1)
                 break;
         }
     } else {
@@ -1373,16 +1376,17 @@ void track_setup(void)
 #pragma pack(1)
 struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same records as cars[] (0x68420), seen
                                  * 0x10 earlier (cars[].sndhandle +0xc4 = +0xd4 here); curkart points in */
-    short f00;
-    char f02[0x0A - 2];
+    short f00, f02, f04;
+    short f06;                  /* 0x06: 1 or 2 = short spin, counted by f08 (kart_state) */
+    short f08;
     short f0a;
     short f0c, f0e, f10;        /* 0x0C-0x10: set to 8, 0x28, 8 by kart_hit 0x216a0 */
     short f12, f14, f16, f18, f1a, f1c, f1e, f20, f22, f24;
-    char f26[0x32 - 0x26];
+    short f26;                  /* 0x26: speed, decays by f36 (16.16) each call (kart_state) */
+    char f28[0x32 - 0x28];
     int f32;                    /* 0x32: ticks2 stamp (shot_hit) */
-    char f36[0x3c - 0x36];
-    short f3c;
-    char f3e[0x42 - 0x3e];
+    int f36;
+    short f3a, f3c, f3e, f40;   /* 0x3A-0x40: charge threshold, phase, doubled threshold, countdown */
     short f42, f44;
     char f46[0x4e - 0x46];
     int *f4e;                   /* 0x4E: &tb7b448[f1a][player] (shot_hit) */
@@ -2329,6 +2333,22 @@ void readdat(void *buf, int n)
 {
     fread(buf, n, 1, datfile);
 }
+
+/* The game CALLS readdat (24 sites), seekdat, telldat and datsize (11-12 each) everywhere; defined
+ * above, -oe would inline their bodies. Later sites call them under another name (same symbol), which
+ * -oe cannot inline. */
+void readdat_x(void *buf, int n);
+#pragma aux readdat_x "readdat_"
+#define readdat readdat_x
+void seekdat_x(long ofs);
+long telldat_x(void);
+long datsize_x(void);
+#pragma aux seekdat_x "seekdat_"
+#pragma aux telldat_x "telldat_"
+#pragma aux datsize_x "datsize_"
+#define seekdat seekdat_x
+#define telldat telldat_x
+#define datsize datsize_x
 
 /* ---- centered double-print (0x17888) */
 
@@ -4066,9 +4086,8 @@ void fn_16f24(void)
  *  1. +819 (0x17C5B): the game binds itoa's eax (movsx v88b88) before the strcpy edi/esi setup,
  *     we bind it after; all three compiler patch levels (95/95A/95B) and every source shape tried
  *     (statement order, nesting, probe isolation) give our order.
- *  2. ~0x18209/.18232: the game keeps `call readdat` (24 such sites game-wide); -oe in 9.5b always
- *     inlines readdat's body (fread(ptr,n,1,datfile): +11 bytes per site). Everything from 0x18209
- *     to the ret sits 22 bytes late in our object for that reason; semantics identical.
+ *  2. stack slot placement of the string buffers (the game addresses them at esp+N, ours at esp).
+ *     (The old readdat cause is gone: readdat is called through readdat_x, QUESTIONS 6.)
  * See findings/executables.md "Open" and GOTCHAS.md. */
 
 extern short v88bd0, v88b88, v7eb82, v88bd6, v88b4a, v88c90;
@@ -4394,8 +4413,7 @@ void fn_182d0(char *dst, short a2, long a3, long a4, int a5)
    0x350-0x368 (frame 0x36c) while ours spills only 4 of them (frame 0x368),
    and the arrays' card/pcx slots swap; Watcom's spill/slot choice is driven by
    its own liveness, declaration order and touch order probes (P15-P24) did not
-   pin the rule; (b) the game CALLS datfind/telldat/datsize/seekdat/readdat (0x1418c-
-   0x14260) while -oe inlines our wrappers (GOTCHAS); (c) loop counters use
+   pin the rule; (b) [the wrapper calls are now made through aliases, QUESTIONS 6]; (c) loop counters use
    different scratch registers in the 0x1839c init loop. Strings, palette and
    net blocks reproduce the game's bytes. */
 
@@ -6988,8 +7006,7 @@ void fn_1dac0(void)
     }
 }
 
-/* differs: near miss, the game calls com_getc at 0x1dc7f where -oe inlines ours (the com_getc trap
- * at net_end above, QUESTIONS 6); everything before it is identical. */
+/* The game calls com_getc at 0x1dc7f (not inlined): com_getc_x. */
 /* ---- 0x1dae8, 437 bytes: opens the serial link (caller 0x20943 in fn_1f858). Pauses the music with
  * a "MUSIC PAUSED" box, shows "INTERBYTE DELAY IS SET TO n" when comdelay is set (then
  * lib_40ff0(comtask, 1000)), opens COM v7ec50 with the port/IRQ of its comports[] record and the
@@ -7002,7 +7019,7 @@ void link_open(void)
 {
     char num[0x2c];                   /* esp+0x00: itoa's buffer */
     char msg[0x28];                   /* esp+0x2c */
-    int port, irq;                    /* esp+0x54, esp+0x58: dword loads and stores (0x1db52-0x1db69),
+    int irq, port;                    /* port esp+0x54, irq esp+0x58 (this order gives that): dword loads and stores (0x1db52-0x1db69),
                                      * the movsx word at 0x1dc24 is com_open's short parameters */
 
     if (musicon) {                    /* 0x1daf0 */
@@ -7034,7 +7051,7 @@ void link_open(void)
     }
     com_open(port, irq, v7ebd4, v7ec50);   /* 0x1dc3c */
     wait_or_key(0x88);                /* 0x1dc41-0x1dc7d, inlined */
-    while (com_getc() != -1)          /* 0x1dc7f */
+    while (com_getc_x() != -1)        /* 0x1dc7f */
         ;
     comopen = 1;                      /* 0x1dc8a */
 }
@@ -7113,8 +7130,7 @@ int wait_connect(void)
  * before and after sending, then returns wait_connect(), or 0 with "CANCELLED" when a wait was
  * aborted. The fn_1c068/fn_1c0ac pair is written out on the main path and called on the cancel path
  * (as in modem and wait_connect). */
-/* differs: near miss, the game calls com_getc at 0x1dfc2 where -oe inlines ours (QUESTIONS 6);
- * everything before it is identical. */
+/* The game calls com_getc at 0x1dfc2 (not inlined): com_getc_x. */
 extern char modemdial[];              /* 0x771bc, between modeminit and modemhangup (0x40 apart) */
 extern char phone[];                  /* 0x7ebdc: the number to dial */
 
@@ -7144,7 +7160,7 @@ int dial(void)
     pal_b = pal_d;
     setpalette();
     msgbox(msg, 0);                   /* 0x1dfbd */
-    while (com_getc() != -1)
+    while (com_getc_x() != -1)
         ;
     wait_or_key(0x110);               /* 0x1dfcf-0x1e00b, inlined */
     sendstr(cmd);                     /* 0x1e00f */
@@ -8619,4 +8635,242 @@ void kart_anim0(void)
     curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
     curkart->f18 = 0xe;
     curkart->f32 = ticks2;
+}
+
+/* differs: near miss, 377 vs 374 instructions, two causes:
+ * 1. the game has one 4-byte stack slot, shared by the f32 value of the tick test (0x22582) and the
+ *    row spill of &tb7b448[f1a][pl] (0x2266b); a named `t` gets its own slot (frame 8). Without `t`
+ *    the registers change: v88b7e lands in EBX, not EDX (6 declaration orders tried, all worse).
+ * 2. the two charge-start tails (f3a == 0) are cross-jumped in the game (0x22aeb -> 0x22bd5), with
+ *    `v88b92 = 0` scheduled late; ours keeps both and schedules that store early (5 spellings tried).
+ * Levers that mattered: calling kart_anim2 through an aux alias (-oe inlined it: 395 -> 369
+ * instructions) and the `pl = v88b7e` local (the game keeps it in EDX for players[] and the row). */
+/* ---- 0x224ec, 1799 bytes: per-frame kart state (caller 0x297c9 in 0x290a0); runs only while the
+ * player's f58 is clear and v88c44 == 2. f06 counts a short spin (v88b90/v88b92 = 0x78 one side);
+ * f20 steps animation 7 (f20 1) or 9 (f20 2) back or on each tick until it ends in kart_anim2;
+ * f3c is the charge phase (1 or 2, by f22/f24 against f3e, f40 counting down 10 per call); with
+ * neither, a charge starts when f42 >= 100 (one-player, off-line, map class not 2). f26 decays by
+ * f36 (16.16) on every path. v88b8c / v88b98 select which side's value goes to v88b92 / v88b90. */
+extern short v88c44, v88b8c, v88b98;
+extern int tb7b4d8[], tb7b508[];
+
+void kart_anim2_x(void);              /* kart_anim2 under another name: -oe cannot inline a body it
+                                       * does not see, and the game calls it (0x22609) */
+#pragma aux kart_anim2_x "kart_anim2_"
+
+void kart_state(void)
+{
+    short f;
+    int pl, t;
+
+    pl = v88b7e;
+    f = 0;
+    if (players[pl].f58 != 0 || v88c44 != 2)
+        return;
+    if (curkart->f06 != 0) {
+        if (curkart->f06 == 1) {
+            v88b92 = 0x78;
+            v88b90 = f;
+        } else {
+            v88b90 = 0x78;
+            v88b92 = f;
+        }
+        if (++curkart->f08 > 4) {
+            curkart->f06 = 0;
+            curkart->f3c = 0;
+        }
+        return;
+    }
+    if (curkart->f20 != 0) {
+        v88b92 = f;
+        v88b90 = f;
+        t = curkart->f32;
+        if (ticks2 - t >= 1) {
+            curkart->f32 = ticks2;
+            if (curkart->f20 == 1) {
+                v88b92 = v88c54;
+                if (--curkart->f1a < 0) {
+                    curkart->f1e = 1;
+                    curkart->f20 = 0;
+                    curkart->f22 = 0;
+                    v88b92 = 0;
+                    curkart->f24 = 0;
+                    v88b90 = 0;
+                    curkart->f42 = 0;
+                    kart_anim2_x();
+                    goto decay;
+                }
+            } else {
+                v88b90 = v88c54;
+                if (++curkart->f1a > 0x10) {
+                    curkart->f1e = 1;
+                    curkart->f20 = 0;
+                    curkart->f22 = 0;
+                    v88b92 = 0;
+                    curkart->f24 = 0;
+                    v88b90 = 0;
+                    curkart->f42 = 0;
+                    kart_anim2_x();
+                    goto decay;
+                }
+            }
+            curkart->f4e = &tb7b448[curkart->f1a][pl];
+        }
+    decay:
+        if (curkart->f26 > 0 && curkart->f36 != 0)
+            curkart->f26 -= (curkart->f36 * curkart->f26) >> 16;
+        if (curkart->f26 <= 0 && curkart->f1e != 0) {
+            curkart->f1e = 1;
+            curkart->f20 = 0;
+            curkart->f22 = 0;
+            v88b92 = 0;
+            curkart->f24 = 0;
+            v88b90 = 0;
+            curkart->f42 = 0;
+            kart_anim2_x();
+        }
+        return;
+    }
+    if (curkart->f3c != 0) {
+        if (curkart->f3a != 0)
+            curkart->f3e = curkart->f3a * 2;
+        else
+            curkart->f3e = f;
+        v88b92 = 0;
+        v88b90 = 0;
+        if (v88b8c != 0) {
+            v88b92 = v88c7a;
+            if (curkart->f3c == 2) {
+                v88b92 = 0;
+                if (curkart->f22 >= 2 && curkart->f3a != 0) {
+                    curkart->f3c = 0;
+                    return;
+                }
+            }
+        }
+        if (v88b98 != 0) {
+            v88b90 = v88c7a;
+            if (curkart->f3c == 1) {
+                v88b90 = 0;
+                if (curkart->f24 >= 2 && curkart->f3a != 0) {
+                    curkart->f3c = 0;
+                    return;
+                }
+            }
+        }
+        if (curkart->f3c == 1) {
+            if (curkart->f22 >= curkart->f3e) {
+                voice_play(0x11);
+                curkart->f1a = 7;
+                curkart->f3c = 0;
+                curkart->f20 = 1;
+                curkart->f1e = 0;
+                curkart->f18 = 1;
+                curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                curkart->f32 = ticks2;
+                v88b92 = v88c54;
+            }
+        } else {
+            if (curkart->f24 >= curkart->f3e) {
+                voice_play(0x11);
+                curkart->f1a = 9;
+                curkart->f3c = 0;
+                curkart->f20 = 2;
+                curkart->f1e = 0;
+                curkart->f18 = 2;
+                curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                curkart->f32 = ticks2;
+                v88b90 = v88c54;
+            }
+        }
+        curkart->f40 -= 10;
+        if (curkart->f40 < 0)
+            curkart->f3c = 0;
+        if (curkart->f26 > 0 && curkart->f36 != 0)
+            curkart->f26 -= (curkart->f36 * curkart->f26) >> 16;
+        if (curkart->f26 > 0 && curkart->f3c != 0)
+            return;
+        if (curkart->f20 == 0) {
+            v88b92 = 0;
+            v88b90 = 0;
+        }
+        curkart->f22 = 0;
+        curkart->f24 = 0;
+        curkart->f3c = 0;
+        curkart->f26 = 0;
+        return;
+    }
+    if (curkart->f26 > 0 && curkart->f36 != 0) {
+        curkart->f26 -= (curkart->f36 * curkart->f26) >> 16;
+        if (curkart->f26 < 0)
+            curkart->f26 = f;
+    }
+    if (curkart->f42 >= 100 && curkart->f44 == 0 && twoplayer == 0 && netvoices == 0 && v7e568 != 2)
+        f = 1;
+    if (v88b8c != 0)
+        v88b92 = v88c7c;
+    else
+        v88b92 = 0;
+    if (v88b98 != 0) {
+        v88b92 = 0;
+        v88b90 = v88c7c;
+    } else
+        v88b90 = 0;
+    curkart->f3c = 0;
+    curkart->f20 = 0;
+    if (f == 0)
+        return;
+    if (curkart->f22 >= curkart->f3a) {
+        voice_play(0x11);
+        v88b92 = 0;
+        v88b90 = 0;
+        if (v88b8c != 0)
+            v88b92 = v88c7a;
+        curkart->f3c = 1;
+        curkart->f18 = 3;
+        curkart->f1a = 0;
+        curkart->f40 = 0x78;
+        curkart->f32 = ticks2;
+        curkart->f24 = 0;
+        curkart->f22 = 0;
+        curkart->f4e = &tb7b4d8[v88b7e];
+        if (curkart->f3a == 0) {
+            voice_play(0x11);
+            curkart->f3c = 0;
+            v88b90 = 0;
+            curkart->f20 = 1;
+            curkart->f1a = 7;
+            curkart->f1e = 0;
+            curkart->f18 = 1;
+            v88b92 = 0;
+            curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+            curkart->f32 = ticks2;
+        }
+    } else if (curkart->f24 >= curkart->f3a) {
+        voice_play(0x11);
+        v88b92 = 0;
+        v88b90 = 0;
+        if (v88b98 != 0)
+            v88b90 = v88c7a;
+        curkart->f1a = 6;
+        curkart->f18 = 4;
+        curkart->f24 = 0;
+        curkart->f32 = ticks2;
+        curkart->f22 = 0;
+        curkart->f3c = 2;
+        curkart->f40 = 0x78;
+        curkart->f4e = &tb7b508[v88b7e];
+        if (curkart->f3a == 0) {
+            voice_play(0x11);
+            curkart->f3c = 0;
+            v88b90 = 0;
+            curkart->f20 = 2;
+            curkart->f1a = 9;
+            curkart->f1e = 0;
+            curkart->f18 = 2;
+            v88b92 = 0;
+            curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+            curkart->f32 = ticks2;
+        }
+    }
 }

@@ -324,3 +324,9 @@ it can be copied back into DREA.
 - **9.5b unrolls a constant-count loop itself** (iter 14, [generic]): crack_draw 0x22034 does pass 0,
   then a loop of three passes per iteration over a byte offset (`add edx,0x30; cmp edx,0x70`). A plain
   `for (i = 0; i < 7; i++)` matched; do not write the unrolling into the source.
+- **When the game CALLS a small function that -oe inlines in ours, call it through an aux alias**
+  (iter 14, [generic], QUESTIONS 6): `short com_getc_x(void); #pragma aux com_getc_x "com_getc_";`
+  then `com_getc_x()` at the sites the game calls. The inliner never sees the alias's body, the
+  fixup names the real symbol, so the fixup check passes. For a function the game calls everywhere
+  (readdat), `#define readdat readdat_x` right after its definition. Fixed dial, link_open, modem
+  and kart_state's kart_anim2 calls.

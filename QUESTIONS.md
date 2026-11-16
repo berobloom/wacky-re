@@ -136,7 +136,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    the rebuild keeps in ECX/EDI/ESI).
    Test: a probe function with the game's 27 stores in the game's store order, then flip one pair
    at a time and diff the frame.
-6. **OPEN, narrowed** (findings/video.md, GOTCHAS): what makes the game's build *call* its small
+6. **WORKAROUND FOUND, cause still open** (iter 14): declaring the function a second time under
+   another C name with `#pragma aux alias "real_"` and calling the alias reproduces the game's
+   `call` (the inliner never sees the alias's body; the fixup names the real symbol). This matched
+   `dial`, `link_open` (com_getc), `modem` (com_getc) and `kart_state`'s kart_anim2 calls, and with
+   `#define readdat readdat_x` (plus seekdat/telldat/datsize) after the definitions it fixed
+   fn_17928's readdat cause and the telldat trap at 0x194c8. Still open: why the game's build
+   calls them at all (a second module stays the likeliest original). Original question:
+   what makes the game's build *call* its small
    user functions - `readdat` (0x1424c, called at 24+ sites, 11 bytes of body) and
    `fn_1c068`/`fn_1c0ac` (68/69 bytes, 11 sites each) - when Watcom 9.5b `-oe` inlines every
    user function of that size in our build? Data this session: adding `-oe=<N>` to the pinned

@@ -32,13 +32,13 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
 1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x21310-0x2222c, 103
-   functions identical and 50 near misses (`src/check.sh`; the register/scheduling ones are
+   functions identical and 48 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: `fn_1f858` (the main menu dispatcher, big), then 0x224ec (`line_points` 0x21554, `shot_hit` 0x218a4 and `line_draw` 0x21f04 near misses by register choice; `karts[]` 0x68410 = `cars[]` - 0x10; `ent_sprites_load` 0x21310 is a near miss by loop SR, QUESTIONS 2;
+2. Next in address order: `fn_1f858` (the main menu dispatcher, big), then 0x22bf4 (`kart_state` 0x224ec a near miss, one stack slot and a cross-jump; `line_points` 0x21554, `shot_hit` 0x218a4 and `line_draw` 0x21f04 near misses by register choice; `karts[]` 0x68410 = `cars[]` - 0x10; `ent_sprites_load` 0x21310 is a near miss by loop SR, QUESTIONS 2;
    `credits_screen` 0x1efb0 is a near miss, slots; `volume_menu` 0x1e760 is
    a near miss by one frame-wait load; `demo_mode` 0x1e2e4 is a
    near miss, 3 causes in its note; `dial`
-   0x1deb0 and `link_open` 0x1dae8 are near misses only by their `com_getc` call), then
+   0x1deb0 and `link_open` 0x1dae8 now match through the com_getc alias), then
    `f2e4b8` (LIKELY the per-track trial table; callers 0x1911f, 0x1d6ca, 0x31e98). `fn_1d704`
    0x1d704 is a near miss (the `which` spill, QUESTIONS 12; its prototype stays unprototyped).
 3. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
@@ -49,12 +49,13 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
    diffs (five causes in its `differs:` note). Vary one lever per try (`short` vs `int`, etc.).
 5. `fn_1c0f4` (the help screen, near miss of exactly the game's size): 67 aligned diffs, five
    block-shape causes in its `differs:` note.
-6. The two-module experiment for QUESTIONS 6: the palette pair (and `readdat`) from a second OMF
-   module so the calls survive `-oe`: matches `fn_1c068`/`fn_1c0ac`, 11 bytes off 24 `readdat`.
-7. Two call-shape traps left (`v88bb2` is now `short`, which fixed 0x1d120): `f375cd`'s aux
+6. QUESTIONS 6 has a workaround: call through a `#pragma aux x "name_"` alias where the game keeps a
+   call (com_getc, kart_anim2, readdat/seekdat/telldat/datsize are done). Not yet tried: the
+   other near misses whose notes blame -oe inlining (grep `inlin` in src/ww.c).
+7. One call-shape trap left (`v88bb2` is now `short`, which fixed 0x1d120): `f375cd`'s aux
    `parm [edx]` forces mov+movzwl over a 16-bit load (0x19506, 0x1ce57, 0x1d73e, 0x1e472, 0x1e816;
-   `pal_a short` costs a match, `parm [eax] [dx]` adds instructions in all four near misses),
-   and `telldat() + datsize() - 0x300` accumulates in the wrong register (0x194c8).
+   `pal_a short` costs a match, `parm [eax] [dx]` adds instructions in all four near misses);
+   the `telldat() + datsize()` one at 0x194c8 is gone with the aliases.
 8. Inventory: archives and formats (WACKY.DAT), strings - the `42.GAM`/`20.GAM` dat records
    (`v7eca0` 1/2/3, 0x34463-0x344d4, `v88bd6` = `datfind`'s index), "BSBCS.PCX", `tbl77758`'s writer.
 9. Get the original running under the harness; record the boot's segments or LE deltas and a first
