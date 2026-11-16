@@ -31,10 +31,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f43b, 94
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f75e, 95
    functions identical and 46 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: 0x1f43c, 0x1f760, then `fn_1f858` (the main menu dispatcher, big;
+2. Next in address order: 0x1f760, then `fn_1f858` (the main menu dispatcher, big;
    `credits_screen` 0x1efb0 is a near miss, slots; `volume_menu` 0x1e760 is
    a near miss by one frame-wait load; `demo_mode` 0x1e2e4 is a
    near miss, 3 causes in its note; `dial`

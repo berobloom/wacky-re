@@ -7799,3 +7799,104 @@ void credits_screen(void)
             return;
     }
 }
+
+/* ---- 0x1f43c, 803 bytes: the link game menu (caller 0x1f9d9 in fn_1f858). Mode: RACE HEAD TO HEAD
+ * (v7ed9c 1), RACE WITH ALL CARS (2), SHOOT OUT GAME (net88c22 3) or TERMINATE LINK (net88c22 4);
+ * then SPLIT SCREEN or FULL SCREEN (v88bd0). Each side sends its detail level (v774de split, v7ee58
+ * full) with net_key, keeps the lower detail of the two (the higher number) in w88cb8 and says which. */
+extern int v7ed9c;
+extern short w88cb8;
+
+void link_menu(void)
+{
+    short sel;                        /* EDX after the second menu */
+
+    do {
+        strcpy(&mnames[0], " RACE HEAD TO HEAD  ");    /* 0x1f441 */
+        v88b9e = 0;
+        strcpy(&mnames[0x3c], " RACE WITH ALL CARS ");
+        v88bb0 = 0x10;
+        v7ed20 = 0x198;
+        v7ed1c = 0x198;
+        strcpy(&mnames[0x78], " SHOOT OUT GAME     ");
+        strcpy(&mnames[0xb4], " TERMINATE LINK     ");
+        v88c80 = 1;
+        v88c80 = menu(4, v88bda, 0, 0);           /* 0x1f4c8 */
+        if (v88bda)
+            v88bda = 0;
+        if (net88c14)
+            return;
+        if (v88c80 == 4) {
+            net88c22 = 4;
+            return;
+        }
+        if (v88c80 == 1) {
+            v7ed9c = 1;
+            net88c22 = 2;
+        }
+        if (v88c80 == 2) {
+            v7ed9c = 2;
+            net88c22 = 2;
+        }
+        if (v88c80 == 3)
+            net88c22 = 3;
+        v88bd0 = 1;
+        strcpy(&mnames[0], " SPLIT SCREEN MODE ");     /* 0x1f559 */
+        v88bb0 = 0xd;
+        strcpy(&mnames[0x3c], " FULL SCREEN MODE  ");
+        v88c80 = 1;
+        sel = menu(2, 0, 0, 0);                   /* 0x1f5a1 */
+        v88bd0 = sel;
+        if (net88c14)
+            return;
+    } while (v7ecc0 != 0);                        /* 0x1f5bc */
+    if (sel == 2)
+        v88bd0 = 0;
+    if (v88bd0 != 0)
+        w88cb8 = v774de;
+    else
+        w88cb8 = v7ee58;
+    net88c14 = net_key((unsigned char)w88cb8, 0, 0);   /* 0x1f601 */
+    {
+        int start = ticks;
+        while (ticks - start < 0x46)
+            ;
+    }
+    if (net88c14)
+        return;
+    if (v88cef > w88cb8)                          /* 0x1f62c: the other side's level */
+        w88cb8 = v88cef;
+    switch (w88cb8) {                             /* 0x1f643: the tree 2 / <2 / 3 */
+    case 1:
+        fn_1c068();
+        msgbox("HIGH DETAIL SELECTED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        break;
+    case 2:
+        fn_1c068();
+        msgbox("MEDIUM DETAIL SELECTED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        break;
+    case 3:
+        fn_1c068();
+        msgbox("LOW DETAIL SELECTED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        break;
+    }
+    cars[0].fd0 = 0;                              /* 0x1f731 */
+    cars[1].fd0 = 0;
+    v7ed20 = 0x440;
+    v7ed1c = 0x2a8;
+}
