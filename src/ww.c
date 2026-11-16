@@ -18148,3 +18148,323 @@ void tiles_setup(void)
     }
 }
 
+/* ---- 0x348f4, 2534 bytes (caller 0x35ca4 at 0x36784, start-up): the intro. Unless v7ecbc (skip):
+ * the APOGEE song (+ pathext) into v7eb00; TABLES.DAT as a picture (up to 3000 ticks, fire / Esc
+ * after 100); then APOG1.PCX as the camera flies along the demo track (curpos from 0x5a0, the view
+ * growing from a 1-line strip, spr_y 0x81 / spr_w 1, by 6 a frame) while the p6a978 logo drops in
+ * with pic_at once the view is full (voice 0xc); the APOGEE song plays once (to its end with music,
+ * else 0x16 logo steps). Then the menu song, BEAVIS.PCX (0x110 ticks), and WINTRO.PCX with the
+ * eight karts driving past one by one (players_ahead, voice 8 as each starts) until the last is
+ * gone, 0x3c ticks and a key. Ends with the WINTRO palette copied to v7d858 and CHECK.PCX loaded
+ * (palette into v7d85c). v7d998 is 1 during the fly-over and restored after.
+ * differs (9 blocks): the fread size is loaded before its buffer, music88bcc is stored after the
+ * song load, the frame wait keeps ticks in EDX, the final palette copy loads the source first. */
+void f37e23(void);
+void f36e66(void);
+extern int v7aa98;
+
+void intro(void)
+{
+    char buf[20];
+    int oldmode, first, n, fly;
+    short done;
+    int lift, dist, y, w, snd, t;
+    short i, k, j;
+    char *pal;
+
+    v88bd4 = 1;
+    oldmode = v7d998;
+    if (v7ecbc) {
+        kartsets_load(0);
+        goto out;
+    }
+    if (musicon) {
+        makepath(buf, "APOGEE");
+        datfind(buf);
+        fread((void *)v7eb00, datdir[datidx].size, 1, datfile);
+    }
+    if (pcxfile_load("TABLES.DAT", 0)) {
+        file_pal("TABLES.DAT", (unsigned char *)v7d858);
+        palptr = pal7d850;
+        getpalette();
+        f1bf94(pal7d850);
+        v88b4a = 0;
+        pal_a = 0x3e80;
+        p7d714 = p6a978;
+        f375cd();
+        pal_a = 0x3e80;
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        fade_in((unsigned char *)v7d858);
+        ticks = 0;
+        do {
+            if (ticks >= 100) {
+                v7d8a4 = v7d8ac;
+                ctl_setup(0);
+                f377ae();
+                if (v88cce)
+                    joy88b40 = 1;
+                if (joy88b40 || key88cd0 == 1)
+                    break;
+            }
+        } while (ticks < 3000);
+    }
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    f37e23();
+    pal_a = 0xbb80;
+    pcx_load("APOG1.PCX", 0);
+    pal = v7d858;
+    datfind("APOG1.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+    v7d998 = 1;
+    v88b4a = 0;
+    i = pal_a;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = i;
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    tiles_setup();
+    v88c20 = 1;
+    curpos = 0x5a0;
+    v88b0a = 0xbcc;
+    v88b0e = 0x834;
+    pal_a = 0x3e80;
+    ticks = 0;
+    ticks2 = 0;
+    first = 1;
+    y = 0x81;
+    w = 1;
+    lift = 0x3c;
+    dist = 0x462;
+    fly = 0;
+    n = 0;
+    for (;;) {
+        ticks = 0;
+        spr_y = y;
+        spr_w = w;
+        f37e94();
+        f36e66();
+        if (fly)
+            pic_at(dist, lift, 0x82);
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        if (!pal_a)
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        if (first) {
+            music_start(v7eb00, 0);
+            w88b10 = 0x100;
+            w88b1e = 0;
+            first = 0;
+            palptr = v7d858;
+            f37cf1();
+        }
+        while (ticks <= 6)
+            ;
+        if (musicon) {
+            if (!MUSIC_SongPlaying() && n >= 8)
+                break;
+        } else if (n >= 0x16)
+            break;
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();
+        if (v88cce)
+            joy88b40 = 1;
+        if (joy88b40 || key88cd0 == 1)
+            break;
+        if (fly) {
+            lift -= 4;
+            if (lift < 0)
+                lift = 0;
+            dist -= 100;
+            if (dist < 0x8c) {
+                dist = 0x8c;
+                n++;
+            }
+        }
+        y -= 6;
+        w += 6;
+        if (y < 0) {
+            w = 0x82;
+            y = 0;
+        }
+        if (w > 0x82) {
+            w = 0x82;
+            y = 0;
+        }
+        if (y == 0 && w == 0x82) {
+            f37a21();
+            v7d798 = v7d7a4;
+            v7d79c = v7d7a8;
+            curpos += 0x1e;
+            if (curpos >= 0x780)
+                curpos -= 0x780;
+            f37a21();
+            v7d768 = v7d798 - v7d7a4;
+            v7d76c = v7d79c - v7d7a8;
+            v88b0a += v7d768;
+            ticks2++;
+            v88b0e += v7d76c;
+            if (ticks2 > 3) {
+                if (!fly) {
+                    fly = 1;
+                    voice_play(0xc);
+                }
+                ticks2 = 0;
+            }
+        } else
+            v88b0e += 6;
+    }
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    v7d998 = oldmode;
+    music_start(menusong, 1);
+    kartsets_load(0);
+    pcx_load("BEAVIS.PCX", 0);
+    pal = v7d858;
+    datfind("BEAVIS.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+    v88b4a = 0;
+    pal_a = 0x3e80;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = 0x3e80;
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    fade_in((unsigned char *)v7d858);
+    ticks = 0;
+    do {
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();
+        if (v88cce)
+            joy88b40 = 1;
+    } while (!joy88b40 && key88cd0 != 1 && ticks < 0x110);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    pcx_load("WINTRO.PCX", 0);
+    pal = v7d85c;
+    datfind("WINTRO.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+    v88b4a = 0;
+    pal_a = 0x3e80;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = 0x3e80;
+    pal_b = 0x3e80;
+    pal_c = 0x7d00;
+    setpalette();
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    fade_in((unsigned char *)v7d85c);
+    ticks = 0;
+    while (ticks < 0x3c)
+        ;
+    pal_b = 0x7d00;
+    v88b0e = 0;
+    for (v7d800 = players, i = 0; i <= 7; i++) {
+        v7d800->f00 = 0;
+        v7d800->x = v88b0a;
+        v7d800++;
+        v7d800[-1].y = v88b0e + 0x3c;
+    }
+    players[0].f00 = 1;
+    k = 0;
+    ticks = 0;
+    ticks2 = 0;
+    voices_reset();
+    voice_play(8);
+    snd = 8;
+    for (;;) {
+        v7ea70 = ticks;
+        pal_c = pal_a;
+        setpalette();
+        players_ahead();
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        if (!pal_a)
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        while (ticks - v7ea70 <= 8)
+            ;
+        for (v7d800 = players, j = 0; j <= 7; j++, v7d800++) {
+            done = v7d800->f00 == 2;
+            if (v7d800->f00)
+                v7d800->y += 0x1c;
+            if (!v7d800->f00 && j == k + 1 && abs(v7d800->y - players[k].y) >= 400) {
+                if (sfxon) {
+                    if (FX_SoundActive(v7aa98))
+                        FX_StopSound(v7aa98);
+                    voice_play(snd);
+                }
+                k++;
+                v7d800->f00 = 1;
+            }
+        }
+        if (done)
+            break;
+        if (ticks < 0x3c)
+            continue;
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();
+        if (v88cce)
+            joy88b40 = 1;
+        if (joy88b40 || key88cd0 == 1)
+            break;
+    }
+out:
+    for (i = 0; i <= 0x2ff; i++)
+        v7d858[i] = v7d85c[i];
+    pcx_load("CHECK.PCX", 0);
+    pal = v7d85c;
+    datfind("CHECK.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+}
+
