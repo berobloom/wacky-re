@@ -17477,10 +17477,8 @@ void songs_pick(void)
  * song buffer v7eb00 (0xcb20 bytes) and loads the five menu songs MAINMENU, LEADRBRD, GAMEOVER,
  * SPACEY, ASHES (+ pathext) into malloc'd buffers menusongs[0..4] (0x7c648; menusong = [0]);
  * v7ebb8 sums the bytes. Returns 0 when a malloc fails, else 1.
- * differs: names[i] is built in EDX with the index in EAX (ours swaps them); tried index forms,
- * int i, a temp, declaration order, and as makepath_x's 2nd argument: names[0] + i * 12,
- * (char *)names + i * 12, &names[i][0], *(names + i), (char *)(names + i), i * 12 + (char *)names
- * (all one swap), &names[0][0] + i * sizeof names[0] (worse). */
+ * The name offset goes through `n` (the datsize local, homed in EAX) to get the game's EAX/EDX
+ * roles; names[i] and six other spellings swap them. */
 extern int v7ebb8;
 extern char *menusongs[];
 #pragma aux menusongs "_menusong"
@@ -17502,7 +17500,8 @@ int songs_load(void)
         if (!v7eb00)
             return 0;
         for (i = 0; i <= 4; i++) {
-            makepath_x(path, names[i]);
+            n = i * 12;
+            makepath_x(path, (char *)names + n);
             datfind(path);
             n = datsize();
             v7ebb8 += n;

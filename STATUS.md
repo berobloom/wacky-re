@@ -34,7 +34,7 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
 1. Near misses: take the first line with an empty status in `src/nearmiss.txt` (ranked by
    `tools/wc/nearmiss.sh`, smallest diff first; procedure in overnight/prompt.md step 2). The C
    rebuild covers 0x10260-0x36a4d except the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857:
-   181 functions identical, 98 open near misses listed. 0x36a4e on is the hand-written assembly module.
+   182 functions identical, 97 open near misses listed. 0x36a4e on is the hand-written assembly module.
 2. Near-miss causes are in each function's `differs:` note in `src/ww.c`; the register/slot
    ones are QUESTIONS.md 2, 3, 9, 10. arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`.
 3. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte

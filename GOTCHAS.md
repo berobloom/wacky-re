@@ -149,6 +149,11 @@ it can be copied back into DREA.
   game's home, 0x19f22); defined at its later use it got ECX, and `menu(nrows,0,0,0)`'s argument
   setup reordered with it. Try moving the assignment before the preceding copy before re-probing
   types, `register` or -o letters (same family as question 2). [generic]
+- **An EAX/EDX swap in an address computation yields to an EAX-homed local** (songs_load 0x3360c,
+  iter 14): `makepath_x(path, names[i])` built the offset in EDX, the game in EAX; seven index
+  spellings and a fresh temp did not change it, `n = i * 12; makepath_x(path, (char *)names + n);`
+  matched (`n` is the local that later takes datsize()'s EAX result). Try this before writing an
+  EAX/EDX swap off as the coin flip above. [generic]
 - **A cold `then` block is emitted after the rest of the chain**: the game's `test eax,eax;
   jne <far block>` with the block after the else-chain (classes_menu 0x19f61 -> 0x1a107) comes from
   `if (!two) { ...big... } else v88bb2 = 4;`; writing the obvious `if (two) v88bb2 = 4; else if
