@@ -12463,3 +12463,61 @@ void sprites_build(void)
         sprites_draw();
 }
 
+/* ---- 0x289ec, 289 bytes: v7d800's hit timer (caller 0x28ce7 in 0x28cac). The limit is 0x21 ticks
+ * for f58 1, else 0x32 (4 in a net game). At 0x32 the hit voice alternates: f58 2 <-> 3 with
+ * voices 0x19 / 0x18 when the voice channel is free (the first voice_check gets 0x19 for 2, 0x18
+ * for 3, the uninitialised value otherwise). When ticks2 - f4c reaches the limit f58 is cleared;
+ * in a net game voice 0xd plays, f56/f58/f5c clear, f02 = 2 and v7edb4 rises by 2 for the kart
+ * whose face is v7ec6c, else by 1, capped at 0x63. */
+extern int i7ec6c, v7edb4;
+#pragma aux i7ec6c "_v7ec6c"
+
+void hit_timer(void)
+{
+    int lim, v, m;
+
+    if (v7d800->f58 == 1)
+        lim = 0x21;
+    else
+        lim = 0x32;
+    if (netvoices)
+        lim = 4;
+    if (lim == 0x32) {
+        switch (v7d800->f58) {
+        case 2:
+            v = 0x19;
+            break;
+        case 3:
+            v = 0x18;
+            break;
+        }
+        voice_check(v);
+        if (voicebusy == 0) {
+            if (v7d800->f58 == 2)
+                v7d800->f58 = 3;
+            else
+                v7d800->f58 = 2;
+            v = (v7d800->f58 == 2) + 0x18;
+            voice_check(v);
+            if (voicebusy == 0)
+                voice_play(v);
+        }
+    }
+    if ((m = v7d800->f4c, ticks2 - m) >= lim) {   /* the inlined since2() shape */
+        v7d800->f58 = 0;
+        if (netvoices) {
+            voice_play(0xd);
+            v7d800->f56 = 0;
+            v7d800->f58 = 0;
+            v7d800->f5c = 0;
+            v7d800->f02 = 2;
+            if (v7d800->face == i7ec6c)
+                v7edb4 += 2;
+            else
+                v7edb4++;
+            if (v7edb4 > 0x63)
+                v7edb4 = 0x63;
+        }
+    }
+}
+
