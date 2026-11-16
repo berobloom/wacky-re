@@ -12145,3 +12145,50 @@ void track_load(void)
     }
 }
 
+/* ---- 0x28038, 328 bytes: loads the kart sprite sets into the stream at v7d844 (callers 0x28399,
+ * 0x3491a, 0x34e95): with `one`, ACTION.SP (0x5e2 bytes into p6a980) and the single set 251X6.INF;
+ * else the six sets named in kartset[]. Each set is 10 frames: w, h (shorts) then (h + 1) * w * 4
+ * bytes; tab6e470[set * 20 + frame] points at each.
+ * differs (near-miss, 86 vs 85 insns, outer loop): the game strength-reduces the set name too
+ * (`mov eax,4; add eax,kartsets` start, +0x16 per set), drops k and tests the 0x50-byte row offset
+ * against n * 0x50, with n in ESI; ours keeps k and an imul by 0x16 for the name. Tried: ternary,
+ * if/else, hoisted name pointer, short/unsigned/short n k, while loop, char[][0x16] + 4. The inner
+ * loop matches. */
+struct kartset { int f00; char name[0x12]; };
+extern struct kartset kartsets[];
+#pragma aux kartsets "_arr7d8b4"
+extern short *v7d844;
+extern short *kartfr[][20];
+#pragma aux kartfr "_tab6e470"
+
+void kartsets_load(int one)
+{
+    int n, k;
+    short i, sz;
+    int w, h;
+    short *p;
+
+    p7d838 = v7d844;
+    if (one) {
+        n = 1;
+        datfind("ACTION.SP");
+        fread(p6a980, 0x5e2, 1, datfile);
+    } else
+        n = 6;
+    for (k = 0; k < n; k++) {
+        datfind(one ? "251X6.INF" : kartsets[k].name);
+        for (i = 0; i <= 9; i++) {
+            p = p7d838;
+            kartfr[k][i] = p;
+            fread(&w, 2, 1, datfile);
+            *p++ = w;
+            fread(&h, 2, 1, datfile);
+            *p = h;
+            sz = (h + 1) * w * 4;
+            p7d838 += 2;
+            fread(p7d838, sz, 1, datfile);
+            p7d838 = (short *)((char *)p7d838 + sz);
+        }
+    }
+}
+
