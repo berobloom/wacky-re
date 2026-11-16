@@ -1921,7 +1921,7 @@ void f287ec(void);
 void players_project(void);
 void ents_project(void);
 void f26a3c(void);
-void f266a8(void);
+void lights_project(void);
 void shots_project(void);
 void sprites_draw(void);
 void f3c3e9(void);
@@ -1966,7 +1966,7 @@ void frame_draw(void)
     ents_project();
     f26a3c();
     if (v88c38)
-        f266a8();
+        lights_project();
     shots_project();
     if (v88b78)
         sprites_draw();
@@ -1987,7 +1987,7 @@ void frame_draw(void)
         ents_project();
         f26a3c();
         if (v88c38)
-            f266a8();
+            lights_project();
         shots_project();
         if (v88b78)
             sprites_draw();
@@ -11395,5 +11395,118 @@ void shots_project(void)
         v88b78++;
         CR->f0c = (int)(v7d874->spr + v7d874->frame * v7d874->fsize);
     }
+}
+
+/* ---- 0x266a8, 916 bytes: the start lights (callers frame_draw 0x134fa, 0x13603 while v88c38;
+ * 0x289d2): during the countdown (v88c44 == 1) the frame v88c5e goes to 1 after 0x11 ticks of ticks2
+ * since v7eba8 and to 2 after 0x22, which also starts the race (v88c44 = 2) with voice 10; then the
+ * lights at (v88c4a, v88c4c) are projected like a shot (tab6e470 sizes, gn7eb40[v88c5e]) and
+ * v88c38 stays set only while they are on screen. LIKELY: "lights" from the 3 frames and the timing.
+ * differs (near-miss, 217 vs 218 insns, 23 blocks): the countdown test is `cmp ax,1; jb; ja` in the
+ * game (a switch range check; ours `jne`), ticks2 - v7eba8 loads v7eba8 first, and the rotation
+ * keeps sy/dy in two stack slots and a in EDI (ours: sy in a register). No loop here, so this is not
+ * the promotion problem of the other projections. Tried: four declaration orders, three t forms. */
+extern short v88c5e, v88c4a, v88c4c;
+extern int v7eba8;
+extern char *lights[];
+#pragma aux lights "_gn7eb40"
+
+void lights_project(void)
+{
+    short dy, sx, k, c, h;
+    int sy, d, side, a, m, t;
+
+    if (v88c44)
+        v88c38 = 0;
+    switch (v88c44) {
+    case 1:
+        t = ticks2 - v7eba8;
+        if (t >= 0x22) {
+            v88c44 = 2;
+            v88c5e = 2;
+            voice_play(10);
+        } else if (t >= 0x11)
+            v88c5e = 1;
+        break;
+    }
+    v88b20 = v88c4a;
+    v88b22 = v88c4c;
+    if (v88b20 < v88c16 || v88b20 > v88c2a || v88b22 < v88c18 || v88b22 > v88c2c)
+        return;
+    if (in_sector() == 0)
+        return;
+    sx = v88b20 - v88b0a;
+    sy = v88b22;
+    dy = v88b22 - v88b0e;
+    d = (v7d614 * sx + v7d5e4 * dy) >> 16;
+    a = (d * 0x93cd) >> 16;
+    side = (dy * v7d614 - sx * v7d5e4) >> 16;
+    if (dy < sy)
+        a = -a;
+    c = 0xa0;
+    if ((short)a != 0)
+        c = 0xa0 - side * 0xa0 / (short)a;
+    if (c < 0 || c > 0x13f)
+        return;
+    d = isqrt(d * d + side * side);
+    m = tb6b7f8[c];
+    if (m) {
+        t = d * m;
+        d = t >> 14;
+        if (t - (d << 14) >= 0x1fa0)
+            d++;
+    }
+    if (d < 0x50 || d > 0x462)
+        return;
+    k = (d - 0x7c) / 0x46;
+    if (k < 0)
+        k = 0;
+    if (k > 9)
+        k = 9;
+    spr_y = tb6bd00[d];
+    p7d838 = tab6e470[k];
+    p7d764 = p7d838;
+    h = *p7d764++;
+    p7d838 += 2;
+    spr_h = h;
+    spr_y -= *p7d764;
+    spr_w = *p7d764;
+    if (spr_y > 0xc7)
+        return;
+    c -= spr_h >> 1;
+    v7d878 = 0;
+    if (c < 0) {
+        c = -c;
+        spr_h -= c;
+        if (spr_h <= 0)
+            return;
+        p7d838 = (short *)((char *)p7d838 + (short)(c * (spr_w + 1) * 4));
+        c = 0;
+    } else if (c + spr_h - 1 > 0x13f) {
+        spr_h -= spr_h - 1 + c - 0x13f;
+        if (spr_h <= 0)
+            return;
+    }
+    if (spr_y + spr_w - 1 > 0xc7) {
+        spr_w -= spr_w - 1 + spr_y - 0xc7;
+        if (spr_w <= 0)
+            return;
+        v7d878 = spr_w * 4;
+    }
+    p7d86c += 0x28;
+    CR->f1c = 0;
+    CR->f24 = -1;
+    CR->f18 = -1;
+    CR->f1a = k;
+    CR->f04 = c;
+    CR->f10 = d;
+    CR->f00 = spr_h;
+    CR->f02 = spr_w;
+    CR->f06 = spr_y;
+    CR->f08 = p7d838;
+    CR->f14 = v7d878;
+    v88c38 = 1;
+    v88b78++;
+    CR->f0c = (int)lights[v88c5e];
 }
 

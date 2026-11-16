@@ -96,7 +96,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    in our build, players_project does not, even cut down to the bounds test and the in_sector call, and
    not with a local short counter (`v88b72 = i;` in the body) like kart_draw's either. Same in
    ents_project 0x25a78 (v7d7f4/ECX) and shots_project 0x2632c (v7d874/ECX), while shots_move 0x2602c,
-   anim_tick 0x261fc (v7d874, v7d7f4, v800 and even twoplayer) do get it: the three that fail are the
+   anim_tick 0x261fc (v7d7f4, v7d800 and even twoplayer) do get it. Common to the three that fail (LIKELY
+   the cause, untested): they are the
    ones that call in_sector and isqrt with the pointer live across the calls.
 3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
    `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
