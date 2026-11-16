@@ -736,7 +736,7 @@
 0x0237a8 pair_reset   # CONFIRMED (rebuild src/ww.c): no callers; clears v7e56c and v7e570 when both are set or both clear
 0x0237e4 kart_move    # CONFIRMED (rebuild src/ww.c): moves curkart one frame - kart_line, wall bounce and push-off with sparks, track drift v88b92/v88b90, surface record; caller 0x297e8
 0x0741f8 surfs        # STRONGLY SUPPORTED: 0x12e-byte records per map class v7e568: +0x120 int -> kart f36, +0x124 -> f3a, +0x126/+0x12a -> f60/f64 (kart_move)
-0x024834 f24834       # SPECULATIVE: called after a track drift with the side (0 left, 1 right) in EAX (kart_move)
+0x024834 f24834       # CONFIRMED (rebuild src/ww.c): view offset v7d860 after a track drift: side 0 subtracts kart f52 down to v7d824, 1 adds f54 up to v7d830, only when v7d998 is 0 or 3
 0x024298 kart_class10 # CONFIRMED (rebuild src/ww.c): no callers; kart_hit's map-class-10 block (f0a, voice 12, f0c/f10 8, f0e 0x28, v88bae 4)
 0x0242fc kart_boost   # CONFIRMED (rebuild src/ww.c): no callers; once per fb4: f42 = 0xa0, fb6 = 0x10, f26 = tbl7e730[f42], voice 12
 0x024364 kart_fire    # CONFIRMED (rebuild src/ww.c): fires curkart's weapon f16/f6a - shot sprite v7eb04, mode v88bc0, track position v7eb9c, f2d548(kind, player); callers 0x325de, 0x32718
@@ -744,6 +744,8 @@
 0x07eb9c v7eb9c       # STRONGLY SUPPORTED: int, track position of the next shot, 0..0x77f (kart_fire, f2d548)
 0x07eb04 v7eb04       # LIKELY: char *, sprite of the next shot (kart_fire)
 0x088bc0 v88bc0       # SPECULATIVE: short, mode of the next shot, 1 or 3 (kart_fire)
+0x0248d0 setvmode_keep # CONFIRMED (rebuild src/ww.c): INT 10h mode set with default palette loading off around it (AH=12h BL=31h), then the mode again; callers 0x36711, 0x369dd
+0x024954 path_join    # CONFIRMED (rebuild src/ww.c): no callers; strcpy(0x7d7b8, 0x7d770) + strcat(s)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

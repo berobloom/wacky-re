@@ -31,10 +31,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x1f858-0x2130c and 0x21310-0x24831, 114
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x1f858-0x2130c and 0x21310-0x249ae, 118
    functions identical and 52 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: f24834 0x24834 (`kart_fire` 0x24364 a near miss, v7eb9c promoted to ECX; `kart_move` 0x237e4 a near miss, one stack temp slot; `main_menu` 0x1f858 a near miss: a constant kept in DX, the cross-function epilogue; `kart_bump` 0x22bf4 a near miss, slots/registers, 31 blocks; `kart_state` 0x224ec a near miss, one stack slot and a cross-jump; `line_points` 0x21554, `shot_hit` 0x218a4 and `line_draw` 0x21f04 near misses by register choice; `karts[]` 0x68410 = `cars[]` - 0x10; `ent_sprites_load` 0x21310 is a near miss by loop SR, QUESTIONS 2;
+2. Next in address order: 0x249b0 (`kart_fire` 0x24364 a near miss, v7eb9c promoted to ECX; `kart_move` 0x237e4 a near miss, one stack temp slot; `main_menu` 0x1f858 a near miss: a constant kept in DX, the cross-function epilogue; `kart_bump` 0x22bf4 a near miss, slots/registers, 31 blocks; `kart_state` 0x224ec a near miss, one stack slot and a cross-jump; `line_points` 0x21554, `shot_hit` 0x218a4 and `line_draw` 0x21f04 near misses by register choice; `karts[]` 0x68410 = `cars[]` - 0x10; `ent_sprites_load` 0x21310 is a near miss by loop SR, QUESTIONS 2;
    `credits_screen` 0x1efb0 is a near miss, slots; `volume_menu` 0x1e760 is
    a near miss by one frame-wait load; `demo_mode` 0x1e2e4 is a
    near miss, 3 causes in its note; `dial`

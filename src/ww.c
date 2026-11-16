@@ -10405,3 +10405,69 @@ void kart_fire(void)
             voice_play(0x1a);
     }
 }
+
+/* ---- 0x24834, 118 bytes: shifts the view offset v7d860 after a track drift (kart_move side 0 left,
+ * 1 right, and 0x30a09 in f2fd8c), only when v7d998 is 0 or 3. Left: from the left stop v7d824 jump
+ * to v7d82c, subtract f52, clamp at v7d824; right: from v7d830 jump to v7d828, add f54, clamp at
+ * v7d830. */
+extern int v7d860, v7d824, v7d828, v7d82c, v7d830;
+
+void f24834(int side)
+{
+    if (v7d998 == 0 || v7d998 == 3) {
+        if ((short)side) {
+            if (v7d860 == v7d830)
+                v7d860 = v7d828;
+            v7d860 += curkart->f54;
+            if (v7d860 > v7d830)
+                v7d860 = v7d830;
+        } else {
+            if (v7d860 == v7d824)
+                v7d860 = v7d82c;
+            v7d860 -= curkart->f52;
+            if (v7d860 < v7d824)
+                v7d860 = v7d824;
+        }
+    }
+}
+
+/* ---- 0x248ac, 36 bytes: BIOS set video mode (caller 0x362f8). */
+void setvmode(char mode)
+{
+    union REGS r;
+
+    r.h.al = mode;
+    r.h.ah = 0;
+    int386(0x10, &r, &r);
+}
+
+/* ---- 0x248d0, 130 bytes: sets a video mode with BIOS default palette loading off (INT 10h AH=12h
+ * BL=31h AL=1) around it, then on again, and sets the mode once more (callers 0x36711, 0x369dd). */
+void setvmode_keep(char mode)
+{
+    union REGS r3, r1, r2;
+
+    r2.h.al = 1;
+    r2.h.ah = 0x12;
+    r2.h.bl = 0x31;
+    int386(0x10, &r2, &r2);
+    r1.h.ah = 0;
+    r1.h.al = mode;
+    int386(0x10, &r1, &r1);
+    r2.h.al = 0;
+    r2.h.ah = 0x12;
+    r2.h.bl = 0x31;
+    int386(0x10, &r2, &r2);
+    r3.h.ah = 0;
+    r3.h.al = mode;
+    int386(0x10, &r3, &r3);
+}
+
+/* ---- 0x24954, 91 bytes, no callers (dead code): str7d7b8 = str7d770 followed by s. */
+extern char str7d7b8[], str7d770[];
+
+void path_join(char *s)
+{
+    strcpy(str7d7b8, str7d770);
+    strcat(str7d7b8, s);
+}
