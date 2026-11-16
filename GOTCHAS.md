@@ -319,4 +319,5 @@ it can be copied back into DREA.
   swap temp reused); `err = dx >> 1` computes straight into EDX. Its other levers: every local
   `short` (sx/sy too: the game's `mov esi,-1` is still a short), the declaration order that gives the
   game's registers, and `dy < dx`. line_points 0x21554 has int sx/sy (dword stack slots) and does
-  not take these levers.
+  not take these levers. Not a rule: in line_draw 0x21f04 (the same walk, plotting) the direct form
+  is the one that goes through EAX, and the game's `movsx edx; sar edx,1` was not reproduced.

@@ -8410,3 +8410,66 @@ void line_plot(void)
     spr_y = ly0;
     f37bf0();
 }
+
+/* differs: near miss, 304 of 303 bytes: the two `err` initialisations. The game emits
+ * `movsx edx,bx; sar edx,1` (32-bit, straight into EDX, interleaved with the loop-test load); `err = dx
+ * >> 1` goes through EAX (the shape kart_line wants), `err = dx; err >>= 1` (this) gives `mov edx,ebx`
+ * + `sar dx,1`. Tried: 150 declaration orders, `dx > dy`, for loops, `(int)` casts, `/ 2`, a temp. */
+/* ---- 0x21f04, 303 bytes: draws the Bresenham line (lx0, ly0) -> (lx1, ly1) point by point with
+ * f37bf0, the far end included (callers 0x22182, 0x221b2 in 0x22034). kart_line's walk with
+ * line_plot's body written out. */
+void line_draw(void)
+{
+    short dx, t, sy, sx, err, dy;
+
+    dx = lx1 - lx0;
+    dy = ly1 - ly0;
+    if (dx < 0) {
+        sx = -1;
+        dx = -dx;
+    } else
+        sx = 1;
+    if (dy < 0) {
+        sy = -1;
+        dy = -dy;
+    } else
+        sy = 1;
+    if (dy < dx) {
+        err = dx;
+        err >>= 1;
+        while (lx0 != lx1) {
+            spr_x = lx0;
+            spr_y = ly0;
+            f37bf0();
+            err += dy;
+            if (err > dx) {
+                ly0 += sy;
+                err -= dx;
+            }
+            lx0 += sx;
+        }
+    } else {
+        err = dy;
+        err >>= 1;
+        t = dx;
+        dx = dy;
+        dy = t;
+        t = sx;
+        sx = sy;
+        sy = t;
+        while (ly0 != ly1) {
+            spr_x = lx0;
+            spr_y = ly0;
+            f37bf0();
+            err += dy;
+            if (err > dx) {
+                lx0 += sy;
+                err -= dx;
+            }
+            ly0 += sx;
+        }
+    }
+    spr_x = lx0;
+    spr_y = ly0;
+    f37bf0();
+}

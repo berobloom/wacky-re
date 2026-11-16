@@ -701,6 +701,7 @@
 0x088b02 v88b02       # STRONGLY SUPPORTED: short, v88b7e saved across the same
 0x021de0 kart_line    # CONFIRMED (rebuild src/ww.c): kart_hit at each point of the line (lx0,ly0)-(lx1,ly1) until v88bae; caller 0x238ac
 0x021ee4 line_plot    # CONFIRMED (rebuild src/ww.c): spr_x/spr_y = lx0/ly0, tail jump to f37bf0; no callers (dead code)
+0x021f04 line_draw    # CONFIRMED (rebuild src/ww.c): plots every point of the line (lx0,ly0)-(lx1,ly1) with f37bf0; callers 0x22182, 0x221b2
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
