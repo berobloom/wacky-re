@@ -13454,7 +13454,7 @@ void lap_banner(void)
  * toward 2 * f26; the place icons (0x6e6ec); the pickup counts karts[].f6a; the blinking light
  * f96/f98 (lp6e720/lp6e724); in v7d998 modes 2/3 the ofont2 panel instead of the rest; else
  * lap_banner and LAP n / LAST LAP! / FINISHED! (v88c3c) while f94, unless banner fd4 runs.
- * differs: 22 blocks, register / stack-slot choice only: the banner's 3 - f temp (EAX vs EBX),
+ * differs: 18 blocks, register / stack-slot choice only: the banner's 3 - f temp (EAX vs EBX),
  * the loop counters (game i in EBP / ESI swapped vs ours in the speedometer loop; EDX/ECX in
  * the place, pickup and light loops). Declaration order down, up put up on the stack as the
  * game does. */
@@ -13504,8 +13504,8 @@ void overlay_draw(void)
         spr_w = 9;
         itoa(v7edb4, buf, 10);
         if (buf[1] == 0) {
-            buf[2] = 0;
             buf[1] = buf[0];
+            buf[2] = 0;
             buf[0] = '0';
         }
         spr_y = 0x20;
@@ -13604,8 +13604,8 @@ void overlay_draw(void)
             if (i == 1)
                 spr_y -= p2offset;
             if (buf[1] == 0) {
-                buf[2] = 0;
                 buf[1] = buf[0];
+                buf[2] = 0;
                 buf[0] = '0';
             }
             spr_x = 0;
@@ -13748,7 +13748,7 @@ void overlay_draw(void)
  * two columns of four, 0x26 apart: the name padded to 8, the two-digit score and the face. The
  * own player's (myplayer) and, in split screen, the second player's (v88c6a) place is returned
  * through the pointers (x, y, player, place) instead of drawing the face, for the caller.
- * differs: 14 blocks: the game spills x and keeps y in EBP (ours the reverse, so the pointer
+ * differs: 12 blocks: the game spills x and keeps y in EBP (ours the reverse, so the pointer
  * stores are ordered differently), loads the score with mov ax / cwde, and adds pnames after
  * the imul; tried: ternary / temp for spr_x, int p, (short) casts. */
 struct standing { short score, player; int f04; };
@@ -13778,8 +13778,8 @@ void leaderboard(short *x, short *y, short *who, short *place, short *x2, short 
         p = standings[i].player;
         itoa(standings[i].score, buf, 10);
         if (buf[1] == 0) {
-            buf[2] = 0;
             buf[1] = buf[0];
+            buf[2] = 0;
             buf[0] = '0';
         }
         if (i <= 4)
@@ -13820,5 +13820,32 @@ void leaderboard(short *x, short *y, short *who, short *place, short *x2, short 
         }
         row += 0x26;
     }
+}
+
+/* ---- 0x2b558, 143 bytes: n as two digits (leading 0) in the 0x16 x 0x1d font 0x6e350 at
+ * (x, y), 0x16 apart; spr_x ends after the second digit (caller 0x2b86c in 0x2b5e8). */
+extern char *font6e350[];
+#pragma aux font6e350 "_arr6e350"
+
+void bigdigits(int x, int y, int n)
+{
+    char buf[0xc];
+
+    itoa(n, buf, 10);
+    if (buf[1] == 0) {
+        buf[1] = buf[0];
+        buf[2] = 0;
+        buf[0] = '0';
+    }
+    spr_h = 0x16;
+    spr_w = 0x1d;
+    spr_x = x;
+    spr_y = y;
+    sprptr = font6e350[(unsigned char)buf[0]];
+    drawsprite();
+    sprptr = font6e350[(unsigned char)buf[1]];
+    spr_x += 0x16;
+    drawsprite();
+    spr_x += 0x16;
 }
 
