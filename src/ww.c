@@ -5454,7 +5454,10 @@ blink:
         while (key88ccd)
             ;
     }
-    pal_a = pal_a ? 0 : 0x3e80;
+    if (pal_a == 0)                             /* 0x1a74e */
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
     while (ticks - v7ea70 < 8)                  /* 0x1a76f */
         ;
     blink++;
@@ -5526,7 +5529,10 @@ nameframe:
         while (key88ccd)
             ;
     }
-    pal_a = pal_a ? 0 : 0x3e80;
+    if (pal_a == 0)                             /* 0x1a9d8 */
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
     if (longwait != 0) {
         while (ticks - v7ea70 < 0x3c)           /* 0x1aa04: the first frame waits 60 ticks */
             ;
@@ -5648,7 +5654,10 @@ input:
         while (key88ccd)
             ;
     }
-    pal_a = pal_a ? 0 : 0x3e80;
+    if (pal_a == 0)                             /* 0x1aeb9 */
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
     if (move == 4) {                            /* 0x1aeb9: a slide back takes 26 ticks */
         while (ticks - v7ea70 < 0x1a)
             ;
@@ -5998,7 +6007,10 @@ animframe:
         while (key88ccd)
             ;
     }
-    pal_a = pal_a ? 0 : 0x3e80;
+    if (pal_a == 0)                             /* 0x1bb16 */
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
     while (ticks - v7ea70 < 10)             /* 0x1bb37 */
         ;
     for (i = 0; i < 8; i++) {               /* 0x1bb48: the chosen icon cycles, the rest keep sliding */
@@ -6458,4 +6470,109 @@ void fn_1c968(void)
     getpalette();                                       /* 0x1c97b */
     f1bf94(pal7d850);                                   /* 0x1c985 */
     v88bda = 1;                                         /* 0x1c98a */
+}
+
+/* ---- 0x1cb44 (enter_name): the name-entry screen. arg1 = the name buffer (EBP), arg2 = the
+ * heading printed centred at y 0xa (its slot 0x54), arg3 = the last index a character may go at
+ * (its slot 0x50; 0xb at the score-table caller 0x1ce78, which passes the pooled empty string 0x600ac
+ * as the heading and a 0x28-byte local buffer as the name). The caret sprite gn7eb2c (0xd x 0xf)
+ * starts at x 0xaa + 8i, y 0x5b, and moves one step per accepted key: A-Z, space, 0-9, plus
+ * backspace. Enter (0xd) and Esc (0x1b) leave through kbd_on. DOS 2509h puts the keyboard vector
+ * back (0x1cc2f-0x1cc5b) before kbd_off. Called from 0x1ce78, 0x2b6d7 and 0x2e769.
+ *
+ * differs: 28 instructions of 709, all of them stack slots (tools/wc/fndiff.py). Ours puts `n`
+ * at esp+0x50 and `heading` at 0x54 like the game, and `x` at 0x60, but the other six locals
+ * permute: y 0x58/0x6c, xc 0x5c/0x58, cy 0x6c/0x5c, lim 0x64/0x68, cx 0x64/0x70, nx 0x70/0x64
+ * (ours/game). 27 declaration orders probed (`.work/probes/SHAPES*.C`, tools/wc/variants.py);
+ * the parameter order and the frame size follow, the permutation of the seven locals does not
+ * (QUESTIONS.md 9). The two palette flips are byte-identical as if/else statements - the
+ * `pal_a = pal_a ? 0 : 0x3e80` form compiles to a value select in EAX, which the game never
+ * emits (GOTCHAS). */
+void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, arg3 = ebx */
+{
+    char prompt[0x28];
+    union REGS r;
+    struct SREGS s;
+    short cx, y, lim, nx, x, cy, xc, i;     /* slots: the game's permutation, QUESTIONS.md 9 */
+    char ch;
+
+    pal_c = 0x7d00;                                 /* 0x1cb55 */
+    pal_b = pal_a;
+    setpalette();                                   /* 0x1cb6c */
+    xc = center_x(strlen(heading) * 11);            /* 0x1cb74-0x1cb8c (both inlined) */
+    wtext(xc, 0xa, heading, 0);                     /* 0x1cba5 */
+    strcpy(prompt, "PLEASE ENTER NAME..");          /* 0x1cbbf, the literal 0x60d8c */
+    x = 0xa;
+    y = 0x60;
+    print_at(x, y, prompt, 0);                      /* 0x1cbce */
+    f37de0();                                       /* 0x1cbd3 */
+    if (key88ccd) {                                 /* 0x1cbd8 */
+        screenshot();                               /* 0x1cbe1 */
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    if (pal_a == 0)                                 /* 0x1cbf8 */
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
+    f32cf8(v7d85c);                                 /* 0x1cc1f */
+    f278c4(0);                                      /* 0x1cc2a */
+    r.x.edx = oldkbd_off;                           /* 0x1cc38 */
+    r.x.eax = 0x2509;                               /* 0x1cc42 */
+    s.ds = oldkbd_seg;                              /* 0x1cc4a */
+    s.es = 0;                                       /* 0x1cc54 */
+    int386x(0x21, &r, &r, &s);                      /* 0x1cc5b */
+    kbd_off();                                      /* 0x1cc60 */
+    pal_b = 0x7d00;                                 /* 0x1cc65 */
+    if (n > 0xb)
+        strcpy(name, "                ");           /* 0x1cc81, the literal 0x60da0 */
+    else
+        strcpy(name, "            ");               /* 0x1cc8d, the literal 0x60db4 */
+    cx = x + 0xa0;                                  /* 0x1cc91-0x1cc9a */
+    lim = cx + ((n + 1) << 3);                      /* 0x1cca2-0x1ccaa, 0x1ccc2 */
+    cy = y - 5;                                     /* 0x1ccac-0x1ccba */
+    nx = cx;                                        /* 0x1ccbe-0x1ccc6 */
+    i = 0;                                          /* EDI (0x1ccb8) */
+    for (;;) {
+        pal_c = pal_a;                              /* 0x1ccd5 */
+        setpalette();                               /* 0x1ccdf */
+        sprptr = gn7eb2c;                           /* 0x1cce4 */
+        spr_h = 0xf;
+        spr_x = cx;
+        spr_w = 0xd;
+        spr_y = cy;
+        drawsprite();                               /* 0x1cd16 */
+        wtext(xc, 0xa, heading, 0);                 /* 0x1cd20 */
+        print_at(x, y, prompt, 0);                  /* 0x1cd30 */
+        print_at(nx, y, name, 0);                   /* 0x1cd40 */
+        f37de0();                                   /* 0x1cd45 */
+        if (key88ccd) {                             /* 0x1cd4a */
+            screenshot();                           /* 0x1cd53 */
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        if (pal_a == 0)                             /* 0x1cd6a */
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        ch = getch();                               /* 0x1cd88 */
+        if (ch == 0xd || ch == 0x1b)                /* 0x1cd8f-0x1cd99 */
+            break;
+        if (ch >= 'a')
+            ch -= 0x20;                             /* 0x1cda3 */
+        if (ch == 8 && i > 0) {                     /* 0x1cda6-0x1cdae */
+            i--;
+            cx -= 8;                                /* 0x1cdb4 */
+            name[i] = ' ';                          /* 0x1cdb9 */
+        }
+        if ((ch >= 'A' && ch <= 'Z') || ch == ' ' || (ch >= '0' && ch <= '9')) {
+            if (i <= n)                             /* 0x1cde1 */
+                name[i++] = ch;                     /* 0x1cde7-0x1cde8 */
+            if (cx < lim)                           /* 0x1cdef */
+                cx += 8;                            /* 0x1cdfa */
+        }
+    }
+    kbd_on();                                       /* 0x1ce04 */
 }

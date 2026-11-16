@@ -1,7 +1,8 @@
 # Score / record tables
 
-Status: OPEN (the two helpers of this area are rebuilt, the table's owner function
-`0x1ce14` and the code that fills `tbl77758` are not)
+Status: OPEN (three helpers of this area are rebuilt - `fn_1cad0`, `fn_1c994` and
+`enter_name` 0x1cb44; the table's owner function `0x1ce14` and the code that fills
+`tbl77758` are not)
 
 ## Summary
 
@@ -9,9 +10,10 @@ Two 0x450-byte rows of records live at `0x77758` and `0x77ba8`; each row is 24
 records of 0x2e (46) bytes, read through the pointer `v7d8a8`. `fn_1cad0`
 (0x1cad0) selects a record into `v7d8a8`, `fn_1c994` (0x1c994) builds the
 fixed-width stamp string that goes in the record's `+0x1a` field, and the
-function at 0x1ce14 (not rebuilt) copies records around inside a row. Both
-helpers sit between the car-select chain and the pause/name-entry screen
-(`0x1cb44`, which prints "PLEASE ENTER NAME..").
+function at 0x1ce14 (not rebuilt) copies records around inside a row, and
+`enter_name` 0x1cb44 is the "PLEASE ENTER NAME.." screen it calls before picking
+the three best scores out of the row. Both helpers sit between the car-select
+chain and the name entry.
 
 ## Findings
 
@@ -61,8 +63,46 @@ helpers sit between the car-select chain and the pause/name-entry screen
   record by record elsewhere (0x1d8a8 writes `v7d8a8` the same way 0x1cad0 does,
   from 0x1d870).
 
+- CONFIRMED (rebuild `src/ww.c` `enter_name`, `src/check.sh`: 718 bytes at
+  0x1cb44, 21 aligned instruction diffs, all of them stack slots - see its
+  `differs:` note): `enter_name(name, heading, n)` (arg1 = EAX the name buffer,
+  arg2 = EDX the heading, arg3 = EBX the last index a character may go at) is the
+  name-entry screen. It centred-prints `heading` at y 0xa with `wtext`
+  (`center_x(strlen * 11)` inlined, 0x1cb74-0x1cba5), copies "PLEASE ENTER NAME.."
+  (0x60d8c) into a local 0x28-byte buffer and prints it at (0xa, 0x60) (0x1cbbf-0x1cbce),
+  then per key redraws: `pal_c = pal_a` + `setpalette`, the caret sprite `gn7eb2c`
+  0xd x 0xf at (`cx`, 0x5b) with `cx = 0xaa + 8i` (0x1ccf0-0x1cd16), `wtext`, the
+  prompt at (0xa, 0x60) and the name at (0xaa, 0x60), then `f37de0`, the
+  `key88ccd` screenshot wait and the `pal_a` flip (0x1cd45-0x1cd87).
+- CONFIRMED (0x1cd88-0x1cdfa): the key loop. `getch`; 0xd and 0x1b leave through
+  `kbd_on` (0x1ce04); a character >= 'a' is folded to upper case at 0x1cda3 and
+  every later test uses the folded byte; backspace (8) deletes only while `i > 0`,
+  writes a space over the deleted slot and steps `cx` back (0x1cda6-0x1cdb9); the
+  accepted set is A-Z, space and 0-9 (0x1cdbd-0x1cdd8) - anything else restarts the
+  redraw without storing; a character is stored only while `i <= n` (0x1cde1, so
+  indices 0..n inclusive) and `cx` steps forward only while `(short)cx <
+  name_x + 8*(n+1)` (0x1cdef, 0x1cdfa).
+- CONFIRMED (0x1cc16-0x1cc65): before reading keys the screen calls `f32cf8(v7d85c)`
+  and `f278c4(0)`, then DOS SET VECTOR 9 (`int386x(0x21, &r, &r, &s)` with
+  `r.x.eax = 0x2509`, `r.x.edx = oldkbd_off` 0x7d58c, `s.ds = oldkbd_seg` 0x7d5a4,
+  `s.es = 0`), then `kbd_off`, then `pal_b = 0x7d00`. Same shape as `chat()`
+  (findings/menus.md): the game puts the BIOS keyboard vector back. LIKELY: to hand
+  the keyboard to `getch` for the length of the entry.
+- CONFIRMED (0x1cc6e-0x1cc90; the caller at 0x1ce3f sets EBX = 0xb before the call
+  at 0x1ce78 and passes the pooled empty string 0x600ac as the heading and a local
+  0x28-byte buffer as the name): the name buffer is blanked with 12 spaces when
+  `n <= 0xb` and 16 spaces when `n > 0xb` (literals 0x60db4, 0x60da0) - the field
+  width is `n + 1`.
+
 ## Traps
 
+- `enter_name` pads its caller's name buffer and writes indices 0..`n` inclusive
+  (0x1cde1); a port that bounds the name by `n` alone drops the last character, and
+  one that skips the pad keeps whatever the buffer held (the 0x1ce78 caller's buffer
+  is an uninitialised 0x28-byte local).
+- The `pal_b = 0x7d00` store at 0x1cc65 sits between `kbd_off` and the padding
+  `strcpy`, easy to skip when that block is read as one "keyboard hand-off"
+  sequence - it cost 7 phantom instruction diffs in the first rebuild.
 - The row index of these tables is `v88bb6 + v7ecb4`, not either global alone
   (0x1cae5-0x1caf2); a port that uses one of them reads the wrong row.
 - `fn_1cad0` returns without touching `v7d8a8` for `which` not in 1..3

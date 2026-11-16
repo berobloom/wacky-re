@@ -164,3 +164,13 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    through a computed base. Test: diff every write into `cfg77128` in the matched
    `save_config`/`save_ctl`/`ctl_setup` 0x14b00 for a +0x30a form, and boot the original and
    dump 0x77432..0x77584 at the car-select screen (STATUS Next item).
+
+9. **OPEN** (src/ww.c `enter_name`, findings/scores.md): which C shape puts the seven locals of
+   `enter_name` in the game's slots - xc 0x58, cy 0x5c, x 0x60, nx 0x64, lim 0x68, y 0x6c,
+   cx 0x70 (ours: y 0x58, xc 0x5c, x 0x60, cx/lim 0x64, cy 0x6c, nx 0x70)? Evidence: the frame
+   (0x74), the parameter spills (`n` 0x50, `heading` 0x54) and `x` 0x60 already match; 43
+   declaration orders probed with `tools/wc/variants.py` permute but never match, so 9.5b
+   assigns local slots from something other than declaration or first-touch order (GOTCHAS).
+   Test: keep the statements fixed and vary one thing at a time (a variable that only ever
+   appears as an argument, a `short` vs `int`, an extra unused local); a match is 21 diffs gone
+   and `enter_name` byte-identical at 0x1cb44.

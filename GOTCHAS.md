@@ -220,3 +220,24 @@ it can be copied back into DREA.
   centring temporary of `fn_1c0f4` as `int` got a stack slot at esp+0x3d4 (frame 0x3d8, every
   displacement off by 4); as `short x` it stayed in EAX, the frame became the game's 0x3d4 and the
   int-to-short argument became the game's `cwde`. Try the type before restructuring. [generic]
+- **A conditional store to a global: the game writes the two branches, Watcom turns a
+  ternary into a value select** (iter 11, [generic]): `pal_a = pal_a ? 0 : 0x3e80;` compiles
+  to `cmp / je / xor eax,eax / jmp / mov eax,0x3e80 / mov [pal_a],ax`. The game's shape at all
+  four `cars_menu` flips (0x1a74e, 0x1a9d8, 0x1aeb9, 0x1bb16) and at both `enter_name` flips
+  (0x1cbf8, 0x1cd6a) is `cmp word [pal_a],0 / jne / mov word [pal_a],0x3e80 / jmp / mov word
+  [pal_a],0`. Scan of the whole code object: 55 `mov word [mem],0x3e80` sites (regex
+  `\x66\xc7\x05....\x80\x3e`) and ZERO `mov eax,0x3e80` (`\xb8\x80\x3e\x00\x00`) - the game
+  never materialised that constant in a register, so it never wrote a ternary of this shape.
+  `if (pal_a == 0) pal_a = 0x3e80; else pal_a = 0;` reproduces it; writing the four `cars_menu`
+  ones that way took `cars_menu` from 749 to 678 aligned instruction diffs with no other change
+  (and 6564 -> 6584 bytes against the game's 6861). [generic]
+- **Declaration order moves the local slots but does not pick their permutation** (iter 11,
+  [generic]): for `enter_name` 0x1cb44 the frame size (0x74), the buffer/`union REGS`/`struct
+  SREGS` placement and even which parameter spills to which slot (`n` at esp+0x50, `heading`
+  at 0x54) all follow from the local declaration order - but 43 probed declaration orders (three probe
+  files, GUIDE "probe recipe", scored with `tools/wc/variants.py ... 0x1cb44 0x1ce13 <names>`) never
+  put the seven locals in the game's permutation (xc, cy, x, nx, lim, y, cx from 0x58 up); the best is 21 diffs, all of
+  them displacements. The types mattered more than the order: `int ch` cost 70 diffs, `char ch`
+  and all-short locals cost 41 (GOTCHAS iter 10, "a local's type decides whether Watcom keeps
+  it in a register"). Ask "which variable lives in which register/slot" before "in what order
+  are they declared". [generic]

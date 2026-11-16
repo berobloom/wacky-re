@@ -635,3 +635,6 @@
 0x088bda v88bda             # short; set to 1 by fn_1c968 0x1c98a
 0x027920 f27920             # SPECULATIVE: called with 0 right after f278c4(0) in fn_1c0f4 0x1c7ea/0x1c801
 0x088ce9 v88ce9             # char; set to 0x2c by fn_1c0f4 0x1c14b next to v88ce8 (0x26) - f371e4 box colours
+0x01cb44 enter_name       # CONFIRMED (rebuild src/ww.c: 718 bytes at 0x1cb44, 21 aligned instruction diffs, all stack slots - QUESTIONS 9): the "PLEASE ENTER NAME.." name-entry screen; arg1 = the name buffer, arg2 = the centred heading (0x600ac empty at 0x1ce78), arg3 = the last index a character may go at (0xb at 0x1ce3f); caret sprite gn7eb2c at x 0xaa+8i y 0x5b; DOS 2509h restores the keyboard vector at 0x1cc2f-0x1cc5b; callers 0x1ce78, 0x2b6d7, 0x2e769
+0x060d8c (name entry strings) # CONFIRMED: "PLEASE ENTER NAME.." 0x60d8c (20 bytes), 16 spaces 0x60da0, 12 spaces 0x60db4 - the pads enter_name copies into its arg1 (0x1cbbf, 0x1cc81, 0x1cc8d)
+0x07d704 sprptr                # see line 102; enter_name points it at gn7eb2c (0x1cce4) for the text caret, so sprptr also names the caret source
