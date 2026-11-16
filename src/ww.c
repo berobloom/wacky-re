@@ -14833,3 +14833,51 @@ void kart_buttons(void)
     }
 }
 
+/* ---- 0x2d94c, 92 bytes: the received key byte v88cef as the second set of controls (caller
+ * 0x31fb9): bits 1/2 keys cd5/cdd, 4..0x20 buttons b40..b46, 0x40 v88cec.
+ * differs: registers only: the game holds c in DL and masks in AL (ours c in AL, masks in AH);
+ * char / short / int / unsigned c tried. Same in netkeys_out. */
+void netkeys_in(void)
+{
+    unsigned char c;
+
+    c = v88cef;
+    key88cd5 = c & 1;
+    key88cdd = c & 2;
+    joy88b40 = c & 4;
+    joy88b42 = c & 8;
+    joy88b44 = c & 0x10;
+    joy88b46 = c & 0x20;
+    v88cec = c & 0x40;
+}
+
+/* ---- 0x2d9a8, 57 bytes (no caller found): the same byte as keys cd6/cd3, button b40, v7ecc0. */
+void netkeys_in1(void)
+{
+    key88cd6 = v88cef & 1;
+    key88cd3 = v88cef & 2;
+    joy88b40 = v88cef & 4;
+    v7ecc0 = v88cef & 0x40;
+}
+
+/* ---- 0x2d9e4, 65 bytes (no caller found): packs keys cd6/cd3, button b40 and v7ecc0 into the
+ * byte v88cf0 to send (v88cf3 cleared).
+ * differs: the game keeps c in DL (push/pop edx) where ours uses AL; an unused int parameter,
+ * other types and store orders keep AL. */
+void netkeys_out(void)
+{
+    unsigned char c;
+
+    c = 0;
+    v88cf3 = c;
+    if (key88cd6)
+        c = 1;
+    if (key88cd3)
+        c += 2;
+    if (joy88b40)
+        c += 4;
+    if (v7ecc0)
+        c += 0x40;
+    v88cf0 = c;
+}
+
