@@ -12,8 +12,10 @@ keep a session diary here.
 - Approach: matching rebuild (../DREA METHOD.md section 9), then a translated port (section 10).
 - Harness: not started. Port: not started.
 - Classes/modes found (findings/classes.md): `v88bb2` = 1 AMATEUR, 2 PRO, 3 CHAMPION, 4 TIME TRIAL,
-  5 KID MODE; `fn_19db8` 0x19db8 sets the class line at 0x6aa40, `v7ece0` and the `tbl7e730` index
-  `v88b84` from it.
+  5 KID MODE; `classes_menu` 0x19eac is that screen (5 rows, 4 in a net game; two-player/net-voice
+  games go straight to TIME TRIAL; splitscreen 2 offers only the first three rows; KID MODE shows
+  nine help lines and then forces AMATEUR + `v7edb0 = 1`); `fn_19db8` 0x19db8 sets the class line
+  `cls_name`, `v7ece0` and the `tbl7e730` index `v88b84` from it.
 
 ## Next
 
@@ -21,32 +23,30 @@ Take the first open item when QUEUE.md has none open. Mark items CLOSED or
 BLOCKED (with the reason) rather than deleting them.
 
 1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x19ea8, 82 functions
-   byte-identical and 31 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
-   register/scheduling ones are QUESTIONS.md 2). Layout notes: struct player pack(1), struct face 0x98,
-   calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX (stack args pushed by the caller and popped by the callee, `ret 4` - see findings/menus.md Traps). `src/ww.c` is ~5.1 K lines: grep, don't read whole.
+   byte-identical and 32 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
+   register/scheduling ones are QUESTIONS.md 2, 3). Layout notes: struct player pack(1), struct face 0x98,
+   calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX (stack args pushed by the caller and popped by the callee, `ret 4` - see findings/menus.md Traps). `src/ww.c` is ~5.2 K lines: grep, don't read whole.
    `tools/wc/starts.py ww LO HI` lists function starts (it can also list loop bodies that follow a jmp).
-   Watcom 9.5 `-oe` inlines small user functions (later-defined included); the game's calls to
-   seekdat/telldat/datsize/readdat stay unresolved (GOTCHAS). Functions after the data-file block
-   (0x14128-0x14260) go at the end of the file. Next in address order: **classes_menu 0x19eac** (668
-   bytes: the 5 class rows into `mnames`, `menu()`, the KID MODE help block; jump table 0x19da8 belongs
-   to the previous function), then 0x1a148 and 0x1a188 (the lap/round part of that screen), then 0x1a380
-   `cars_menu`.
-2. fn_19db8 0x19db8 is a 241-byte near miss whose only difference is the register home (game: phi in
-   EDX, switch value in EAX; ours the reverse, and the two entry loads in the opposite order). ~30 C
-   shapes and every -o<letter> were probed (QUESTIONS.md 2). Same rule as ctl_label's +2 (item: try to
-   find the rule that gives the accumulator to the short-lived value; both questions now point at one
-   rule - start from the two listings side by side, not from more C shapes).
-3. The `v7ebc0` register promotion probe (GOTCHAS "Watcom promotes a global read inside a loop"): find
-   what makes 9.5b do it in wait_or_key and fn_193a8's build but not in our fn_193a8. If it is pinned,
-   fn_193a8 and maybe fn_1832c shrink by ~90 bytes each.
+   Functions after the data-file block (0x14128-0x14260) go at the end of the file. Next in address
+   order: **0x1a148** (the lap/round part of the same screen: checks twoplayer/netvoices, sets
+   `v88b9e`, and at 0x1a178 sets `nlaps` when `v7edb0 != 0`), then 0x1a188, then 0x1a380 `cars_menu`.
+2. Probe statement placement with one compile per batch instead of guessing: `.work/cmpmany.py OBJ ww
+   0x19eac 0x1a147 name...` scores ~40 variants of one function in 4 s (see GOTCHAS "Watcom slides
+   global stores across an inline strcpy's string-op unit"). Use it for the two store-schedule near
+   misses (classes_menu 0x1a05d, fn_19db8's four stores) before re-probing types or -o letters.
+3. The register-home rule (QUESTIONS.md 2): the home follows the position of the first definition
+   (classes_menu's `nrows`: EDX when defined early, ECX when defined at its use). Use that when
+   retrying fn_19db8 (0x19db8: game homes the long-lived local in EDX, ours in EAX) and ctl_label's
+   +2 at 0x19d0e; start from the two listings side by side, not from more C shapes.
 4. Fix the two known call-shape traps before the menus are retried: the `f375cd` aux `parm [edx]`
    forces mov+movzwl where the game does a 16-bit partial load (0x19506), and
    `telldat() + datsize() - 0x300` accumulates in the wrong register (0x194c8).
 5. Inventory: archives and file formats (WACKY.DAT), strings. Find what dat record "BSBCS.PCX" /
-   "(B)SBn.PCX" is (findings/menus.md).
+   "(B)SBn.PCX" is (findings/menus.md), and what `showlines` reads (the 0x7c854 line array vs
+   `netstats`).
 6. Get the original running under the harness; record the boot's segments or
    LE deltas and a first save state in `captures/`.
-7. Copy this session's three generic Watcom traps (GOTCHAS: jump tables precede the function and are
-   not in body order; the EAX-vs-pushed-register home flip; literals land at the game's CONST offsets in
-   address order) plus the three from the last session into `../DREA/reference/DOS.md` - the overnight
-   policy blocks writes outside this repository.
+7. Copy this session's four generic Watcom traps (GOTCHAS: stores slide across a strcpy's string-op
+   unit; not every placement is reachable; a local's register home follows its first definition; a
+   cold `then` block is emitted after the chain) plus the earlier seven into `../DREA/reference/DOS.md`
+   - the overnight policy blocks writes outside this repository.

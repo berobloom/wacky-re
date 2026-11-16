@@ -124,3 +124,30 @@ it can be copied back into DREA.
   "AMATEUR. "/"PRO. "/"CHAMPION. " got offsets 0x948/0x954/0x95c = 0x6094c/0x60958/0x60960 with the
   base check.sh prints (`segment CONST base 0x060004`). If that line splits into two bases, a literal
   is out of place - fix the source order before hand-patching addresses. [generic]
+- **Watcom slides global stores across an inline `strcpy`'s string-op unit** (`mov ecx/mov edi/
+  mov esi` + `rep movsd` + `movsb`), and which of a group slide is not obvious from the C: in
+  classes_menu the three stores before the fourth row's strcpy land as the game has them
+  (`v88bb0 = 6` stays above the setup movs at 0x19f01, `v88b9e = 0` at 0x19f19 and the `nrows = 4`
+  def at 0x19f22 move inside the unit, before the `rep` at 0x19f27), while writing the same three
+  statements *after* that strcpy puts the first inside the unit and the rest after the copy. So a
+  store that sits between the setup movs and the `rep movsd` is a source-position fact to check,
+  not a mystery: generate one probe file with the statement at every position around the copy and
+  compare (`.work/cmpmany.py`, one compile for 40 variants, ~4 s). [generic]
+- **But not every store placement is reachable**: with `v88bb2 = 1; v7edb0 = 1;` 9.5b hoists the
+  first of the pair into the eighth help line's unit (0x1a054, like the game) and sinks the second
+  to just before the following call (0x1a080), where the game has it at 0x1a05d; swapping the two
+  statements swaps which one moves. 72 placements of the pair (before each of the last six help
+  lines and after all nine, both orders), a folded-away `if` around the second store, and
+  `v7edb0 = v88bb2` to make it depend on the first all gave the same single instruction out of
+  place (149 instructions, 667 bytes) - accept it as a near miss with `differs:` and move on
+  (QUESTIONS.md 3). [generic]
+- **The register that homes a local follows the position of its first definition, not its
+  declaration**: classes_menu's `short nrows` defined before the fourth row's strcpy got EDX (the
+  game's home, 0x19f22); defined at its later use it got ECX, and `menu(nrows,0,0,0)`'s argument
+  setup reordered with it. Try moving the assignment before the preceding copy before re-probing
+  types, `register` or -o letters (same family as question 2). [generic]
+- **A cold `then` block is emitted after the rest of the chain**: the game's `test eax,eax;
+  jne <far block>` with the block after the else-chain (classes_menu 0x19f61 -> 0x1a107) comes from
+  `if (!two) { ...big... } else v88bb2 = 4;`; writing the obvious `if (two) v88bb2 = 4; else if
+  ...` makes 9.5b put the block inline and add a forward `jmp` (+1 byte, different jump
+  displacements everywhere after it). [generic]

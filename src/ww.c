@@ -5156,3 +5156,87 @@ void fn_19db8(void)
     }
     v88b84 = keep;
 }
+
+/* ---- the class / game-mode menu (called from 0x1bd3c, cars_menu) */
+
+extern int v7ecc8;
+
+/* Five rows into mnames with v88bb0 = 6 (menu()'s cursor style); KID MODE is not a row in a net
+ * game and the count passed to menu() drops to 4 with it; a two-player or net-voice game goes
+ * straight to TIME TRIAL; splitscreen 2 offers only the first three rows; the KID MODE help goes
+ * into the str7c854 line array, 9 lines 0x3c apart (findings/classes.md, findings/menus.md).
+ *
+ * differs: one instruction of 667. The game emits the store of v7edb0 = 1 at 0x1a05d - inside the
+ * eighth help line's inline strcpy, after its mov ecx/mov edi/mov esi and before the rep movsd -
+ * and ours at 0x1a080, just before the showlines call; every other instruction agrees (the v88bb2
+ * store lands at 0x1a054 like the game's). Probed without change: the v88bb2/v7edb0 pair put before
+ * each of the last six help lines and after all nine, in both orders (72 placements over four probe
+ * compiles), each with the second store wrapped in a branch the optimizer folds away, and
+ * `v7edb0 = v88bb2` to make the second store depend on the first: exactly one of two adjacent
+ * stores is ever pulled into a strcpy's string-op unit, and which one it is follows the source
+ * order (GOTCHAS, QUESTIONS.md 3). */
+void classes_menu(void)
+{
+    short nrows;
+    int two;
+
+    two = twoplayer;
+    v7edb0 = 0;
+    if (!two)
+        two = netvoices;
+    strcpy(&mnames[0], " AMATEUR  CLASS ");
+    strcpy(&mnames[0x3c], " PRO      CLASS ");
+    strcpy(&mnames[0x78], " CHAMPION CLASS ");
+    v88bb0 = 6;
+    v88b9e = 0;
+    nrows = 4;
+    strcpy(&mnames[0xb4], " TIME TRIAL     ");
+    if (!netgame) {
+        strcpy(&mnames[0xf0], " KID MODE       ");
+        nrows = 5;
+    }
+    v7ecf0 = -1;
+    v7ecc8 = 1;
+    if (!two) {                          /* two players or net voices: TIME TRIAL, no menu */
+        if (!splitscreen) {
+            v88bb2 = 1;
+            v88bb2 = menu(nrows, 0, 0, 0);
+            if (v7ecc0)
+                v88b9e = 1;
+            if (v88b9e)
+                return;
+            if (v88bb2 == 5) {           /* KID MODE: what the mode does, then drive as AMATEUR */
+                strcpy(&str7c854[0], " THIS MODE IS FOR YOUNG CHILDREN ");
+                strcpy(&str7c854[0x3c], " WHO MAY EXPERIENCE DIFFICULTY   ");
+                strcpy(&str7c854[0x78], " CONTROLLING THE CARS.           ");
+                strcpy(&str7c854[0xb4], "                                 ");
+                strcpy(&str7c854[0xf0], " THE CHILD ONLY HAS TO STEER THE ");
+                strcpy(&str7c854[0x12c], " VEHICLE IN THIS MODE AND DOES   ");
+                strcpy(&str7c854[0x168], " NOT NEED TO ACCELERATE AS THE   ");
+                strcpy(&str7c854[0x1a4], " COMPUTER FIXES THE SPEED OF THE ");
+                strcpy(&str7c854[0x1e0], " CAR.                            ");
+                v88bb2 = 1;
+                v7edb0 = 1;
+                showlines(9, 1, 0);
+                if (v88b9e)
+                    return;
+            }
+        } else {
+            v88bb2 = 1;
+            if (splitscreen == 2 && v88b7e == 1) {
+                v88bb2 = menu(3, 0, 0, 0);
+                if (v7ecc0)
+                    v88b9e = 1;
+                if (netgame && net88c14)
+                    return;
+                if (v88b9e)
+                    return;
+            }
+        }
+    } else
+        v88bb2 = 4;
+    if (twoplayer || splitscreen || netvoices) {
+        v684e0 = 0;
+        v685e4 = 0;
+    }
+}

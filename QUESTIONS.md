@@ -80,6 +80,25 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    strcpy` gives the game's instruction order), ternary vs if/else (the game uses the arithmetic form
    for 0x59 + (v7ee5a != 1) and the branch form for the other two), and every -o<letter> on top of
    -oneatx. Same rule as question 1 and ctl_label: which pseudo gets the accumulator.
+   New data point (classes_menu 0x19eac, this session): the home follows the *position of the first
+   definition*. `short nrows` assigned before the fourth row's strcpy gets EDX like the game
+   (0x19f22 `mov edx,4`, 0x19f43 `mov edx,5`, 0x19f75 `movsx eax,dx`); the same variable assigned at
+   its use gets ECX, and `menu(nrows,0,0,0)`'s `xor ebx/xor ecx/xor edx` order changes with it.
+   Declaration order, `unsigned short` and `register` do nothing there.
+3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
+   `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
+   and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;
+   the other store of the pair, `v88bb2 = 1`, does land at 0x1a054 like the game's. What was
+   probed without change (72 placements, four probe compiles, `.work/probe5`, `probe6`, `probe8`,
+   `probe9`; compare with `.work/cmpmany.py`): the pair before each of the last six help strcpy's
+   and after all nine, both statement orders; the second store wrapped in `if (v88bb2)`, `if (1)`, a
+   folded `if/else` and plain braces (a branch the optimizer deletes, in case a block boundary pins
+   it); and `v7edb0 = v88bb2` to make the store depend on the first store. In every case exactly one
+   of the two stores slides into the copy's unit and the other stays where the C puts it, and which
+   one follows the source order. What would settle it: what the scheduler stops a sink at (a use?
+   a block boundary? a second string-op unit in the same window?) - or accept the 1-instruction near
+   miss (the game's `mov dword` at 0x1a05d needs no register, so no register-pressure story explains
+   it).
 
 ## Hypotheses
 

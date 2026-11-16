@@ -589,3 +589,11 @@
 0x06aa40 cls_name      # LIKELY: char[], the class line: "" / "AMATEUR. " / "PRO. " / "CHAMPION. " (fn_19db8; also cleared at 0x1e58f)
 0x06094c (class lines) # CONFIRMED: fn_19db8's literals "AMATEUR. " 0x6094c, "PRO. " 0x60958, "CHAMPION. " 0x60960
 0x06096c (class rows)  # CONFIRMED: the 0x14-byte menu captions at 0x6096c/0x60980/0x60994/0x609a8/0x609bc: AMATEUR, PRO, CHAMPION, TIME TRIAL, KID MODE
+0x019eac classes_menu     # CONFIRMED (rebuild, src/ww.c): 667 code bytes byte-identical except one store's schedule (findings/classes.md)
+0x07ecc8 v7ecc8           # SPECULATIVE: int, written only by classes_menu (0x19f55, = 1); read nowhere in the decoded set
+0x0609d0 (KID MODE help)  # CONFIRMED: the nine 34-byte literals 0x609d0,0x609f4,0x60a18,0x60a3c,0x60a60,0x60a84,0x60aa8,0x60acc,0x60af0, copied 0x19fc0-0x1a088
+0x07c854 str7c854         # CONFIRMED (supersedes the str7c854/str7c890/str7c8cc lines): a 0x3c-strided array of message lines; slots 0..2 in the bonus menus, slots 0..8 for the KID MODE help; both are followed by showlines(n,1,0) with n = the slots written
+0x0684e0 v684e0           # SPECULATIVE: int, classes_menu stores 0 there when twoplayer||splitscreen||netvoices (0x1a12d)
+0x0685e4 v685e4           # SPECULATIVE: int, ditto (0x1a137)
+0x088bb0 v88bb0           # LIKELY (supports the 0x088bb0 line above): 6 = the class/mode menu (0x19f01)
+0x07edb0 v7edb0           # LIKELY (supports the 0x07edb0 line above): classes_menu sets it next to v88bb2 = 1 in KID MODE (0x1a054, 0x1a05d) - the child's engines are fixed

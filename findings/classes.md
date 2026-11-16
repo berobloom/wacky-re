@@ -1,7 +1,8 @@
 # Classes and game modes
 
-Status: OPEN (`classes_menu` 0x19eac and the users of these globals are not rebuilt
-yet; the values at `tbl7e730` are run-time)
+Status: OPEN (the per-class users after `classes_menu` and the values at `tbl7e730` are not
+settled; the class menu itself is rebuilt, `classes_menu` 0x19eac in `src/ww.c`, one store
+out of place)
 
 ## Summary
 
@@ -49,8 +50,39 @@ maps 1..4 to three globals: the class line `cls_name` (0x6aa40), `v7ece0`
   0x948/0x954/0x95c, i.e. 0x6094c/0x60958/0x60960 with the module's CONST base
   0x60004 that check.sh reports.
 
+- CONFIRMED (rebuild: `classes_menu` 0x19eac in `src/ww.c`, 667 code bytes with one store out of
+  place; the row literals 0x6096c..0x609bc and the nine help literals 0x609d0..0x60af0 verified
+  by the single `segment CONST base 0x060004` line `src/check.sh` prints): the class/mode screen.
+  `v88bb0 = 6` (the row style `menu()` draws with), `v88b9e = 0`, `v7ecf0 = -1`, `v7ecc8 = 1`
+  (0x19f4b, 0x19f55), and `menu(nrows, 0, 0, 0)` where `nrows` is a `short` local held in EDX
+  (0x19f22 `mov edx,4`, 0x19f43 `mov edx,5`, used at 0x19f75 `movsx eax,dx`): **5 rows, or 4 when
+  `netgame != 0`**, where the KID MODE row is not copied in (0x19f2a `cmp word[netgame],0`).
+- CONFIRMED (0x19eb1-0x19ec6, 0x19f5f-0x19f6f, 0x1a107): the menu is skipped when `twoplayer != 0`
+  or `netvoices != 0` - the local is `two = twoplayer; if (!two) two = netvoices;` - and then
+  `v88bb2 = 4` (TIME TRIAL). So a two-player or net-voice game never picks a class: it is TIME
+  TRIAL by construction.
+- CONFIRMED (0x1a0a2-0x1a0cb): with `splitscreen != 0` a menu is shown only when `splitscreen == 2`
+  and `v88b7e == 1` (player two's turn), and then `menu(3, 0, 0, 0)` with the rows written at
+  0x19ed5-0x19f29, i.e. **only AMATEUR / PRO / CHAMPION are offered in a two-player split screen**;
+  TIME TRIAL and KID MODE are not reachable there. After the choice, `netgame != 0 && net88c14`
+  (the remote holds the menu) leaves the function without the tail below.
+- CONFIRMED (0x19fb2 `cmp word[v88bb2],5`, 0x19fc0-0x1a088): choosing KID MODE copies nine 34-byte
+  help lines (literals 0x609d0+0x24*i) into the line array at `str7c854` + 0x3c*i, i = 0..8, then
+  sets `v88bb2 = 1` (the child drives as AMATEUR) and `v7edb0 = 1`, then `showlines(9, 1, 0)`;
+  the text says the child only steers and the computer fixes the speed. The `v7edb0 = 1` beside
+  `v88bb2 = 1` supports the names file's reading of `v7edb0` as the "engines locked" flag
+  (STRONGLY SUPPORTED there).
+- CONFIRMED (0x1a110-0x1a137): the tail runs when `twoplayer || splitscreen || netvoices` and
+  stores 0 to `v684e0` (0x684e0) and `v685e4` (0x685e4); `return` from inside the menu paths skips
+  it (all four returns jump to the pop sequence at 0x1a141).
+- CONFIRMED (0x1a141-0x1a146, the caller 0x1bd3c): the function returns nothing; `cars_menu` calls
+  it, then re-tests `v88b9e` before calling 0x1a148, so `v88b9e` is how the menu chain aborts.
+
 ## Traps
 
+- `menu()`'s first argument is the row count, not an index: pass it short, and remember that this
+  menu's count changes with `netgame` (4 vs 5) - a port that always passes 5 shows a blank row in
+  net games.
 - A Watcom switch's jump table sits *before* the function and its entries are
   not in body order: here 0x19da8 = [0x19e02, 0x19e37, 0x19e6f, 0x19dde] for
   cases 1,2,3,4, i.e. the source wrote TIME TRIAL first. Reading those four

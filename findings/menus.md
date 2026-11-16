@@ -85,6 +85,14 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   to 0x88/0x220 (the net-game tick rates) - the same pair the races menu sets
   at 0x18365 to 0x440/0x2a8.
 
+- CONFIRMED (classes_menu 0x19fc0-0x1a003 writes slots 0..8 of the same array): 0x7c854 is not
+  three buffers but one array of 0x3c-byte message lines - `str7c854`, `str7c890` and `str7c8cc`
+  are slots 0, 1, 2 (0x7c854 + 0x3c*i); the KID MODE help fills slots 0..8 (up to 0x7ca5c) and is
+  followed by `showlines(9, 1, 0)`, as the bonus menus fill slots 0..2 and call `showlines(3, 1, 0)`.
+  LIKELY showlines(count, 1, ?) draws the first `count` slots of that array; gap: showlines itself
+  is not rebuilt and net_end 0x110d4 passes 4 after filling `netstats`, so which buffer it reads
+  is not proven.
+
 ## Traps
 
 - fn_182d0 takes 4 register arguments plus one on the stack and pops it itself;
