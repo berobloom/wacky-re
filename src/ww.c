@@ -8473,3 +8473,35 @@ void line_draw(void)
     spr_y = ly0;
     f37bf0();
 }
+
+/* ---- 0x22034, 505 bytes: the cracked-screen effect (caller 0x2fc75 in 0x2f794): v88ce9 = 20, the
+ * crack sprite at (0x76, 0x5a), then seven straight cracks drawn with line_draw. The plain for loop
+ * is right: 9.5b peels pass 0 and unrolls the other six by three itself. */
+
+void crack_draw(void)
+{
+    int l[10][4];                     /* x0, x1, y0, y1 */
+    int i;
+
+    v88ce9 = 0x14;
+    l[0][0] = 0x77;  l[0][2] = 0x5f;  l[0][1] = 0x16;  l[0][3] = 0x29;
+    l[1][0] = 0xa8;  l[1][2] = 0x5a;  l[1][1] = 0xb9;  l[1][3] = 0x35;
+    l[2][0] = 0xc6;  l[2][2] = 0x5d;  l[2][1] = 0xf7;  l[2][3] = 0x2b;
+    l[3][0] = 0xf7;  l[3][2] = 0x2b;  l[3][1] = 0x128; l[3][3] = 0x38;
+    l[4][0] = 0xc3;  l[4][2] = 0x91;  l[4][1] = 0xf1;  l[4][3] = 0xb2;
+    l[5][0] = 0xf1;  l[5][2] = 0xb2;  l[5][1] = 0xd7;  l[5][3] = 0xc2;
+    l[6][0] = 0x78;  l[6][2] = 0x86;  l[6][1] = 0x2c;  l[6][3] = 0xa9;
+    spr_x = 0x76;
+    spr_y = 0x5a;
+    spr_h = 0x54;
+    spr_w = 0x3e;
+    sprptr = crackdata;
+    drawsprite();
+    for (i = 0; i < 7; i++) {
+        lx0 = l[i][0];
+        lx1 = l[i][1];
+        ly0 = l[i][2];
+        ly1 = l[i][3];
+        line_draw();
+    }
+}

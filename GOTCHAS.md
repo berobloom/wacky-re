@@ -321,3 +321,6 @@ it can be copied back into DREA.
   game's registers, and `dy < dx`. line_points 0x21554 has int sx/sy (dword stack slots) and does
   not take these levers. Not a rule: in line_draw 0x21f04 (the same walk, plotting) the direct form
   is the one that goes through EAX, and the game's `movsx edx; sar edx,1` was not reproduced.
+- **9.5b unrolls a constant-count loop itself** (iter 14, [generic]): crack_draw 0x22034 does pass 0,
+  then a loop of three passes per iteration over a byte offset (`add edx,0x30; cmp edx,0x70`). A plain
+  `for (i = 0; i < 7; i++)` matched; do not write the unrolling into the source.
