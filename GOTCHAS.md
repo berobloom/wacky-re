@@ -314,3 +314,9 @@ it can be copied back into DREA.
   (iter 14, [generic]): shot_hit 0x218a4 has `mov word [v88bae],3` + epilogue six times. Writing
   `v88bae = 3; return;` in each branch lets 9.5b schedule the store above the branch's last store;
   letting every branch fall into one common `v88bae = 3; return;` keeps it last (38 -> 33 scored).
+- **`movsx eax,r; sar eax,1; mov edx,eax` (computed in EAX, then moved) is a store through a temp
+  variable** (iter 14, [generic]): kart_line 0x21de0 matched only with `t = dx >> 1; err = t;` (the
+  swap temp reused); `err = dx >> 1` computes straight into EDX. Its other levers: every local
+  `short` (sx/sy too: the game's `mov esi,-1` is still a short), the declaration order that gives the
+  game's registers, and `dy < dx`. line_points 0x21554 has int sx/sy (dword stack slots) and does
+  not take these levers.

@@ -8342,3 +8342,71 @@ void shot_hit(void)
         v7d800++;
     }
 }
+
+/* ---- 0x21de0, 259 bytes: moves the kart along the Bresenham line (lx0, ly0) -> (lx1, ly1), calling
+ * kart_hit at every point, the far end included; stops at the first point where v88bae is set
+ * (caller 0x238ac in 0x237e4). lx0/ly0 end at the last point tested. */
+void kart_line(void)
+{
+    short dx, t, sy, sx, err, dy;     /* this order gives the game's BX/CX/SI/DI */
+
+    dx = lx1 - lx0;
+    dy = ly1 - ly0;
+    if (dx < 0) {
+        sx = -1;
+        dx = -dx;
+    } else
+        sx = 1;
+    if (dy < 0) {
+        sy = -1;
+        dy = -dy;
+    } else
+        sy = 1;
+    if (dy < dx) {
+        t = dx >> 1;                  /* through the swap temp: movsx eax/sar/mov edx,eax */
+        err = t;
+        while (lx0 != lx1) {
+            kart_hit();
+            if (v88bae != 0)
+                return;
+            err += dy;
+            if (err > dx) {
+                ly0 += sy;
+                err -= dx;
+            }
+            lx0 += sx;
+        }
+    } else {
+        t = dy >> 1;
+        err = t;
+        t = dx;
+        dx = dy;
+        dy = t;
+        t = sx;
+        sx = sy;
+        sy = t;
+        while (ly0 != ly1) {
+            kart_hit();
+            if (v88bae != 0)
+                return;
+            err += dy;
+            if (err > dx) {
+                lx0 += sy;
+                err -= dx;
+            }
+            ly0 += sx;
+        }
+    }
+    kart_hit();
+}
+
+/* ---- 0x21ee4, 29 bytes: plots the point (lx0, ly0) with f37bf0; no caller in WW.EXE (dead code). The
+ * call is a tail jump. */
+void f37bf0(void);
+
+void line_plot(void)
+{
+    spr_x = lx0;
+    spr_y = ly0;
+    f37bf0();
+}
