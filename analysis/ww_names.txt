@@ -95,7 +95,7 @@
 0x010e58 modem        # LIKELY: init (modeminit, wait "OK") or hang up (DTR, "+++", modemhangup); message box
 0x01c068 fn_1c068
 0x01c0ac fn_1c0ac
-0x02a414 msgbox       # SPECULATIVE: draws a message (string, flag)
+0x02a414 msgbox       # LIKELY: draws a message box (string, arg2); fn_1d704 0x1d865 titles the record table with it, arg2 = 0x32
 0x036f14 setpalette   # SPECULATIVE: asm; called around the modem dialogue with 0x88B1A/1C/24 set
 0x036fd0 drawsprite   # SPECULATIVE: asm; uses sprptr and spr_x/y/w/h
 0x07c0a4 faceimgs     # SPECULATIVE: pointer table indexed by car.face
@@ -640,7 +640,7 @@
 0x060d8c (name entry strings) # CONFIRMED: "PLEASE ENTER NAME.." 0x60d8c (20 bytes), 16 spaces 0x60da0, 12 spaces 0x60db4 - the pads enter_name copies into its arg1 (0x1cbbf, 0x1cc81, 0x1cc8d)
 0x07d704 sprptr                # see line 102; enter_name points it at gn7eb2c (0x1cce4) for the text caret, so sprptr also names the caret source
 0x01ce14 scores_screen   # CONFIRMED (rebuild src/ww.c): the record book - loads LEAD.PCX, runs enter_name, shifts and inserts the run score v7ed5c in this mode's group of tbl77758, then fn_1d704 draws the table; only caller 0x2d227 in 0x2bff0
-0x01d704 fn_1d704       # LIKELY: the score table screen - loads "LEAD.PCX" 0x60dc4 (0x1d71f), prints rows, walks records with add v7d8a8,0x2e (0x1da3c); arg1 = eax (mode), arg2 = edx (row); called from scores_screen 0x1d12d
+0x01d704 fn_1d704       # CONFIRMED (rebuild src/ww.c, near miss): the record table screen for (short which = class 1-3, int row = tbl77758 group); LEAD.PCX, msgbox "<CLASS> 12 HP"/"6 HP" (v7ecb8 == 1), four records of tbl77758[row] + (which-1)*0x170: name, face sprite, stamp, metal sprite sp7c800[(row-v7ecb4-1)*2], two-digit score; callers scores_screen 0x1d12d, race_records_menu 0x1d321
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
 0x07ed5c v7ed5c         # CONFIRMED: the score of the finished run; compared against the four table entries at 0x1cf3f/0x1cf77, stored into record+4 at 0x1d040-0x1d047

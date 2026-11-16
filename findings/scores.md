@@ -166,6 +166,20 @@ car-select chain and the name entry.
   `i = 1..5` compiles to: `&mnames[(i-1)*0x3c]` gives `mov ebp,mnames` (38 diffs), `mnames - 0x3c
   + i*0x3c` 10 diffs. What `mrows[0]` holds is not known (`arr7bba0` ends at 0x7bc00).
 
+- CONFIRMED (rebuild `src/ww.c`, near miss at 0x1d704; callers 0x1d12d, 0x1d321): `fn_1d704(short
+  which, int row)` draws the record table. LEAD.PCX (0x1d71f), then a box titled from a local
+  `char cls[3][40] = {"AMATEUR CLASS", "PRO CLASS", "CHAMP CLASS"}` (the initializer at 0x10184,
+  after the month table) plus " 12 HP" when `v7ecb8 == 1`, else " 6 HP" (0x60e8c/0x60e94). Then
+  the four records from `tbl77758 + row*0x450 + (which-1)*0x170`, one per 0x1a pixels from y = 0x53:
+  name (+0x1a) at x 10, the face `faces[player].img[0]` (+2) at x 0x7a, stamp (+6) at x 0xaa,
+  then the metal sprite `sp7c800[(row - v7ecb4 - 1) * 2]` and the score (+4) printed with two
+  digits ("7" -> "07"). "POINTS" heads the score column on the first row only. It returns after
+  the fade once `key88cd0` is no longer 1 (0x1daa1).
+- So the 0x170-byte third of a `tbl77758` row is a class (AMATEUR/PRO/CHAMP, `which` = `v88bb2`),
+  and `row - v7ecb4` (1-3) is the metal, which picks the sprite. Eight records per class, of which
+  this screen shows the first four. The scores are two digits. LIKELY (read from the code, not
+  seen on screen).
+
 ## Traps
 
 - The 1-char menu-name padding literal 0x600a0 is `" "`, and the padding loop uses `strcat`, not

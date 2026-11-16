@@ -280,3 +280,8 @@ it can be copied back into DREA.
   folds to `mov ebp,mnames` (38 diffs) and `mnames - 0x3c + i*0x3c` gives 10. Declaring
   `extern char mrows[][0x3c]` at 0x7bc00 and writing `&mrows[i][0]` was byte-identical. When the
   `add` immediate is not a known symbol, name a new array there before rewriting the index.
+- **A `short` parameter whose callers do not sign-extend means the callers had no prototype**
+  (iter 14, [generic]): fn_1d704 0x1d704 compares its first argument as a word (`movsx eax,bx`,
+  `cmp word`), but `void fn_1d704(short, int);` made both callers add a `movsx` (race_records_menu
+  504 -> 472 bytes). Declaring it `void fn_1d704();` (no parameter list) and defining it with
+  `short which` keeps both callers and gives the callee its word compares.

@@ -31,12 +31,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1d703, 88
-   functions identical and 40 near misses (`src/check.sh`; the register/scheduling ones are
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1dabe, 88
+   functions identical and 41 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: `fn_1d704` 0x1d704 (the score table screen, LEAD.PCX 0x1d71f, frame
-   0x9c, copies 0x1e dwords from 0x10184 into esp first; `starts.py` 0x1d6d0/0x1d6f0 need the
-   padding rule). Then `f2e4b8` (LIKELY the per-track trial table, two other callers).
+2. Next in address order: the function at 0x1dac0 (`tools/wc/starts.py ww 0x1dac0 0x1e000`), then
+   `f2e4b8` (LIKELY the per-track trial table; callers 0x1911f, 0x1d6ca, 0x31e98). `fn_1d704`
+   0x1d704 is a near miss (the `which` spill, QUESTIONS 12; its prototype stays unprototyped).
 3. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
    0x600ac into EDX, ours into EAX, which lets -oe tail-merge a store (GOTCHAS iter 13 - and the six
    probes in `.work/rrmv.c` were useless, that file has no `#include <string.h>`). Diff with

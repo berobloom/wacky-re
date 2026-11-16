@@ -196,3 +196,10 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     (pointer temp for the fourth row, a 4-iteration loop, two separate ifs, an unused second
     parameter, plain assignments after the declarations, flipped condition - the last changes the
     branch to `je` as well). Test: the function byte-identical at 0x1d13c (504 -> 516 bytes).
+12. **OPEN** (src/ww.c `fn_1d704`, findings/scores.md): what makes 9.5b spill the `short which`
+    parameter of 0x1d704 to a stack slot after `f278c4` (0x1d7b5) when ours keeps it in BX? EBX
+    still holds it at 0x1d7df/0x1d7fe, yet msgbox's row (0x1d843) and the switch (0x1d875-0x1d88f)
+    read the slot. `msgbox` saves EBX (0x2a414), so no call clobbers it. Tried and failed (17 diffs
+    is the best): K&R definitions with `short which` / `int which` in either order, a short local
+    copy before the strcat and before the switch, `(short)which` casts on an int, `int sx`, local
+    declaration orders. Same family as 9 and 10. Test: 0x1d704 byte-identical (930 -> 955 bytes).

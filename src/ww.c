@@ -6591,7 +6591,8 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
 extern int v7ed5c;                    /* 0x7ed5c: the score of the run just finished */
 void fn_3542c(int n);                 /* 0x3542c: builds a "WACKY" file name (strcat of 0x7c158,
                                      * itoa(n) and "WACKY"); called with v7ee5a at 0x1d0d0 */
-void fn_1d704(int which, int row);    /* 0x1d704: arg1 = eax, arg2 = edx; the score table screen */
+void fn_1d704();                      /* 0x1d704: (short which = eax, int row = edx); no parameter list,
+                                     * like the game's callers (see the differs: note at 0x1d704) */
 
 struct score {                        /* 0x2e = 46 bytes, 24 per row of 0x450 */
     short row;                        /* +0 */
@@ -6831,4 +6832,113 @@ void trial_records_menu(void)
         }
     }
     v88c80 = saved;                                 /* 0x1d6f0-0x1d6f4 */
+}
+
+/* ---- 0x1d704, 955 bytes: the record table. Draws LEAD.PCX, titles the box "<CLASS> 12 HP" or
+ * "<CLASS> 6 HP" (v7ecb8 == 1) with msgbox, then the four records of group `row`, class `which`
+ * (its 0x170-byte third of the tbl77758 row): name at y, face sprite, stamp, metal sprite
+ * sp7c800[(row - v7ecb4 - 1) * 2] and the two-digit score; "POINTS" over the first score. Waits for
+ * key88cd0 to drop after the fade. Callers: race_records_menu 0x1d321, scores_screen 0x1d12d. */
+/* differs: near miss, 930 of the game's 955 bytes, 214 vs 215 instructions (the missing one is the
+ * spill store); 7 diff blocks, two of them linker-filled displacements, and two causes (QUESTIONS 12):
+ * 1. the game spills `which` to esp+0x94 after f278c4 (0x1d7b5: `mov [esp+0x94],ebx`, its frame is
+ *    0x9c) and reads that slot for the msgbox row (0x1d843) and the three switch compares
+ *    (`cmp word [esp+0x94],N`, 0x1d875-0x1d88f); ours keeps it in BX (frame 0x98, `cmp bx,N`). The
+ *    23 bytes are those encodings. A K&R definition (short or int), a short local copy, an int
+ *    copy, casts and moving the declarations do not spill it.
+ * 2. `mov dx,[pal_a]` vs ours `movzx edx` (0x1d73e): the f375cd EDX parameter trap (GOTCHAS).
+ * The prototype above is unprototyped (`void fn_1d704();`): a `short which` prototype makes both
+ * callers sign-extend (race_records_menu 504 -> 472 bytes), so the game's callers saw none. */
+void fn_1d704(short which, int row)
+{
+    char cls[3][40] = { "AMATEUR CLASS", "PRO CLASS", "CHAMP CLASS" };  /* 0x10184, 0x1d713 */
+    char num[0x14];                           /* esp+0x78, itoa 0x1d9d8 */
+    short i, y, ystamp, ypts;                 /* edi, esi, esp+0x98, esp+0x90: i first keeps the
+                                               * game's register order (21 -> 17 diffs) */
+    short sx;                                 /* esp+0x8c */
+
+    f27060((struct rec14 *)"LEAD.PCX", 2);    /* 0x1d71f-0x1d72b */
+    v88b4a = 0;
+    p7d714 = p6a980;
+    pal_a = f375cd(p6a980, pal_a);            /* 0x1d739-0x1d758 */
+    pal_c = 0x7d00;
+    pal_b = pal_a;
+    setpalette();                             /* 0x1d766 */
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    if (pal_a == 0)                           /* 0x1d790 */
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
+    f278c4(0);                                /* 0x1d7b0 */
+    pal_b = 0x7d00;
+    pal_c = pal_a;
+    setpalette();                             /* 0x1d7d1 */
+    if (v7ecb8 == 1)                          /* 0x1d7d6 */
+        strcat(cls[which - 1], " 12 HP");
+    else
+        strcat(cls[which - 1], " 6 HP");
+    msgbox(cls[which - 1], 0x32);             /* 0x1d865 */
+    switch (which) {                          /* 0x1d875: the tree 2 / <2 / 3 */
+    case 1: v7d8a8 = tbl77758 + row * 0x450; break;
+    case 2: v7d8a8 = tbl77758 + row * 0x450 + 0x170; break;
+    case 3: v7d8a8 = tbl77758 + row * 0x450 + 0x2e0; break;
+    }
+    y = 0x53;
+    i = 1;                                    /* 0x1d8b2, before the two slot stores */
+    ystamp = 0x50;
+    ypts = 0x3f;
+    for (; i <= 4; i++) {                /* 0x1d8cd, the test at 0x1da43 */
+        print_at(10, y, v7d8a8 + 0x1a, 0);    /* the name */
+        sprptr = faces[*(short *)(v7d8a8 + 2)].img[0];
+        spr_h = 0x26;
+        spr_w = 0x1c;
+        spr_x = 0x7a;
+        spr_y = y - 0xc;
+        drawsprite();                         /* 0x1d92f */
+        spr_x += 0x30;
+        print_at(spr_x, ystamp, v7d8a8 + 6, 0);   /* the stamp, 0x1d94c */
+        sprptr = sp7c800[(row - (v7ecb4 + 1)) * 2];
+        spr_h = 0x1c;
+        spr_w = 0x17;
+        spr_x += 8;
+        spr_y = y - 7;
+        drawsprite();                         /* 0x1d98e */
+        if (i == 1) {
+            sx = spr_x;
+            print_at(sx, ypts, "POINTS", 0);  /* 0x1d9b6 */
+            spr_x = sx;
+        }
+        spr_y = y - 7;
+        itoa(*(short *)(v7d8a8 + 4), num, 10);    /* 0x1d9e5 */
+        if (num[1] == 0) {                    /* one digit: "07"; num[0] is read first (0x1d9f1) */
+            char c = num[0];
+            num[2] = 0;
+            num[0] = '0';
+            num[1] = c;
+        }
+        print_at(spr_x + 0x22, (short)(spr_y + 7), num, 0);  /* 16-bit add + movsx, 0x1da07-0x1da22 */   /* 0x1da37 */
+        ystamp += 0x1a;
+        ypts += 0x1a;
+        y += 0x1a;
+        v7d8a8 += 0x2e;                       /* 0x1da3c */
+    }
+    f37de0();                                 /* 0x1da4d */
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    f27920(1);                                /* 0x1da77 */
+    if (pal_a == 0)
+        pal_a = 0x3e80;
+    else
+        pal_a = 0;
+    f278c4(0);                                /* 0x1da9c */
+    while (key88cd0 == 1)                     /* 0x1daa1 */
+        ;
 }
