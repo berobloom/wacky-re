@@ -13264,21 +13264,20 @@ void showlines_def(int n, int wait, int t)
     pal_a = save_a;
 }
 
-/* ---- 0x2a414, 152 bytes: one line in a centred box, 0x10 high, at row y (0x5c when 0).
- * differs (near-miss, 1 block): the game stores 0x5c through EAX (`mov eax,0x5c; mov [spr_y],ax`),
- * ours as an immediate. Tried: ternaries, `y = 0x5c` then store, (0xc8 - spr_w) / 2. The print_at
- * arguments are 16-bit sums (casts). */
+/* ---- 0x2a414, 152 bytes: one line in a centred box, 0x10 high, at row y (0x5c when 0). */
 void msgbox(char *s, int y)
 {
     short h;
+    int row;
 
     h = strlen(s) * 8 + 8;
     spr_x = (0x140 - h) / 2;
     spr_w = 0x10;
     spr_h = h;
-    if ((short)y == 0)
-        spr_y = 0x5c;
-    else
+    if ((short)y == 0) {
+        row = 0x5c;
+        spr_y = row;
+    } else
         spr_y = y;
     v88ce9 = 0x2c;
     v88ce8 = 0x26;

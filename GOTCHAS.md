@@ -428,3 +428,14 @@ it can be copied back into DREA.
   EDX form did not survive the whole file: 4 diff rows became 13). Probes rank spellings for one
   function in isolation; before keeping one, compile the whole file and diff (GOTCHAS iter 13, "the
   probe's scores are not the whole-file ones").
+- **A constant the game stores to a global through a register comes from an `int` local assigned
+  inside that arm** (iter 17, [generic]): msgbox 0x2a45c materialises the default row as
+  `mov eax,0x5c` (inside the arm, after the `test si,si`/`jne` at 0x2a457) + `mov word [spr_y],ax`,
+  where `spr_y = 0x5c;` and every ternary give the 7-byte `mov word [spr_y],0x5c` (GOTCHAS iter 11,
+  "write `if`/`else`, not a ternary", covers the other direction). `int row; row = 0x5c;` *before*
+  the if is hoisted above the test (2 diffs); written inside the then arm it stays where the game has
+  it and msgbox MATCHes (148 -> 152 bytes, 4 diff rows -> 0). A `short` local folds into the store and
+  does not work, `int` (and `unsigned`) do. `int t; if (c) spr_y = (t = 0x5c);` gives the immediate
+  form. Probe lesson: reordering the *unchanged* statements of the probe body (the four spr_x/w/h
+  stores) re-scheduled everything and moved the control score 3 -> 9, so copy the committed body
+  verbatim into the probe and vary only the block under test.
