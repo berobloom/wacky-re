@@ -347,6 +347,7 @@
 0x02bbd8 overall_winner # CONFIRMED (rebuild src/ww.c): two-player overall winner / draw screen; net fire handshake
 0x02bff0 race_results # CONFIRMED (rebuild src/ww.c): post-race leaderboard + talking face; after the last race THE ROSTRUM (WIN.PCX) or the bonus-track message
 0x02d264 result_msg   # CONFIRMED (rebuild src/ww.c): end-of-race message into 0x6aa18 by place (tables 0x63d44 / 0x63e0c / 0x63ed4), centred x v88b66
+0x02d3fc bump_turn    # LIKELY (rebuild src/ww.c): applies a pending v88bf4 turn of 0x12 to curpos (direction v88bfe 5) and f42 +-0x28; meaning of v88bf4/v88bfc inferred
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
 0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit

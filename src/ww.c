@@ -14632,3 +14632,36 @@ void result_msg(void)
     v88b66 = (0x140 - (int)strlen(str6aa18) * 8) / 2;
 }
 
+/* ---- 0x2d3fc, 255 bytes: a pending turn bump (v88bf4; callers 0x2f7a5, 0x2fa2c in 0x2f794):
+ * curpos turns by 0x12 (left with v88bfe 5, else right) in 0..0x780, the move vector is
+ * applied, and on v88bfc 2 / 1 with v88bf6 curkart->f42 rises / falls by 0x28 within 0..0xbe. */
+void bump_turn(void)
+{
+    if (v88bf4 == 0)
+        return;
+    if (v88bfe == 5) {
+        curpos -= 0x12;
+        if (curpos < 0)
+            curpos += 0x780;
+    } else {
+        curpos += 0x12;
+        if (curpos >= 0x780)
+            curpos -= 0x780;
+    }
+    v7d678 = curpos;
+    track_around();
+    VEC(v7d614, v7d5e4, 1);
+    v88b0a += v7d610;
+    v88b0e += v7d620;
+    if (v88bfc == 2 && v88bf6) {
+        curkart->f42 += 0x28;
+        if (curkart->f42 > 0xbe)
+            curkart->f42 = 0xbe;
+    } else if (v88bfc == 1 && v88bf6) {
+        curkart->f42 -= 0x28;
+        if (curkart->f42 < 0)
+            curkart->f42 = 0;
+    }
+    v88bf4 = 0;
+}
+
