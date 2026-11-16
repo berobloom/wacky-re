@@ -7082,3 +7082,64 @@ int wait_connect(void)
     }
     return 0;
 }
+
+/* ---- 0x1deb0, 578 bytes: dials (caller 0x209f1 in fn_1f858). Shows "DIALING <phone>", sends
+ * modemdial + the digits of phone (spaces dropped, one strcat per character), waits 0x110 ticks
+ * before and after sending, then returns wait_connect(), or 0 with "CANCELLED" when a wait was
+ * aborted. The fn_1c068/fn_1c0ac pair is written out on the main path and called on the cancel path
+ * (as in modem and wait_connect). */
+/* differs: near miss, the game calls com_getc at 0x1dfc2 where -oe inlines ours (QUESTIONS 6);
+ * everything before it is identical. */
+extern char modemdial[];              /* 0x771bc, between modeminit and modemhangup (0x40 apart) */
+extern char phone[];                  /* 0x7ebdc: the number to dial */
+
+int dial(void)
+{
+    char cmd[0x2c];                   /* esp+0x00 */
+    char msg[0x28];                   /* esp+0x2c */
+    char c[2];                        /* esp+0x54 */
+    unsigned i;                       /* EDX; jb against strlen (0x1df71) */
+
+    i = 0;                            /* first: the game's xor edx,edx sits in the strcat (0x1decc) */
+    strcpy(msg, "DIALING ");
+    strcat(msg, phone);
+    c[1] = 0;                         /* before the copy: the game's store is in its unit (0x1defb) */
+    strcpy(cmd, modemdial);
+    for (; i < strlen(phone); i++) {
+        if (phone[i] != ' ') {
+            c[0] = phone[i];
+            strcat(cmd, c);
+        }
+    }
+    save_a = pal_a;                   /* fn_1c068, inline */
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 48000;
+    pal_a = pal_d;
+    pal_b = pal_d;
+    setpalette();
+    msgbox(msg, 0);                   /* 0x1dfbd */
+    while (com_getc() != -1)
+        ;
+    wait_or_key(0x110);               /* 0x1dfcf-0x1e00b, inlined */
+    sendstr(cmd);                     /* 0x1e00f */
+    wait_or_key(0x110);
+    pal_b = 48000;                    /* fn_1c0ac, inline */
+    pal_a = pal_d;
+    pal_c = pal_d;
+    setpalette();
+    pal_b = save_b;
+    pal_c = save_c;
+    pal_a = save_a;
+    if (sendfail) {                   /* 0x1e096 */
+        fn_1c068();
+        msgbox("CANCELLED", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        return 0;
+    }
+    return wait_connect();            /* 0x1e0e5 */
+}

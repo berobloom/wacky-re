@@ -149,8 +149,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    with the bodies written out and `fn_1c068`/`fn_1c0ac` kept `extern`. That reads as a source-level
    copy (a macro or pasted code) next to real calls, not an inline budget. If so, the question is
    only why our `-oe` inlines a *defined* `fn_1c068`, and the two-module test settles it.
-   `com_getc` 0x105b0 is the same case: called at `link_open` 0x1dc7f (the only difference left
-   in that function) and at the `net_end` family, while `com_waitfor` inlines it.
+   `com_getc` 0x105b0 is the same case: called at `link_open` 0x1dc7f and `dial` 0x1dfc2 (the only difference left
+   in either) and at the `net_end` family, while `com_waitfor` inlines it.
 
 7. **OPEN** (findings/scores.md): what are the 46-byte records of `tbl77758`
    (0x77758, row 1 at 0x77ba8), who fills them, and are the two strings at +6 and
