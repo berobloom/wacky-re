@@ -330,7 +330,7 @@
 0x028480 f28480       # SPECULATIVE: called from frame_draw
 0x037e94 f37e94       # SPECULATIVE: called from frame_draw
 0x0287ec f287ec       # SPECULATIVE: called from frame_draw
-0x025a78 f25a78       # SPECULATIVE: called from frame_draw
+0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c f26a3c       # SPECULATIVE: called from frame_draw
 0x0266a8 f266a8       # SPECULATIVE: called from frame_draw
 0x02632c f2632c       # SPECULATIVE: called from frame_draw

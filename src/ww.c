@@ -1919,7 +1919,7 @@ void f28480(void);
 void f37e94(void);
 void f287ec(void);
 void players_project(void);
-void f25a78(void);
+void ents_project(void);
 void f26a3c(void);
 void f266a8(void);
 void f2632c(void);
@@ -1963,7 +1963,7 @@ void frame_draw(void)
     p7d86c = arr79a28;
     f287ec();
     players_project();
-    f25a78();
+    ents_project();
     f26a3c();
     if (v88c38)
         f266a8();
@@ -1984,7 +1984,7 @@ void frame_draw(void)
         p7d86c = arr79a28;
         f287ec();
         players_project();
-        f25a78();
+        ents_project();
         f26a3c();
         if (v88c38)
             f266a8();
@@ -2605,7 +2605,8 @@ struct attr {                   /* SPRITE.ATR, 40 bytes */
     short kind;                 /* 2 and up: see ents_flags / ent_sprites_load */
     short f02;
     short w, h;
-    char f08[0x0E - 8];
+    char f08[0x0C - 8];
+    short f0c;                  /* size class: tab6e470[f0c * 20 + step] (ents_project) */
     short nframes;
     char f10[0x24 - 0x10];
     char *data;
@@ -11005,6 +11006,106 @@ void players_project(void)
         CR->f0c = (int)sprptr;
         v88b78++;
         CR->f14 = v7d878;
+    }
+}
+
+/* ---- 0x25a78, 1011 bytes: the same projection for the ents (callers frame_draw 0x134e6, 0x135ef;
+ * 0x289be): every ent with f2 != -1 in the view box and in_sector gets a sprite record (f24 = f18 =
+ * -1, f1c = f2, f22 = its index); sprite sprattr[id].data + frame * w*h, size tab6e470[f0c*20 + step].
+ * differs (near-miss, 243 vs 226 insns, 29 blocks): the game keeps the global iterator v7d7f4 in ECX
+ * for the whole loop (stores before in_sector/isqrt, reload after); ours reads it from memory - the
+ * players_project case again (QUESTIONS 2). `int i, id` (the game's `inc dword [esp+0x10]`) helped. */
+extern struct attr attrs[];
+#pragma aux attrs "_sprattr"
+
+void ents_project(void)
+{
+    short dy, sx, k, c;
+    int i, id, sy, d, side, a, m, t;
+
+    for (v7d7f4 = ents, i = 0; i < nents; v7d7f4++, i++) {
+        if (v7d7f4->f2 == -1)
+            continue;
+        v88b20 = v7d7f4->x;
+        id = v7d7f4->id;
+        v88b22 = v7d7f4->y;
+        if (v88b20 < v88c16 || v88b20 > v88c2a || v88b22 < v88c18 || v88b22 > v88c2c)
+            continue;
+        if (in_sector() == 0)
+            continue;
+        sx = v88b20 - v88b0a;
+        sy = v88b22;
+        dy = v88b22 - v88b0e;
+        d = (v7d614 * sx + v7d5e4 * dy) >> 16;
+        a = (d * 0x93cd) >> 16;
+        side = (dy * v7d614 - sx * v7d5e4) >> 16;
+        if (dy < sy)
+            a = -a;
+        c = 0xa0;
+        if ((short)a != 0)
+            c = 0xa0 - side * 0xa0 / (short)a;
+        if (c < 0 || c > 0x13f)
+            continue;
+        d = isqrt(d * d + side * side);
+        m = tb6b7f8[c];
+        if (m) {
+            t = d * m;
+            d = t >> 14;
+            if (t - (d << 14) >= 0x1fa0)
+                d++;
+        }
+        if (d < 0x50 || d > 0x462)
+            continue;
+        k = (d - 0x7c) / 0x46;
+        if (k < 0)
+            k = 0;
+        if (k > 9)
+            k = 9;
+        spr_y = tb6bd00[d];
+        p7d838 = tab6e470[attrs[id].f0c * 20 + k];
+        sprptr = attrs[id].data + v7d7f4->frame * (short)(attrs[id].w * attrs[id].h);
+        p7d764 = p7d838;
+        p7d838 += 2;
+        spr_h = *p7d764++;
+        spr_w = *p7d764;
+        spr_y -= spr_w;
+        if (spr_y > 0xc7)
+            continue;
+        c -= spr_h >> 1;
+        v7d878 = 0;
+        if (c < 0) {
+            c = -c;
+            spr_h -= c;
+            if (spr_h <= 0)
+                continue;
+            p7d838 = (short *)((char *)p7d838 + (short)(c * (spr_w + 1) * 4));
+            c = 0;
+        } else if (c + spr_h - 1 > 0x13f) {
+            spr_h -= spr_h - 1 + c - 0x13f;
+            if (spr_h <= 0)
+                continue;
+        }
+        if (spr_y + spr_w - 1 > 0xc7) {
+            spr_w -= spr_w - 1 + spr_y - 0xc7;
+            if (spr_w <= 0)
+                continue;
+            v7d878 = spr_w * 4;
+        }
+        p7d86c += 0x28;
+        CR->f24 = -1;
+        CR->f18 = -1;
+        CR->f1c = v7d7f4->f2;
+        CR->f1a = k;
+        CR->f04 = c;
+        CR->f10 = d;
+        CR->f00 = spr_h;
+        CR->f02 = spr_w;
+        CR->f06 = spr_y;
+        CR->f08 = p7d838;
+        CR->f0c = (int)sprptr;
+        v88b78++;
+        CR->f14 = v7d878;
+        CR->f22 = i;
     }
 }
 
