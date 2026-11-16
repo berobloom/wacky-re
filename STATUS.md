@@ -31,10 +31,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x1f858-0x2130c and 0x21310-0x2847f, 135
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1f823 plus 0x1f858-0x2130c and 0x21310-0x28667, 136
    functions identical and 67 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: 0x28480 (`track_around` 0x283a4 index registers; `kartsets_load` 0x28038 outer-loop strength reduction; `track_load` 0x279e8 two register causes; `track_pics_load` 0x277b8 2 blocks; `pcx_load` 0x27060 one register pair; `self_project` 0x26a3c one dec register; `lights_project` 0x266a8 18 blocks; `shots_project` 0x2632c like players_project; `anim_tick` 0x261fc one swapped pair; `shots_move` 0x2602c 7 blocks; `shot_step` 0x25e6c a near miss by one stack temp; `players_project` 0x255d4 and `ents_project` 0x25a78 near misses: v7d800 not promoted, QUESTIONS 2; `kart_draw` 0x24bcc 8 blocks)
+2. Next in address order: 0x28668 (`track_around` 0x283a4 index registers; `kartsets_load` 0x28038 outer-loop strength reduction; `track_load` 0x279e8 two register causes; `track_pics_load` 0x277b8 2 blocks; `pcx_load` 0x27060 one register pair; `self_project` 0x26a3c one dec register; `lights_project` 0x266a8 18 blocks; `shots_project` 0x2632c like players_project; `anim_tick` 0x261fc one swapped pair; `shots_move` 0x2602c 7 blocks; `shot_step` 0x25e6c a near miss by one stack temp; `players_project` 0x255d4 and `ents_project` 0x25a78 near misses: v7d800 not promoted, QUESTIONS 2; `kart_draw` 0x24bcc 8 blocks)
    `credits_screen` 0x1efb0 is a near miss, slots; `volume_menu` 0x1e760 is
    a near miss by one frame-wait load; `demo_mode` 0x1e2e4 is a
    near miss, 3 causes in its note; `dial`

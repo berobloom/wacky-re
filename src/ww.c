@@ -1916,7 +1916,7 @@ void pcx_load(char *name, int n);
 void f1bf94(char *p);
 short f375cd();                     /* asm; the game passes (EAX, EDX) and reads the result in EDX */
 #pragma aux f375cd value [dx] parm [eax] [edx] modify []   /* 9.5b rejects value[edx]; [dx] gives the same bytes */
-void f28480(void);
+void view_box(void);
 void f37e94(void);
 void f287ec(void);
 void players_project(void);
@@ -1956,7 +1956,7 @@ void frame_draw(void)
         pal_c = 32000;
         setpalette();
     }
-    f28480();
+    view_box();
     if (v7eb80)
         f37e94();
     v88bf4 = 0;
@@ -1973,7 +1973,7 @@ void frame_draw(void)
         sprites_draw();
     if (twoplayer || splitscreen) {
         view2_in();
-        f28480();
+        view_box();
         if (v7eb82) {
             if (v88bde)
                 f3c3e9();
@@ -12286,5 +12286,60 @@ void track_here(void)
     v7d690 = (int *)(curpos * 8 + a6a0);
     v7d5f8 = *v7d690++;
     v7d5f4 = *v7d690--;
+}
+
+/* ---- 0x28480, 488 bytes: the view box around the kart (callers 0x134ac, 0x135a4, 0x2de14,
+ * 0x2f9b4): the track points 0xa0 steps behind (index v7d674) and ahead (v7d670), each scaled by
+ * 0x462 through f37bb1 and offset by the kart (v88b0a, v88b0e); the box (v88c16, v88c18) -
+ * (v88c2a, v88c2c) holds both and the kart. Then curpos's pair into v7d5f8/v7d5f4 and v7d614/v7d5e4. */
+void view_box(void)
+{
+    short x1, x2, y1, y2;               /* this order (one of five of 24) gives the registers */
+
+    v7d674 = curpos - 0xa0;
+    if (v7d674 < 0)
+        v7d674 += 0x780;
+    v7d690 = (int *)(v7d6a0 + v7d674 * 8);
+    v7d5f8 = *v7d690++;
+    v7d608 = 0x462;
+    v7d5f4 = *v7d690;
+    f37bb1();
+    x1 = v88b0a + v7d610;
+    y1 = v88b0e + v7d620;
+    v7d670 = curpos + 0xa0;
+    if (v7d670 >= 0x780)
+        v7d670 -= 0x780;
+    v7d690 = (int *)(v7d6a0 + v7d670 * 8);
+    v7d5f8 = *v7d690++;
+    v7d608 = 0x462;
+    v7d5f4 = *v7d690;
+    f37bb1();
+    x2 = v88b0a + v7d610;
+    y2 = v88b0e + v7d620;
+    v88c18 = y1;
+    if (y1 > v88b0e)
+        v88c18 = v88b0e;
+    if (y2 < v88c18)
+        v88c18 = y2;
+    v88c16 = x1;
+    if (x1 > v88b0a)
+        v88c16 = v88b0a;
+    if (x2 < v88c16)
+        v88c16 = x2;
+    v88c2c = y1;
+    if (y1 < v88b0e)
+        v88c2c = v88b0e;
+    if (y2 > v88c2c)
+        v88c2c = y2;
+    v88c2a = x1;
+    if (x1 < v88b0a)
+        v88c2a = v88b0a;
+    if (x2 > v88c2a)
+        v88c2a = x2;
+    v7d690 = (int *)(v7d6a0 + curpos * 8);
+    v7d5f8 = *v7d690++;
+    v7d5f4 = *v7d690--;
+    v7d614 = v7d5f8;
+    v7d5e4 = v7d5f4;
 }
 

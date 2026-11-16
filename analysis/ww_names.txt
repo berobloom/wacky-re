@@ -327,7 +327,6 @@
 0x027060 pcx_load     # CONFIRMED (rebuild src/ww.c): (name, n) DAT PCX picture data (no header, no palette) into p6a978[n]
 0x01bf94 f1bf94       # SPECULATIVE: called from frame_draw
 0x0375cd f375cd       # SPECULATIVE: called from frame_draw
-0x028480 f28480       # SPECULATIVE: called from frame_draw
 0x037e94 f37e94       # SPECULATIVE: called from frame_draw
 0x0287ec f287ec       # SPECULATIVE: called from frame_draw
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
@@ -345,6 +344,7 @@
 0x028180 data_load    # CONFIRMED (rebuild src/ww.c): MAP.XY, WACKY.SDX surfs, TRIG.DAT, NDIST, CARS.SP, GIG.MOV, kartsets_load(1); carves the v7d750 block
 0x0283a4 track_around # CONFIRMED (rebuild src/ww.c): pairs of v7d678 and curpos -/+ 0x12 into v7d614/5e4, v7d618/5e8, v7d61c/5ec; indexes v7d5cc/v7d5c8
 0x02844c track_here   # CONFIRMED (rebuild src/ww.c): curpos pair into v7d5f8/v7d5f4, v7d690 at it
+0x028480 view_box     # LIKELY (rebuild src/ww.c): box (v88c16,v88c18)-(v88c2a,v88c2c) around the kart and the track points 0xa0 behind/ahead; use as view box is inferred
 0x027028 flength      # CONFIRMED (rebuild src/ww.c): ftell/fseek(END)/ftell/fseek - file length; inlined in file_pal
 0x0266a8 lights_project # CONFIRMED code, LIKELY meaning (rebuild src/ww.c): start-lights countdown (v88c44 1 -> 2, frame v88c5e) and projection; callers frame_draw 0x134fa, 0x13603
 0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608
