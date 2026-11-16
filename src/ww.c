@@ -12192,3 +12192,60 @@ void kartsets_load(int one)
     }
 }
 
+/* ---- 0x28180, 546 bytes: loads the game-wide data once (caller 0x36770 in 0x35ca4): MAP.XY (two
+ * 0x800 tables at 0x802cc, 0x7faca); WACKY.SDX (v88b7c surface records of 0x12e bytes into
+ * surfs[], v88b7c left one less); carves the v7d750 block into v7d6a0 (TRIG.DAT, v7d640 bytes),
+ * v7d660 (NDIST, v7d658), v7d6a4, v7d844, v7d75c (sizes v7d658, v7d600, v7d628), with v7d69c =
+ * v7d6a0 + 4 (written as a += 4, read, -= 4) and v7d698 = v7d6a0 + 0x3bf8; CARS.SP (0x18f00 bytes at v7d708, v7d6c8 its end);
+ * GIG.MOV (v88b80, then v88b80 * 4 + 4 bytes at 0x7b548); then kartsets_load(1). */
+extern char arr802cc[], arr7faca[], arr7b548[];
+#pragma aux arr802cc "_arr802cc"
+#pragma aux arr7faca "_arr7faca"
+#pragma aux arr7b548 "_arr7b548"
+extern char *v7d660;
+extern int v7d640, v7d658, v7d600, v7d628;
+/* The block carving is done on the pointers as ints: char * arithmetic gets scheduled differently. */
+extern int a6a0, a660, a6a4, a844, a75c, a69c, a698, a750;
+#pragma aux a6a0 "_v7d6a0"
+#pragma aux a660 "_v7d660"
+#pragma aux a6a4 "_v7d6a4"
+#pragma aux a844 "_v7d844"
+#pragma aux a75c "_v7d75c"
+#pragma aux a69c "_v7d69c"
+#pragma aux a698 "_v7d698"
+#pragma aux a750 "_v7d750"
+extern short v88b80;
+
+void data_load(void)
+{
+    datfind("MAP.XY");
+    fread(arr802cc, 0x800, 1, datfile);
+    fread(arr7faca, 0x800, 1, datfile);
+    v88bd6 = datfind("WACKY.SDX");
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr("WACKY.SDX");
+    fread(&v88b7c, 2, 1, datfile);
+    fread(surfs, v88b7c * 0x12e, 1, datfile);
+    a75c = (a844 = (a6a4 = (a660 = (a6a0 = a750) + v7d640) + v7d658) + v7d600) + v7d628;
+    a69c = (a6a0 += 4);
+    a6a0 -= 4;
+    v88b7c--;
+    a698 = a6a0;
+    a698 += 0x3bf8;
+    v88bd6 = datfind("TRIG.DAT");
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr("TRIG.DAT");
+    readdat_in(v7d6a0, v7d640);
+    v88bd6 = datfind("NDIST");
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr("NDIST");
+    readdat_in(v7d660, v7d658);
+    v7d6c8 = (int)(v7d708 + 0x18f00);
+    datfind("CARS.SP");
+    readdat_in(v7d708, 0x18f00);
+    datfind("GIG.MOV");
+    fread(&v88b80, 2, 1, datfile);
+    fread(arr7b548, v88b80 * 4 + 4, 1, datfile);
+    kartsets_load(1);
+}
+

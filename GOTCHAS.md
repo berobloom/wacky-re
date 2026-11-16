@@ -339,3 +339,8 @@ it can be copied back into DREA.
   seekdat/readdat (fseek/fread directly, its argument loads in the inlined order); writing fseek/fread
   by hand loads datfile before the buffer. `#undef seekdat` / `#undef readdat` around such a function
   (and re-#define after) gives the game's code. Check which form a site has before writing it.
+
+- **Pointer chains scheduled when typed char \***: data_load 0x28180 carves a block with
+  `p1 = (p0 = base) + size0` ... The game's code is a plain  chain; with char *
+  globals our build hoists the size loads into ECX/EDX (+8 insns). The same expression on int
+  aliases of the globals (`extern int a; #pragma aux a "_v7d6a0"`) matched byte for byte.
