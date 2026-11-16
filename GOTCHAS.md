@@ -274,7 +274,13 @@ it can be copied back into DREA.
   music_start bodies): `int lp = 0;` then `music_start(song, lp)`, `short lp`, `register int lp`, the
   same local passed to both calls, an unused second parameter, spelling the inline out by hand,
   swapping music_start's two stores, `#pragma aux music_start parm [eax] [edx]`. Cost 0 more variants
-  until someone finds what makes 9.5b define a zero early.
+  until someone finds what makes 9.5b define a zero early. The same "the game defines early, our build
+  sinks/hoists it" shape sits in track_setup 0x124e8 (the game has `mov ebx,[trk7ebc8]` at +8 and
+  `mov eax,[track]` at +14, ours swaps those two 6-byte loads): assignment order, `int y, x;`
+  declaration order (that changes the register choice, 13 diffs), `register`, `unsigned` and switching
+  on a local copy all give the same bytes. `-3` instead of `-3r` is not the cause either - the whole
+  object comes out byte-identical (182 MATCH either way), so do not re-litigate the reorder flag for a
+  moved load.
 - **`tools/wc/fndiff.py`'s diff count is not the number of real differences** (iter 13, [generic]):
   it aligns only `min(len(ours), len(game))` instructions, so when ours is shorter its whole epilogue
   shows up as ours-only rows (`race_records_menu`: it printed 13 pairs where the real difference was

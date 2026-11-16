@@ -1344,7 +1344,10 @@ void logerr(char *s)
 extern unsigned track;
 extern int trk7ebc8, trk7ec44, trk7ebc4, trk7ec40;
 
-/* differs: the game loads x before track (+8); otherwise equal */
+/* differs: one moved load - the game loads x (ebx) at +8 and the switch subject (eax) at +14, ours
+ * hoists the switch subject above the x load. Tried x/y assignment order, `int y, x;` declaration order
+ * (that changes the register choice, 13 diffs), `register`, `unsigned`, switching on a local copy, and
+ * compiling with -3 instead of -3r (identical object): all give these same 212 bytes. */
 void track_setup(void)
 {
     int x, y;
