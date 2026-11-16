@@ -187,6 +187,7 @@
 0x011bbc voice_check  # LIKELY: voicebusy = FX_SoundActive(voice handle); handle -1 when done
 0x0341d8 waitkey      # CONFIRMED (rebuild src/ww.c; T2.C): drains keys, prints "Press any key when ready..", getch
 0x034208 players_ahead # CONFIRMED (rebuild src/ww.c): draws f00 == 1 players centred ahead at their distance scale, img[4]; f00 = 2 beyond 1000
+0x0343a0 pic_at       # CONFIRMED (rebuild src/ww.c): draws p6a980 at distance d (tb6bd00, tab6e470 frame), lifted, centred on x
 0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
 0x042c4d getch        # CONFIRMED: clib (libmatch)

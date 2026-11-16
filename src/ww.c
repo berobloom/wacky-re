@@ -17991,3 +17991,32 @@ void players_ahead(void)
     }
 }
 
+/* ---- 0x343a0, 184 bytes (caller 0x348f4 at 0x34c08): draws the p6a980 picture at the scale of
+ * distance d (row tb6bd00[d], frame size tab6e470[(d - 0x7c) / 0x46, 0..9]), lifted by `lift` and
+ * centred on x.
+ * differs (8 blocks): the game spills d to the stack and keeps the row in EBX until one final
+ * spr_y store (reloading spr_y into BX after the call); ours stores spr_y early. Tried: a local
+ * row, spr_y -= twice, h temp, statement orders. */
+void pic_at(int d, int lift, short x)
+{
+    short k, h;
+
+    k = (d - 0x7c) / 0x46;
+    if (k < 0)
+        k = 0;
+    if (k > 9)
+        k = 9;
+    spr_y = tb6bd00[d];
+    p7d838 = tab6e470[k];
+    sprptr = p6a980;
+    v7d878 = 0;
+    p7d764 = p7d838;
+    p7d838 += 2;
+    h = *p7d764++;
+    spr_h = h;
+    spr_w = *p7d764;
+    spr_y = spr_y - spr_w - lift;
+    spr_x = x - (h >> 1);
+    f37487();
+}
+
