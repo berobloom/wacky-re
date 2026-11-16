@@ -4372,7 +4372,14 @@ extern int v7c658, v7ecf0, v7ec80, v7ec9c, v7e574;
 extern short w88b1e, w88b10, v88b88, v88c58;
 extern char v88cec;
 extern char *pal7d84c;
-extern char p6aaae[], p6847a[], p68426[];
+extern char p6aaae[];
+struct rec104 {                   /* 0x104 bytes, two of them at 0x68426 (fn_1dac0, fn_1832c 0x1839c) */
+    short f00;
+    char p02[0x52];
+    short f54;
+    char p56[0xae];
+};
+extern struct rec104 tbl68426[];
 extern int v684e0, v685e4;
 extern char str7c854[], str7c890[], str7c8cc[];
 void f26ec4(char *p);
@@ -4411,8 +4418,8 @@ retry:
     for (i = 0; i <= 7; i++)
         *(short *)(p6aaae + i * 0x68) = 0;
     for (i = 0; i <= 1; i++) {
-        *(short *)(p6847a + i * 0x104) = 0;
-        *(short *)(p68426 + i * 0x104) = 0;
+        tbl68426[i].f54 = 0;                 /* +0x54 first, then the inc, then +0 (0x183a7-0x183b1) */
+        tbl68426[i].f00 = 0;
     }
     if (cursong != v7c658)
         music_start(v7c658, 1);
@@ -6941,4 +6948,17 @@ void fn_1d704(short which, int row)
     f278c4(0);                                /* 0x1da9c */
     while (key88cd0 == 1)                     /* 0x1daa1 */
         ;
+}
+
+/* ---- 0x1dac0, 39 bytes: clears the two words of fn_1832c's 0x1839c loop for both 0x104-byte
+ * records of tbl68426 (+0x54 at 0x6847a, +0 at 0x68426). No caller in the image (no call, no stored address): dead code kept by
+ * the linker, like fn_1c88c. Defined after fn_1832c, so -oe cannot inline it there. */
+void fn_1dac0(void)
+{
+    short i;                                  /* EDX: movsx eax,dx / cmp dx,1 */
+
+    for (i = 0; i <= 1; i++) {
+        tbl68426[i].f54 = 0;                 /* +0x54 first, then the inc, then +0 (0x183a7-0x183b1) */
+        tbl68426[i].f00 = 0;
+    }
 }
