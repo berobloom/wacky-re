@@ -964,6 +964,8 @@ extern short cfg7ee2a;
 extern char cfg7b6d8[0x18];
 extern char cfg77128[0x630];
 void waitkey(void);
+void waitkey_x(void);   /* called, not inlined: the game calls 0x341d8 */
+#pragma aux waitkey_x "waitkey_"
 int save_config(short keep);
 
 int save_config(short keep)
@@ -981,7 +983,7 @@ int save_config(short keep)
         printf("You will need to set the APOGEECD enviroment label\n");
         printf("To a writeable area of your system.\n");
         printf("Example:  SET APOGEECD=C:\\WACKY\\ \n");
-        waitkey();
+        waitkey_x();
         return 0;
     }
     if (keep && cfg7ee2a)
@@ -1124,7 +1126,7 @@ int sound_init(void)
         status = MUSIC_Init(musiccard, musicaddr);
         if (status != 0) {
             printf("%s\n", MUSIC_ErrorString(status));
-            waitkey();
+            waitkey_x();
             return 0;
         }
         printf("OK\n");
@@ -1143,13 +1145,13 @@ int sound_init(void)
         status = FX_SetupCard(fxcard, fxdevice);
         if (status != 0) {
             printf("%s\n", FX_ErrorString(status));
-            waitkey();
+            waitkey_x();
             return 0;
         }
         status = FX_Init(fxcard, fxvoices, 1, fxbits, 11000);
         if (status != 0) {
             printf("%s\n", FX_ErrorString(status));
-            waitkey();
+            waitkey_x();
             return 0;
         }
         sfxon = 1;
