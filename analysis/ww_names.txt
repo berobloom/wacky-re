@@ -303,6 +303,7 @@
 0x02da28 netkeys_pack # CONFIRMED (rebuild src/ww.c): packs keys cd5/cdd, buttons b40-b46, v88cec into v88cf0
 0x02da90 com_getc_wait # CONFIRMED (rebuild src/ww.c): com_getc retried until a byte or timeout ticks; -1
 0x02db00 net_recv     # CONFIRMED (rebuild src/ww.c): one packet of six values (type Z/D/W, 3 data, 2 CRC bytes); counts noise, timeouts, badcrc; returns type or N
+0x02dc38 net_send     # CONFIRMED (rebuild src/ww.c): sends type, a, b, v7ed8c and their CRC (6 bytes)
 0x012f80 draw_status  # LIKELY: player names, SCORE labels, panels; "DEMO MODE " (v7d998 == 3), "TIME TRIAL"
 0x07d228 pnames       # LIKELY: char[12] player names, indexed by myplayer and v88c6a
 0x088ca0 v88ca0       # SPECULATIVE: short; 1 draws img7eb3c once, then 2

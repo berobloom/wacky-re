@@ -14987,3 +14987,38 @@ int net_recv(void)
     return buf[0];
 }
 
+/* ---- 0x2dc38, 247 bytes: sends one packet (callers in 0x2dd30): type, a, b (zero for 'Z' and
+ * 'W'), v7ed8c, then the CRC of those four, low byte first. buf[12] puts the CRC at esp+0xc
+ * as in the game; the send loop is unrolled by the compiler, which keeps buf in memory. */
+extern unsigned char v7ed8c;
+
+void net_send(int type, unsigned char a, unsigned char b)
+{
+    unsigned char buf[12];
+    unsigned short crc;
+    unsigned char c3;
+    unsigned char *p;
+    int i;
+
+    if (type == 'Z' || type == 'W') {
+        a = 0;
+        b = 0;
+    }
+    c3 = v7ed8c;
+    crc = 0;
+    crc = crcupdate(crc, type);
+    crc = crcupdate(crc, a);
+    crc = crcupdate(crc, b);
+    crc = crcupdate(crc, c3);
+    buf[1] = a;
+    buf[2] = b;
+    buf[3] = c3;
+    p = (unsigned char *)&crc;
+    buf[4] = *p;
+    p++;
+    buf[0] = type;
+    buf[5] = *p;
+    for (i = 0; i < 6; i++)
+        com_putc(buf[i]);
+}
+
