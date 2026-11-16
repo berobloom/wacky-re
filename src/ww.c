@@ -1918,7 +1918,7 @@ short f375cd();                     /* asm; the game passes (EAX, EDX) and reads
 #pragma aux f375cd value [dx] parm [eax] [edx] modify []   /* 9.5b rejects value[edx]; [dx] gives the same bytes */
 void view_box(void);
 void f37e94(void);
-void f287ec(void);
+void players_frames(void);
 void players_project(void);
 void ents_project(void);
 void self_project(void);
@@ -1962,7 +1962,7 @@ void frame_draw(void)
     v88bf4 = 0;
     v88b78 = 0;
     p7d86c = arr79a28;
-    f287ec();
+    players_frames();
     players_project();
     ents_project();
     self_project();
@@ -1983,7 +1983,7 @@ void frame_draw(void)
         v88bf4 = 0;
         v88b78 = 0;
         p7d86c = arr79a28;
-        f287ec();
+        players_frames();
         players_project();
         ents_project();
         self_project();
@@ -12402,5 +12402,64 @@ void kart_dirframe(void)
             a = 7;
     }
     v7d800->f1a = dirfr7d328[a];
+}
+
+/* ---- 0x287ec, 426 bytes: each player's sprite frame as seen by viewer v88b7e (callers 0x134dc,
+ * 0x135e5, 0x289b4): v88c30 is the viewer's direction class from curpos (as kart_dirframe); per
+ * player (v7d800, v88b72; in two-player or the first two of split screen kart_dirframe first)
+ * f38[viewer] = dirtab706a0[v88c30][f1a]; with f28[viewer] clear, f30[viewer] is set for frames
+ * 0/2/4/6 of the other karts in a net game, else for frame 4 with f5c clear. */
+extern short v88c30, dirtab706a0[][8];
+#pragma aux dirtab706a0 "_arr706a0"
+
+void players_frames(void)
+{
+    short r, v;
+
+    v88c0e = curpos / 0xf0;
+    r = curpos % 0xf0;
+    v88c30 = v88c0e & 7;
+    if (r >= 0x78) {
+        if (v88c0e < curpos) {
+            if (++v88c30 > 7)
+                v88c30 = 0;
+        } else if (--v88c30 < 0)
+            v88c30 = 7;
+    }
+    v7d800 = players;
+    for (v88b72 = 0; v88b72 <= nplayers; v88b72++, v7d800++) {
+        if (twoplayer || (splitscreen && v88b72 < 2))
+            kart_dirframe();
+        v = v7d800->f38[v88b7e] = dirtab706a0[v88c30][v7d800->f1a];
+        if (v7d800->f28[v88b7e] == 0) {
+            if (netvoices && v88b72 > 0) {
+                v7d800->f30[v88b7e] = 0;
+                if (v == 0 || v == 2 || v == 4 || v == 6)
+                    v7d800->f30[v88b7e] = 1;
+            } else if (v7d800->f38[v88b7e] == 4 && v7d800->f5c == 0)
+                v7d800->f30[v88b7e] = 1;
+            else
+                v7d800->f30[v88b7e] = 0;
+        }
+    }
+}
+
+/* ---- 0x28998, 84 bytes: builds the frame's sprite list for viewer v88b7e: clears v88bf4 and the
+ * count v88b78, starts the records at arr79a28, sets the player frames, projects players, ents,
+ * the own kart, the start lights (while v88c38) and shots, and draws the list if it has any. */
+void sprites_build(void)
+{
+    v88bf4 = 0;
+    v88b78 = 0;
+    p7d86c = arr79a28;
+    players_frames();
+    players_project();
+    ents_project();
+    self_project();
+    if (v88c38)
+        lights_project();
+    shots_project();
+    if (v88b78)
+        sprites_draw();
 }
 
