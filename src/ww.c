@@ -1414,7 +1414,8 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     short faa;                  /* 0xAA: 1 when the move hit something or f3c was set (kart_move) */
     char fac[0xb4 - 0xac];
     short fb4;
-    char fb6[0xd4 - 0xb6];
+    short fb6;                  /* 0xB6: set to 0x10 with fb4 (kart_boost) */
+    char fb8[0xd4 - 0xb8];
     int fd4;                    /* 0xD4: = cars[].sndhandle */
     char fd8[0x104 - 0xd8];
 };
@@ -10217,5 +10218,36 @@ void kart_move(void)
         v7d8a0 = &surfs[k];
         curkart->f60 = v7d8a0->f126;
         curkart->f64 = v7d8a0->f12a;
+    }
+}
+
+/* ---- 0x24298, 99 bytes, no callers (dead code): kart_hit's map-class-10 block on its own. */
+void kart_class10(void)
+{
+    if (curkart->f44 != 0) {
+        curkart->f44 = 0;
+        players[v88b7e].f5c = 0;
+        curkart->f5a = 0;
+    }
+    curkart->f0a = 1;
+    voice_play(12);
+    curkart->f0c = 8;
+    curkart->f10 = 8;
+    v88bae = 4;
+    curkart->f0e = 0x28;
+}
+
+/* ---- 0x242fc, 68 bytes, no callers (dead code): starts a boost once (fb4): f42 = 0xa0, fb6 = 0x10,
+ * speed f26 = tbl7e730[f42], voice 12. */
+extern short tbl7e730[];
+
+void kart_boost(void)
+{
+    if (curkart->fb4 == 0) {
+        curkart->fb4 = 1;
+        curkart->f42 = 0xa0;
+        curkart->fb6 = 0x10;
+        curkart->f26 = tbl7e730[curkart->f42];
+        voice_play(12);
     }
 }
