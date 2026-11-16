@@ -341,7 +341,7 @@
 0x03c3e9 f3c3e9       # SPECULATIVE: called from frame_draw
 0x02a92c f2a92c       # SPECULATIVE: called from frame_draw
 0x029e0c f29e0c       # SPECULATIVE: called from frame_draw
-0x0261fc f261fc       # SPECULATIVE: called from frame_draw
+0x0261fc anim_tick    # CONFIRMED (rebuild src/ww.c): ents frame step, players face/sprite animation counters; callers frame_draw 0x13689, 0x2fb73, 0x308f2
 0x037de0 f37de0       # SPECULATIVE: called from frame_draw
 0x032cf8 f32cf8       # SPECULATIVE: called from frame_draw
 0x0136f8 ani_giggles  # LIKELY: loads GIGGLES.SP (0xB6E0) and QUACK.VOC into anidata/sfx2data, clears anidope

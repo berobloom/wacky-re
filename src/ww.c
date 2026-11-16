@@ -1927,7 +1927,7 @@ void sprites_draw(void);
 void f3c3e9(void);
 void f2a92c(void);
 void f29e0c(void);
-void f261fc(void);
+void anim_tick(void);
 void f37de0(void);
 void f32cf8(char *p);
 
@@ -1998,7 +1998,7 @@ void frame_draw(void)
     draw_status();
     f2a92c();
     f29e0c();
-    f261fc();
+    anim_tick();
     draw_faces();
     f37de0();
     if (key88ccd) {
@@ -10901,7 +10901,8 @@ struct carv {                   /* the 0x104-byte car records seen from 0x68400 
     short f6e;
     char f70[0x74 - 0x70];
     char *f74;
-    char f78[0x8e - 0x78];
+    char f78[0x8c - 0x78];
+    short f8c;                  /* cleared for cars 0 and 1 every tick (anim_tick) */
     short f8e;
     char f90[0x104 - 0x90];
 };
@@ -11248,5 +11249,55 @@ void shots_move(void)
             v7d874->spr = hogdata;
         }
     }
+}
+
+/* ---- 0x261fc, 302 bytes: one animation tick (callers frame_draw 0x13689, 0x2fb73, 0x308f2): each
+ * ent with f2 != -1 gets f2 = 0 and its frame stepped through sprattr nframes; players 2-8 (and the
+ * first unless split) step the kind-2 sprite f56 up to 4 or the face frame f5a (0-7) while f58 == 1;
+ * f02 other than 2 drops to 0, f54 counts 0-3 and f62 steps when set; cars 0/1 f8c cleared.
+ * The game keeps twoplayer in DI (written back at the exit), v7d7f4 in EBX, v7d800 in EDX; so do we.
+ * differs (near-miss, 85 vs 85 insns, 1 pair): at the end of the ents loop the game steps the pointer
+ * before the counter (`add ebx,0xc; inc ecx`), ours the other way round. Tried: increment order in the
+ * for, the increment in the body, continue vs if-block, separate counters, declaration orders. */
+void anim_tick(void)
+{
+    short on, i;
+
+    v7d7f4 = ents;
+    for (i = 0; i < nents; v7d7f4++, i++) {
+        if (v7d7f4->f2 != -1) {
+            v7d7f4->f2 = 0;
+            v7d7f4->frame++;
+            if (v7d7f4->frame == attrs[v7d7f4->id].nframes)
+                v7d7f4->frame = 0;
+        }
+    }
+    for (v7d800 = players, i = 1; i <= 8; v7d800++, i++) {
+        on = 1;
+        if (i == 1)
+            on = 0;
+        if (twoplayer || splitscreen && i == 2)
+            on = 0;
+        if (on) {
+            if (v7d800->f02 == 2) {
+                if (v7d800->f56 <= 3 && twoplayer == 0 && splitscreen == 0)
+                    v7d800->f56++;
+            } else if (v7d800->f58 == 1) {
+                v7d800->f5a++;
+                if (v7d800->f5a > 7)
+                    v7d800->f5a = 0;
+            }
+        }
+        if (v7d800->f02 != 2)
+            v7d800->f02 = 0;
+        v7d800->f54++;
+        if (v7d800->f54 > 3) {
+            v7d800->f54 = 0;
+            if (v7d800->f62)
+                v7d800->f62++;
+        }
+    }
+    carv[0].f8c = 0;
+    carv[1].f8c = 0;
 }
 
