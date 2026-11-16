@@ -335,6 +335,7 @@
 0x028cac cpu_drive    # LIKELY (rebuild src/ww.c): computer karts follow trklines[] by v88c24 steps per frame, state machine f04, collision with the human karts
 0x0290a0 kart_frame   # CONFIRMED (rebuild src/ww.c): the human kart per frame: keys, speed f42/f26, kart_state, kart_move, boost zone, animation switch on f18; v88c42 1 pushes it back
 0x029e0c hud_draw     # CONFIRMED (rebuild src/ww.c): lives digit or both scores, SCORE panels; GAME OVER when curkart->f6c (lives) is 0
+0x02a4ac minimap      # CONFIRMED (rebuild src/ww.c): img7eb3c plus a dot per player through the MAP.XY tables (arr802cc, arr7faca)
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
 0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit

@@ -13251,3 +13251,58 @@ void msgbox(char *s, int y)
     print_at((short)(spr_x + 4), (short)(spr_y + 4), s, 0);
 }
 
+/* ---- 0x2a4ac, 364 bytes: the minimap (caller 0x2a935 in 0x2a92c), while v88ca0: the map image
+ * img7eb3c at (0, 0x3c), 0x32 x 0x4e, then a dot per player (f37bf0) at the track position mapped
+ * through the 0x800-entry tables MAP.XY (arr802cc for x, arr7faca for y, +0x3c), x/y - 0x400
+ * clamped to 0..0x7ff. Colour 0xff for the own player (1 for netgame 2), 0x54 for the other one
+ * in a net game with more than two players, else 0x5a.
+ * differs (near-miss): the game keeps spr_y in ESI through the function (load at entry, store at
+ * exit and around the calls), GOTCHAS "promotes a global"; with ESI taken, y and the clamp
+ * constant 0 (EDI) move too (85 vs 82 insns, 12 blocks). Tried: pointer vs indexed players, the
+ * x/y order, y through a temp, 0 > x. */
+void f37bf0(void);
+
+void minimap(void)
+{
+    int me, i;
+    short x, y;
+
+    if (v88ca0 == 0)
+        return;
+    spr_x = 0;
+    spr_y = 0x3c;
+    spr_h = 0x4e;
+    spr_w = 0x32;
+    sprptr = img7eb3c;
+    f373ee();
+    me = 0;
+    if (netgame && netgame != 1)
+        me = 1;
+    for (i = 0; i <= nplayers; i++) {
+        if (i == me)
+            v88ce9 = 0xff;
+        else
+            v88ce9 = 0x5a;
+        if (netgame && nplayers > 1) {
+            if (me == 0 && i == 1)
+                v88ce9 = 0x54;
+            if (me == 1 && i == 0)
+                v88ce9 = 0x54;
+        }
+        x = players[i].x - 0x400;
+        y = players[i].y - 0x400;
+        spr_x = x;
+        if (x < 0)
+            spr_x = 0;
+        else if (x > 0x7ff)
+            spr_x = 0x7ff;
+        if (y < 0)
+            y = 0;
+        else if (y > 0x7ff)
+            y = 0x7ff;
+        spr_x = (unsigned char)arr802cc[spr_x];
+        spr_y = (unsigned char)arr7faca[y] + 0x3c;
+        f37bf0();
+    }
+}
+
