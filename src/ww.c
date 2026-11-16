@@ -18522,3 +18522,39 @@ void scores_write(int n)
     fclose(f);
 }
 
+/* ---- 0x35534, 483 bytes (caller 0x35ca4 at 0x36845, start-up): reads WACKY.DTT (0x60 bytes: four
+ * records {name padded with blanks to 16, value}) into dtt6e768. When the file is missing it first
+ * writes the defaults SHAUN 16, ANDY 12, NUGGET 8, RUEBEN 6. This is the Duck Shoot hall of fame
+ * (duckfame, shown and updated by duck_screen). */
+
+void duckfame_load(void)
+{
+    char name[0x80];
+    char names[4][10] = { "SHAUN", "ANDY", "NUGGET", "RUEBEN" };
+    int vals[4];
+    FILE *f;
+    int i;
+
+    vals[0] = 0x10;
+    vals[1] = 0xc;
+    vals[2] = 8;
+    vals[3] = 6;
+    strcpy(name, savedir);
+    strcat(name, "WACKY.DTT");
+    f = fopen(name, "rb");
+    if (!f) {
+        for (i = 0; i < 4; i++) {
+            strcpy(duckfame[i].name, names[i]);
+            while (strlen(duckfame[i].name) < 0x10)
+                strcat(duckfame[i].name, " ");
+            duckfame[i].score = vals[i];
+        }
+        f = fopen(name, "wb");
+        fwrite(duckfame, 0x60, 1, f);
+        fclose(f);
+        f = fopen(name, "rb");
+    }
+    fread(duckfame, 0x60, 1, f);
+    fclose(f);
+}
+

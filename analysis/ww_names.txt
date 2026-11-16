@@ -194,6 +194,7 @@
 0x0352dc vga_check    # CONFIRMED (rebuild src/ww.c): int 10h mode 3, then AX 0x1a00; returns AL == 0x1a (VGA present)
 0x035324 trial_write  # CONFIRMED (rebuild src/ww.c): trial70730 (0xe10 bytes) to <0x7c158>WACKY<n>.TIM
 0x03542c scores_write # CONFIRMED (rebuild src/ww.c): tbl77758 + 0x450 (0x19e0 bytes) to <0x7c158>WACKY<n>.HI
+0x035534 duckfame_load # CONFIRMED (rebuild src/ww.c): reads WACKY.DTT into the Duck Shoot hall of fame duckfame 0x6e768; writes defaults SHAUN 16, ANDY 12, NUGGET 8, RUEBEN 6 if missing
 0x07c158 savedir      # LIKELY: directory prefix of the .TIM / .HI save files
 0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
