@@ -8505,3 +8505,59 @@ void crack_draw(void)
         line_draw();
     }
 }
+
+/* ---- 0x22230, 260 bytes: kart_line for a shot - shot_hit at every point of the line (lx0, ly0) ->
+ * (lx1, ly1) until v88bae is set (caller 0x25fd6 in 0x25e6c). */
+void shot_line(void)
+{
+    short dx, t, sy, sx, err, dy;     /* this order gives the game's BX/CX/SI/DI */
+
+    dx = lx1 - lx0;
+    dy = ly1 - ly0;
+    if (dx < 0) {
+        sx = -1;
+        dx = -dx;
+    } else
+        sx = 1;
+    if (dy < 0) {
+        sy = -1;
+        dy = -dy;
+    } else
+        sy = 1;
+    if (dy < dx) {
+        t = dx >> 1;                  /* through the swap temp: movsx eax/sar/mov edx,eax */
+        err = t;
+        while (lx0 != lx1) {
+            shot_hit();
+            if (v88bae != 0)
+                return;
+            err += dy;
+            if (err > dx) {
+                ly0 += sy;
+                err -= dx;
+            }
+            lx0 += sx;
+        }
+    } else {
+        t = dy >> 1;
+        err = t;
+        t = dx;
+        dx = dy;
+        dy = t;
+        t = sx;
+        sx = sy;
+        sy = t;
+        while (ly0 != ly1) {
+            shot_hit();
+            if (v88bae != 0)
+                return;
+            err += dy;
+            if (err > dx) {
+                lx0 += sy;
+                err -= dx;
+            }
+            ly0 += sx;
+        }
+    }
+    shot_hit();
+}
