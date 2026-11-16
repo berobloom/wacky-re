@@ -55,6 +55,20 @@ count. SPECULATIVE: a net/handicap rule for who gets the chosen car graphic.
 Rebuild: `src/ww.c` `fn_1bf00`, near miss (97 of 125 bytes; the game keeps the store/continue
 block inside both arms of the test, our build merges them — see the `differs:` mark).
 
+## Hit tests: `kart_hit` 0x216a0 and `shot_hit` 0x218a4; `karts[]` 0x68410
+
+- **`karts[]` at 0x68410 (0x104-byte records) is `cars[]` (0x68420) seen 0x10 bytes earlier**:
+  STRONGLY SUPPORTED. `shot_hit` sets `curkart = 0x68410 + i*0x104` (0x21cde) and stops the
+  engine sound at karts +0xd4 = 0x684e4, which is `cars[i].sndhandle` (+0xc4). `curkart` (0x7d5b0)
+  points at one of these records. Both rebuilds use `struct kart` (pack(1), src/ww.c).
+- Both functions call the asm map probe `f37b04` 0x37b04 with the point in `v7d7a4`/`v7d7a8`; it
+  returns a class in `v7e568` (CONFIRMED by the code: 10 = pickup for a kart, 3 = v88bae 1).
+- The touch test is `|dx| + |dy|` (abs, `cdq/xor/sub`) as a short against 14 for entities and kart
+  to player, 18 for a shot to a player (CONFIRMED, byte-identical / near-miss rebuilds).
+- The result goes to `v88bae`: 1 map, 2 entity, 3 player, 4 pickup (CONFIRMED). The player loops
+  run `i <= nplayers` (0x2189e, 0x21dd3: `jle`), one more than the count (LIKELY a game bug or a
+  count stored as n-1).
+
 ## Traps
 
 - `fn_1bf00` starts at index **1**, not 0: `players[0]` is left alone (0x1bf1e `mov $1,%edx`).

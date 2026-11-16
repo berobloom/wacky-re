@@ -8,7 +8,7 @@ check, do not re-derive; **OPEN** = work remains (say what).
 | Executables: format, size, sha256, entry, compiler, source file names, calling convention | `executables.md` | OPEN (compiler pinned to 9.5b; options open) |
 | File formats and archives on the disc | `formats.md` | OPEN |
 | Memory map: segments / LE objects, globals, tables | `memory.md` | OPEN |
-| Startup chain, main loop, frame timing; the race-start helpers `fn_1be3c` (start grid `v70720[]`) and `fn_1bf00` (per-player rows) | `game-loop.md` | OPEN (the two helpers mapped and rebuilt as near misses; the loop itself not) |
+| Startup chain, main loop, frame timing; the race-start helpers `fn_1be3c` (start grid `v70720[]`) and `fn_1bf00` (per-player rows); the hit tests `kart_hit`/`shot_hit` and `karts[]` 0x68410 = `cars[]` - 0x10 | `game-loop.md` | OPEN (the two helpers mapped and rebuilt as near misses; the loop itself not) |
 | Input: keyboard handler, key table, mouse | `input.md` | OPEN |
 | Video: mode, palette, blitter, back buffer, present; `setpalette` 0x36f14 = a 0x3e80-byte screen page copy, `pal_a`-`pal_d` are page offsets | `video.md` | OPEN (the page-flip pair 0x1c068/0x1c0ac CONFIRMED byte-identical; mode/buffer open) |
 | Menus: the bonus race / bonus zone order screens, palette flash, the F1 controls screen (`fn_1c0f4` 0x1c0f4, twelve 80-byte frame slots, names from 84-byte records at 0x77432) | `menus.md` | OPEN |
