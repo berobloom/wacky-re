@@ -17,8 +17,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
   three times = a **second local re-armed at the loop body's end** (fn_1c994); a `for` tail with two
   increments is rescheduled, so put the pointer step in the body (anim_tick). Not reachable so far: a
   loop-carried local's home register (net_recv, 21 spellings), a dead incoming-register copy
-  (fn_182d0), one moved load (track_setup, music_jingle), the v88bb2/v7edb0 store pair
-  (classes_menu), the int shift into `err`'s register (line_draw).
+  (fn_182d0), one moved load (track_setup, music_jingle), the v88bb2/v7edb0 store pair (classes_menu),
+  the int shift into `err`'s register (line_draw).
 - Classes/modes (findings/classes.md): `v88bb2` = 1 AMATEUR ... 5 KID MODE (a **signed** short),
   `classes_menu` 0x19eac is that screen; `laps_menu` 0x1a148 (identical) sets `nlaps` 6/8/10.
 - Car select (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b, one 6861-byte C function, `ents[0..7]`
