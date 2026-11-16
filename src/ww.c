@@ -8014,3 +8014,70 @@ void swap16(short *a, short *b)
     *a = *b;
     *b = t;
 }
+
+/* differs: near miss, 346 of 330 bytes. Same statements; the register choice differs: the game keeps
+ * dx in ESI and err in EAX and leaves n on the stack (esp+0x10), ours keeps n in EAX and spills dx.
+ * Levers that mattered: dx computed before dy (89 -> 39 scored), `sy, sx` declared in that order, the
+ * `n = 0` initializer (38). No effect: 72 declaration orders, `short t`, `register dx`, the n++ place.
+ * QUESTIONS 2. */
+/* ---- 0x21554, 330 bytes: Bresenham line from (lx0, ly0) to (lx1, ly1) (caller 0x28011 in 0x279e8).
+ * Appends the (x, y) short pairs, both ends included, at linep and returns their count; lx0/ly0 end
+ * at the far point. A steep line swaps dx/dy and sx/sy and runs the second loop. */
+extern short lx0, ly0, lx1, ly1;
+extern short *linep;
+
+int line_points(void)
+{
+    short dy, dx, err;
+    int sy, sx, t, n = 0;
+
+    dx = lx1 - lx0;
+    dy = ly1 - ly0;
+    if (dx < 0) {
+        sx = -1;
+        dx = -dx;
+    } else
+        sx = 1;
+    if (dy < 0) {
+        dy = -dy;
+        sy = -1;
+    } else
+        sy = 1;
+    if (dx > dy) {
+        err = dx >> 1;
+        while (lx0 != lx1) {
+            *linep++ = lx0;
+            *linep++ = ly0;
+            n++;
+            err += dy;
+            if (err > dx) {
+                ly0 += sy;
+                err -= dx;
+            }
+            lx0 += sx;
+        }
+    } else {
+        err = dy >> 1;
+        t = dx;
+        dx = dy;
+        dy = t;
+        t = sx;
+        sx = sy;
+        sy = t;
+        while (ly0 != ly1) {
+            *linep++ = lx0;
+            *linep++ = ly0;
+            n++;
+            err += dy;
+            if (err > dx) {
+                lx0 += sy;
+                err -= dx;
+            }
+            ly0 += sx;
+        }
+    }
+    *linep++ = lx0;
+    *linep++ = ly0;
+    n++;
+    return n;
+}

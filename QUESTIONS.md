@@ -88,6 +88,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    Data point (ent_sprites_load 0x21310): the game recomputes `imul ebp,edi,0x28` for `sprattr[i]` inside
    the inner loop; ours strength-reduces it to an EBP pointer stepped in the outer loop. Eleven C forms
    tried, none keeps the imul. Same kind as fn_16f90 (b): is the game built without loop SR here?
+   Data point (line_points 0x21554): the game keeps a short dx in ESI and the int count n on the stack;
+   ours swaps them (n in EAX, dx spilled). Declaration orders, `register`, initializers do not move it.
 3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
    `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
    and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;
