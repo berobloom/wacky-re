@@ -18624,3 +18624,53 @@ void records_load(int n)
     fclose(f);
 }
 
+/* ---- 0x35b78, 54 bytes (caller end_screen): puts the text cursor at column x, row y (1-based;
+ * int 10h AH 2, page 0); without `show` parks it below the screen (row 0x19, column 0). */
+void cursor_at(int x, int y, int show)
+{
+    union REGS in, out;
+
+    y--;
+    x--;
+    if (!show) {
+        y = 0x19;
+        x = 0;
+    }
+    in.h.ah = 2;
+    in.h.dl = x;
+    in.h.dh = y;
+    in.h.bh = 0;
+    int386(0x10, &in, &out);
+}
+
+/* ---- 0x35bb0, 241 bytes (caller 0x35ca4 at 0x36a2f, on exit): shows the DOS end screen `name`
+ * from the DAT (0xfa0 bytes = 80 x 25 text cells, read into p6a978 and put on screen by f36a4e),
+ * cursor to the last row, waits for a key. When the entry is missing: beep, "Cannot find DOS end
+ * screen %s", key. */
+void f36a4e(void);
+void cursor_at_x(int x, int y, int show);
+#pragma aux cursor_at_x "cursor_at_"
+
+void end_screen(char *name)
+{
+    int found;
+
+    found = datfind(name);
+    if (!found) {
+        while (kbhit())
+            getch();
+        putchar(7);
+        printf("Cannot find DOS end screen %s\n", name);
+        fflush(stdout);
+        getch();
+        return;
+    }
+    p7d714 = p6a978;
+    fread(p6a978, 0xfa0, 1, datfile);
+    while (kbhit())
+        getch();
+    f36a4e();
+    cursor_at_x(0x4f, 0x18, 1);
+    getch();
+}
+
