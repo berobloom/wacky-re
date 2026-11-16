@@ -5054,3 +5054,51 @@ joined:
         p7d718[i] = pal[i];
     v88b9e = 1;
 }
+
+/* ---- the car-select screen's control label (called from 0x1a437) */
+
+void ctl_label(char *label, char *line)
+{
+    int num = v88b7e;
+    int dev;
+
+    if (netgame) {
+        num = 0;
+        if (netgame == 1) {
+            if (v88b7e == 1) {
+                strcpy(label, "");
+                strcpy(line, "REMOTE IS CHOOSING A CAR");
+                return;
+            }
+        } else if (v88b7e == 0) {
+            strcpy(label, "");
+            strcpy(line, "REMOTE IS CHOOSING A CAR");
+            return;
+        }
+    }
+    if (v88b7e == 0 || netgame != 0) {
+        dev = v7ee4a;
+        if (dev && ((short *) cfg77128)[0])
+            dev = 2;
+    } else {
+        /* differs: the game zero-extends the comparison into EAX (movzx eax,al, 0x19d0e); our 9.5b
+         * keeps this boolean in EBX and adds `mov ebx,eax`. Those +2 bytes are the whole gap (321 vs
+         * 319); every other instruction of 0x19c68-0x19da6 matches, only the jumps that cross the
+         * extra mov differ (their displacements are 2 smaller). */
+        dev = (((short *) cfg77128)[2] == 0);
+        if (dev && ((short *) cfg77128)[1])
+            dev = 2;
+    }
+    if (dev != 0) {
+        if (dev == 1)
+            strcpy(label, "JOYSTICK #");
+        else
+            strcpy(label, "GAME PAD #");
+    } else
+        strcpy(label, "KEYBOARD");
+    if (dev != 0) {
+        itoa(num + 1, line, 10);
+        strcat(label, line);
+    }
+    strcpy(line, "PRESS F1 TO VIEW YOUR CONTROLS");
+}

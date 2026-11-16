@@ -59,6 +59,12 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    (d) `telldat() + datsize() - 0x300` accumulates in EDX for us, in EAX for the game (0x194c8).
    Blocks that do match byte for byte (modulo the 6-byte shift): every input block, both nav blocks,
    the net_key/error blocks, the message copies and the palette copy loops.
+   (e) ctl_label 0x19d0e: the game zero-extends a `== 0` comparison defined in a jump-target block
+   straight into EAX (`sete al; movzx eax,al`); our build uses EBX and adds `mov ebx,eax` (+2 bytes,
+   and every jump after it then differs). Probed without change: `x == 0`, `!x`, `?:`, `short`/`char`
+   /`register` on the variable, an `int radix` local, an unused third parameter, `!(X && Y)`, the
+   condition re-written with `||`, and the 9.5 / 9.5a compilers (9.5 is worse: 328 vs 321 bytes;
+   9.5a identical to 9.5b). What would settle it: the same register-choice rule as question 1.
 
 ## Hypotheses
 

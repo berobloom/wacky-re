@@ -57,6 +57,29 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
 - CONFIRMED (code 0x19633-0x19672): at the top of each menu iteration the game
   waits 8 ticks (or a key88cd0 press, which sets v88cec); that is the menu's
   frame limiter.
+- CONFIRMED (code 0x19c68-0x19da6, `ctl_label`, called only from the "CHOOSE VEHICLE" screen at
+  0x1a437 with arg1 = its `[esp]` buffer and arg2 = `[esp+0xa0]`): the screen shows the current
+  player's control device in arg1 - `KEYBOARD`, `JOYSTICK #n` or `GAME PAD #n` (the number from
+  `itoa(v88b7e + 1, arg2, 10)` then an inline `strcat`) - and a hint line in arg2, always
+  "PRESS F1 TO VIEW YOUR CONTROLS" except in the net-game case, where arg1 is cleared with
+  `strcpy(arg1, "")` and arg2 becomes "REMOTE IS CHOOSING A CAR" (0x19c98-0x19c9d, 0x19cbd-0x19cc2).
+- CONFIRMED (code 0x19c98 and 0x1a3c4): `[0x600ac]` is not a variable. It is the pooled `""`
+  literal, which string pooling places on the NUL of "WACK"/"ack" (0x600a4/0x600a9); every
+  `mov al,[0x600ac]` + store is `strcpy(p, "")` inlined as one byte copy.
+- CONFIRMED (code 0x19d2d, 0x19d3b, 0x19d49, 0x19d90): `strcpy` with a literal copies `strlen+1`
+  bytes as `n/4` dwords, then `movsw` if `n & 2`, then `movsb` if `n & 1`, using `mov ecx,n/4;
+  rep movsd` when `n/4 >= 4` and plain `movsd`s below it (KEYBOARD 9: movsd,movsd,movsb; JOYSTICK #
+  and GAME PAD # 11: movsd,movsd,movsw,movsb; PRESS F1... 31: `ecx=7 rep movsd`,movsw,movsb). The
+  game keeps three separate copies; writing the three as one `if/else if/else` chain makes our build
+  tail-merge the two 11-byte ones - `if (dev) { if/else } else` keeps them separate (0x19d24-0x19d52).
+- STRONGLY SUPPORTED (0x1a400 uses "PLAYER TWO" when v88b7e == 1 else "PLAYER ONE", and 0x19d5c
+  prints `itoa(v88b7e + 1, ...)` after "JOYSTICK #"): v88b7e is the current player index, 0-based.
+- LIKELY (code 0x19c84-0x19cbb): in a net game the "remote" slot is player index 1 when
+  netgame == 1 and index 0 when netgame >= 2.
+- LIKELY (code 0x19cec-0x19d28, with sound_init writing 0,0,1 to the same three words): the device
+  is player 1's `v7ee4a` (0 keyboard, 1 joystick, 2 gamepad) unless cfg77128[0] != 0 forces 2; for
+  player 2 in a local game it is 1 when cfg77128[2] == 0 else 0, unless cfg77128[1] != 0 forces 2.
+  `ctl_label`'s 2-byte register near miss is QUESTIONS.md 2.
 - STRONGLY SUPPORTED (code 0x19882, 0x19895): v7ecc4 counts menu iterations;
   after the first it is clamped to 2 and switches v7ed20/v7ed1c from 0x550/0x2a8
   to 0x88/0x220 (the net-game tick rates) - the same pair the races menu sets
@@ -72,3 +95,7 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   that always sets v88b9e lets the player "enter" a zone they cannot order.
 - The two menus look identical in a decompiler listing but use different key
   globals (key88cd3/cd6 vs key88cd5/cdd); Ghidra names neither.
+- `ctl_label` writes the device name into arg1 and the hint into arg2, and in the net-game branch
+  it *clears* arg1 (0x19c98). A port that reuses one buffer, or leaves the old label in place,
+  shows "KEYBOARD" over a remote player's slot. The caller keeps two buffers, `[esp]` and
+  `[esp+0xa0]` (0x1a3b5-0x1a3d1).

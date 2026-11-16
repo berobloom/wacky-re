@@ -571,3 +571,11 @@
 0x037cf1 f37cf1       # SPECULATIVE: called after each fn_182d0 palette flash (refreshes the palette)
 0x0377ae f377ae       # SPECULATIVE: called after ctl_setup(0) in the menu loops
 0x02da28 f2da28       # SPECULATIVE: netgame==1 menu branch, before net_key
+0x019c68 ctl_label     # LIKELY: control label for the car-select screen (0x1a380): "KEYBOARD"/"JOYSTICK #n"/"GAME PAD #n" in arg1, hint line in arg2; net-game remote branch
+0x019c68 ctl_label     # see the line above: matched byte for byte except 0x19d0e (QUESTIONS.md 2)
+0x088b7e v88b7e        # STRONGLY SUPPORTED (supersedes the 0x088b7e line above): short, current player index 0-based; 0x1a400 "PLAYER TWO" when 1, ctl_label itoa(v88b7e+1)
+0x0600ac (string pool) # CONFIRMED: not a variable - the pooled "" literal, i.e. the NUL of "WACK"/"ack" (0x600a4/0x600a9); strcpy(p,"") = mov al,[0x600ac]; mov [p],al
+0x07712a cfg7712a      # SPECULATIVE: short inside cfg77128 (+2); ctl_label: nonzero -> player 2 shows "GAME PAD #"
+0x07712c cfg7712c      # SPECULATIVE: short inside cfg77128 (+4); ctl_label: 0 -> player 2 "JOYSTICK #n", nonzero -> "KEYBOARD"
+0x07ee4a v7ee4a        # LIKELY (supersedes the 0x07ee4a line above): short, player 1's control device 0 keyboard / 1 joystick / 2 gamepad (ctl_label 0x19cec-0x19d28)
+0x01a380 cars_menu     # LIKELY: the "CHOOSE VEHICLE" screen (pal_a, PLAYER ONE/TWO labels, ctl_label, 0x140-wide sprite row loop)

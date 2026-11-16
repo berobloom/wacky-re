@@ -94,3 +94,20 @@ it can be copied back into DREA.
 - **optpin probes can mislead on flags**: `-oi/-ol/-or` were pinned from single-function probe files,
   but in the full build each of them breaks com_open's bytes while sendstr/find12/crchware match
   without them. Re-check every pinned letter against the whole-program match count. [generic]
+- **Watcom 9.5b homes a boolean defined in a jump-target block in EBX and copies it to the merge
+  register**: `cmpw $0,[cfg]; sete al; movzbl al,ebx; mov ebx,eax; test ebx,ebx` where the game has
+  `sete al; movzbl al,eax; test eax,eax` (ctl_label 0x19d0e). The 2 extra bytes shift every later
+  jump's displacement, so ~74 lines of the side-by-side listing differ from one instruction.
+  Probed and unchanged: `x == 0`, `!x`, `?:`, `short`/`char`/`register` on the variable, a
+  `radix` local, an unused third parameter, `!(X && Y)` vs `||` forms of the outer condition, and
+  Watcom 9.5/9.5a. When a near miss starts at a `setcc`/`movzx`/`lea` pair, count the size gap
+  first (`Code size:` from WCC.OUT) - one wrong register can account for the whole diff. [generic]
+- **The prologue's `push ebx` is a register-allocation signal, not an ABI requirement**: 9.5b
+  pushes EBX when a local *value* lives in it, but not when EBX is only loaded as a call argument
+  (itoa's radix at 0x19d57); adding an unused third parameter to ctl_label made push/pop ebx
+  vanish and the code 2 bytes shorter. So a game prologue that pushes a register ours does not
+  means a variable lived there - look for a value the game keeps in that register. [generic]
+- **`strcpy(p, "")` is a one-byte copy from the string pool** (`mov al,[0x600ac]; mov [p],al`), and
+  pooling puts that `""` on another literal's NUL - 0x600ac is the terminator of "WACK"/"ack" at
+  0x600a4. Before naming a "global char" that many functions read, check whether its address falls
+  inside a literal. [generic]
