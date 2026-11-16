@@ -7372,3 +7372,226 @@ void fn_1e6dc(void)
     if (play)                         /* 0x1e735 */
         v7eaf8 = FX_PlayVOC(p7abc0, 0, fxvol, fxvol, fxvol, 1, 0);   /* fxvol 0x77428, not sfxvol */
 }
+
+/* differs: near miss, 1921 of the game's 1922 bytes, 402 vs 403 instructions, two causes:
+ * 1. the frame wait (0x1ecba): the game loads both operands, `mov eax,[v7e724]; mov edx,[ticks];
+ *    sub edx,eax`, ours `mov ebx,[ticks]; sub ebx,[v7e724]`. cars_menu's identical-looking
+ *    `ticks - v7ea70` loop (0x1a9f7) matches, but there no call sits in the loop. Tried: volatile
+ *    v7e724 (6 blocks), `for (;;)` + break, `0xe > ...`, `ticks < v7e724 + 0xe` and a leading
+ *    `while` (all worse or equal).
+ * 2. `mov dx,[pal_a]` at 0x1e816: the f375cd EDX parameter trap.
+ * The levers that did matter: `k = kind[i]` read first and compared as a register, `spr_h = vol * 4`
+ * before the other three sprite stores, `ys[i]` before `spr_x = 10`, `vol < 0` (not < 1) and
+ * `spr_x + (spr_h - 2)`. */
+/* ---- 0x1e760, 1922 bytes: the SOUND VOLUMES screen (caller 0x21198 in fn_1f858). Rows are indexed
+ * from 1 like mrows: MUSIC when musicready, SOUND FX and ENGINE FX when sfxsoft, kind[] 1/2/3.
+ * Each row's volume is a bar of (vol / 5) clamped to 1..0x33, times 4 pixels (f371e4); a blinking
+ * cursor (gn7eae4) marks the selected row while fn_1e6dc keeps the test sample looping. Left and
+ * right change the volume by 5 within 5..255 and apply it at once; up and down move the row; ESC
+ * (key88cd0) saves the config. */
+extern int v7e724;                    /* 0x7e724: ticks at the start of a frame (0x1eadf) */
+
+void volume_menu(void)
+{
+    char rows[4][0x28];               /* esp+0x00, rows[1..3] */
+    char buf[0x50];                   /* esp+0xa0: the centred help lines */
+    int ys[4];                        /* esp+0xf0: each row's y */
+    int kind[4];                      /* esp+0x100: 1 music, 2 sound fx, 3 engine */
+    int blink;                        /* esp+0x110 */
+    int textx;                        /* esp+0x114: x after the label text */
+    int barx;                         /* esp+0x118 */
+    int vol;                          /* esp+0x128 */
+    int n, sel, i, changed, k;        /* EBP, ESI, ECX, EDX, EAX */
+
+    if (!musicready && !sfxsoft) {    /* 0x1e76c */
+        fn_1c068();
+        msgbox("BOTH SOUND DEVICES SET TO NONE!", 0);
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        fn_1c0ac();
+        return;
+    }
+    netvoices = 0;                    /* 0x1e7c5 */
+    v7ec90 = 0;
+    twoplayer = 0;
+    splitscreen = 0;
+    blink = 0;
+    v88bda = 0;
+    v88b9e = 0;
+    v88b4a = 0;
+    p7d714 = p6a978;
+    pal_a = f375cd(p6a978, pal_a);    /* 0x1e824 */
+    n = 0;
+    if (musicready) {
+        n = 1;
+        strcpy(rows[n], "MUSIC     -");
+        kind[n] = 1;
+    }
+    if (sfxsoft) {                    /* 0x1e851 */
+        n++;
+        strcpy(rows[n], "SOUND FX  -");
+        kind[n] = 2;
+        n++;
+        strcpy(rows[n], "ENGINE FX -");
+        kind[n] = 3;
+    }
+    strcpy(buf, "UP AND DOWN TO SELECT");
+    spr_y = 0xb0;
+    spr_x = (0x140 - (int)strlen(buf) * 8) / 2;
+    print_at(spr_x, spr_y, buf, 0);   /* 0x1e903 */
+    strcpy(buf, "LEFT AND RIGHT TO ADJUST. ESC TO QUIT");
+    spr_y += 10;
+    spr_x = (0x140 - (int)strlen(buf) * 8) / 2;
+    print_at(spr_x, spr_y, buf, 0);
+    strcpy(buf, "SOUND VOLUMES");
+    spr_y = 0x46;
+    spr_x = (0x140 - (int)strlen(buf) * 8) / 2;
+    print_at(spr_x, spr_y, buf, 0);   /* 0x1e9b6 */
+    spr_y += 0x14;
+    for (i = 1; i <= n; i++) {        /* 0x1e9c3-0x1ea63 */
+        ys[i] = spr_y;
+        spr_x = 10;
+        textx = spr_x + strlen(rows[i]) * 8;
+        print_at(spr_x, spr_y, rows[i], 0);
+        spr_y += 0x14;
+    }
+    pal_c = 0xbb80;                   /* 0x1ea65 */
+    pal_b = pal_a;
+    setpalette();
+    sel = 1;
+    ticks2 = 0;
+    v7eaf8 = -1;
+    v7eb08 = 0;
+    pal_b = pal_c;
+    if (sfxsoft) {                    /* 0x1eaae */
+        fn_1e6dc();
+        cars[0].sndhandle = -1;
+        cars[1].sndhandle = -1;
+        engine_start();
+    }
+    for (;;) {
+        v7e724 = ticks;               /* 0x1eada */
+        pal_c = pal_a;
+        setpalette();
+        for (i = 1; i <= n; i++) {    /* 0x1eafa-0x1ebeb */
+            k = kind[i];
+            spr_x = textx;
+            spr_y = ys[i] + 2;
+            if (k == 1)
+                vol = musicvol;
+            else if (k == 2)
+                vol = fxvol;
+            else
+                vol = enginevol;
+            vol = vol / 5;
+            if (vol < 0)              /* test eax,eax / jge (0x1eb77): < 0, not < 1 */
+                vol = 1;
+            if (vol > 0x33)
+                vol = 0x33;
+            spr_h = vol * 4;
+            spr_w = 5;
+            v88ce9 = 0x2c;
+            v88ce8 = 0x26;
+            f371e4();                 /* 0x1ebc2: the bar */
+            if (i == sel)
+                barx = spr_x + (spr_h - 2);
+        }
+        spr_x = barx;                 /* 0x1ebf1 */
+        spr_y = ys[sel] - 8;
+        if (blink) {
+            blink = 0;
+            spr_x = barx - 2;
+            spr_y += 2;
+        } else
+            blink = 1;
+        spr_h = 0xc;
+        spr_w = 0xd;
+        sprptr = gn7eae4;
+        drawsprite();                 /* 0x1ec64 */
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            while (key88ccd)
+                ;
+        }
+        if (pal_a == 0)
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        do {
+            if (sfxsoft)
+                fn_1e6dc();
+        } while (ticks - v7e724 < 0xe);   /* 0x1ecac-0x1ecca */
+        ticks2++;
+        if (key88cd0 == 1)            /* 0x1ecd2 */
+            break;
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();                     /* 0x1ecf0 */
+        changed = 0;
+        switch (kind[sel]) {          /* 0x1ecfe */
+        case 1: vol = musicvol; break;
+        case 2: vol = fxvol; break;
+        case 3: vol = enginevol; break;
+        }
+        if (key88cd5 || v7b6d9) {     /* left */
+            vol -= 5;
+            blink = 0;
+            if (vol < 5)
+                vol = 5;
+            changed = 1;
+        }
+        if (key88cdd || v7b6db) {     /* right */
+            blink = 0;
+            vol += 5;
+            changed = 1;
+            if (vol > 0xff)
+                vol = 0xff;
+        }
+        if (changed) {                /* 0x1edac */
+            switch (kind[sel]) {
+            case 1:
+                musicvol = vol;
+                MUSIC_SetVolume(vol);
+                break;
+            case 2:
+                fxvol = vol;
+                FX_SetVolume(vol);
+                sfxvol = fxvol;
+                if (soundon) {
+                    FX_StopSound(cars[0].sndhandle);
+                    cars[0].sndhandle = -1;
+                }
+                engine_start();
+                break;
+            case 3:
+                enginevol = vol;
+                if (soundon) {
+                    FX_StopSound(cars[0].sndhandle);
+                    cars[0].sndhandle = -1;
+                }
+                engine_start();
+                break;
+            }
+        }
+        if (key88cd6 || key88cdb) {   /* up, 0x1ee50 */
+            blink = 0;
+            if (sel > 1)
+                sel--;
+        }
+        if (key88cd3 || key88cd2) {   /* down, 0x1ee73 */
+            blink = 0;
+            if (sel < n)
+                sel++;
+        }
+    }
+    while (key88cd0 == 1)             /* 0x1eea2 */
+        ;
+    if (sfxsoft)
+        FX_StopAllSounds();
+    save_config(1);                   /* 0x1eebe */
+    v88bda = 0;
+    v88b9e = 0;
+}

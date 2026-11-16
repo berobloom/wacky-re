@@ -665,6 +665,8 @@
 0x07eb08 v7eb08       # LIKELY: int, "pause before replaying p7abc0" flag (fn_1e6dc)
 0x07eaf8 v7eaf8       # LIKELY: int, FX voice handle of p7abc0, -1 = none (fn_1e6dc)
 0x07abc0 p7abc0       # LIKELY: char *, a VOC sample played by fn_1e6dc
+0x01e760 volume_menu  # CONFIRMED (rebuild src/ww.c): the SOUND VOLUMES screen - MUSIC / SOUND FX / ENGINE FX bars, left/right +-5 in 5..255, up/down select, ESC saves the config; caller 0x21198
+0x07e724 v7e724       # LIKELY: int, ticks at the start of a frame in volume_menu (0x1eadf, frame pacing 0xe ticks)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
