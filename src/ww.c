@@ -1939,7 +1939,7 @@ void overlay_draw(void);
 void hud_draw(void);
 void anim_tick(void);
 void f37de0(void);
-void f32cf8(char *p);
+void fade_in(unsigned char *target);
 
 void frame_draw(void)
 {
@@ -2017,7 +2017,7 @@ void frame_draw(void)
             ;
     }
     if (!v7d998)
-        f32cf8(p7d718);
+        fade_in((unsigned char *)p7d718);
     pal_a = 0;
     pal_b = 16000;
     pal_c = 0;
@@ -3331,7 +3331,7 @@ short menu(short n, short d, short mode, short c)
     while (key88ccd)
         ;
     if (d)
-        f32cf8(v7d85c);
+        fade_in((unsigned char *)v7d85c);
     if (pal_a)
         pal_a = 0;
     else
@@ -4303,7 +4303,7 @@ setdone:;
                     ;
         }
         if (v7d998 != 3 && v7ec80 == 0)
-            f32cf8(p7d718);
+            fade_in((unsigned char *)p7d718);
     }
     v88b9e = 0;
     if (v7d998)
@@ -4550,7 +4550,7 @@ retry:
     fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 1, (int)gp);
     for (i = 5; i <= 9; i++)
         fn_182d0(pal, i, 1, 0, (int)gp);
-    f32cf8(pal);
+    fade_in((unsigned char *)pal);
     wait_release(0);
     if (v88bb2 == 4 && v7ecf0 != -1) {
         v88b88 = (short)v7ecf0;
@@ -4972,7 +4972,7 @@ void fn_193a8(void)
     for (i = 5; i <= 0xa; i++)
         fn_182d0(pal, i, 1, 0, (int)pal7d848);
     fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
-    f32cf8(pal);
+    fade_in((unsigned char *)pal);
     flash = 0;
     wait_release(0);
     v88b9e = 0;
@@ -6607,7 +6607,7 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
         pal_a = 0x3e80;
     else
         pal_a = 0;
-    f32cf8(v7d85c);                                 /* 0x1cc1f */
+    fade_in((unsigned char *)v7d85c);                                 /* 0x1cc1f */
     wait_release(0);                                      /* 0x1cc2a */
     r.x.edx = oldkbd_off;                           /* 0x1cc38 */
     r.x.eax = 0x2509;                               /* 0x1cc42 */
@@ -7421,7 +7421,7 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
             while (key88ccd)
                 ;
         }
-        f32cf8(v7d85c);               /* 0x1e695 */
+        fade_in((unsigned char *)v7d85c);               /* 0x1e695 */
     }
     v7d998 = 0;                       /* 0x1e69f */
     v88bda = 1;
@@ -13974,7 +13974,7 @@ void duck_screen(int after)
         while (key88ccd)
             ;
     }
-    f32cf8(v7d854 = v7d85c);
+    fade_in((unsigned char *)v7d854 = v7d85c);
     wait_input(0);
     palptr = pal7d850;
     getpalette();
@@ -14051,7 +14051,7 @@ void overall_winner(void)
         while (key88ccd)
             ;
     }
-    f32cf8(v7d854 = v7d85c);
+    fade_in((unsigned char *)v7d854 = v7d85c);
     if (netgame) {
         v7ed20 = 0xaa0;
         v7ed1c = 0x2a8;
@@ -14191,7 +14191,7 @@ void race_results(void)
             ;
     }
     pal_a = 0x3e80;
-    f32cf8(v7d854 = v7d85c);
+    fade_in((unsigned char *)v7d854 = v7d85c);
     pal_b = 0x7d00;
     ticks = 0;
     ticks2 = 0;
@@ -14394,7 +14394,7 @@ void race_results(void)
         pal_a = save;
     }
     setpalette();
-    f32cf8(v7d858);
+    fade_in((unsigned char *)v7d858);
     music88bcc = 0;
     music_start(v7c64c, 0);
     pal_a = 0x3e80;
@@ -15609,7 +15609,7 @@ void trial_book(int a, int b, int show)
         if (first) {
             first = 0;
             v7d854 = v7d85c;
-            f32cf8(v7d85c);
+            fade_in((unsigned char *)v7d85c);
             if (newlap == 0) {
                 strcpy(title, "YOU HAVE THE BEST LAP TIME EVER!");
                 fn_1c068();
@@ -16301,7 +16301,7 @@ restart:
     frame_draw();
     if (v7d998 && first) {
         first = 0;
-        f32cf8(p7d718);
+        fade_in((unsigned char *)p7d718);
     }
     if (v88ca8) {
         go = 1;
@@ -17298,7 +17298,10 @@ void kbd_restore(void)
 }
 
 /* ---- 0x32c98, 41 bytes (no direct caller found): f375cd with p7d714 = p, v88b4a = n and pal_a = a
- * for the call, pal_a restored after; the same steps race_run does inline for the demo records. */
+ * for the call, pal_a restored after; the same steps race_run does inline for the demo records.
+ * check.sh says differs at +41: the code is byte-identical; the next 3 bytes are our alignment
+ * padding, where the game has the out-of-line tail (0x32cc1-0x32cf7) of the fade-out function in
+ * the unrebuilt 0x1bf7e gap (same 0x308 frame; its branches go to 0x1c03a / 0x32cc5). */
 void pic_show(char *p, short n, short a)
 {
     short save;
@@ -17309,5 +17312,49 @@ void pic_show(char *p, short n, short a)
     pal_a = a;
     f375cd();
     pal_a = save;
+}
+
+/* ---- 0x32cf8, 218 bytes (callers race_run 0x307a9, main_menu 0x1e9d4, 0x1ec2e, ...): fades the
+ * VGA palette in from black to `target`: a 0x300-byte working palette (signed bytes) starts at 0
+ * and every step moves each entry by v88c46 towards target, clamped, then f37cf1 uploads it
+ * (palptr = working copy, w88b10 = 0x100 entries from w88b1e = 0); stops after a step with no
+ * change. The k counter (0..2, the RGB component) is computed but unused.
+ * differs: the init loop's i/k registers swap (game i EDX, k EBX); ~15 variants tried (declaration
+ * order, k int, k++ placement, loop index). */
+extern char v88c46;
+
+void fade_in(unsigned char *target)
+{
+    signed char cur[0x300];
+    short lo, hi;
+    short k, i, same;
+
+    lo = 0;
+    hi = 0x2ff;
+    for (i = 0, k = 0; i <= 0x2ff; i++) {
+        cur[i] = 0;
+        if (++k > 2)
+            k = 0;
+    }
+    w88b10 = 0x100;
+    w88b1e = 0;
+    palptr = (char *)cur;
+    do {
+        same = -1;
+        for (i = lo; i <= hi; i++) {
+            if (cur[i] < target[i]) {
+                cur[i] += v88c46;
+                if (cur[i] > target[i])
+                    cur[i] = target[i];
+                same = 0;
+            } else if (cur[i] > target[i]) {
+                cur[i] -= v88c46;
+                if (cur[i] < target[i])
+                    cur[i] = target[i];
+                same = 0;
+            }
+        }
+        f37cf1();
+    } while (!same);
 }
 
