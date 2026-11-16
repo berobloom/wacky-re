@@ -290,3 +290,8 @@ it can be copied back into DREA.
   block after the success path's `ret`. `while (!x) { if (y) {cancel} }` emits the cancel inline (54
   diffs); `for (;;)`/`do ... while (!y)` with the same body leave one instruction off; `while (1)`
   with explicit `!= 0` tests is byte-identical.
+- **`tools/wc/variants.py` copies of one function share their identical tail** (iter 14, [generic]):
+  9.5b merges the same epilogue across functions in one module, so every copy after the first jumps
+  into the first one's tail (`jg` rel32 out of the function) and scores 50 bytes short with a wrong
+  diff count. Score up to the start of the common tail (demo_mode: 0x1e69f, not the `ret`), or make
+  the tails differ.

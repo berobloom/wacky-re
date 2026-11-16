@@ -7211,3 +7211,140 @@ void fn_1e2cc(void)
     v684e0 = 0;
     v685e4 = 0;
 }
+
+/* differs: near miss, 1015 of the game's 1013 bytes, 221 vs 220 instructions, three causes:
+ * 1. the loop top (0x1e4d2): the game loads v7ec60 and stores netvoices/v7ec90/net88c22/myplayer/
+ *    w88bce before `nlaps = 10; v88b84 = 0x59`; ours emits those two constant stores first. All 28
+ *    source positions of the pair, in both orders, give the same code (.work/p14/gdemo.py).
+ * 2. a `mov edx,ebx` before the second f375cd (0x1e648) that the game leaves out (EDX is 0 from
+ *    0x1e609); `f375cd(p6a978, 0)` and `pal_a = f375cd(p6a978, pal_a)` both keep it.
+ * 3. `mov dx,[pal_a]` at 0x1e472: the f375cd EDX parameter trap (GOTCHAS). */
+/* ---- 0x1e2e4, 1013 bytes: the demo races. mode 3 when the menus sit idle (v7ed0c >= 500, callers
+ * 0x1faaf/0x1fb04), mode 1 from a menu entry (0x20f48). The mode picks the picture set ("OR"/"INT",
+ * rec7c208[1..n] = "<set><i>.PCX" for n = 11/8/1) and the starting group/class (v7ec5c, v7ec58).
+ * Then, with v7ee58/v7ee5a saved and forced to 2/1, it runs one single-player race (0x2fd8c with
+ * countplays = 1) per pass, rotating the driver v7ec60 through 0-7, until a race sets v7ec68 or
+ * v7ec58 passes 5. */
+extern short w88c98, w88c9a, w88bce, w88c08;
+extern int v7ec5c, v7ec58, v7ec60, v7ec90, v7ec68;
+void f2fd8c(void);
+
+void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
+{
+    char set[0x14];                   /* esp+0x00 */
+    char num[0x14];                   /* esp+0x14 */
+    int i;                            /* esp+0x2c */
+    int s58, s5a;                     /* ESI, EDI: movsx loads (0x1e461) */
+    short k;
+
+    w88c98 = 0;
+    v7edb0 = 0;
+    switch (mode) {                   /* 0x1e304: the tree 2 / <2 / 3 */
+    case 1:
+        v7ec5c = 2;
+        strcpy(set, "OR");
+        v7ec58 = 2;
+        w88c9a = 0xb;
+        break;
+    case 2:
+        v7ec5c = 1;
+        v7ec58 = 1;
+        strcpy(set, "INT");
+        w88c9a = 8;
+        break;
+    case 3:
+        v7ec5c = 1;
+        strcpy(set, "OR");
+        v7ec58 = 2;
+        w88c9a = 1;
+        break;
+    }
+    v88c8e = 1;
+    for (i = 1; i <= w88c9a; i++) {   /* 0x1e397-0x1e44a, rec7c208[i] in EBP */
+        itoa(i, num, 10);
+        strcpy(rec7c208[i].f00, set);
+        strcat(rec7c208[i].f00, num);
+        strcat(rec7c208[i].f00, ".PCX");
+    }
+    v7d998 = (mode == 3) + 2;         /* 0x1e450-0x1e485 */
+    v88b4a = 0;
+    s58 = v7ee58;
+    s5a = v7ee5a;
+    v7ee58 = 2;
+    v7ee5a = 1;
+    p7d714 = p6a978;
+    pal_a = f375cd(p6a978, pal_a);    /* 0x1e49d */
+    v7ecb4 = 0;
+    v88c20 = v7ee58;
+    v7ea58 = v7ee5a;
+    for (;;) {
+        netvoices = 0;                /* 0x1e4d2 */
+        v7ec90 = 0;
+        net88c22 = 0;
+        myplayer = v7ec60;
+        w88bce = 0;
+        nlaps = 10;
+        v88b84 = 0x59;
+        twoplayer = 0;
+        splitscreen = 0;
+        v88c58 = 0;
+        v88b9e = 0;
+        v7ec68 = 0;
+        v88bb2 = 1;
+        v684e0 = 0;
+        v685e4 = 0;
+        players[0].f1e = 0;           /* 0x1e545-0x1e582: eight stores, no loop */
+        players[1].f1e = 0;
+        players[2].f1e = 0;
+        players[3].f1e = 0;
+        players[4].f1e = 0;
+        players[5].f1e = 0;
+        players[6].f1e = 0;
+        players[7].f1e = 0;
+        v88bb6 = v7ec5c;
+        v88b88 = v7ec58;
+        strcpy(cls_name, "");
+        for (k = 0; k <= 1; k++) {
+            tbl68426[k].f54 = 0;
+            tbl68426[k].f00 = 0;
+        }
+        fn_1be3c();                   /* 0x1e5b9 */
+        w88c08 = 0;
+        fn_17928();
+        countplays = 1;
+        f2fd8c();                     /* 0x1e5d0: the race */
+        countplays = 0;
+        voices_reset();
+        if (++v7ec60 > 7)             /* 0x1e5e0 */
+            v7ec60 = 0;
+        palptr = pal7d850;
+        getpalette();
+        f1bf94(pal7d850);
+        f27060((struct rec14 *)"CHECK.PCX", 0);   /* 0x1e615 */
+        if (v7ec68 != 0)              /* 0x1e61a */
+            break;
+        if (++v7ec58 > 5)             /* 0x1e626 */
+            break;
+        v88b4a = 0;
+        pal_a = 0;
+        p7d714 = p6a978;
+        f375cd(p6a978, 0);            /* 0x1e64d, result unused; EDX is still 0 from 0x1e609 */
+        pal_c = 0x3e80;
+        pal_a = 0;
+        pal_b = 0;
+        setpalette();
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            while (key88ccd)
+                ;
+        }
+        f32cf8(v7d85c);               /* 0x1e695 */
+    }
+    v7d998 = 0;                       /* 0x1e69f */
+    v88bda = 1;
+    v7ee58 = s58;
+    v7ee5a = s5a;
+    v88c20 = v7ee58;                  /* re-read as the setup does: movsx eax,di (0x1e6c0) */
+    v7ea58 = v7ee5a;
+}

@@ -651,6 +651,17 @@
 0x07ebdc phone        # LIKELY: the number to dial (dial 0x1dec7, spaces skipped 0x1df20)
 0x01e0f4 answer_call  # CONFIRMED (rebuild src/ww.c, byte-identical): "WAITING FOR CALL....", com_waitfor("RING") until it succeeds or sendfail, then "ANSWERING CALL...", "ATA", return wait_connect(); caller 0x20a11
 0x01e2cc fn_1e2cc       # CONFIRMED (rebuild src/ww.c): v684e0 = v685e4 = 0; no caller in the image (dead)
+0x01e2e4 demo_mode    # CONFIRMED (rebuild src/ww.c): demo races; arg mode 3 from the idle timeout (v7ed0c >= 500, 0x1faaf/0x1fb04), 1 from a menu (0x20f48); LIKELY "demo": loops 0x2fd8c with countplays = 1, rotating v7ec60
+0x088c98 w88c98       # SPECULATIVE: short, cleared by demo_mode 0x1e2f1
+0x088c9a w88c9a       # LIKELY: short, number of demo pictures rec7c208[1..n] (11/8/1), demo_mode 0x1e43f
+0x07ec5c v7ec5c       # LIKELY: demo group (copied to v88bb6, 0x1e576)
+0x07ec58 v7ec58       # LIKELY: demo track/class counter (copied to v88b88, 0x1e589; demo stops past 5)
+0x07ec60 v7ec60       # LIKELY: demo driver, copied to myplayer each race, cycles 0-7 (0x1e5e0)
+0x07ec90 v7ec90       # SPECULATIVE: int, cleared per demo race
+0x088bce w88bce       # SPECULATIVE: short, cleared per demo race
+0x07ec68 v7ec68       # LIKELY: set by a race to end the demo (0x1e61a)
+0x088c08 w88c08       # SPECULATIVE: short, cleared before fn_17928 in demo_mode
+0x02fd8c f2fd8c       # LIKELY: runs a race (demo_mode 0x1e5d0 with countplays = 1)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
