@@ -57,5 +57,4 @@ BLOCKED (with the reason) rather than deleting them.
    INFO" message should be unreachable off-net.
 7. Copy this session's generic Watcom trap (GOTCHAS: switch jump tables sit in the gap *before* the
    function, so a gap is not padding - `jmp dword ptr cs:[reg*4+disp]` is the tell), plus the earlier
-   twelve, into `../DREA/reference/DOS.md` - BLOCKED: the overnight policy blocks writes outside this
-   repository.
+   twelve, into `../DREA/reference/DOS.md` - BLOCKED: the overnight policy blocks writes outside this repo.
