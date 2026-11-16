@@ -1476,7 +1476,7 @@ void view2_out(void)
 /* ---- place display */
 
 extern int v7d998;
-extern unsigned short v88bb2;
+extern short v88bb2;   /* signed: the game's loads are movsx (0x1ce7d, 0x1d120) */
 struct face {                 /* 0x98-byte DAT record (0x73C08) */
     char *img[35];
     short f8c, f8e;           /* img tail words if unused */
@@ -6575,4 +6575,126 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
         }
     }
     kbd_on();                                       /* 0x1ce04 */
+}
+
+/* ---- 0x1ce14: the record book. Loads the LEAD.PCX leader board behind the name entry, asks for a
+ * name, and if the run's score (v7ed5c) beats an entry of this mode's group it shifts the records
+ * down and writes the new one; then fn_1d704 draws the table. Called once, at 0x2d227 in the
+ * end-of-race screen 0x2bff0.
+ *
+ * The record fields, from the insert at 0x1d03b-0x1d0b6: +0 = the row index v88bb6 + v7ecb4,
+ * +2 = myplayer, +4 = the score, +6 = the fn_1c994 stamp string and +0x1a = the enter_name name -
+ * the opposite way round from the guess in findings/scores.md, which read the two 20-byte strings
+ * by their order in the record. Higher scores are better: the table is scanned best-first and the
+ * insert slot is the first j with v7ed5c >= sc[j] (0x1cf77); when the run beats none of the four
+ * entries 0x1cf51-0x1cf57 lowers sc[3] to score-1, which puts the run in the last slot. */
+extern int v7ed5c;                    /* 0x7ed5c: the score of the run just finished */
+void fn_3542c(int n);                 /* 0x3542c: builds a "WACKY" file name (strcat of 0x7c158,
+                                     * itoa(n) and "WACKY"); called with v7ee5a at 0x1d0d0 */
+void fn_1d704(int which, int row);    /* 0x1d704: arg1 = eax, arg2 = edx; the score table screen */
+
+struct score {                        /* 0x2e = 46 bytes, 24 per row of 0x450 */
+    short row;                        /* +0 */
+    short player;                     /* +2 */
+    short score;                      /* +4 */
+    char stamp[20];                   /* +6 */
+    char name[20];                    /* +0x1a */
+};
+
+/* differs: near miss, 793 of the game's 807 bytes and 97 aligned instruction diffs
+ * (tools/wc/fndiff.py). Five causes, all slot/register noise, no semantic difference:
+ * 1. the game's j is in esp+0x50 and which in esp+0x54, ours the other way round (6 sites). The
+ *    frame size (0x58), the array slots and each variable's own access shape (`mov dword [slot],0`
+ *    / `movsx` / `inc dword` / `cmp word`) are the game's; moving the declarations does not flip
+ *    the two scalar slots (GOTCHAS "does not allocate scalar stack slots in declaration order").
+ *    `int k`, not `short k`, is what keeps the frame at 0x58 and puts k in ECX (0x1cf8c).
+ * 2. in the three sc[] loops the game forms the row product first (0x1cea6-0x1ceb3) where ours
+ *    forms i*0x2e first, and in groups 2 and 3 its eax/edx/ecx roles are swapped (11 sites).
+ * 3. in the shift and insert blocks the game holds the record pointer in EAX and the 16-bit temp in
+ *    EDX (0x1cfb4, 0x1d03b), ours the other way round, and its EAX died in the first inlined
+ *    strcpy so the second one reloads v7d8a8 (0x1cff3/0x1cffc) where ours has one lea (20 sites);
+ *    spelling the reload in the source does not bring it back.
+ * 4. the game's k loop is rotated: `mov ecx,3` + `jmp` to its tail test (0x1cf8c-0x1cf91), whose j
+ *    bound is recomputed with movsx+inc (0x1d01e-0x1d024); ours falls into the body and compares
+ *    against a live register. The do/while form costs 157 diffs and the `for (;;)` + break form 113,
+ *    this plain `for (k = 3; k > j; k--)` 97.
+ * 5. `movzx edx, word [pal_a]` at 0x1ce57 where the game has `mov dx`: the f375cd EDX parameter
+ *    trap (GOTCHAS). Declaring pal_a `short` fixes this site but costs one of the 87 matches. */
+
+void scores_screen(void)
+{
+    long sc[10];                      /* esp+0x00-0x27: only sc[0..3] are read or written
+                                     * (0x1cebc-0x1cf57), but the game's frame puts the next array at
+                                     * esp+0x28, so its array is 40 bytes wide */
+    char stamp[0x14];                 /* the game's name is at esp+0x28 (the enter_name argument, the
+                                     * lea at 0x1ce68) and its stamp at esp+0x3c (the fn_1c994
+                                     * argument, 0x1cf5b); declaring name first lands the two the
+                                     * other way round, so the stamp is declared first */
+    char name[0x14];
+    short which;                      /* esp+0x50 in our build, the game's esp+0x54 (0x1ce83) */
+    short j, i;                       /* j: the game's esp+0x50 (0x1cf5f); i stays in BX (0x1ceb9) */
+    int k;                            /* as short k it takes a stack slot and the frame grows to
+                                     * 0x5c; as int it stays in ECX like the game's 0x1cf8c */
+    int better;                       /* 0x1cf2f/0x1cf44/0x1cf4d: the game's temp is ECX, not CX */
+    struct score *dst, *src, *p;
+
+    f27060((struct rec14 *)"LEAD.PCX", 2);     /* 0x1ce1c-0x1ce26, the string 0x60dc4 */
+    palptr = pal7d850;                /* 0x1ce2b-0x1ce30 */
+    getpalette();                     /* 0x1ce35 */
+    f1bf94(pal7d850);                 /* 0x1ce3a-0x1ce44 */
+    v88b4a = 0;                       /* 0x1ce49 */
+    p7d714 = p6a980;                  /* 0x1ce52-0x1ce5e */
+    pal_a = f375cd(p6a980, pal_a);    /* 0x1ce57-0x1ce6c */
+    enter_name(name, "", 0xb);        /* 0x1ce68-0x1ce78: the empty heading is 0x600ac */
+    which = v88bb2;                   /* 0x1ce7d-0x1ce83 */
+    switch (which) {                  /* 0x1ce87-0x1ce9e: the compare chain 2 / <2 / 3; the other
+                                     * cases jump straight to 0x1cf2f with sc[] untouched */
+    case 1:
+        for (i = 0; i <= 3; i++)      /* 0x1cea6-0x1ced1, the displacement 0x7775c */
+            sc[i] = *(short *)(tbl77758 + (v88bb6 + v7ecb4) * 0x450 + i * 0x2e + 4);
+        break;
+    case 2:
+        for (i = 0; i <= 3; i++)      /* 0x1ced5-0x1cf00, the displacement 0x778cc */
+            sc[i] = *(short *)(tbl77758 + (v88bb6 + v7ecb4) * 0x450 + 0x170 + i * 0x2e + 4);
+        break;
+    case 3:
+        for (i = 0; i <= 3; i++)      /* 0x1cf04-0x1cf2d, the displacement 0x77a3c */
+            sc[i] = *(short *)(tbl77758 + (v88bb6 + v7ecb4) * 0x450 + 0x2e0 + i * 0x2e + 4);
+        break;
+    }
+    better = 1;                       /* 0x1cf2f */
+    for (i = 0; i <= 3; i++)          /* 0x1cf3c-0x1cf4b */
+        if (v7ed5c >= sc[i])
+            better = 0;
+    if (better)
+        sc[3] = v7ed5c - 1;           /* 0x1cf51-0x1cf57: guarantees the loop below takes a slot */
+    fn_1c994(stamp);                  /* 0x1cf5b-0x1cf67 */
+    for (j = 0; j <= 3; j++) {        /* 0x1cf72, the inc test at 0x1d0b9-0x1d0c3 */
+        if (v7ed5c >= sc[j]) {        /* 0x1cf77-0x1cf7a */
+            if (j != 3)               /* 0x1cf80-0x1cf86 */
+                for (k = 3; k > j; k--) {   /* 0x1cf8c-0x1cf91: k in ECX */
+                    fn_1cad0(which, k);       /* 0x1cf9b-0x1cf9f */
+                    dst = (struct score *)v7d8a8;             /* 0x1cfa9 */
+                    fn_1cad0(which, k - 1);   /* 0x1cfa4-0x1cfaf */
+                    src = (struct score *)v7d8a8;             /* 0x1cfb4 */
+                    dst->score = src->score;  /* 0x1cfb9-0x1cfbd */
+                    dst->row = src->row;      /* 0x1cfc1-0x1cfc4 */
+                    dst->player = src->player;                /* 0x1cfca-0x1cfd1 */
+                    strcpy(dst->name, src->name);             /* 0x1cfd5-0x1cff2, +0x1a first */
+                    strcpy(dst->stamp, src->stamp);           /* 0x1cff3-0x1d01d, +6 second */
+                }
+            fn_1cad0(which, j);       /* 0x1d02c-0x1d036 */
+            p = (struct score *)v7d8a8;                       /* 0x1d03b */
+            p->score = v7ed5c;        /* 0x1d040-0x1d047 */
+            p->row = v88bb6 + v7ecb4; /* 0x1d04b-0x1d05d */
+            p->player = myplayer;     /* 0x1d060-0x1d06a */
+            strcpy(p->stamp, stamp);  /* 0x1d06e-0x1d08b */
+            strcpy(p->name, name);    /* 0x1d08c-0x1d0b6 */
+            break;                    /* 0x1d0b7 */
+        }
+    }
+    fn_3542c(v7ee5a);                 /* 0x1d0c9-0x1d0d0 */
+    if (cursong != menusong)          /* 0x1d0d5-0x1d0e0 */
+        music_start(menusong, 1);     /* 0x1d0e2-0x1d114, inlined by -oe like the game's */
+    fn_1d704(v88bb2, v88bb6 + v7ecb4);                        /* 0x1d119-0x1d12d */
 }

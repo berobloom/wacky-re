@@ -174,3 +174,13 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    Test: keep the statements fixed and vary one thing at a time (a variable that only ever
    appears as an argument, a `short` vs `int`, an extra unused local); a match is 21 diffs gone
    and `enter_name` byte-identical at 0x1cb44.
+
+10. **OPEN** (src/ww.c `scores_screen`, findings/scores.md): which C shape puts the two spilled
+    scalars in the game's slots - the game has `j` at esp+0x50 and `which` at esp+0x54, ours the
+    other way round (6 sites of the 97 diffs)? Evidence: the frame (0x58), all three array slots,
+    `i` in BX, `k` in ECX and each variable's own access shape (`mov dword [slot],0` / `movsx` /
+    `inc dword` / `cmp word`) already match; three declaration positions for `which` (before the
+    arrays, between arrays, after the scalars) all give the same permutation. The rest of the 97
+    are EAX/EDX role swaps in the shift and insert blocks (0x1cfb4, 0x1d03b) and the rotated
+    `k` loop (0x1cf8c-0x1cf91 `mov ecx,3; jmp` to the tail test). Test: 97 diffs gone and the
+    function byte-identical at 0x1ce14 (793 -> 807 bytes).

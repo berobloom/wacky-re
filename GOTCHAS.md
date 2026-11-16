@@ -219,7 +219,16 @@ it can be copied back into DREA.
 - **A local's type decides whether Watcom keeps it in a register** (iter 10, [generic]): the
   centring temporary of `fn_1c0f4` as `int` got a stack slot at esp+0x3d4 (frame 0x3d8, every
   displacement off by 4); as `short x` it stayed in EAX, the frame became the game's 0x3d4 and the
-  int-to-short argument became the game's `cwde`. Try the type before restructuring. [generic]
+  int-to-short argument became the game's `cwde`. The reverse also happens: `scores_screen`'s loop
+  counter `k` as `short` took a stack slot and grew the frame to 0x5c (the game's 0x58), pushing
+  every scalar displacement up by 4, while `int k` left it in ECX exactly where the game has it
+  (0x1cf8c) - 113 diffs became 97. Try the type before restructuring. [generic]
+- **A gap between two arrays in the game's frame is an array it sized larger than its code uses**
+  (iter 12, [generic]): `scores_screen`'s frame is 0x58 with the name buffer at esp+0x28 and the
+  stamp at esp+0x3c, but the only writes below 0x28 are four dwords (16 bytes). Declaring that
+  array `long sc[4]` put the two buffers 0x18 too low; `long sc[10]` (40 bytes, 0x00-0x27, still
+  only indexed 0..3, 0x1cebc-0x1cf57) lands all three arrays on the game's slots. Size a local
+  array from the frame, not from the largest index the code shows. [generic]
 - **A conditional store to a global: the game writes the two branches, Watcom turns a
   ternary into a value select** (iter 11, [generic]): `pal_a = pal_a ? 0 : 0x3e80;` compiles
   to `cmp / je / xor eax,eax / jmp / mov eax,0x3e80 / mov [pal_a],ax`. The game's shape at all

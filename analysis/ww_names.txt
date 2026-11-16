@@ -638,3 +638,8 @@
 0x01cb44 enter_name       # CONFIRMED (rebuild src/ww.c: 718 bytes at 0x1cb44, 21 aligned instruction diffs, all stack slots - QUESTIONS 9): the "PLEASE ENTER NAME.." name-entry screen; arg1 = the name buffer, arg2 = the centred heading (0x600ac empty at 0x1ce78), arg3 = the last index a character may go at (0xb at 0x1ce3f); caret sprite gn7eb2c at x 0xaa+8i y 0x5b; DOS 2509h restores the keyboard vector at 0x1cc2f-0x1cc5b; callers 0x1ce78, 0x2b6d7, 0x2e769
 0x060d8c (name entry strings) # CONFIRMED: "PLEASE ENTER NAME.." 0x60d8c (20 bytes), 16 spaces 0x60da0, 12 spaces 0x60db4 - the pads enter_name copies into its arg1 (0x1cbbf, 0x1cc81, 0x1cc8d)
 0x07d704 sprptr                # see line 102; enter_name points it at gn7eb2c (0x1cce4) for the text caret, so sprptr also names the caret source
+0x01ce14 scores_screen   # CONFIRMED (rebuild src/ww.c): the record book - loads LEAD.PCX, runs enter_name, shifts and inserts the run score v7ed5c in this mode's group of tbl77758, then fn_1d704 draws the table; only caller 0x2d227 in 0x2bff0
+0x01d704 fn_1d704       # LIKELY: the score table screen - loads "LEAD.PCX" 0x60dc4 (0x1d71f), prints rows, walks records with add v7d8a8,0x2e (0x1da3c); arg1 = eax (mode), arg2 = edx (row); called from scores_screen 0x1d12d
+0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
+0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
+0x07ed5c v7ed5c         # CONFIRMED: the score of the finished run; compared against the four table entries at 0x1cf3f/0x1cf77, stored into record+4 at 0x1d040-0x1d047
