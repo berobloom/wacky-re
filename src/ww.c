@@ -13465,7 +13465,7 @@ extern char str6aa18[];
 extern char *font7c118[], *sp6e6ec[];
 #pragma aux font7c118 "_arr7c118"
 #pragma aux sp6e6ec "_arr6e6ec"
-void f2d628(int i);
+void gig_sound2(int i);
 void FX_SetPitch(int handle, int pitchoffset);
 
 void overlay_draw(void)
@@ -13526,7 +13526,7 @@ void overlay_draw(void)
             if (n == 0)
                 continue;
             if (soundon && cars[i].fcc && !FX_SoundActive(cars[i].fc8))
-                f2d628(i);
+                gig_sound2(i);
             n--;
             f = cars[i].fb8;
             if (cars[i].fb4)
@@ -14729,5 +14729,30 @@ void shot_fire(short kind, short player)
         }
     }
     v7d874 = p;
+}
+
+/* ---- 0x2d628 / 0x2d67c, 81 bytes each: the GIG sound of a car's banner (gigs[n - 1] at sfxvol, n-- kept apart,
+ * priority 0x22): gig_sound2 for the second banner fb0 (handle fc8, playing flag fcc; overlay_draw),
+ * car_finished for the lap banner fdc (handle fec, flag ff0; car_laps, lap_banner). */
+void gig_sound2(int i)
+{
+    int n;
+
+    n = cars[i].fb0;
+    n--;
+    cars[i].fc8 = FX_PlayVOC(gigs[n], 0, sfxvol, sfxvol, sfxvol, 0x22, 0);
+    if (cars[i].fc8 > 0)
+        cars[i].fcc = 1;
+}
+
+void car_finished(int i)
+{
+    int n;
+
+    n = cars[i].fdc;
+    n--;
+    cars[i].fec = FX_PlayVOC(gigs[n], 0, sfxvol, sfxvol, sfxvol, 0x22, 0);
+    if (cars[i].fec > 0)
+        cars[i].ff0 = 1;
 }
 

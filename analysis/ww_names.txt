@@ -295,7 +295,7 @@
 0x07e71c racetime     # SPECULATIVE: int; lap times are differences of it
 0x07e718 lastlap      # SPECULATIVE: racetime at the last lap
 0x07d358 laptimes     # SPECULATIVE: int[], laps 1..6 of a single-player time trial (v88bb2 == 4)
-0x02d67c car_finished # SPECULATIVE: called with the car index when its last lap starts and sound is on
+0x02d67c car_finished # CONFIRMED (rebuild src/ww.c): plays gigs[cars[i].fdc - 1] (the lap banner GIG sound), handle fec, flag ff0
 0x012f80 draw_status  # LIKELY: player names, SCORE labels, panels; "DEMO MODE " (v7d998 == 3), "TIME TRIAL"
 0x07d228 pnames       # LIKELY: char[12] player names, indexed by myplayer and v88c6a
 0x088ca0 v88ca0       # SPECULATIVE: short; 1 draws img7eb3c once, then 2
@@ -350,6 +350,7 @@
 0x02d3fc bump_turn    # LIKELY (rebuild src/ww.c): applies a pending v88bf4 turn of 0x12 to curpos (direction v88bfe 5) and f42 +-0x28; meaning of v88bf4/v88bfc inferred
 0x02d4fc shots_clear  # CONFIRMED (rebuild src/ww.c): clears cars[0..1].f02/f04 and shots[0..60].f04
 0x02d548 shot_fire    # CONFIRMED (rebuild src/ww.c): first free shot slot: kind, owner, speed, range, dir, position, shot_step(0), animation
+0x02d628 gig_sound2   # CONFIRMED (rebuild src/ww.c): plays gigs[cars[i].fb0 - 1] for the second banner, handle fc8, flag fcc
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
 0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit
