@@ -6188,9 +6188,9 @@ extern void dos_gettime(struct dostime *t);     /* 0x43164 */
  * the game keeps `edi = s` off the loop head (0x1ca83 starts straight at `push edi`, edi is still
  * s from the `pop edi` at 0x1ca74) and re-materialises it on the back edge at 0x1cabf; our build
  * puts `mov ebp,edi` at the loop head instead, which shifts the `jae`/`jmp` displacements (0x1cab8,
- * 0x1cabf). Shapes t1-t4 in analysis/shapes/SHAPES.C: t1 (this one) is the best of twelve tried at
- * 4 diffs; the pre-test `while (strlen(s) < 10) strcat(s, " ")` form is 8 diffs, so the loop really
- * is entered twice (findings/scores.md). */
+ * 0x1cabf). t1-t6 in analysis/shapes/SHAPES.C keep six of the 21 shapes scored; t1 (this one) is the
+ * best at 4 diffs, and the pre-test `while (strlen(s) < 10) strcat(s, " ")` form is 8, so the game's
+ * loop really is entered twice (findings/scores.md). */
 void fn_1c994(char *s)                  /* arg1 = eax */
 {
     char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
