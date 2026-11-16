@@ -9917,3 +9917,14 @@ void kart_bump(void)
         }
     }
 }
+
+/* ---- 0x237a8, 57 bytes, no callers (dead code): both of v7e56c/v7e570 set, or both clear, clears both. */
+extern int v7e56c, v7e570;
+
+void pair_reset(void)
+{
+    if ((v7e56c && v7e570) || (!v7e56c && !v7e570)) {
+        v7e56c = 0;
+        v7e570 = 0;
+    }
+}
