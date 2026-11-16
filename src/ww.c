@@ -1404,7 +1404,7 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     int f56;                    /* 0x56: surface class v7e568 under the kart (kart_move) */
     short f5a, f5c, f5e;
     int f60, f64;               /* 0x60/0x64: from the surface record +0x126/+0x12a (kart_move) */
-    char f68[0x6a - 0x68];
+    short f68;                  /* 0x68: toggles each frame while driving (self_project bob) */
     short f6a;                  /* 0x6A: counts up by 4 per pickup, at most 99 (kart_bump) */
     short f6c;
     int f6e;                    /* 0x6E: id of the surface animation playing (kart_draw) */
@@ -1920,7 +1920,7 @@ void f37e94(void);
 void f287ec(void);
 void players_project(void);
 void ents_project(void);
-void f26a3c(void);
+void self_project(void);
 void lights_project(void);
 void shots_project(void);
 void sprites_draw(void);
@@ -1964,7 +1964,7 @@ void frame_draw(void)
     f287ec();
     players_project();
     ents_project();
-    f26a3c();
+    self_project();
     if (v88c38)
         lights_project();
     shots_project();
@@ -1985,7 +1985,7 @@ void frame_draw(void)
         f287ec();
         players_project();
         ents_project();
-        f26a3c();
+        self_project();
         if (v88c38)
             lights_project();
         shots_project();
@@ -10916,7 +10916,7 @@ extern char *gnspr[];
 
 void players_project(void)
 {
-    short dy, sx, k, c, h;
+    short n, dy, sx, k, c, h;
     int sy, d, side, a, m, t;
 
     for (v7d800 = players, v88b72 = 0; v88b72 <= nplayers; v7d800++, v88b72++) {
@@ -10998,10 +10998,11 @@ void players_project(void)
                 continue;
         }
         if (spr_y + spr_w - 1 > 0xc7) {
-            spr_w -= spr_w - 1 + spr_y - 0xc7;
+            n = spr_w - 1 + spr_y - 0xc7;
+            spr_w -= n;
             if (spr_w <= 0)
                 continue;
-            v7d878 = spr_w * 4;
+            v7d878 = n * 4;
         }
         p7d86c += 0x28;
         CR->f24 = 1;
@@ -11031,7 +11032,7 @@ extern struct attr attrs[];
 
 void ents_project(void)
 {
-    short dy, sx, k, c;
+    short n, dy, sx, k, c;
     int i, id, sy, d, side, a, m, t;
 
     for (v7d7f4 = ents, i = 0; i < nents; v7d7f4++, i++) {
@@ -11097,10 +11098,11 @@ void ents_project(void)
                 continue;
         }
         if (spr_y + spr_w - 1 > 0xc7) {
-            spr_w -= spr_w - 1 + spr_y - 0xc7;
+            n = spr_w - 1 + spr_y - 0xc7;
+            spr_w -= n;
             if (spr_w <= 0)
                 continue;
-            v7d878 = spr_w * 4;
+            v7d878 = n * 4;
         }
         p7d86c += 0x28;
         CR->f24 = -1;
@@ -11310,7 +11312,7 @@ extern short *tab6e600[];
 
 void shots_project(void)
 {
-    short dy, sx, k, c, h;
+    short n, dy, sx, k, c, h;
     int i, sy, d, side, a, m, t;
 
     for (v7d874 = shots, i = 0; i <= 0x3c; v7d874++, i++) {
@@ -11375,10 +11377,11 @@ void shots_project(void)
                 continue;
         }
         if (spr_y + spr_w - 1 > 0xc7) {
-            spr_w -= spr_w - 1 + spr_y - 0xc7;
+            n = spr_w - 1 + spr_y - 0xc7;
+            spr_w -= n;
             if (spr_w <= 0)
                 continue;
-            v7d878 = spr_w * 4;
+            v7d878 = n * 4;
         }
         p7d86c += 0x28;
         CR->f1c = 0;
@@ -11402,10 +11405,11 @@ void shots_project(void)
  * since v7eba8 and to 2 after 0x22, which also starts the race (v88c44 = 2) with voice 10; then the
  * lights at (v88c4a, v88c4c) are projected like a shot (tab6e470 sizes, gn7eb40[v88c5e]) and
  * v88c38 stays set only while they are on screen. LIKELY: "lights" from the 3 frames and the timing.
- * differs (near-miss, 217 vs 218 insns, 23 blocks): the countdown test is `cmp ax,1; jb; ja` in the
- * game (a switch range check; ours `jne`), ticks2 - v7eba8 loads v7eba8 first, and the rotation
- * keeps sy/dy in two stack slots and a in EDI (ours: sy in a register). No loop here, so this is not
- * the promotion problem of the other projections. Tried: four declaration orders, three t forms. */
+ * differs (near-miss, 217 vs 220 insns, 18 blocks): the countdown test is `cmp ax,1; jb; ja` in the
+ * game (a switch range check; ours `jne`), and the rotation keeps sy/dy in two stack slots and a in
+ * EDI (ours: sy in a register). No loop here, so this is not the promotion problem of the other
+ * projections. Tried: four declaration orders. ticks2 - v7eba8 is the inlined since2():
+ * `(m = v7eba8, ticks2 - m)` gives its load order. */
 extern short v88c5e, v88c4a, v88c4c;
 extern int v7eba8;
 extern char *lights[];
@@ -11413,14 +11417,14 @@ extern char *lights[];
 
 void lights_project(void)
 {
-    short dy, sx, k, c, h;
+    short n, dy, sx, k, c, h;
     int sy, d, side, a, m, t;
 
     if (v88c44)
         v88c38 = 0;
     switch (v88c44) {
     case 1:
-        t = ticks2 - v7eba8;
+        t = (m = v7eba8, ticks2 - m);
         if (t >= 0x22) {
             v88c44 = 2;
             v88c5e = 2;
@@ -11488,10 +11492,11 @@ void lights_project(void)
             return;
     }
     if (spr_y + spr_w - 1 > 0xc7) {
-        spr_w -= spr_w - 1 + spr_y - 0xc7;
+        n = spr_w - 1 + spr_y - 0xc7;
+        spr_w -= n;
         if (spr_w <= 0)
             return;
-        v7d878 = spr_w * 4;
+        v7d878 = n * 4;
     }
     p7d86c += 0x28;
     CR->f1c = 0;
@@ -11508,5 +11513,138 @@ void lights_project(void)
     v88c38 = 1;
     v88b78++;
     CR->f0c = (int)lights[v88c5e];
+}
+
+/* ---- 0x26a3c, 1158 bytes: the sprite record of the viewer's own kart at the bottom centre (caller
+ * frame_draw 0x134fa..; between ents_project and lights_project): nothing while v88c42 == 4 or
+ * v88ca8; a kind-2 viewer in a split/net game only steps its sprite f56; while f44 (engine trouble?)
+ * the 8-frame f64 animation with voice 0xe until f56 changes (then voice 0xf, f5a = 2); else the
+ * kart frame from f4e, and the v88c42 intro: 1 drives in (tb7b328 frames, v88c1a down by 6 to 0x72),
+ * 2 waits 11 ticks, 3 drives out (tb7b2d8 frames, v88c1a up by 4 to 0xc7), 4 done. The kart bobs a
+ * pixel every other frame while racing. The game keeps the global spr_y in CX throughout (so do we).
+ * differs (near-miss, 233 vs 233 insns, 1 real block + fixup noise): the bottom-clip test - the game
+ * puts spr_w - 1 in EDX and spr_y in EAX, ours the other way round; six forms of the sum tried.
+ * Found: `k = v88c42; switch (k)` (else the n/v88c42 registers swap), `(m = v7e72c, ticks2 - m)` for
+ * the inlined since2(), `sprptr = gnspr[f56]; f56++;`, and f56 > 3 (not <= 3) for the kind-2 step. */
+extern int tb7b328[], tb7b2d8[], v7e72c;
+
+void self_project(void)
+{
+    short x, n, k;
+    int m;
+
+    if (v88c42 == 4 || v88ca8)
+        return;
+    if ((twoplayer || splitscreen || netvoices) && curkart->f7e && players[v88b7e].f56 > 3) {
+        players[v88b7e].f56++;
+        return;
+    }
+    v7d878 = 0;
+    x = 0xa0;
+    if (curkart->f44) {
+        voice_check(0xe);
+        if (voicebusy == 0)
+            voice_play(0xe);
+        p7d838 = tab6e560[0];
+        sprptr = (char *)curkart->f64 + curkart->f5e * 0x300;
+        spr_y = tb6bd00[0x7c];
+        curkart->f5e++;
+        if (curkart->f5e == 8)
+            curkart->f5e = 0;
+        if (curkart->f56 != 3 && v88bd8 != curkart->f56) {
+            players[v88b7e].f5c = 0;
+            curkart->f44 = 0;
+            curkart->f5c = 0;
+            curkart->f5a = 2;
+            voice_play(0xf);
+        }
+    } else {
+        p7d838 = tab6e470[0];
+        spr_y = tb6bd00[0x7c];
+        if (v88c42) {
+            n = v88c32 + 1;
+            k = v88c42;
+            switch (k) {
+            case 1:
+                curkart->f4e = &tb7b328[v88c32];
+                v88c32 = n;
+                if (n == 8)
+                    v88c32 = 0;
+                v88c1a -= 6;
+                if (v88c1a <= 0x72) {
+                    v88c1a = 0x72;
+                    v88c42 = 2;
+                    curkart->f4e = tb7b2d8;
+                    v88c32 = 0;
+                    v7e72c = ticks2;
+                }
+                break;
+            case 2:
+                curkart->f4e = &tb7b2d8[v88c32];
+                if ((m = v7e72c, ticks2 - m) >= 0xb)
+                    v88c42 = 3;
+                break;
+            case 3:
+                v88c32 = n;
+                if (n == v88c4e)
+                    v88c32 = 0;
+                curkart->f4e = &tb7b2d8[v88c32];
+                v88c1a += 4;
+                if (v88c1a > 0xc7) {
+                    v88c1a = 0xc7;
+                    v88c42 = 4;
+                    v7e72c = ticks2;
+                }
+                break;
+            }
+        }
+        sprptr = (char *)*curkart->f4e;
+    }
+    if (curkart->f7e && v88c42 == 0) {
+        curkart->f44 = 0;
+        p7d838 = tab6e470[0];
+        sprptr = gnspr[players[v88b7e].f56];
+        players[v88b7e].f56++;
+    }
+    p7d764 = p7d838;
+    spr_h = *p7d764++;
+    spr_w = *p7d764;
+    spr_y -= spr_w;
+    p7d838 += 2;
+    if (curkart->f26 > 0 && curkart->f44 == 0 && curkart->f7e == 0 && v88c44 == 2) {
+        if (curkart->f68) {
+            spr_y--;
+            curkart->f68 = 0;
+        } else
+            curkart->f68 = 1;
+    }
+    x -= spr_h >> 1;
+    if (curkart->f44 == 0) {
+        if (v88c42) {
+            spr_y = v88c1a;
+            if ((spr_w - 1) + spr_y > 0xc7) {
+                n = spr_w - 1 + spr_y - 0xc7;
+                spr_w -= n;
+                v7d878 = n * 4;
+            }
+        } else if (curkart->f26 == 0 && curkart->f56 == 5) {
+            v7d878 = 0x10;
+            spr_w -= 4;
+            spr_y += 4;
+        }
+    }
+    p7d86c += 0x28;
+    CR->f1c = 0;
+    CR->f24 = 0;
+    CR->f10 = 0x7c;
+    CR->f18 = v88b7e;
+    CR->f04 = x;
+    CR->f06 = spr_y;
+    CR->f00 = spr_h;
+    CR->f02 = spr_w;
+    CR->f08 = p7d838;
+    CR->f0c = (int)sprptr;
+    v88b78++;
+    CR->f14 = v7d878;
 }
 
