@@ -129,6 +129,9 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    so the shareware release locks four cars and the registered one locks none off-net.
    Open: why `v7ec9c == 1` locks cars 0/1/5/6 in net play (what `v7ec9c` counts), and why
    `sprptr += 0x10a0` for the icons whose per-car state is not 1 (0x1a6ad-0x1a6b8).
+   More (iter 14): shots_clear 0x2d4fc (v7d874/EBX, one store at the end) and shot_fire 0x2d548
+   (v7d874/EDX, stored before shot_step, reloaded after, stored at both exits) walk shots[] with the
+   global itself; written with a local pointer they differ in registers only (near misses).
 
 ## Hypotheses
 
