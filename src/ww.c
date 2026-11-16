@@ -8072,8 +8072,8 @@ extern short v88bd4, v88c1e, optmap, optclock, optspeed;
 extern char *v7d708;
 extern char str7c908[], str7c944[];
 void f1bf80(void);
-void f327e0(void);
-void f328d4(void);
+void digger_load(void);
+void faces_reset(void);
 void f35718(void);
 short net_sync(void);
 
@@ -8410,7 +8410,7 @@ void main_menu(void)
                 cars_menu();
             }
             if (v88b9e == 0) {
-                f327e0();
+                digger_load();
                 for (;;) {
                     v88b9e = 0;
                     fn_193a8();
@@ -8435,7 +8435,7 @@ void main_menu(void)
                 f1bf94(pal7d850);
                 datfind("CARS.SP");
                 fread(v7d708, 0x18f00, 1, datfile);
-                f328d4();
+                faces_reset();
                 pal_a = 0;
                 v88bda = 1;
             }
@@ -17103,5 +17103,116 @@ void render_scales(void)
     v7d644 = 0x80;
     v7d664 = 0x1000;
     v7d634 = 0x1000;
+}
+
+/* ---- 0x327e0, 241 bytes (caller main_menu 0x2028c, before the race loop): picks the first two
+ * players other than myplayer into v7ec70 and v7ec6c, then loads DIGGER.SP (0x2140 bytes each,
+ * 8 frames of 0x428) over their CARS.SP slots in v7d708 (stride 0x31e0) and points faces[].img[0..7]
+ * at them. f328d4 (after the loop) reloads CARS.SP. What the mode is: LIKELY a digger race;
+ * evidence is only the file name. */
+extern int iv7ec70, iv7ec6c;
+#pragma aux iv7ec70 "_v7ec70"
+#pragma aux iv7ec6c "_v7ec6c"
+
+void digger_load(void)
+{
+    int i;
+    char *p;
+
+    for (i = 0; i <= 7; i++)
+        if (i != myplayer) {
+            iv7ec70 = i;
+            break;
+        }
+    for (i = 0; i <= 7; i++)
+        if (i != myplayer && i != iv7ec70) {
+            iv7ec6c = i;
+            break;
+        }
+    p = v7d708 + iv7ec70 * 0x31e0;
+    datfind("DIGGER.SP");
+    fread(p, 0x2140, 1, datfile);
+    for (i = 0; i < 8; i++) {
+        faces[iv7ec70].img[i] = p;
+        p += 0x428;
+    }
+    p = v7d708 + iv7ec6c * 0x31e0;
+    fread(p, 0x2140, 1, datfile);
+    for (i = 0; i < 8; i++) {
+        faces[iv7ec6c].img[i] = p;
+        p += 0x428;
+    }
+}
+
+/* ---- 0x328d4, 573 bytes (caller main_menu 0x202bc, after the digger loop reloaded CARS.SP): puts
+ * the eight player sprite file names back into arr7bba0 (PANDA, CAMEL, MOOSE, PELICAN, SHARK,
+ * RINGO, ELE, TIGER), points faces[i].img[0..11] at consecutive 0x428-byte frames of v7d708, sets
+ * each face's two frame counts f90/f92 (4/2, 4/4, 4/8, 4/8, 2/2, 1/7, 2/2, 1/4), its record size
+ * f94 = (f90 + f92 + 12) * 0x428, and img[12..23] plus f90 frames at img[24] and f92 at img[28]
+ * from v7d6c8 (the same base for every face). Undoes digger_load. */
+void faces_reset(void)
+{
+    int i, j;
+    char *p;
+
+    strcpy(arr7bba0, "PANDA.SP");
+    strcpy(arr7bba0 + 0xc, "CAMEL.SP");
+    strcpy(arr7bba0 + 0x18, "MOOSE.SP");
+    strcpy(arr7bba0 + 0x24, "PELICAN.SP");
+    strcpy(arr7bba0 + 0x30, "SHARK.SP");
+    strcpy(arr7bba0 + 0x3c, "RINGO.SP");
+    strcpy(arr7bba0 + 0x48, "ELE.SP");
+    strcpy(arr7bba0 + 0x54, "TIGER.SP");
+    p = v7d708;
+    for (i = 0; i <= 7; i++) {
+        for (j = 0; j < 8; j++) {
+            faces[i].img[j] = p;
+            p += 0x428;
+        }
+        for (j = 0; j < 4; j++) {
+            faces[i].img[8 + j] = p;
+            p += 0x428;
+        }
+    }
+    faces[0].f90 = 4;
+    faces[0].f92 = 2;
+    faces[1].f90 = 4;
+    faces[1].f92 = 4;
+    faces[2].f90 = 4;
+    faces[2].f92 = 8;
+    faces[3].f90 = 4;
+    faces[3].f92 = 8;
+    faces[4].f90 = 2;
+    faces[4].f92 = 2;
+    faces[5].f90 = 1;
+    faces[5].f92 = 7;
+    faces[6].f90 = 2;
+    faces[6].f92 = 2;
+    faces[7].f90 = 1;
+    faces[7].f92 = 4;
+    for (i = 0; i <= 7; i++) {
+        p = (char *)v7d6c8;
+        faces[i].f94 = (faces[i].f90 + 0xc + faces[i].f92) * 0x428;
+        for (j = 0; j < 2; j++) {
+            faces[i].img[12 + j] = p;
+            p += 0x428;
+        }
+        for (j = 0; j < 2; j++) {
+            faces[i].img[14 + j] = p;
+            p += 0x428;
+        }
+        for (j = 0; j < 8; j++) {
+            faces[i].img[16 + j] = p;
+            p += 0x428;
+        }
+        for (j = 0; j < faces[i].f90; j++) {
+            faces[i].img[24 + j] = p;
+            p += 0x428;
+        }
+        for (j = 0; j < faces[i].f92; j++) {
+            faces[i].img[28 + j] = p;
+            p += 0x428;
+        }
+    }
 }
 

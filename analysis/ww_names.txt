@@ -536,6 +536,8 @@
 0x02f794 race_frame2  # CONFIRMED (rebuild src/ww.c): rest of a race frame: cycles, curtain bars v88c8c/tb80ae8, second view + player-2 keys in split screen, overlays, faces, crack, Pause (scancode 0xc5)
 0x02fd8c race_run     # CONFIRMED (rebuild src/ww.c): one race session: setup, restart label, frame loop, crash / lives / finish / placings, demo record+playback inline, in-race menu; 10834 bytes
 0x0327b4 render_scales # CONFIRMED (rebuild src/ww.c): v7d648 = v7d644 = 0x80, v7d664 = v7d634 = 0x1000; no caller found
+0x0327e0 digger_load  # CONFIRMED (rebuild src/ww.c): v7ec70/v7ec6c = first two players != myplayer; DIGGER.SP into their v7d708 slots, faces[].img[0..7]
+0x0328d4 faces_reset  # CONFIRMED (rebuild src/ww.c): restores arr7bba0 sprite names, faces[].img pointers, f90/f92 frame counts, f94 sizes; undoes digger_load
 0x070730 trial70730   # CONFIRMED (0x2e4b8): struct { char lapname[4][20]; int lap[4]; char racename[20]; int race; } [30], (group-1)*5 + track-1
 0x07ed34 v7ed34
 0x07ed20 v7ed20
