@@ -601,3 +601,16 @@
 0x01a148 laps_menu        # CONFIRMED (rebuild, src/ww.c): 430 bytes byte-identical (findings/classes.md)
 0x01a2f8 fn_1a2f8         # LIKELY: clears v7d338[0..7] and sets [0],[1],[5],[6] = 1 in a net/local case; each caller calls it just before cars_menu (src/ww.c)
 0x0430f7 fn_430f7         # CONFIRMED: the dword path 0x39 into the clib module __stos at 0x430be (libmatch); eax=dst edx=value ecx=count, ebx untouched
+0x01a360 jt_1a360            # CONFIRMED: 4-entry jump table 0x1b7d7/0x1b828/0x1b86e/0x1b8c1, used by jmp dword cs:[esi*4+0x1a360] (0x1b7cf, guarded cmp si,3/ja at 0x1b7c6). STATUS's "0x1a360 is padding" was wrong
+0x01a370 jt_1a370            # CONFIRMED: 4-entry jump table 0x1bbc3/0x1bbf9/0x1bc35/0x1bc55, used by jmp dword cs:[edx*4+0x1a370] (0x1bbbb) on stage-3 after cmp ax,3/ja 0x1bbaa
+0x01a380 cars_menu           # CONFIRMED (0x1a380-0x1be3b read in full, findings/car_select.md): 6861 bytes, one C function, sub esp,0x17c, three extra epilogues 0x1b198/0x1b37b/0x1b540
+0x07399c carbox_x            # LIKELY: word set to 0xec (0x1a58f), read as spr_x for the sp6a878 box sprite (0x1a6d2, 0x1a951)
+0x07399e carbox_y            # LIKELY: word set to 0x8e (0x1a598), read as spr_y ditto; 0x739a0/0x739a2 are set to 0 next to them and read nowhere
+0x07eda0 hits_target         # LIKELY: 5 * the " PLAY FOR 5/10/15/20 HITS " menu choice (0x1bcfb, 0x1bd03); compared with a counter in 0x2bbd8/0x30aae
+0x01c0f4 fn_1c0f4            # LIKELY: arg1 = a stack buffer; called when the F1/help control joy88b46 is set (0x1b2df, 0x1b415) on the "REMOTE IS VIEWING HELP" path
+0x07b6df v7b6df              # LIKELY: cfg 12-byte record byte, read as [v88b7e*12+0x7b6df] into joy88b40 when cfg7712c == 0 (0x1b392)
+0x088b88 v88b88              # LIKELY: short = v88c96 when the car menus are skipped (0x1be02); read by fn_17928
+0x07d338 v7d338              # STRONGLY SUPPORTED (supersedes the v7d338 line): int per car 0..7, nonzero = that car cannot be chosen - confirm blocked (0x1ac0e, 0x1b461), a 9x0x36 lock sprite lp7d804 over its icon (0x1462d-0x14659), and voice 0x1a + "PLEASE READ ORDERING INFO" on confirm (0x1b493-0x1b4dc); only writer fn_1a2f8
+0x07e574 v7e574              # CONFIRMED (supersedes the v7e574 line): shareware flag, 1 when neither "42.GAM" nor "20.GAM" is in WACKY.DAT (0x34463-0x344d4, then "SHAREWARE RELEASE." printed 0x344e7)
+0x07eca0 v7eca0              # LIKELY (supersedes the v7eca0 line): 1 shareware, 2 "20.GAM" present, 3 "42.GAM" present (0x344a8, 0x344be, 0x344d4)
+0x060b50 (car select strings) # CONFIRMED: "CHOOSE VEHICLE" 0x60b50, "PLAYER TWO" 0x60b60, "PLAYER ONE" 0x60b6c, "EXCESSIVE ERRORS" 0x60b78, "REMOTE IS VIEWING HELP" 0x60b8c, " PLEASE READ ORDERING INFO " 0x60ba4, " TO FIND OUT HOW TO RACE   " 0x60bc0, " WITH THIS ANIMAL.         " 0x60bdc, " PLAY FOR 5  HITS "/"10 "/"15 "/"20 " 0x60bf8/0x60c0c/0x60c20/0x60c34

@@ -166,6 +166,12 @@ it can be copied back into DREA.
   `if (v88bb2 != 4) { menu ... } else nlaps = 6;` shares it and matches byte for byte. Probe the
   orientation of such a test with `tools/wc/variants.py` (30 shapes in one compile here) rather than
   assuming the copy is a bug. [generic]
+- **Watcom puts switch jump tables in the gap *before* the function, so a gap is not dead space**:
+  0x1a360-0x1a37f (recorded as "padding" in a STATUS note) is two 4-entry tables used by
+  `jmp dword ptr cs:[esi*4+0x1a360]` / `jmp dword ptr cs:[edx*4+0x1a370]` inside `cars_menu`.
+  Disassemble a gap before calling it padding; the `jmp dword ptr cs:[reg*4+disp]` + range check
+  (`cmp reg16,N / ja default`) is the tell, and the table order is source-label order (iter 3).
+  [generic]
 - **A call target can be an interior label of a library module**: 0x430f7 is 0x39 bytes into the
   clib `__stos` module at 0x430be (165 bytes, `libmatch.py -l ww .../DOS/CLIB3R.LIB`); declare it as
   its own extern and pin the argument registers with what the call site loads (`#pragma aux

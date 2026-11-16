@@ -104,11 +104,17 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    `rep movsd`) from ALL THREE source placements - before the first copy, between the second and the
    third, and after the third (`.work/probe11`, 30 shapes) - so the pair slides as far up as it can go
    and its source placement is not a lever; the classes_menu pair stops one unit earlier.
-4. What are the eight ints at `v7d338` (the names file calls it "int per ent")? `fn_1a2f8` clears
-   [0..7] and sets [0], [1], [5], [6] to 1 when `netgame && v7ec9c == 1` or, off-net, when `v7e574`
-   is nonzero; it is called immediately before `cars_menu` from `fn_1f858` (0x1fd7a, 0x201fa,
-   0x20478). What would settle it: xref the reads of `v7d338` (+4, +0x14, +0x18) once the entity
-   code is ported.
+4. **PARTIALLY ANSWERED** (findings/car_select.md): the eight ints at `v7d338` are a
+   **per-car lock** (car id 0..7). Evidence: `cars_menu` blocks the confirm control when
+   `v7d338[car under the cursor] != 0` (0x1ac0e-0x1ac3f, 0x1b461-0x1b491) and plays voice
+   `0x1a` plus the three `" PLEASE READ ORDERING INFO "` lines (0x1b493-0x1b4dc);
+   `ents_show` draws the 9x0x36 `lp7d804` sprite over an ent whose flag is set
+   (0x1462d-0x14659). The only writer is `fn_1a2f8` (clears 0..7, sets [0],[1],[5],[6]) when
+   `netgame && v7ec9c == 1` or, off-net, when `v7e574` - and `v7e574` is CONFIRMED the
+   shareware flag (1 when neither `42.GAM` nor `20.GAM` is in WACKY.DAT, 0x34463-0x344d4),
+   so the shareware release locks four cars and the registered one locks none off-net.
+   Open: why `v7ec9c == 1` locks cars 0/1/5/6 in net play (what `v7ec9c` counts), and why
+   `sprptr += 0x10a0` for the icons whose per-car state is not 1 (0x1a6ad-0x1a6b8).
 
 ## Hypotheses
 

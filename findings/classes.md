@@ -80,7 +80,7 @@ maps 1..4 to three globals: the class line `cls_name` (0x6aa40), `v7ece0`
 - CONFIRMED (rebuild `laps_menu` in `src/ww.c`, 430 bytes byte-identical at 0x1a148; row literals
   0x60b14/0x60b28/0x60b3c read out of the image): 0x1a148 is the **lap-count menu**, the next screen
   of the same chain - `cars_menu` calls `classes_menu` 0x19eac at 0x1bd3c, `laps_menu` at 0x1bd4b
-  and `engines_menu` 0x167d8 at 0x1bd5f, each guarded by `v88b9e == 0` (0x1bd32, 0x1bd41, 0x1bd50).
+  and `engines_menu` 0x167d8 at 0x1bd5f, each guarded by `v88b9e == 0` (0x1bd32, 0x1bd41, 0x1bd50). (`zones_menu` follows at 0x1bd87; the whole caller is mapped in findings/car_select.md)
   Its three rows are " SIX LAP RACE   ", " EIGHT LAP RACE ", " TEN LAP RACE   " into
   `mnames` + 0x3c*i with `v88bb0 = 0xd` and the cursor `v88c80 = 1` (0x1a1bb, 0x1a1c4); the rows are
   1-based as always, so the switch at 0x1a21e maps nlaps 1, 2, 3 to 6, 8, 10 and leaves any other
