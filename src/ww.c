@@ -13306,3 +13306,60 @@ void minimap(void)
     }
 }
 
+/* ---- 0x2a618, 224 bytes: formats a race time t (tenths) as "MM:SS:T" into out (callers 0x2a9a4,
+ * 0x2aa19 in 0x2a92c); a time over 0x8ca0 (one hour) shows as 0 and clears racetime.
+ * differs (near-miss, 76 vs 77 insns, 13 blocks, registers only): the game keeps t in EBP and the
+ * divisor 10 in EBX, ours t in EBX and 10 in EBP. Tried: 24 declaration orders, a separate t/10
+ * local, nested divisions, long t, statement orders, buf sizes. */
+void time_str(int t, char *out)
+{
+    char buf[8];
+    int tenths, min, sec;
+
+    if (t > 0x8ca0) {
+        t = 0;
+        racetime = 0;
+    }
+    tenths = t % 10;
+    t /= 10;
+    min = t / 60;
+    sec = t % 60;
+    strcpy(out, "00:00:0");
+    itoa(min, buf, 10);
+    if (buf[1] == 0) {
+        buf[1] = buf[0];
+        buf[0] = '0';
+    }
+    out[0] = buf[0];
+    out[1] = buf[1];
+    itoa(sec, buf, 10);
+    if (buf[1] == 0) {
+        buf[1] = buf[0];
+        buf[0] = '0';
+    }
+    out[3] = buf[0];
+    out[4] = buf[1];
+    itoa(tenths, buf, 10);
+    out[6] = buf[0];
+}
+
+/* ---- 0x2a6f8, 70 bytes: draws the 7 characters of s at (x, y) with the 7 x 9 font at 0x7d618
+ * (indexed by character; callers 0x2a9c9, 0x2a9e4). */
+extern char *font7d618[];
+#pragma aux font7d618 "_arr7d618"
+
+void time_draw(short x, short y, char *s)
+{
+    int i;
+
+    spr_h = 7;
+    spr_w = 9;
+    spr_y = y;
+    for (i = 0; i < 7; i++) {
+        spr_x = x;
+        sprptr = font7d618[(unsigned char)s[i]];
+        drawsprite();
+        x += 7;
+    }
+}
+
