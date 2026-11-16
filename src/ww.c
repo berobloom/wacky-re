@@ -8977,6 +8977,10 @@ void kart_hit(void)
  * and the rest run the hit animation on that player's kart (f1a = 7, table tb7b448). */
 struct shot {
     short owner, kind, f04, f06, f08, x, y;
+    short f0e, f10, f12, f14;
+    short speed;                /* 0x16: -> v7d608 (shot_step) */
+    short f18, f1a, f1c;
+    int dir;                    /* 0x1E: track direction 0..0x77f (shot_step) */
 };
 extern struct shot *v7d874;
 extern int tb7b448[][2];
@@ -11107,5 +11111,73 @@ void ents_project(void)
         CR->f14 = v7d878;
         CR->f22 = i;
     }
+}
+
+/* ---- 0x25e6c, 447 bytes: moves the shot v7d874 one step (callers 0x26090 in 0x2602c, 0x2d5d3):
+ * heading v7eb9c = its dir for kinds 1-4, for kinds < 1 and 5 v7d5d0 turned by dir (0 straight,
+ * 1 left, 2 right by 0x1e of 0x780); a kind > 1 that does not move stays put; else the step
+ * v7d6a0[v7eb9c] * speed through f37bb1 gives lx1/ly1. With move, shot_line tests the segment and the
+ * shot stops at lx0/ly0 unless it is a kind 1 that hit (v88bae == 3).
+ * differs (near-miss, 106 vs 103 insns, 3 blocks): the game keeps t = v7eb9c * 8 in a 4-byte stack
+ * slot (`sub esp,4`, `mov [esp],eax; mov ebx,[esp]`); ours keeps it in a register. Same cause as
+ * kart_move's single temp slot. Tried: int/long/array t, declaration orders, no t. Fixed: lx1 = lx0
+ * as its own statement lets the ly1 store be shared like the game's. */
+extern int v7d5d0;
+
+void shot_step(short move)
+{
+    short stay;
+    int t;
+
+    stay = 0;
+    if (v7d874->kind >= 1 && v7d874->kind != 5) {
+        if (v7d874->kind > 1)
+            stay = 1;
+        v7eb9c = v7d874->dir;
+    } else
+        switch (v7d874->dir) {
+        case 0:
+            v7eb9c = v7d5d0;
+            break;
+        case 1:
+            v7eb9c = v7d5d0 - 0x1e;
+            if (v7eb9c < 0)
+                v7eb9c += 0x780;
+            break;
+        case 2:
+            v7eb9c = v7d5d0 + 0x1e;
+            if (v7eb9c >= 0x780)
+                v7eb9c -= 0x780;
+            break;
+        }
+    if (move && stay) {
+        lx0 = v7d874->x;
+        lx1 = lx0;
+        ly0 = v7d874->y;
+        ly1 = ly0;
+    } else {
+        t = v7eb9c * 8;
+        v7d690 = (int *)(v7d6a0 + t);
+        v7d5f8 = *v7d690++;
+        v7d5f4 = *v7d690;
+        lx0 = v7d874->x;
+        ly0 = v7d874->y;
+        v7d608 = v7d874->speed;
+        f37bb1();
+        lx1 = lx0 + v7d610;
+        ly1 = ly0 + v7d620;
+    }
+    if (move) {
+        v7e568 = 0;
+        v88bae = 0;
+        shot_line();
+        if (v88bae != 3 || v7d874->kind != 1) {
+            v7d874->x = lx0;
+            v7d874->y = ly0;
+            return;
+        }
+    }
+    v7d874->x = lx1;
+    v7d874->y = ly1;
 }
 
