@@ -31,7 +31,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1e2ca, 91
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1e2e0, 92
    functions identical and 43 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
 2. Next in address order: 0x1e2e4 (`starts.py ww 0x1e2cb 0x1e800`; `dial`

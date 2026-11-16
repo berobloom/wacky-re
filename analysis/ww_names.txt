@@ -650,6 +650,7 @@
 0x0771bc modemdial    # LIKELY: dial command prefix; dial 0x1def6 copies it, then appends the digits of phone
 0x07ebdc phone        # LIKELY: the number to dial (dial 0x1dec7, spaces skipped 0x1df20)
 0x01e0f4 answer_call  # CONFIRMED (rebuild src/ww.c, byte-identical): "WAITING FOR CALL....", com_waitfor("RING") until it succeeds or sendfail, then "ANSWERING CALL...", "ATA", return wait_connect(); caller 0x20a11
+0x01e2cc fn_1e2cc       # CONFIRMED (rebuild src/ww.c): v684e0 = v685e4 = 0; no caller in the image (dead)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

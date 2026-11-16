@@ -7203,3 +7203,11 @@ int answer_call(void)
     fn_1c0ac();
     return 0;
 }
+
+/* ---- 0x1e2cc, 21 bytes: clears v684e0 and v685e4 (the pair classes_menu and fn_1832c clear inline).
+ * No caller in the image: dead code kept by the linker. */
+void fn_1e2cc(void)
+{
+    v684e0 = 0;
+    v685e4 = 0;
+}
