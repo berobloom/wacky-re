@@ -12596,3 +12596,113 @@ void kart_catchup(int n)
     }
 }
 
+/* ---- 0x28cac, 954 bytes: drives the computer karts for one frame (callers 0x3277c, 0x3278d in
+ * 0x30aae). Per player (v7d800, v88b72; not the human ones: 0, and 1 in two-player or split
+ * screen; f58 set runs hit_timer instead; net games skip f02 == 2): the f04 state sets the step
+ * count v88c24 - 0: f0c steps for f06 frames, then 1; 1: f0a steps for f0e frames, then 2; 2: f08
+ * steps and kart_catchup; 3: f0a steps until f0e runs out or the gap to karts[0] closes, then 2.
+ * A spin (f00, 3 = the other way) pushes x by f14, which falls by 4 a frame. In state 2 a kart
+ * within 0x14 (x + y distance) of another adds 0x3c steps; v7edb0 without v88c3c takes 0xc off
+ * (at least 4). Each step reads the next (x, y) of the track line at f5e (x + the push), moving to
+ * the next trklines[] entry (f1c, wrapping after v88b7a) when f10 runs out, and checks the human
+ * karts: within 0xe sets f02 = 1 and that kart's f7c. */
+extern short v88c3c;
+extern struct trkline *v7d7f8;
+
+void cpu_drive(void)
+{
+    short dir, x, step, y, k;           /* this order (of 120) gives the game's registers */
+    int lim, gap, j;
+
+    v7d800 = players;
+    for (v88b72 = 0; v88b72 <= nplayers; v88b72++) {
+        if (v7d800->f58)
+            hit_timer();
+        else {
+            if (netvoices && v7d800->f02 == 2) {
+                v7d800++;
+                continue;
+            }
+            if ((!splitscreen && !twoplayer || v88b72 != 1) && v88b72 != 0) {
+                switch (v7d800->f04) {
+                case 0:
+                    v88c24 = v7d800->f0c;
+                    if (--v7d800->f06 <= 0)
+                        v7d800->f04 = 1;
+                    break;
+                case 1:
+                    v88c24 = v7d800->f0a;
+                    if (--v7d800->f0e <= 0)
+                        v7d800->f04 = 2;
+                    break;
+                case 2:
+                    v88c24 = v7d800->f08;
+                    kart_catchup(v88b72);
+                    break;
+                case 3:
+                    gap = karts[0].f2e - karts[v88b72].f2e;
+                    v88c24 = v7d800->f0a;
+                    if (--v7d800->f0e <= 0 || gap <= 7 - v88b72 + v7ece0)
+                        v7d800->f04 = 2;
+                    break;
+                }
+                dir = 0;
+                if (v7d800->f00) {
+                    if (v7d800->f00 == 3)
+                        dir = -v7d800->f14;
+                    else
+                        dir = v7d800->f14;
+                    v7d800->f14 -= 4;
+                    if (v7d800->f14 <= 0)
+                        v7d800->f00 = 0;
+                }
+                if (v7d800->f00 == 0 && v7d800->f04 == 2 && !netvoices) {
+                    x = v7d800->x;
+                    y = v7d800->y;
+                    for (k = 7; k >= 1; k--) {
+                        if (k == v88b72)
+                            continue;
+                        if (abs(players[k].x - x) + abs(players[k].y - y) < 0x14) {
+                            v88c24 += 0x3c;
+                            break;
+                        }
+                    }
+                }
+                if (v7edb0 && v88c3c == 0) {
+                    v88c24 -= 0xc;
+                    if (v88c24 <= 4)
+                        v88c24 = 4;
+                }
+                for (step = 1; step <= v88c24; step++) {
+                    v7d800->x = *(short *)v7d800->f5e;
+                    if (dir)
+                        v7d800->x += dir;
+                    v7d800->f5e += 2;
+                    v7d800->y = *(short *)v7d800->f5e;
+                    v7d800->f5e += 2;
+                    if (--v7d800->f10 == 0) {
+                        if (++v7d800->f1c > v88b7a)
+                            v7d800->f1c = 0;
+                        v7d7f8 = &trklines[v7d800->f1c];
+                        v7d800->f1a = v7d7f8->f06;
+                        v7d800->f5e = (int)v7d7f8->pts;
+                        v7d800->f10 = v7d7f8->n;
+                    }
+                    if (twoplayer || splitscreen)
+                        lim = 1;
+                    else
+                        lim = 0;
+                    for (j = 0; j <= lim; j++) {
+                        if (karts[j].f0a == 0 && karts[j].f7e == 0 && v88c3c == 0
+                            && abs(v7d800->x - players[j].x) + abs(v7d800->y - players[j].y) < 0xe) {
+                            v7d800->f02 = 1;
+                            karts[j].f7c = 1;
+                        }
+                    }
+                }
+            }
+        }
+        v7d800++;
+    }
+}
+

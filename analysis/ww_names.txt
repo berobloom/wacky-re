@@ -332,6 +332,7 @@
 0x028998 sprites_build # CONFIRMED (rebuild src/ww.c): resets the list at arr79a28, players_frames, the five *_project, sprites_draw when v88b78
 0x0289ec hit_timer    # LIKELY (rebuild src/ww.c): v7d800 f58 timer against ticks2 - f4c (0x21/0x32/4), voices 0x18/0x19/0xd, v7edb4 score; meaning of f58 inferred
 0x028b20 kart_catchup # LIKELY (rebuild src/ww.c): (int place) state 3 boost by the gap to karts[0].f2e, v88c24 by curkart->fac; "catch-up" is inferred
+0x028cac cpu_drive    # LIKELY (rebuild src/ww.c): computer karts follow trklines[] by v88c24 steps per frame, state machine f04, collision with the human karts
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
 0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit
