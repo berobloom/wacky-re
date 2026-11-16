@@ -15171,3 +15171,40 @@ int com_wait_byte(int esc)
     return c;
 }
 
+/* ---- 0x2e008, 158 bytes: com_getc until the byte want arrives (1); key 0xcd0 aborts
+ * (net88c14 = 2, 0); a non-zero timeout gives up after that many ticks (0). v7ea68 = start.
+ * differs: registers only: want in EBX and t0 in ESI in the game, the reverse here (as in
+ * com_wait_byte); all 30 orders of t0, c, r (and an elapsed temp) tried. */
+int com_expect(int want, int timeout)
+{
+    int t0, c, r;
+
+    net88c14 = 0;
+    t0 = ticks;
+    for (;;) {
+        c = com_getc();
+        if (key88cd0 == 1) {
+            net88c14 = 2;
+            r = 0;
+            break;
+        }
+        if (c != -1 && c == want) {
+            r = 1;
+            break;
+        }
+        if (timeout && ticks - t0 >= timeout) {
+            r = 0;
+            break;
+        }
+    }
+    v7ea68 = t0;
+    return r;
+}
+
+/* ---- 0x2e0a8, 82 bytes: drops everything in the receive buffer. */
+void com_flush(void)
+{
+    while (com_getc() != -1)
+        ;
+}
+
