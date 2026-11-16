@@ -6698,3 +6698,58 @@ void scores_screen(void)
         music_start(menusong, 1);     /* 0x1d0e2-0x1d114, inlined by -oe like the game's */
     fn_1d704(v88bb2, v88bb6 + v7ecb4);                        /* 0x1d119-0x1d12d */
 }
+
+/* 0x1d13c, 516 bytes. Called from fn_1f858 at 0x2108f with the "class drivers" menu choice
+ * (v88c80 1 AMATEUR / 2 PRO / 3 CHAMP, 0x21074-0x2108f; choice 4 goes to 0x1d340).
+ * Each row shows that class's record table: fn_1d704(class, v7ecb4 + choice), so v7ecb4 (0 regular,
+ * 3 bonus pack, zones_menu) selects the group of tbl77758. v7ecb4 != 0 prefixes the item names with
+ * " BONUS" (the names are built by strcat on top of that prefix). */
+/* differs: near miss, 504 of the game's 516 bytes; one diff block. The game 0x1d178-0x1d196 is
+ * `mov dl,[0x600ac]` + four `mov byte [mnames slot],dl` + the join jmp; ours 0x1d178-0x1d18c is
+ * `mov al,[0x600ac]` + three `mov byte [slot],al` + that jmp, and the game has 2 bytes of 4-byte
+ * alignment padding (0x1d33e) that ours does not. Ours keeps the pooled "" byte in EAX (the AL-only
+ * short forms `a0`/`a2`, 5 bytes) and the game in EDX (`8a 15`/`88 15`, 6 bytes each); with EAX, -oe
+ * tail-merges this arm's fourth strcpy with the identical one that ends the else arm (the store at
+ * the join serves both arms), with EDX the game keeps a copy in each arm. Writing it as `if (v7ecb4 != 0) {BONUS
+ * ...} else {"" x4}` does keep four stores in one arm (514 bytes, after which the only aligned diffs
+ * are AL-vs-DL) but puts the BONUS arm in the fall-through position, so the branch is `je` where the
+ * game has `jne 0x1d198` (0x1d176) - two changes, not one. The sibling 0x1d340 has our merged shape
+ * in the game itself: its if arm stores three (0x1d386-0x1d390) and the fourth sits at the join,
+ * 0x1d3c6, loaded into AL. */
+void race_records_menu(int mode)              /* arg1 = eax (0x1d145: mov ebp,eax) */
+{
+    int saved = v88c80;                       /* 0x1d147-0x1d153, the esp slot restored at 0x1d32b */
+    int sel = 1;                              /* EDI: menu()'s initial cursor and the choice */
+
+    for (;;) {
+        v88bb0 = 0xd;                         /* 0x1d156 */
+        v88b9e = 0;                           /* 0x1d15f */
+        v88c80 = sel;                         /* 0x1d168 (1 on the first pass) */
+        if (v7ecb4 == 0) {                    /* 0x1d16f: cmp/jne, the "" block falls through */
+            strcpy(&mnames[0], "");
+            strcpy(&mnames[0x3c], "");
+            strcpy(&mnames[0x78], "");
+            strcpy(&mnames[0xb4], "");
+        } else {
+            strcpy(&mnames[0], " BONUS");
+            strcpy(&mnames[0x3c], " BONUS");
+            strcpy(&mnames[0x78], " BONUS");
+            strcpy(&mnames[0xb4], "");
+        }
+        strcat(&mnames[0], " BRONZE RACE     ");       /* 0x1d1cc-0x1d1fb */
+        strcat(&mnames[0x3c], " SILVER RACE     ");    /* 0x1d1fc-0x1d22b */
+        strcat(&mnames[0x78], " GOLD RACE       ");    /* 0x1d22c-0x1d25b */
+        strcat(&mnames[0xb4], " LEAVE THIS MENU ");    /* 0x1d25c-0x1d28b */
+        while (strlen(&mnames[0xb4]) < strlen(&mnames[0]))
+            strcat(&mnames[0xb4], " ");                /* 0x1d28e-0x1d2dc */
+        sel = menu(4, 0, 0, 0);                         /* 0x1d2de-0x1d2ee, movsx EDI,AX */
+        if (v7ecc0 != 0)                               /* 0x1d2f1 */
+            v88b9e = 1;
+        if (v88b9e != 0)                               /* 0x1d303 */
+            sel = 4;
+        if (sel == 4)                                  /* 0x1d312 */
+            break;
+        fn_1d704(mode, v7ecb4 + sel);                  /* 0x1d317-0x1d321 */
+    }
+    v88c80 = saved;                                    /* 0x1d32b-0x1d331 */
+}

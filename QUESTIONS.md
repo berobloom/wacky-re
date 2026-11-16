@@ -184,3 +184,15 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     are EAX/EDX role swaps in the shift and insert blocks (0x1cfb4, 0x1d03b) and the rotated
     `k` loop (0x1cf8c-0x1cf91 `mov ecx,3; jmp` to the tail test). Test: 97 diffs gone and the
     function byte-identical at 0x1ce14 (793 -> 807 bytes).
+
+11. **OPEN** (src/ww.c `race_records_menu`, findings/scores.md): what makes Watcom keep the pooled
+    "" byte (0x600ac) of the 0x1d16f if/else in EDX in the game and in EAX in ours? That single
+    register decides everything left in this function: with AL the four `mov [mnames slot],al` stores
+    are 5 bytes and -oe tail-merges the arm's fourth `strcpy(&mnames[0xb4], "")` into the else arm's
+    identical store (ours 504 bytes vs the game's 516, one block at 0x1d178-0x1d196); with DL the
+    stores are 6 bytes and both arms keep a copy. Evidence: the two sibling functions differ here -
+    the game's 0x1d340 shows the merged form (its if arm stores three, 0x1d386-0x1d390, the fourth at
+    the join 0x1d3c6 in AL), its 0x1d13c does not. Tried and failed: six spellings in `.work/rrmv.c`
+    (pointer temp for the fourth row, a 4-iteration loop, two separate ifs, an unused second
+    parameter, plain assignments after the declarations, flipped condition - the last changes the
+    branch to `je` as well). Test: the function byte-identical at 0x1d13c (504 -> 516 bytes).

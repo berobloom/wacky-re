@@ -1,8 +1,9 @@
 # Score / record tables
 
-Status: OPEN (four helpers of this area are rebuilt - `fn_1cad0`, `fn_1c994`,
-`enter_name` 0x1cb44 and the table's owner `scores_screen` 0x1ce14 (near miss, 97
-aligned instruction diffs); the code that first fills `tbl77758` is not)
+Status: OPEN (five helpers of this area are rebuilt - `fn_1cad0`, `fn_1c994`,
+`enter_name` 0x1cb44, the table's owner `scores_screen` 0x1ce14 (near miss, 97
+aligned instruction diffs) and the class record book `race_records_menu` 0x1d13c
+(near miss, one diff block); the code that first fills `tbl77758` is not)
 
 ## Summary
 
@@ -128,8 +129,43 @@ car-select chain and the name entry.
   `n <= 0xb` and 16 spaces when `n > 0xb` (literals 0x60db4, 0x60da0) - the field
   width is `n + 1`.
 
+- CONFIRMED (rebuild `src/ww.c`, near miss at 0x1d13c; callers 0x2107e and 0x2108f in `fn_1f858`):
+  `race_records_menu` 0x1d13c-0x1d33e is the **class record book** menu. The
+  "drivers by class" menu (its items at 0x61400-0x61460: " AMATEUR CLASS DRIVERS", " PRO CLASS
+  DRIVERS", " CHAMP CLASS DRIVERS", " TIME TRIAL DRIVERS", " LEAVE THIS MENU") stores its 1-based
+  choice in `v88c80` (0x2103b); choice 4 calls 0x1d340 (the time-trial variant), any other choice
+  calls 0x1d13c with EAX = the class (0x21088 `movsx eax, word [v88c80]`). Inside, four rows
+  " BRONZE RACE     " / " SILVER RACE     " / " GOLD RACE       " / " LEAVE THIS MENU "
+  (0x60dd8/0x60dec/0x60e00/0x604d0) go through `menu`
+  (0x1d2e9) and a selection calls `fn_1d704(class, v7ecb4 + choice)` (0x1d321) - so the group of
+  `tbl77758` is `v7ecb4 + choice`, `v7ecb4` being 0 regular / 3 bonus pack (`zones_menu` 0x16664).
+  CONFIRMED: the item names are built by `strcat` on top of a prefix - `strcpy(row, " BONUS")` for
+  the first three and `strcpy(row, "")` for the fourth when `v7ecb4 != 0`, `strcpy(row, "")` for all
+  four otherwise (0x1d16f-0x1d1c7), then `strcat` of the row text (0x1d1cc-0x1d28b: the inline first
+  `repne scasb`es the end of the destination), then `while (strlen(row3) < strlen(row0))
+  strcat(row3, " ")` pads the last row to the first one's width (0x1d28e-0x1d2dc, the 1-char literal
+  is 0x600a0). `v88bb0 = 0xd` and `v88c80 = <previous choice>` are re-set on every pass of the loop
+  (the back edge 0x1d326 jumps to 0x1d156), and `v88c80` is saved on entry (0x1d147) and restored on
+  exit (0x1d32b-0x1d331).
+- STRONGLY SUPPORTED: 0x1d340-0x1d703 is the same screen for TIME TRIAL (` BRONZE TRIALS   `,
+  ` SILVER TRIALS   `, ` GOLD TRIALS       `, 0x60e14/0x60e28/0x60e3c), and after the class choice a
+  second menu of five generated rows - `mnames[0x3c*k] = <metal> + "TRACK " + itoa(1..5) + "  "`
+  (0x1d53a-0x1d648, `itoa` 0x425f9 writing into the frame's first slot) plus " LEAVE THIS MENU " at
+  0x7bd68 - run through `menu(6, v88bda, 0, 0)` at 0x1d671. Not rebuilt.
+
 ## Traps
 
+- The 1-char menu-name padding literal 0x600a0 is `" "`, and the padding loop uses `strcat`, not
+  `strcpy`: `strcpy(row, " ")` inside that loop would loop forever once `strlen(row0) > 1`. The
+  Watcom inline gives it away - `repne scasb` over the destination before the copy is `strcat`
+  (`strcpy` of a constant starts copying immediately).
+- The four rows of these menus, 0x7bc3c / 0x7bc78 / 0x7bcb4 / 0x7bcf0, are `mnames[0]`, `[0x3c]`,
+  `[0x78]`, `[0xb4]` - `0x7bc3c + 3 * 0x3c = 0x7bcf0`, four consecutive slots, which is how `menu()`
+  reads them (`mnames[i * 0x3c]`). Writing the last row at `mnames[0xf0]` shows a blank fourth row.
+- `v88c80` is both `menu()`'s initial cursor and the choice of the drivers-by-class menu: 0x2103b
+  stores `menu`'s return there and 0x21088 reads it back as `race_records_menu`'s argument, while
+  `race_records_menu` itself saves it (0x1d147) and rewrites it with the previous choice each pass
+  (0x1d168). A port that treats it as one thing loses either the menu cursor or the class.
 - The two 20-byte strings of a record are `+6` = the `fn_1c994` stamp and `+0x1a` = the typed
   name, the reverse of what their order in the record suggests: the insert writes the stamp into
   `+6` (0x1d06e) and the name into `+0x1a` (0x1d08c), while the shift copies `+0x1a` first

@@ -250,3 +250,18 @@ it can be copied back into DREA.
   and all-short locals cost 41 (GOTCHAS iter 10, "a local's type decides whether Watcom keeps
   it in a register"). Ask "which variable lives in which register/slot" before "in what order
   are they declared". [generic]
+- **`-oe` tail-merges an identical statement that ends both arms of an if/else, and which arm keeps
+  its copy follows the register the constant lands in** (iter 13, [generic]): in `race_records_menu`
+  0x1d13c both arms of `if (v7ecb4 == 0) {strcpy(row,"") x4} else {" BONUS" x3 + strcpy(row,"")}`
+  end with the same `strcpy(&mnames[0xb4], "")`. Ours loaded the pooled "" byte 0x600ac into EAX,
+  which let the optimizer serve both arms from one store after the join (504 bytes, and the arm lost
+  a store); the game loaded it into EDX, so the two arms each keep their copy (its 0x1d178-0x1d196).
+  The register also decides the size: `mov al,[abs]`/`mov [abs],al` are the AL-only 5-byte forms
+  (`a0`/`a2`), EDX needs the 6-byte `8a 15`/`88 15` - so a near miss that is one load+N stores
+  shorter, with AL where the game has DL, is this merge and not a wrong expression. Flipping the
+  condition to `if (v7ecb4 != 0)` un-merges but turns the game's `jne` into `je`: two changes, not one.
+- **`tools/wc/fndiff.py`'s diff count is not the number of real differences** (iter 13, [generic]):
+  it aligns only `min(len(ours), len(game))` instructions, so when ours is shorter its whole epilogue
+  shows up as ours-only rows (`race_records_menu`: it printed 13 pairs where the real difference was
+  5 in one block, 8 were its own cut-off `add esp,4`/`pop`/`ret`). Read the blocks; count instructions
+  per range with `tools/le/disasm.py` before concluding anything from the number.
