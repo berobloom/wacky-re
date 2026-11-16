@@ -18020,3 +18020,87 @@ void pic_at(int d, int lift, short x)
     f37487();
 }
 
+/* ---- 0x34458, 860 bytes (caller 0x35ca4 at 0x3677f, start-up): the release check. 42.GAM in the
+ * DAT means registered and upgraded (v7eca0 3), 20.GAM registered (2), neither shareware (1, and
+ * v7e574 1). Shows CHECK.PCX (palette from its last 0x300 bytes into v7d858) with the release
+ * lines, the copyright and PRESS FIRE; unless v7ecbc, fades in and waits up to 2000 ticks for fire
+ * (or the v88cce key) or Esc.
+ * differs: only the stack slots of n and y swap (game n esp+0x190, y +0x194); declaration order,
+ * placement and int/short mixes do not move them. */
+extern int v7ecbc;
+
+void release_check(void)
+{
+    char lines[10][40];
+    short n, y;
+    short i;
+    char *pal;
+
+    strcpy(lines[1], "WACKY WHEELS VERSION 1.1");
+    v88bd6 = datfind("42.GAM");
+    if (!v88bd6) {
+        v88bd6 = datfind("20.GAM");
+        if (!v88bd6) {
+            v7e574 = 1;
+            v7eca0 = 1;
+        } else {
+            v7e574 = 0;
+            v7eca0 = 2;
+        }
+    } else {
+        v7e574 = 0;
+        v7eca0 = 3;
+    }
+    if (v7e574) {
+        n = 2;
+        strcpy(lines[2], "SHAREWARE RELEASE.");
+    } else {
+        n = 4;
+        strcpy(lines[2], "THIS IS REGISTERED");
+        if (v7eca0 == 3)
+            strcat(lines[2], " AND UPGRADED");
+        strcat(lines[2], ".");
+        strcpy(lines[3], "IF YOU DID NOT PURCHASE THIS COPY");
+        strcpy(lines[4], "THEN PLEASE SELECT ORDERING.");
+    }
+    pcx_load("CHECK.PCX", 0);
+    pal = v7d858;
+    datfind("CHECK.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    y = 0x54;
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+    v88b4a = 0;
+    pal_a = 0x3e80;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = 0x3e80;
+    for (i = 1; i <= n; i++) {
+        print_at(center_x(strlen(lines[i]) * 8), y, lines[i], 0);
+        y += 10;
+    }
+    strcpy(lines[1], "COPYRIGHT BEAVIS-SOFT 1994");
+    print_at(center_x(strlen(lines[1]) * 8), 0xa0, lines[1], 0);
+    print_at(center_x(strlen("PRESS FIRE") * 8), 0xb8, "PRESS FIRE", 0);
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    if (!v7ecbc) {
+        fade_in((unsigned char *)v7d858);
+        wait_release(0);
+        ticks = 0;
+        do {
+            v7d8a4 = v7d8ac;
+            ctl_setup(0);
+            f377ae();
+            if (v88cce)
+                joy88b40 = 1;
+        } while (!joy88b40 && key88cd0 != 1 && ticks < 2000);
+        wait_release(0);
+    }
+}
+
