@@ -6,8 +6,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries incl. the Apogee Sound System (findings/executables.md).
-  Compiling the whole file with `-3` instead of `-3r` gives a byte-identical object, so the
-  CPU-reorder letter is not what moves instructions - do not re-test it.
+  Compiling with `-3` instead of `-3r` gives a byte-identical object, so the CPU-reorder letter is
+  not what moves instructions - do not re-test it.
 - **185 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
   entries in `src/nearmiss.txt` (4 MATCH, 6 SKIP, 2 LAYOUT, 88 open). The C rebuild covers
   0x10260-0x36a4d except the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is
@@ -25,7 +25,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
   car icons plus **`ents[8]` as the selection box** (0x73998); `v7d338[car]` = per-car lock (0x34463).
 - Race setup (findings/game-loop.md, both near misses): `fn_1be3c` builds the start grid `v70720[0..7]`
   (permutation of 0..7, `myplayer` first, `v88c6a` second in 2p, rest `rand()`-drawn); `fn_1bf00` sets
-  `players[i].f64`/`.face`.
+  each `players[i].f64`/`.face`.
 - Scores (findings/scores.md): `tbl77758` rows of 0x450 = 24 records of 0x2e (stamp +6 from
   `fn_1c994`, now byte-identical, name +0x1a), row `v88bb6 + v7ecb4`; `fn_1cad0` picks one,
   `enter_name` 0x1cb44 (21 slot diffs) and `scores_screen` 0x1ce14 (97 diffs) insert `v7ed5c` among
@@ -35,16 +35,15 @@ Short: where the project stands, and what is next. History is in git; no diary.
   calls `trial_records_menu` 0x1d340 (byte-identical). Menu rows are `mrows[][0x3c]` at 0x7bc00
   indexed from 1 (`mnames` = `mrows[1]`); names are `strcpy(prefix)` + `strcat` + padding.
 - Menus/help (findings/menus.md): `fn_1c0f4` 0x1c0f4-0x1c88b = the F1 controls screen; control names
-  in 84-byte records at 0x77432. `fn_182d0` (palette-entry copier, ~24 callers) takes 4 register args
-  plus one stack arg it pops itself (`ret 4`), and **its 4th argument is a word** (0x182e9
-  `test cx,cx`) - our `short a4` reproduces that without touching a caller.
+  in 84-byte records at 0x77432. `fn_182d0` (palette copier, ~24 callers) takes 4 register args plus
+  one stack arg it pops itself (`ret 4`); **its 4th argument is a word** (0x182e9 `test cx,cx`).
 - Music (findings/sound.md still unwritten; the compiler fact is in GOTCHAS): `music_start` 0x1180c
   and `music_play` 0x11834 are byte-identical; the game inlines `music_start` (scan
   `66 c7 05 cc8b08 0000`: 20 hits) and in the four `music_start(song, 0)` copies keeps `xor edx,edx`
   **before** the two stores (0x11885, 0x2b6a3, 0x2cad6, 0x2e729) while 9.5b sinks it.
 - Video (findings/video.md): `setpalette` 0x36f14 is **not** a palette op - asm `rep movsb` of 0x3e80
-  bytes A0000+`pal_b` to A0000+`pal_c`; its flippers stay `extern` (-oe loses `net_end`); page
-  flips are `if`/`else` pairs of stores, never ternaries.
+  bytes A0000+`pal_b` to A0000+`pal_c`; its flippers stay `extern` (-oe loses `net_end`); page flips
+  are `if`/`else` pairs of stores, never ternaries.
 
 ## Next
 
@@ -55,7 +54,7 @@ Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCK
    0x2f408 (6 each). Read the `differs:` note first, then `tools/wc/fndiff.py` (the LEFT column is
    OURS, the right is the game's - the reverse of what overnight/prompt.md says).
 2. `pcx_load` 0x27060 (5 diffs): probe shapes the way iter 17 did - copy src/ww.c whole, add the
-   variants with new names, score with `tools/wc/variants.py OBJ ww 0xADDR 0xEND n1 n2 ...` where
+   variants under new names, score with `tools/wc/variants.py OBJ ww 0xADDR 0xEND n1 n2 ...` where
    END cuts before the shared epilogue, and keep the unchanged statements verbatim (reordering them
    re-schedules the whole function and invalidates the ranking).
 3. Apply the iter 17 levers where their shape shows up: a constant stored through a register
