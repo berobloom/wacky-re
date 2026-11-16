@@ -4132,7 +4132,7 @@ extern char *lapdata;
 void fn_279e8(void);
 void fn_2754c(void);
 short fn_27920(int n);
-void fn_2b5e8(int n);
+void duck_screen(int after);
 void fn_32e60(void);
 void fn_36f55(void);              /* asm: writes 0x6400 bytes from v7eb54 to A000:7D00 */
 
@@ -4278,7 +4278,7 @@ setdone:;
             pal_a = 0;
         }
         if (netvoices)
-            fn_2b5e8(0);
+            duck_screen(0);
         v88bd6 = datfind((char *)0x6a4b8);
         fread(p6a980, 0x6400, 1, datfile);
         if (v7d998 == 0 || v7d998 == 3) {
@@ -13847,5 +13847,132 @@ void bigdigits(int x, int y, int n)
     spr_x += 0x16;
     drawsprite();
     spr_x += 0x16;
+}
+
+/* ---- 0x2b5e8, 1518 bytes: the Duck Shoot screen on ORDER.PCX (callers 0x17e41, 0x31142).
+ * With after set (the shoot is over) the score v7edb4 enters the four-place hall of fame
+ * 0x6e768 if it reaches a place (jingle v7c64c, enter_name, the lower places move down) and
+ * is shown big; before it the two-line instructions. Then the two drivers' faces (v7ec70
+ * facing right, v7ec6c left), THE WACKY DUCK TOP SHOOTERS with the table, after the shoot
+ * the race song v7c658 again, PRESS FIRE, and wait_input.
+ * differs: 13 blocks: the inlined music_start loads edx before its stores (as in music_jingle),
+ * i = 0 is scheduled before getpalette, and three centred x values go through a dword stack
+ * slot reloaded with movsx (int x in memory?); int x / a second short / inline forms tried. */
+struct hiscore { char name[0x14]; int score; };
+extern struct hiscore duckfame[4];
+#pragma aux duckfame "_arr6e768"
+extern int v7c64c;
+extern int i7ec70;
+#pragma aux i7ec70 "_v7ec70"
+
+void duck_screen(int after)
+{
+    char buf[0x50];
+    char num[0x50];
+    char name[0x28];
+    short x;
+    int i, j, found, y;
+
+    pcx_load("ORDER.PCX", 2);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    v88b4a = 0;
+    pal_a = 0;
+    p7d714 = p6a980;
+    f375cd();
+    pal_a = 0;
+    if (after) {
+        found = 0;
+        for (i = 0; i <= 3; i++) {
+            if (v7edb4 >= duckfame[i].score) {
+                found = 1;
+                break;
+            }
+        }
+        if (found) {
+            music_start(v7c64c, 0);
+            enter_name(name, "DUCK SHOOT HALL OF FAME", 0xf);
+            palptr = pal7d850;
+            getpalette();
+            f1bf94(pal7d850);
+            v88b4a = 0;
+            pal_a = 0;
+            p7d714 = p6a980;
+            f375cd();
+            pal_a = 0;
+            for (i = 0; i <= 3; i++) {
+                if (v7edb4 >= duckfame[i].score) {
+                    if (i != 3) {
+                        for (j = 3; j >= i + 1; j--) {
+                            duckfame[j].score = duckfame[j - 1].score;
+                            strcpy(duckfame[j].name, duckfame[j - 1].name);
+                        }
+                    }
+                    duckfame[i].score = v7edb4;
+                    strcpy(duckfame[i].name, name);
+                    break;
+                }
+            }
+        }
+        strcpy(buf, "YOUR DUCK SCORE");
+    } else
+        strcpy(buf, "THE WACKY DUCK SHOOT");
+    wtext((0x140 - (int)strlen(buf) * 0xb) / 2, 0xa, buf, 0);
+    if (after)
+        bigdigits(0x8a, 0x3c, v7edb4);
+    else {
+        strcpy(buf, "YOU HAVE TWO MINUTES TO");
+        x = (0x140 - (int)strlen(buf) * 8) / 2;
+        print_at(x, 0x1e, buf, 0);
+        strcpy(buf, "BLAST AS MANY DUCKS AS YOU CAN!");
+        x = (0x140 - (int)strlen(buf) * 8) / 2;
+        print_at(x, 0x28, buf, 0);
+    }
+    spr_y = 0x3c;
+    spr_h = 0x26;
+    spr_w = 0x1c;
+    sprptr = faces[i7ec70].img[7];
+    spr_x = 0x4c;
+    drawsprite();
+    sprptr = faces[i7ec6c].img[1];
+    spr_x = 0xcd;
+    drawsprite();
+    strcpy(buf, "THE WACKY DUCK TOP SHOOTERS");
+    wtext((0x140 - (int)strlen(buf) * 0xb) / 2, 0x6e, buf, 0);
+    y = 0x82;
+    for (i = 0; i <= 3; i++) {
+        strcpy(buf, duckfame[i].name);
+        strcat(buf, " ");
+        itoa(duckfame[i].score, num, 10);
+        if (num[1] == 0) {
+            num[2] = 0;
+            num[1] = num[0];
+            num[0] = '0';
+        }
+        strcat(buf, num);
+        x = (0x140 - (int)strlen(buf) * 8) / 2;
+        print_at(x, (short)y, buf, 0);
+        y += 0xa;
+    }
+    if (after) {
+        if (cursong != v7c658)
+            music_start(v7c658, 1);
+    }
+    strcpy(buf, "PRESS FIRE");
+    x = (0x140 - (int)strlen(buf) * 8) / 2;
+    print_at(x, 0xb4, buf, 0);
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    f32cf8(v7d854 = v7d85c);
+    wait_input(0);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    v88b9e = 0;
 }
 
