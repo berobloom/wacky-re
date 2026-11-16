@@ -177,3 +177,15 @@ it can be copied back into DREA.
   its own extern and pin the argument registers with what the call site loads (`#pragma aux
   fn_430f7 parm [eax] [edx] [ecx]`, ebx untouched) - the fixup check then verifies it by name like
   any other clib symbol. [generic]
+- **Watcom does not allocate scalar stack slots in declaration order** (386-byte probe plus
+  `cars_menu`, iter 7): arrays do (three `char[0x50]`s and two `short[8]`s land in declaration
+  order, ascending from `esp+0`, and reversing the declarations permutes them), but the scalars
+  get their `esp` offsets from the register allocator's order, not the source's: a 1250-instruction
+  function whose every statement was translated in the game's order still came out with the same
+  26 spilled locals in a different permutation, and one local the original spills stayed in a
+  register here (frame 4 bytes short). Expect a whole-function slot permutation as a near-miss
+  class; compare the two listings with the `disp(%esp)` text masked before hunting for a
+  translation error. [generic]
+- **Read esp offsets per instruction, not per table**: Watcom's 5-argument calls push one dword,
+  so every displacement after a `push 0` is 4 below the value that a slot table sorted by printed
+  offset implies (`cars_menu` 0x1adf7/0x1ba75 read 0x138/0x15c, not 0x13c/0x160). [generic]

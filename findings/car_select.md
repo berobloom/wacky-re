@@ -1,9 +1,11 @@
 # Car select: `cars_menu` 0x1a380 (CHOOSE VEHICLE)
 
 Question: what does the car-select screen do, and what are its locals and globals?
-Status: **OPEN** — the whole function is mapped (all 1250 instructions read);
-`src/ww.c` does not contain it yet, so the local *roles* below are inferences
-from addresses, not rebuild-confirmed.
+Status: **OPEN** — the whole function is mapped and `src/ww.c` now contains the
+rebuild (`cars_menu`, near miss: 6562 vs 6861 bytes; 71 % of the instruction rows
+agree once the stack-slot permutation and the fixup bytes are masked, see
+"Rebuild status" below). The local roles are now read off matching code, but the
+scalar slot numbers are the open part (QUESTIONS.md 5).
 
 ## The function (CONFIRMED, disassembly 0x1a380-0x1be3b)
 
@@ -22,6 +24,11 @@ from addresses, not rebuild-confirmed.
   input stage); `cmp word [esp+0x164],5 / jne 0x1b9b5` 0x1be13 ends it.
 
 ## Stack frame (offsets CONFIRMED as printed; roles are labelled)
+
+NB the printed offset is relative to `esp` **at that instruction**: the five-argument
+calls (`ents_show`, `showlines`) push one dword, so a read that follows a `push 0` is
+4 below the row it appears to match (0x1adf7 reads 0x138, 0x1ba75 reads 0x15c - CONFIRMED
+by the rebuild, where the same C reads land in the same slots).
 
 0x00, 0x50, 0xa0 `char[0x50]` × 3, then 0xf0, 0x100 `short[8]` × 2, then 27
 dword locals 0x110-0x178: 0xf0 + 0x20 + 0x6c = 0x17c = the `sub esp` size
@@ -49,8 +56,8 @@ dword locals 0x110-0x178: 0xf0 + 0x20 + 0x6c = 0x17c = the `sub esp` size
 | 0x150 | cursor move state: 1 up, 2 down, 4 returning, 0 idle | set 0x1b5aa, 0x1b634, 0x1af97, 0x1aef4; read 0x1af08, 0x1b557, 0x1b5f7 | CONFIRMED values |
 | 0x154, 0x168 | selection-box sprite y / x (set to 0x8e / 0xec) | 0x1a5e5, 0x1a605, 0x1ae0f, 0x1ae24 | CONFIRMED |
 | 0x158 | added to 0x178 when picking the box sprite in the confirm stage | 0x1b9fe, 0x1ba0b | LIKELY |
-| 0x15c | stage-4 countdown (to 9, then -1) | 0x1b9a3, 0x1bbf9, 0x1bc1a | LIKELY |
-| 0x160 | 0/1 toggle: which frame of the selection-box pair | 0x1afe0, 0x1aff2, 0x1ae2a, 0x1ba75 | LIKELY |
+| 0x15c | stage-4 countdown (-1, then 0..10); also `ents_show`'s `sel` in stage 1-2 (0x1ba86) | 0x1b9a3, 0x1ba75, 0x1bbf9, 0x1bc1a | LIKELY |
+| 0x160 | 0/1 toggle: which frame of the selection-box pair | 0x1afe0, 0x1aff2, 0x1ae2a | LIKELY |
 | 0x164 | stage machine 1 (set 0x1b97c), 2 (0x1bbde), 3 (0x1bc25), 4 (0x1bc45), 5 (0x1be08); loop while != 5 | 0x1be13 | CONFIRMED values |
 | 0x16c | = 0x2e, column 0 x (compared with `ents[i].x`) | 0x1a46d, 0x1b6d7, 0x1b765 | CONFIRMED |
 | 0x170, 0x174 | the cursor's y / x in the icon grid (find12's args; start 0x72 / 0xee) | 0x1a513, 0x1a574, 0x1a864, 0x1a871 | CONFIRMED args |
@@ -76,6 +83,26 @@ dword locals 0x110-0x178: 0xf0 + 0x20 + 0x6c = 0x17c = the `sub esp` size
   `add`/`sub` of a step in the state machine 0x1b7d7-0x1b8fd
   (0x1b81c, 0x1b862, 0x1b8b8, 0x1b8f6); `ents[i].f2` latches `frame == 2`
   and `frame == 6` at 0x1b946-0x1b96c.
+
+## There are nine `struct ent` records here, not eight (CONFIRMED)
+
+- Both setup loops walk 0..7 (0x1a58a `cmp edx,7`), but two other walks run 0..8:
+  0x1a792 (`lea eax,[ecx*8]; add eax,eax; lea eax,[eax+eax*4]` -> 0xc*i,
+  `cmp eax,0x6c` = 8*8) and 0x1b96f (`lea eax,[edx*8]; lea esi,[eax+eax*4]`,
+  `cmp esi,0x60`) reach past the eight icon records, i.e. they scan/clear up to
+  the record at 0x73938 + 8*0xc = **0x73998**.
+- That 9th record is the selection box: 0x1a58f-0x1a5b2 (just after the two
+  8-record setup loops) writes `ents[8].x` = 0xec, `ents[8].y` = 0x8e,
+  `ents[8].f8` = 0 and `ents[8].frame` = 0; the draw at 0x1a6d2-0x1a710 takes
+  spr_x/spr_y from `ents[8].x/y` with spr_w 0x1c / spr_h 0x26 and
+  `sprptr = sp6a878[pbase]` (0x1a6fb), and the second one at 0x1ae03-0x1ae37 uses
+  the box *locals* ([esp+0x168]/[esp+0x154]) with `sp6a878[pbase + flip]`. So
+  `ents[8].frame` is set to 0 here and the box's two-frame toggle lives in the
+  0x160 local, not in the record.
+- Consequence: what the first pass of this file called `carbox_x` (0x7399c) /
+  `carbox_y` (0x7399e) are `ents[8].x` / `ents[8].y` (0x73938 + 8*0xc + 4/6), and
+  `ents` has to be declared `struct ent ents[9]` for those writes to land. The
+  rebuild does, and its writes match.
 
 ## `v7d338[]` = the per-car lock (STRONGLY SUPPORTED; closes most of QUESTIONS 4)
 
@@ -130,8 +157,11 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   (0x60b8c, 0x1b0a7) and to a full control reset 0x1b0b1-0x1b129.
 - `v88cef` (the remote control byte) unpacks at 0x1ac8c-0x1ad1d:
   bit0 -> `key88cd5`, bit1 -> `key88cdd` (only when this instance's player
-  index matches the net slot: `(v88b7e == 0 && netgame == 1) ||
-  (v88b7e == 1 && netgame == 2)`, 0x1acb7-0x1acd5), bit2 -> `joy88b40`,
+  index matches the net slot: `(v88b7e == 1 && netgame == 1) ||
+  (v88b7e != 1 && netgame == 2)` - CONFIRMED, 0x1acb7 `cmp v88b7e,1`, 0x1acbf
+  `jne 0x1accd`, 0x1acc1 `cmp netgame,1 / jne 0x1ad23`, 0x1accd `cmp netgame,2
+  / je 0x1acd7`; the earlier note had the two player values swapped),
+  bit2 -> `joy88b40`,
   bit3 -> `joy88b42`, bit4 -> `joy88b44`, bit5 -> `joy88b46`,
   bit6 -> `v88cec`; otherwise bit5 only, and only if `joy88b46 == 0` (0x1ad23).
 - `joy88b42 != 0 || v88cce != 0` forces `joy88b40 = 1` (0x1ab9a, 0x1b3a0,
@@ -169,6 +199,26 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   (0x1bde0-0x1be02).
 - Exit: `myplayer = [esp+0x140]` (0x1be29) — the car the player picked.
 
+## Rebuild status (iter 7)
+
+`src/ww.c` has `cars_menu`: 6562 bytes vs the game's 6861, differing from +8
+(the frame `sub esp,0x17c` is right; the slot numbers are not). Masking the esp
+displacements and the relocation-filled addresses, 876 of the 1229 disassembly
+rows (71 %) already sit in the same order with the same opcodes and immediates,
+including both switch jump tables landing in the 0x1a360/0x1a370 gap.
+
+The rest is one permutation plus a few statement orders: the game's 27 scalar
+slots (0x110..0x178) and ours (0x110..0x174) are the same variables in a
+different order - ours 0x16c is the game's 0x114 (the 0x2e box x), ours 0x160 is
+the game's 0x140 (the car), ours 0x140 is the game's 0x110 (the loop counter),
+ours 0x174 is the game's 0x150 (the slide step). Arrays are allocated in
+declaration order (the three 0x50 buffers and the two `short[8]`s land right,
+and reversing the buffer declarations permutes them), but Watcom gives the
+scalars their slots in an order set by its register allocation, not by
+declaration: our 26 spilled scalars are a fixed permutation of the game's 27,
+and the game additionally spills what we keep live in a register. Open in
+QUESTIONS.md.
+
 ## Traps
 
 - 0x1a360/0x1a370 are jump tables for the two switches, not padding: check
@@ -183,3 +233,9 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   every esp offset by 0x50, which looks like a global-slot puzzle.
 - The centred caption x lives in ECX across both setup loops (0x1a4a9 ->
   0x1a5c8); recomputing it in C re-spills it and moves the code.
+- A `push 0` before a 5-argument call shifts every following esp displacement by
+  4: the reads at 0x1adf7/0x1ba75 are 0x138/0x15c, not the 0x13c/0x160 they look
+  like in a table sorted by printed offset.
+- `cmp reg,imm; jg out; cmp reg,imm; jle loop` (0x1b156, 0x1b172) is this
+  compiler's two-copy form of one spin test; write one `while` in C and the
+  second load comes back. Do not read it as two different variables.

@@ -16,10 +16,11 @@ keep a session diary here.
   `v7ece0` and the `tbl7e730` index `v88b84` from it. `laps_menu` 0x1a148 (rebuilt byte-identical):
   SIX/EIGHT/TEN LAP RACE rows into `nlaps` 6/8/10, 3 laps when the KID MODE engines are locked
   (`v7edb0`), 6 for a TIME TRIAL outside splitscreen.
-- Car select mapped (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b is one 6861-byte C function
-  (`sub esp,0x17c` = 3 `char[0x50]` buffers, 2 `short[8]` arrays at 0xf0/0x100, 27 dword locals); it
-  uses `ents[0..7]` as the eight car icons, the cursor as a grid point resolved by `find12`,
-  `sp6a878[player<<1|frame]` for the selection box, and ends with the class/lap/engine/zone menus.
+- Car select mapped and rebuilt (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b is one
+  6861-byte C function (`sub esp,0x17c` = 3 `char[0x50]` buffers, 2 `short[8]` arrays at 0xf0/0x100,
+  27 dword locals); it uses `ents[0..7]` as the eight car icons plus **`ents[8]` as the selection
+  box** (0x73998, so `ents` is 9 records here), the cursor as a grid point resolved by `find12`,
+  the box sprite pair at 0x6e5b0, and ends with the class/lap/engine/zone menus.
   `v7d338[car]` is the per-car lock (shareware locks cars 0,1,5,6; `v7e574` is CONFIRMED the shareware
   flag, 0x34463-0x344d4); the 0x20 bytes at 0x1a360 are two jump tables, not padding.
 
@@ -28,17 +29,15 @@ keep a session diary here.
 Take the first open item when QUEUE.md has none open. Mark items CLOSED or
 BLOCKED (with the reason) rather than deleting them.
 
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1a35e, 84 functions
-   byte-identical and 32 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1be3b, 84 functions
+   byte-identical and 33 near misses (`src/check.sh`; near misses are marked `differs:` in the source, and the
    register/scheduling ones are QUESTIONS.md 2, 3). Layout notes: struct player pack(1), struct face 0x98,
-   calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX (stack args pushed by the caller and popped by the callee, `ret 4` - see findings/menus.md Traps). `src/ww.c` is ~5.3 K lines: grep, don't read whole. Functions after the data-file block (0x14128-0x14260) go at the end of the file.
-2. **Port `cars_menu` 0x1a380** (next in address order; the phase map, frame and constants are in
-   findings/car_select.md, so no re-reading of the disassembly is needed - `tools/le/disasm.py ww
-   0x1a380 --func` for the listing). One C function, so it compiles only as a whole: expect the first
-   iteration to reach a compile and a near miss. Declare the locals in the frame order the findings
-   table gives, and add the externs newly named in analysis/ww_names.txt (`carbox_x/y`, `hits_target`,
-   `v7b6df`, `v88b88`). The "after-ret" starts between 0x1a380 and 0x1be3b are bodies inside it; the
-   functions after it start at 0x1be3c, 0x1bf00, 0x1bf80 and 0x1bf94.
+   calling convention arg1=EAX arg2=EDX arg3=EBX arg4=ECX (stack args pushed by the caller and popped by the callee, `ret 4` - see findings/menus.md Traps). `src/ww.c` is ~6 K lines: grep, don't read whole. Functions after the data-file block (0x14128-0x14260) go at the end of the file.
+2. Finish `cars_menu` (near miss at +8, 6562 vs 6861 bytes): the statements are in the game's order
+   and 71 % of the rows agree with the esp disps masked, so what is left is the scalar slot
+   permutation (QUESTIONS.md 5, probe recipe there), our frame being 4 bytes short because the game
+   spills one local we keep in a register. Listing: `tools/wc/objdiff.py ww .work/src/WW.OBJ
+   cars_menu`. The functions after it start at 0x1be3c, 0x1bf00, 0x1bf80 and 0x1bf94.
 3. The two store/register near misses: classes_menu's `v7edb0` store schedule (QUESTIONS 3) and
    fn_19db8's register home (QUESTIONS 2, the home follows the position of the first definition).
    Batch the probes: `tools/wc/variants.py WW.OBJ ww 0x19eac 0x1a147 name...` scores ~30 shapes in

@@ -603,9 +603,10 @@
 0x0430f7 fn_430f7         # CONFIRMED: the dword path 0x39 into the clib module __stos at 0x430be (libmatch); eax=dst edx=value ecx=count, ebx untouched
 0x01a360 jt_1a360            # CONFIRMED: 4-entry jump table 0x1b7d7/0x1b828/0x1b86e/0x1b8c1, used by jmp dword cs:[esi*4+0x1a360] (0x1b7cf, guarded cmp si,3/ja at 0x1b7c6). STATUS's "0x1a360 is padding" was wrong
 0x01a370 jt_1a370            # CONFIRMED: 4-entry jump table 0x1bbc3/0x1bbf9/0x1bc35/0x1bc55, used by jmp dword cs:[edx*4+0x1a370] (0x1bbbb) on stage-3 after cmp ax,3/ja 0x1bbaa
-0x01a380 cars_menu           # CONFIRMED (0x1a380-0x1be3b read in full, findings/car_select.md): 6861 bytes, one C function, sub esp,0x17c, three extra epilogues 0x1b198/0x1b37b/0x1b540
-0x07399c carbox_x            # LIKELY: word set to 0xec (0x1a58f), read as spr_x for the sp6a878 box sprite (0x1a6d2, 0x1a951)
-0x07399e carbox_y            # LIKELY: word set to 0x8e (0x1a598), read as spr_y ditto; 0x739a0/0x739a2 are set to 0 next to them and read nowhere
+0x01a380 cars_menu           # CONFIRMED (0x1a380-0x1be3b read in full, findings/car_select.md): 6861 bytes, one C function, sub esp,0x17c, three extra epilogues 0x1b198/0x1b37b/0x1b540; rebuilt in src/ww.c (near miss, slot permutation open)
+0x07399c ents[8].x           # CONFIRMED: was called carbox_x; 0x7399c = ent base 0x73938 + 8*0xc + 4, written 0xec at 0x1a58f, read as spr_x (0x1a6d2, 0x1a951); the 9th record is the selection box (findings/car_select.md)
+0x07399e ents[8].y           # CONFIRMED: ditto, written 0x8e at 0x1a598; 0x739a0/0x739a2 = ents[8].f8/frame, zeroed at 0x1a5a0 and toggled 0..1 at 0x1ae01
+0x006e5b0 tab6e5b0          # CONFIRMED (0x1a8a7 `movsx eax,[esp+0x128]`, 0x1a8c5 `mov eax,[eax*4+0x6e5b0]`, stored to 0x7d838/0x7d764 at 0x1a8d1/0x1a8d6): a dword table indexed by the stage-3 countdown local; LIKELY one sprite-data pointer per step (src/ww.c)
 0x07eda0 hits_target         # LIKELY: 5 * the " PLAY FOR 5/10/15/20 HITS " menu choice (0x1bcfb, 0x1bd03); compared with a counter in 0x2bbd8/0x30aae
 0x01c0f4 fn_1c0f4            # LIKELY: arg1 = a stack buffer; called when the F1/help control joy88b46 is set (0x1b2df, 0x1b415) on the "REMOTE IS VIEWING HELP" path
 0x07b6df v7b6df              # LIKELY: cfg 12-byte record byte, read as [v88b7e*12+0x7b6df] into joy88b40 when cfg7712c == 0 (0x1b392)

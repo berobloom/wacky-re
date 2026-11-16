@@ -2476,7 +2476,7 @@ struct ent {
     short frame;
 };
 
-extern struct ent ents[8];
+extern struct ent ents[9];      /* 0x73938; the 9th slot is the car-select box (cars_menu) */
 extern short nents;
 
 void ents_init(void)
@@ -5326,4 +5326,759 @@ void fn_1a2f8(void)
         v7d338[5] = 1;
         v7d338[6] = 1;
     }
+}
+
+/* ---- the "CHOOSE VEHICLE" screen (0x1a380-0x1be3b, 6861 bytes: the module's largest function).
+ * Frame, phases, globals and the two jump tables that sit in the gap before the function
+ * (0x1a360, 0x1a370) are in findings/car_select.md.
+ *
+ * The 9th struct ent slot (0x73998) is the selection box: the words the notes called carbox_x /
+ * carbox_y are its x and y (0x73998 + 0x64 / + 0x66 = 0x7399c / 0x7399e, set to 0xec and 0x8e at
+ * 0x1a58f, 0x1a598), and the neighbours 0x739a0 / 0x739a2 are its f8 and frame, cleared at 0x1a5a1
+ * and 0x1a5aa (CONFIRMED: the 0x73938 base and 0xc stride with the field displacements every other
+ * ent write uses). The walks that run past the eight cars - 0x1a792 `cmp eax,0x6c` and the f2 latch
+ * at 0x1b96f - cover that ninth record. */
+
+extern short *tab6e5b0[];         /* 0x6e5b0: p7d838's source, one entry per countdown step (0x1a8c5) */
+extern int hits_target;           /* 0x7eda0: the deathmatch hit target (0x1bcfb, 0x1bd03) */
+extern char v7b6df[];             /* 0x7b6df: byte 3 of the 12-byte cfg control records (0x1b392) */
+extern short cfg7712c;            /* 0x7712c = cfg77128 + 4 */
+extern char *v7d854;              /* 0x7d854 (v7d85c is declared at 3095) */
+void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a caller buffer */
+
+/* differs: near miss at +8 (6562 vs 6861). The statements are in the game's order - with the
+ * `disp(%esp)` and the relocation bytes masked, 71 % of the disassembly rows agree - but Watcom
+ * gave our 26 spilled scalars a permutation of the game's 27 slots and kept one local the game
+ * spills in a register, so the frame is 4 bytes short. Probe recipe: QUESTIONS.md 5.
+ * Frame: 3 char[0x50] at esp+0/0x50/0xa0, short[8] iconx/carstat at 0xf0/0x100, scalars 0x110-. */
+void cars_menu(void)
+{
+    char buf0[0x50], buf1[0x50], buf2[0x50];   /* esp+0x00, esp+0x50, esp+0xa0 */
+    short iconx[8], carstat[8];                /* esp+0xf0, esp+0x100 */
+    int c110, idle, savepal, slide_up, slide_dn, yrow134, yrow138, yrow13c, boxy, cd15c, flip, stage, boxx;
+    short x2e, f120, capy, cd, row0y, car, f144, longwait, move, add158, col0x, curgy, curgx, pbase;
+    int y, sv, blink, ok, done, i, j;
+    short capx, n;
+
+    x2e = 0x2e;
+    v7ecc4 = 0;
+    v7ed20 = 0x550;
+    v7ed1c = 0x2a8;
+    pbase = 0;
+    strcpy(buf0, "");
+    strcpy(buf2, "");
+    savepal = pal_a;
+    strcpy(buf1, "CHOOSE VEHICLE");
+    if (twoplayer != 0 || splitscreen != 0) {
+        if (v88b7e == 1) {
+            strcpy(buf1, "PLAYER TWO");
+            pbase = 2;
+        } else
+            strcpy(buf1, "PLAYER ONE");
+    }
+    ctl_label(buf0, buf2);
+    capy = 0x60;
+    capx = (0x140 - (short) (8 * strlen(buf1))) / 2;   /* centred caption x, kept live in ECX (0x1a4a9) */
+    col0x = 0x2e;
+    row0y = 0x3a;
+    myplayer = -1;
+    v88b9e = 0;
+    spr_x = 0x2e;
+    spr_y = 0x3a;
+    for (i = 0; i <= 3; i++) {                  /* the top row's four icons (0x1a4b1) */
+        ents[i].y = 0x3a;
+        ents[i].id = i;
+        ents[i].frame = 0;
+        carstat[i] = 0;
+        ents[i].f8 = 0;
+        iconx[i] = ents[i].x = spr_x;
+        spr_x += 0x40;
+    }
+    spr_x = 0x2e;
+    spr_y = 0x72;
+    curgy = 0x72;
+    for (i = 4; i <= 7; i++) {                  /* the bottom row's four icons (0x1a52d) */
+        ents[i].frame = 0;
+        ents[i].f8 = 0;
+        ents[i].y = 0x72;
+        ents[i].id = i;
+        carstat[i] = 1;
+        iconx[i] = ents[i].x = spr_x;
+        if (i == 7)
+            curgx = spr_x;
+        spr_x += 0x40;
+    }
+    ents[8].x = 0xec;
+    ents[8].y = 0x8e;
+    ents[8].frame = 0;
+    ents[8].f8 = 0;
+    pal_a = 0x7d00;
+    print_at(x2e, capy, buf1, 0);
+    boxy = 0x8e;
+    print_at(x2e, 0xaf, buf0, 0);
+    boxx = 0xec;
+    print_at(x2e, 0xbc, buf2, 0);
+    pal_a = savepal;
+    blink = 0;
+    pal_b = 0x7d00;
+    voice_play(0x12);
+
+    /* --- phase 1 (0x1a637): the ten frames of each icon alternate until every ent slot of the nine
+     * has a frame past 3 (0x1a783, 0x1a7a0); the two box sprites are the pbase / pbase+1 pair. */
+blink:
+    v7ea70 = ticks;
+    pal_c = pal_a;
+    setpalette();
+    if (ents[0].frame >= 2) {                   /* 0x1a657: nothing is drawn before frame 2 */
+        for (i = 0; i < 8; i++) {
+            spr_x = ents[i].x;
+            spr_y = ents[i].y;
+            spr_h = 0x26;
+            spr_w = 0x1c;
+            sprptr = faces[ents[i].id].img[0];
+            if (carstat[i] != 1)
+                sprptr += 0x10a0;               /* the frame-10 variant (0x1a6b8) */
+            drawsprite();
+        }
+        spr_x = ents[8].x;
+        spr_y = ents[8].y;
+        spr_h = 0x26;
+        spr_w = 0x1c;
+        sprptr = sp6a878[pbase];
+        drawsprite();
+    }
+    ents_draw(9);
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    pal_a = pal_a ? 0 : 0x3e80;
+    while (ticks - v7ea70 < 8)                  /* 0x1a76f */
+        ;
+    blink++;
+    done = 1;
+    for (i = 0; i <= 8; i++) {                  /* the nine-record walk (0x1a777) */
+        if (blink > 1)
+            ents[i].frame++;
+        if (ents[i].frame <= 3)
+            done = 0;
+    }
+    if (blink > 1)
+        blink = 0;
+    if (done == 0)
+        goto blink;
+    ents[0].frame = 4;                          /* 0x1a7a6: the top row slides in, the bottom row waits */
+    ents[0].f8 = 0;
+    ents[1].frame = 4;
+    ents[1].f8 = 0;
+    ents[2].frame = 4;
+    ents[2].f8 = 0;
+    ents[3].frame = 4;
+    ents[3].f8 = 0;
+    ents[4].frame = 0;
+    ents[4].f8 = 0;
+    ents[5].frame = 0;
+    ents[5].f8 = 0;
+    ents[6].frame = 0;
+    ents[6].f8 = 0;
+    ents[7].frame = 0;
+    ents[7].f8 = 0;
+    longwait = 1;
+    cd = 9;
+    yrow134 = boxy + 4;
+
+    /* --- phase 2 (0x1a85f): the name and description of the car under the cursor, while the bottom
+     * row's frames run up to 6; find12 turns the cursor's grid point into a car id. */
+nameframe:
+    v7ea70 = ticks;
+    car = find12(curgx, curgy);
+    pal_c = pal_a;
+    setpalette();
+    if (longwait == 0) {
+        v7d878 = 0;
+        p7d838 = tab6e5b0[cd];
+        p7d764 = p7d838 + 1;
+        y = yrow134;
+        for (j = 0; j < 2; j++) {               /* 0x1a912: the two name rows, 0xc apart */
+            v88c2e = p7d764[-1];
+            v88c10 = p7d764[0];
+            p7d838 += 2;
+            pname_desc(car);
+            wtext(col0x - 1, y, &mnames[0x3c * j], 1);
+            y += 0xc;
+        }
+        cd--;
+        if (cd < 0)
+            cd = 0;
+    }
+    spr_x = ents[8].x;
+    spr_h = 0x26;
+    spr_w = 0x1c;
+    spr_y = ents[8].y;
+    sprptr = sp6a878[pbase];
+    drawsprite();
+    ents_show(-1, 8, 0, 0, 0);
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    pal_a = pal_a ? 0 : 0x3e80;
+    if (longwait != 0) {
+        while (ticks - v7ea70 < 0x3c)           /* 0x1aa04: the first frame waits 60 ticks */
+            ;
+        longwait = 0;
+    } else
+        while (ticks - v7ea70 < 0x10)           /* 0x1aa23: 16 ticks after that */
+            ;
+    if (ents[4].frame == 6) {                   /* 0x1aa28: the input stage starts here */
+        kbd_off();
+        idle = 0;
+        flip = 0;
+        slide_up = 0;
+        slide_dn = 0;
+        move = 0;
+        f144 = 1;
+        yrow138 = boxy + 4;
+        f120 = 0;
+        goto input;
+    }
+    ents[4].frame++;                            /* 0x1aa32: the bottom row steps once per frame */
+    ents[5].frame++;
+    ents[6].frame++;
+    ents[7].frame++;
+    for (i = 0; i < 4; i++) {
+        ents[i].frame++;
+        if (ents[i].frame > 7)
+            ents[i].frame = 0;
+    }
+    goto nameframe;
+
+    /* --- phase 3 (0x1aae0): the input frame loop. The cursor moves only while nothing is sliding;
+     * a locked car clears the confirm control (0x1ac0e, 0x1b461). */
+input:
+    if (netgame != 0) {
+        key88cd5 = 0;
+        key88cdd = 0;
+        key88cd6 = 0;
+        key88cd3 = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        v7d8a4 = v7d8ac;
+        n = 0;
+        ctl_setup(n);
+        f377ae();
+        joy88b46 = (key88cd0 == 0x3b);          /* F1 on the local keyboard (0x1ab47) */
+        if (joy88b46 != 0) {
+            if (v88b7e == 0 && netgame != 1)
+                joy88b46 = 0;
+            if (v88b7e == 1 && netgame != 2)
+                joy88b46 = 0;
+        }
+        if (joy88b42 != 0)
+            joy88b40 = 1;
+        if (v88cce != 0)
+            joy88b40 = 1;
+        if ((&v7b6d9)[12 * n] != 0)
+            key88cd5 = 1;
+        if ((&v7b6db)[12 * n] != 0)
+            key88cdd = 1;
+        v88cec = (key88cd0 == 1);
+        if (v88b7e == 1 && car == v88c68) {     /* 0x1abf4: not this player's turn to pick */
+            joy88b40 = 0;
+            flip = 0;
+            idle = 0;
+        } else if (v7d338[car] != 0) {          /* 0x1ac0e: the locked cars cannot be confirmed */
+            joy88b40 = 0;
+            flip = 0;
+            idle = 0;
+        }
+        f2da28();
+        net88c14 = net_key(v88cf0, v88cf3, 0);
+        v7ecc4++;
+        if (v7ecc4 > 1) {                       /* 0x1ac6c: the second and later passes go fast */
+            v7ecc4 = 2;
+            v7ed20 = 0x2c;
+            v7ed1c = 0x220;
+        }
+        if ((v88b7e == 1 && netgame == 1) || (v88b7e != 1 && netgame == 2)) {
+            key88cd5 = v88cef & 1;              /* the remote control byte (0x1ac8c-0x1ad1d) */
+            key88cdd = v88cef & 2;
+            joy88b40 = v88cef & 4;
+            joy88b42 = v88cef & 8;
+            joy88b44 = v88cef & 0x10;
+            v88cec = v88cef & 0x40;
+            joy88b46 = v88cef & 0x20;
+        } else if (joy88b46 == 0)
+            joy88b46 = v88cef & 0x20;
+        if (net88c14 != 0) {
+            fn_1c068();
+            msgbox("EXCESSIVE ERRORS", 0);
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks <= 0x12c)
+                ;
+            fn_1c0ac();
+            return;
+        }
+    }
+    v7ea70 = ticks;
+    if (move == 0 && slide_up == 0 && slide_dn == 0)    /* 0x1ad99 */
+        car = find12(curgx, curgy);
+    pal_c = pal_a;
+    setpalette();
+    ents_show(-1, 8, 0, 0, 0);
+    spr_x = boxx;
+    spr_h = 0x26;
+    sprptr = sp6a878[pbase + flip];
+    spr_y = boxy;
+    pname_desc(car);
+    y = yrow138;
+    for (j = 0; j < 2; j++) {                   /* the same two rows, unscaled (0x1ae75) */
+        wtext(col0x - 1, y, &mnames[0x3c * j], 0);
+        y += 0xc;
+    }
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    pal_a = pal_a ? 0 : 0x3e80;
+    if (move == 4) {                            /* 0x1aeb9: a slide back takes 26 ticks */
+        while (ticks - v7ea70 < 0x1a)
+            ;
+        move = 0;
+    }
+    if (move != 0) {
+        while (ticks - v7ea70 < 10)             /* 0x1af1b: 10 ticks per step of the slide */
+            ;
+        done = 0;
+        for (i = 0; i < 7; i++) {               /* the top row's records plus one (0x1af29) */
+            if (ents[i].y == row0y) {
+                if (move == 1) {
+                    ents[i].frame++;
+                    if (ents[i].frame == 6)
+                        done = move;
+                } else {
+                    ents[i].frame--;
+                    if (ents[i].frame == 2)
+                        done = move;
+                }
+            } else {
+                if (move == 1) {
+                    ents[i].frame--;
+                    if (ents[i].frame == 2)
+                        done = move;
+                } else {
+                    ents[i].frame++;
+                    if (ents[i].frame == 6)
+                        done = move;
+                }
+            }
+        }
+        if (done != 0)
+            move = 4;
+        goto input;
+    }
+    while (ticks - v7ea70 < 4)                  /* 0x1afb4 */
+        ;
+    idle++;
+    if (idle > 4) {                             /* 0x1afc8: the box alternates only while at rest */
+        if (slide_up == 0 && slide_dn == 0) {
+            flip++;
+            if (flip > 1)
+                flip = 0;
+        }
+        idle = 0;
+    }
+    if (netgame != 0 && joy88b46 != 0) {        /* 0x1b008: F1 */
+        ok = 0;
+        if (v88b7e == 0 && netgame == 1)
+            ok = 1;
+        if (v88b7e == 1 && netgame == 2)
+            ok = 1;
+        if (ok != 0) {                          /* the remote is viewing help: tell it and go quiet */
+            save_a = pal_a;
+            save_b = pal_b;
+            save_c = pal_c;
+            pal_c = 0xbb80;
+            pal_a = pal_d;
+            pal_b = pal_d;
+            setpalette();
+            msgbox("REMOTE IS VIEWING HELP", 0);
+            v88cec = 0;
+            key88cc3 = 0;
+            key88ccc = 0;
+            key88cc4 = 0;
+            key88cc5 = 0;
+            key88cc6 = 0;
+            key88cc7 = 0;
+            key88cd5 = 0;
+            key88cdd = 0;
+            key88cd6 = 0;
+            key88cd3 = 0;
+            joy88b40 = 0;
+            joy88b42 = 0;
+            joy88b44 = 0;
+            joy88b46 = 0;
+            v88cf0 = 0;
+            v88cf3 = 0;
+            sv = v7ed20;
+            v7ed20 = 0xaa0;
+            net88c14 = net_key(0, 0, 0);
+            if (net88c14 != 0) {
+                fn_1c068();
+                msgbox("EXCESSIVE ERRORS", 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 0x12c)
+                    ;
+                fn_1c0ac();
+                return;
+            }
+            while (ticks - ticks < 0x46)        /* 0x1b1ab: the game reads the volatile twice */
+                ;
+            v88cec = 0;
+            key88cc3 = 0;
+            key88ccc = 0;
+            key88cc4 = 0;
+            key88cc5 = 0;
+            key88cc6 = 0;
+            key88cc7 = 0;
+            key88cd5 = 0;
+            key88cdd = 0;
+            key88cd6 = 0;
+            key88cd3 = 0;
+            joy88b40 = 0;
+            joy88b42 = 0;
+            joy88b44 = 0;
+            joy88b46 = 0;
+            pal_b = 0xbb80;
+            pal_a = pal_d;
+            pal_c = pal_d;
+            setpalette();
+            pal_b = save_b;
+            pal_c = save_c;
+            pal_a = save_a;
+            v7ed20 = sv;
+        } else {
+            fn_1c0f4(buf0);                     /* 0x1b2dd: this side reads the help */
+            key88cd5 = 0;
+            key88cdd = 0;
+            key88cd6 = 0;
+            key88cd3 = 0;
+            joy88b40 = 0;
+            joy88b42 = 0;
+            joy88b44 = 0;
+            joy88b46 = 0;
+            v88cec = 0;
+            if (net88c14 != 0) {
+                fn_1c068();
+                msgbox("EXCESSIVE ERRORS", 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 0x12c)
+                    ;
+                fn_1c0ac();
+                return;
+            }
+        }
+    }
+    if (netgame == 0) {                         /* 0x1b272: the local controls */
+        v7d8a4 = v7d8ac;
+        n = v88b7e;
+        ctl_setup(n);
+        f377ae();
+        if ((twoplayer != 0 || splitscreen != 0) && v88b7e == 1) {
+            if (cfg7712c == 0)
+                joy88b40 = joy88b44;
+            else
+                joy88b40 = v7b6df[12 * v88b7e];
+        }
+        if (joy88b42 != 0)
+            joy88b40 = 1;
+        if (v88cce != 0)
+            joy88b40 = 1;
+        if ((&v7b6d9)[12 * n] != 0)
+            key88cd5 = 1;
+        if ((&v7b6db)[12 * n] != 0)
+            key88cdd = 1;
+        v88cec = (key88cd0 == 1);
+        joy88b46 = (key88cd0 == 0x3b);
+        if (joy88b46 != 0) {                    /* 0x1b3fa: F1 shows this player's controls */
+            fn_1c0f4(buf0);
+            key88cd5 = 0;
+            key88cdd = 0;
+            key88cd6 = 0;
+            key88cd3 = 0;
+            joy88b40 = 0;
+            joy88b42 = 0;
+            joy88b44 = 0;
+            joy88b46 = 0;
+            v88cec = 0;
+        }
+    }
+    if (v7d338[car] != 0) {                     /* 0x1b461: the locked-car nag */
+        flip = 0;
+        idle = 0;
+        if (joy88b40 != 0) {
+            voice_play(0x1a);
+            strcpy(str7c854, " PLEASE READ ORDERING INFO ");
+            strcpy(str7c890, " TO FIND OUT HOW TO RACE   ");
+            strcpy(str7c8cc, " WITH THIS ANIMAL.         ");
+            showlines(3, 1, 0);
+        }
+    }
+    if ((twoplayer != 0 || splitscreen != 0) && v88b7e == 1 && car == v88c68) {
+        joy88b40 = 0;                           /* 0x1b4e1 */
+        flip = 0;
+        idle = 0;
+    }
+    if (v88cec != 0) {
+        v88b9e = 1;                             /* 0x1b52e: escape leaves the menu chain */
+        return;
+    }
+    if (joy88b40 != 0 && move == 0 && slide_dn == 0 && slide_up == 0)
+        goto confirm;                           /* 0x1b576 */
+    if (key88cd5 != 0 && slide_up == 0 && slide_dn == 0) {
+        if (f144 == 0)
+            move = 1;
+        f120 = 1;
+        f144 = 0;
+        flip = 0;
+        idle = 0;
+        slide_dn = 0;
+        slide_up = 8;                           /* 0x1b5ec: the 8-step slide of the top row */
+        if (move != 0)
+            goto input;
+    }
+    if (key88cdd != 0 && slide_up == 0 && slide_dn == 0) {
+        if (f120 == 0)
+            move = 2;
+        f144 = 1;
+        f120 = 0;
+        flip = 0;
+        idle = 0;
+        slide_up = 0;
+        slide_dn = 8;                           /* 0x1b676 */
+        if (move != 0)
+            goto input;
+    }
+    if (slide_up == 8 || slide_dn == 8) {       /* 0x1b6aa: tag the icons for the slide */
+        for (i = 0; i < 8; i++) {
+            if (ents[i].y == row0y) {
+                if (slide_dn == 0) {
+                    if (ents[i].x == curgx)
+                        carstat[i] = 2;
+                    else
+                        carstat[i] = 1;
+                } else {
+                    if (ents[i].x == col0x)
+                        carstat[i] = 2;
+                    else
+                        carstat[i] = 0;
+                }
+            }
+            if (ents[i].y == curgy) {
+                if (slide_dn == 0) {
+                    if (ents[i].x == col0x)
+                        carstat[i] = 3;
+                    else
+                        carstat[i] = 0;
+                } else {
+                    if (ents[i].x == curgx)
+                        carstat[i] = 3;
+                    else
+                        carstat[i] = 1;
+                }
+            }
+        }
+    }
+    if (slide_up != 0 || slide_dn != 0) {       /* 0x1b7ac: the slide itself, one step per frame */
+        for (i = 0; i < 8; i++) {
+            if (carstat[i] > 3)
+                continue;
+            switch (carstat[i]) {
+            case 0:                             /* 0x1b7d7: sliding left out of the cursor column */
+                if (ents[i].x == col0x) {
+                    if (ents[i].y == curgy)
+                        carstat[i] = 3;
+                    else
+                        carstat[i] = 2;
+                } else
+                    ents[i].x -= 8;
+                break;
+            case 1:                             /* 0x1b828: sliding right out of the cursor column */
+                ents[i].frame = 6;
+                if (ents[i].x == curgx)
+                    carstat[i] = (ents[i].y == curgy) ? 3 : 2;
+                else
+                    ents[i].x += 8;
+                break;
+            case 2:                             /* 0x1b86e: the row under the cursor moves down */
+                if (ents[i].y == curgy) {
+                    if (ents[i].x == curgx) {
+                        carstat[i] = 0;
+                        ents[i].frame = 2;
+                    } else {
+                        carstat[i] = 1;
+                        ents[i].frame = 6;
+                    }
+                } else
+                    ents[i].y += 8;
+                break;
+            case 3:                             /* 0x1b8c1: the top row moves up */
+                if (ents[i].y == row0y) {
+                    if (ents[i].x == curgx) {
+                        carstat[i] = 0;
+                        ents[i].frame = 2;
+                    } else {
+                        carstat[i] = 1;
+                        ents[i].frame = 6;
+                    }
+                } else
+                    ents[i].y -= 8;
+                break;
+            }
+        }
+        if (slide_up != 0)
+            slide_up--;
+        if (slide_dn != 0)
+            slide_dn--;
+    }
+    goto input;
+
+confirm:                                    /* 0x1b939: the choice is locked in */
+    add158 = 1;
+    for (i = 0; i < 8; i++) {               /* the f2 latch of 0x1b946 records the slide direction */
+        if (ents[i].frame == 2)
+            ents[i].f2 = 2;
+        if (ents[i].frame == 6)
+            ents[i].f2 = 6;
+    }
+    voice_play(car);                        /* the chosen car's voice (0x1b987) */
+    stage = 1;
+    c110 = 1;
+    cd15c = -1;
+    yrow13c = boxy + 4;
+
+    /* --- phase 4 (0x1b9b5): the confirm animation, a four-stage machine in `stage` (0x1be13). */
+animframe:
+    v7ea70 = ticks;
+    pal_c = pal_a;
+    setpalette();
+    spr_x = boxx;
+    spr_h = 0x26;
+    spr_w = 0x1c;
+    spr_y = boxy;
+    sprptr = sp6a878[pbase + add158];
+    drawsprite();
+    pname_desc(car);
+    y = yrow13c;
+    for (j = 0; j < 2; j++) {
+        wtext(col0x - 1, y, &mnames[0x3c * j], 0);
+        y += 0xc;
+    }
+    if (stage < 3)
+        ents_show(cd15c, 8, 0, 0, 0);       /* 0x1ba73: the box follows the countdown */
+    spr_x = curgx;
+    spr_y = curgy;
+    spr_h = 0x26;
+    spr_w = 0x1c;
+    sprptr = faces[ents[car].id].img[ents[car].frame];
+    drawsprite();
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    pal_a = pal_a ? 0 : 0x3e80;
+    while (ticks - v7ea70 < 10)             /* 0x1bb37 */
+        ;
+    for (i = 0; i < 8; i++) {               /* 0x1bb48: the chosen icon cycles, the rest keep sliding */
+        if (i == car) {
+            ents[i].frame++;
+            if (ents[i].frame > 7)
+                ents[i].frame = 0;
+        } else if (stage == 1) {
+            if (ents[i].f2 == 2)
+                ents[i].frame++;
+            if (ents[i].f2 == 6)
+                ents[i].frame--;
+        }
+    }
+    switch (stage - 1) {                    /* 0x1bbbb, the jump table at 0x1a370 */
+    case 0:
+        c110++;
+        if (c110 > 2) {
+            cd15c = 0;
+            stage = 2;
+            c110 = 0;
+        }
+        break;
+    case 1:
+        cd15c++;
+        if (cd15c > 9) {
+            c110 = 0;
+            cd15c = -1;
+            stage = 3;
+        }
+        break;
+    case 2:
+        c110++;
+        if (c110 > 5)
+            stage = 4;
+        break;
+    case 3:                                 /* 0x1bc55: the car is chosen - the menus behind it */
+        v88b9e = 0;
+        ents_init();
+        if (twoplayer != 0 && v88b7e == 1) {
+            strcpy(&mnames[0], " PLAY FOR 5  HITS ");
+            strcpy(&mnames[0x3c], " PLAY FOR 10 HITS ");
+            strcpy(&mnames[0x78], " PLAY FOR 15 HITS ");
+            v88b9e = 0;
+            v88bb0 = 0xd;
+            strcpy(&mnames[0xb4], " PLAY FOR 20 HITS ");
+            v88c80 = 1;
+            hits_target = menu(4, 0, 0, 0);
+            hits_target = hits_target * 5;  /* 0x1bd00: lea eax,[eax+eax*4] */
+            if (netgame != 0 && net88c14 != 0)
+                return;
+            if (v7ecc0 != 0)
+                v88b9e = 1;
+        }
+        if (v88b9e == 0)
+            classes_menu();
+        if (v88b9e == 0)
+            laps_menu();
+        if (v88b9e == 0)
+            engines_menu(2);
+        if (v88b9e == 0)
+            zones_menu(2, twoplayer != 0 ? twoplayer : netvoices);
+        if (v88b9e == 0) {
+            ok = 1;
+            if (twoplayer != 0 || netvoices != 0)
+                ok = 0;
+            if (splitscreen != 0 && v88b7e != 1)
+                ok = 0;
+            if (ok != 0) {
+                v7d854 = v7d85c;
+                fn_1832c();
+            } else if (twoplayer != 0 || netvoices != 0) {
+                v88bb6 = 3;
+                v88b88 = v88c96;
+            }
+        }
+        stage = 5;
+        break;
+    }
+    if (stage != 5)
+        goto animframe;
+    myplayer = car;                         /* 0x1be29 */
 }

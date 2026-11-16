@@ -120,3 +120,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
 
 - LIKELY: <claim>. For: <evidence>. Against / gap: <what is missing>.
   Test: <the experiment that decides it>.
+5. **OPEN** (findings/car_select.md "Rebuild status"): which rule gives `cars_menu`'s 27 scalar
+   slots their order? The rebuild has the right frame size, the right statements in the right
+   order (71 % of the disassembly rows agree once `disp(%esp)` and the relocation bytes are
+   masked) and the same 26 spilled locals, but in a different permutation: ours 0x16c = the game's
+   0x114, ours 0x160 = 0x140, ours 0x140 = 0x110, ours 0x174 = 0x150. Declaration order is not the
+   lever (reversing it permutes the arrays only). Candidate levers not yet tried: the *order of
+   first assignment in the source* (the game's first store is its 0x114 local, but its 0x110 local
+   is stored first in phase 4), and locals that must stay live across calls (the game spills what
+   the rebuild keeps in ECX/EDI/ESI).
+   Test: a probe function with the game's 27 stores in the game's store order, then flip one pair
+   at a time and diff the frame.
