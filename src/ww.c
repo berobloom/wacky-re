@@ -13177,3 +13177,77 @@ void hud_draw(void)
     }
 }
 
+/* ---- 0x2a268, 425 bytes: shows netstats[1..n] in a centred box (the width from netstats[1]) on
+ * the dimmed palette (pal_c 0xbb80, pal_a = pal_b = pal_d; restored after), then with `wait`
+ * waits for a key (v88b9e = wait_input(1)) or else until ticks passes t (callers 0x113f3,
+ * 0x18de3 and more). Defined under its own name: the callers' prototype carries a pragma for
+ * the ECX pass-through.
+ * differs (near-miss, 103 vs 104 insns, 10 blocks): the game keeps t in EBP, the line pointer in
+ * ESI and i in EDI, with x/y and n/wait in stack slots (x at [esp], y [esp+4]); ours spills t and
+ * orders the slots the other way. Tried: all 120 declaration orders, int x/y, an indexed loop. */
+void showlines_def(int n, int wait, int t);
+#pragma aux showlines_def "showlines_"
+
+void showlines_def(int n, int wait, int t)
+{
+    short h, x, y;
+    int i;
+    char *p;
+
+    save_a = pal_a;
+    save_b = pal_b;
+    save_c = pal_c;
+    pal_c = 0xbb80;
+    pal_a = pal_b = pal_d;
+    setpalette();
+    h = strlen(netstats[1]) * 8 + 8;
+    spr_w = n * 9 + 8;
+    spr_x = (0x140 - h) / 2;
+    spr_y = (0xc8 - spr_w) / 2;
+    v88ce9 = 0x2c;
+    v88ce8 = 0x26;
+    spr_h = h;
+    f371e4();
+    y = spr_y + 4;
+    x = spr_x + 4;
+    for (i = 1, p = netstats[1]; i <= n; i++, p += 0x3c, y += 9)
+        print_at(x, y, p, 0);
+    if (wait) {
+        wait_release(0);
+        v88b9e = wait_input(1);
+        wait_release(0);
+    } else {
+        ticks = 0;
+        while (ticks <= t)
+            ;
+    }
+    pal_b = 0xbb80;
+    pal_a = pal_c = pal_d;
+    setpalette();
+    pal_b = save_b;
+    pal_c = save_c;
+    pal_a = save_a;
+}
+
+/* ---- 0x2a414, 152 bytes: one line in a centred box, 0x10 high, at row y (0x5c when 0).
+ * differs (near-miss, 1 block): the game stores 0x5c through EAX (`mov eax,0x5c; mov [spr_y],ax`),
+ * ours as an immediate. Tried: ternaries, `y = 0x5c` then store, (0xc8 - spr_w) / 2. The print_at
+ * arguments are 16-bit sums (casts). */
+void msgbox(char *s, int y)
+{
+    short h;
+
+    h = strlen(s) * 8 + 8;
+    spr_x = (0x140 - h) / 2;
+    spr_w = 0x10;
+    spr_h = h;
+    if ((short)y == 0)
+        spr_y = 0x5c;
+    else
+        spr_y = y;
+    v88ce9 = 0x2c;
+    v88ce8 = 0x26;
+    f371e4();
+    print_at((short)(spr_x + 4), (short)(spr_y + 4), s, 0);
+}
+
