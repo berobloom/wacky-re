@@ -10,7 +10,7 @@ keep a session diary here.
   Apogee Sound System.
 - Toolchain: Watcom 9.5, 9.5a, 9.5b installed in `.work/toolchains/inst` (not committed).
 - Approach: matching rebuild (../DREA METHOD.md section 9), then a translated port (section 10).
-- Harness: not started. Port: not started.
+  Harness: not started. Port: not started.
 - Classes/modes found (findings/classes.md): `v88bb2` = 1 AMATEUR, 2 PRO, 3 CHAMPION, 4 TIME TRIAL,
   5 KID MODE; `classes_menu` 0x19eac is that screen; `fn_19db8` 0x19db8 sets the class line `cls_name`,
   `v7ece0` and the `tbl7e730` index `v88b84` from it. `laps_menu` 0x1a148 (rebuilt byte-identical):
