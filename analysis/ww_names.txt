@@ -337,6 +337,8 @@
 0x026ff0 read_line    # CONFIRMED (rebuild src/ww.c): (s, f) CR-terminated line, skips the LF; callers in 0x271ce
 0x0270dc pcxfile_load # CONFIRMED (rebuild src/ww.c): (name, n) PCX file picture data into p6a978[n], 0 if missing or > 64000 bytes; caller 0x349b7
 0x02717c gam_load     # CONFIRMED (rebuild src/ww.c): reads the track .GAM text (names, start point, start orders); caller 0x27c01
+0x0274a4 ytab_init    # CONFIRMED (rebuild src/ww.c): tb6bd00[i] = ground screen row at distance i; caller 0x3677a
+0x02754c effects_load # CONFIRMED (rebuild src/ww.c): surface animations of the track from EFFECTS.SP into v7d80c, shared by offset; caller 0x17d6f
 0x027028 flength      # CONFIRMED (rebuild src/ww.c): ftell/fseek(END)/ftell/fseek - file length; inlined in file_pal
 0x0266a8 lights_project # CONFIRMED code, LIKELY meaning (rebuild src/ww.c): start-lights countdown (v88c44 1 -> 2, frame v88c5e) and projection; callers frame_draw 0x134fa, 0x13603
 0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608

@@ -1377,7 +1377,8 @@ void track_setup(void)
 struct surf {                   /* 0x741f8, 0x12e bytes per surface class v7e568 (kart_move) */
     char k1[0x80];              /* per track [track - 1]: 3 = keep the kart's last animation (kart_draw) */
     char k2[0x80];              /* the same for the second animation */
-    short f100, f102, f104, f106, f108, f10a, f10c, f10e;   /* f100/f104 animation ids, f108 frame size, */
+    int f100, f104;             /* animation ids = their offsets in EFFECTS.SP (effects_load) */
+    short f108, f10a, f10c, f10e;   /* f108 frame size, */
     short f110, f112, f114, f116, f118, f11a, f11c, f11e;   /* f10a/f10c h/w, f112 frames; f114-f11e the second */
     int f120;                   /* -> kart f36 */
     short f124;                 /* -> kart f3a */
@@ -11824,4 +11825,96 @@ void gam_load(void)
     if ((twoplayer || splitscreen) && v88bde)
         strcpy(gam6a4e0, "BLANK.PCX");
 }
+
+/* ---- 0x274a4, 168 bytes: fills tb6bd00[0..0xfff], the screen row of the ground at distance i:
+ * height h = 0x4650 / i rounded, clamped to 0x15..0xf0, row 0x78 - h/2 + h (caller 0x3677a). */
+void ytab_init(void)
+{
+    int h, r, i, y;
+
+    h = 0xf0;
+    y = 0x78 - (short)h / 2;
+    tb6bd00[0] = y + h;
+    for (i = 1; i < 0x1000; i++) {
+        h = 0x4650 / i;
+        r = 0x4650 - h * i;
+        if (r > i / 2)
+            h++;
+        if (h < 0x15)
+            h = 0x15;
+        if (h > 0xf0)
+            h = 0xf0;
+        y = 0x78 - (short)h / 2;
+        tb6bd00[i] = y + h;
+    }
+}
+
+/* ---- 0x2754c, 620 bytes: loads the surface animations of this track from EFFECTS.SP (caller
+ * 0x17d6f in 0x17928): for surfaces 0..v88b7c whose k1/k2 byte for the track is 1, the frames
+ * (f108 * f112 resp. f114 * f11e bytes at offset f100/f104) go to v7d80c (from v7d820) unless a
+ * surface before it uses the same offset, which then shares the frames (f126/f12a). */
+extern char *v7d80c, *v7d820;
+extern short v88b7c;
+
+/* This site inlines the real seekdat/readdat (defined early); undo the call-site aliases here. */
+#undef seekdat
+#undef readdat
+void effects_load(void)
+{
+    int ptr1[42], offs1[42], offs2[42], ptr2[42];
+    long base;
+    short n1, n2;
+    short i, j, found;
+    int size;
+
+    for (i = 0; i <= 0x28; i++) {
+        offs1[i] = -1;
+        offs2[i] = -1;
+    }
+    v7d80c = v7d820;
+    n1 = 0;
+    n2 = 0;
+    datfind("EFFECTS.SP");
+    base = ftell(datfile);
+    for (i = 0; i <= v88b7c; i++) {
+        if (surfs[i].k1[track - 1] == 1) {
+            found = 0;
+            for (j = 0; j <= 0x28; j++)
+                if (offs1[j] == surfs[i].f100) {
+                    found = j + 1;
+                    break;
+                }
+            if (found == 0) {
+                size = surfs[i].f108 * surfs[i].f112;
+                seekdat(base + surfs[i].f100);
+                readdat(v7d80c, size);
+                surfs[i].f126 = (int)v7d80c;
+                offs1[n1] = surfs[i].f100;
+                ptr1[n1++] = (int)v7d80c;
+                v7d80c += size;
+            } else
+                surfs[i].f126 = ptr1[found - 1];
+        }
+        if (surfs[i].k2[track - 1] == 1) {
+            found = 0;
+            for (j = 0; j <= 0x28; j++)
+                if (offs2[j] == surfs[i].f104) {
+                    found = j + 1;
+                    break;
+                }
+            if (found == 0) {
+                size = surfs[i].f114 * surfs[i].f11e;
+                seekdat(base + surfs[i].f104);
+                readdat(v7d80c, size);
+                surfs[i].f12a = (int)v7d80c;
+                offs2[n2] = surfs[i].f104;
+                ptr2[n2++] = (int)v7d80c;
+                v7d80c += size;
+            } else
+                surfs[i].f12a = ptr2[found - 1];
+        }
+    }
+}
+#define seekdat seekdat_x
+#define readdat readdat_x
 

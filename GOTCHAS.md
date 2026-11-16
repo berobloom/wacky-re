@@ -334,3 +334,8 @@ it can be copied back into DREA.
   [generic]): main_menu 0x1f858 has case 7 at 0x20df5 before case 6 at 0x210ba. Writing case 6
   first made fncompare misalign the whole tail (596 vs 360 instrdiffs). Sort the case labels by
   their jump-table target address before writing the switch.
+
+- **The seekdat/readdat call-site aliases are not universal**: effects_load 0x2754c inlines the real
+  seekdat/readdat (fseek/fread directly, its argument loads in the inlined order); writing fseek/fread
+  by hand loads datfile before the buffer. `#undef seekdat` / `#undef readdat` around such a function
+  (and re-#define after) gives the game's code. Check which form a site has before writing it.
