@@ -12706,3 +12706,345 @@ void cpu_drive(void)
     }
 }
 
+/* ---- 0x290a0, 3436 bytes: the human kart's frame (curkart; callers 0x325b7, 0x326cf in 0x30aae).
+ * v88c42 1: the kart is pushed 0x40 back along the track pair at curpos, kept in 0x400..0xbfe,
+ * and (v88b68, v88b6a) is 0x7c further. v88c42 0: while knocked out (f0a) the hit animation
+ * (f18 0xe, f1a 0..7, tb7b448/tb7b518) and f0c count down; otherwise the steer keys (key88cdd
+ * right -> v88b98, key88cd5 left -> v88b8c, swapped while f14) pick the lean animation f1c, joy88b40
+ * accelerates (f42 up to 0x64, +6 in two-player/net, 0x36 under v7edb0), joy88b44 brakes (f42 - 8,
+ * voice 0x11) and its hold drives the dope animation, joy88b46 hops (f06, voice 0x11), f42 maps to
+ * the speed f26 through tbl7e730; then kart_state, kart_move and the boost zone (v7e568 2:
+ * in_zone, voice 0xc, f42 0xa0). Every frame f18 > 0 (one tick since f32) steps animation f18:
+ * 1/2/14 the hit frames, 3/4 the hop, 5 lean f1a toward f1c, 6/7 tb7b418 frames with a 3-tick hold
+ * into 8/9 (the stamp is the dword at +2), 10 the win voice and tb7b378, 13 the tb7b238 loop.
+ * Animation resets go to f18 0, f1a 2, f1c 2, f00 0 with tb7b518.
+ * differs (near-miss): the game keeps the global curkart in EDX through the whole function
+ * (store before each call and exit, reload after), GOTCHAS "promotes a global"; ours reads it from
+ * memory at every use (744 vs 651 insns, 36 blocks, aligned block for block after the v88c42 != 0
+ * branch was put first). Cases ending in return instead of break: no change. */
+extern short v7e85c, v88b92, v88b90, v88c9c, v88c5c, v88c3a, v88c5a, v88c36;
+extern int kd7b4d8[][2], kd7b378[], kd7b238[][2];
+#pragma aux kd7b4d8 "_tb7b4d8"
+#pragma aux kd7b378 "_arr7b378"
+#pragma aux kd7b238 "_arr7b238"
+extern int i7d610, i7d620;
+#pragma aux i7d610 "_v7d610"
+#pragma aux i7d620 "_v7d620"
+
+#define ANIM_RESET() { curkart->f1a = 2; curkart->f00 = 0; curkart->f18 = 0; curkart->f1c = 2; \
+                       curkart->f4e = &tb7b518[curkart->f1a][v88b7e]; }
+
+void kart_frame(void)
+{
+    v88b92 = 0;
+    v88b90 = 0;
+    if (v88c42) {
+        if (v88c42 == 1) {
+            v7d690 = (int *)(v7d6a0 + curpos * 8);
+            v7d608 = 0x40;
+            v7d5f8 = *v7d690;
+            v7d690++;
+            v7d5f4 = *v7d690;
+            v7d690--;
+            f37bb1();
+            i7d610 = -i7d610;
+            v88b0a += v7d610;
+            i7d620 = -i7d620;
+            v88b0e += v7d620;
+            if (v88b0a > 0xbfe)
+                v88b0a = 0xbfe;
+            if (v88b0e > 0xbfe)
+                v88b0e = 0xbfe;
+            if (v88b0a < 0x400)
+                v88b0a = 0x400;
+            if (v88b0e < 0x400)
+                v88b0e = 0x400;
+            v7d608 = 0x7c;
+            f37bb1();
+            v88b68 = v88b0a + v7d610;
+            v88b6a = v88b0e + v7d620;
+        }
+    } else {
+        if (curkart->f0a) {
+            curkart->f26 = v7e85c;
+            if (curkart->f0c > 4 && curkart->f0c <= 6 && curkart->f18 != 0xe) {
+                curkart->f1a = 0;
+                curkart->f18 = 0xe;
+                curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                curkart->f32 = ticks2;
+            }
+            if (curkart->f18 == 0xe) {
+                if (++curkart->f1a >= 8)
+                    ANIM_RESET()
+                else
+                    curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+            }
+            v88b8c = 0;
+            v88b98 = 0;
+            if (--curkart->f0c <= 4)
+                curkart->f0a = 2;
+        } else {
+            if (key88cdd == 0 && key88cd5 == 0 && (curkart->f18 == 0 || curkart->f18 == 5)
+                && curkart->f1a != 2) {
+                curkart->f18 = 5;
+                curkart->f1c = 2;
+            }
+            v88b98 = key88cdd != 0;
+            v88b8c = key88cd5 != 0;
+            if (curkart->f14) {
+                if (v88b8c) {
+                    v88b8c = 0;
+                    v88b98 = 1;
+                } else if (v88b98) {
+                    v88b8c = 1;
+                    v88b98 = 0;
+                }
+            }
+            if (curkart->f0a) {
+                v88b8c = 0;
+                v88b98 = 0;
+            }
+            if (v7d998) {
+                if (v88b98 && curkart->f26 == 0) {
+                    v88b98 = 0;
+                    if (curkart->f18 == 0 || curkart->f18 == 5) {
+                        curkart->f1c = 3;
+                        curkart->f18 = 5;
+                    }
+                }
+                if (v88b8c && curkart->f26 == 0) {
+                    v88b8c = 0;
+                    if (curkart->f18 == 0 || curkart->f18 == 5) {
+                        curkart->f1c = 1;
+                        curkart->f18 = 5;
+                    }
+                }
+            }
+            if (v88b8c) {
+                if (curkart->f26 == 0 && v88c38)
+                    anitimer++;
+                else
+                    anitimer = 0;
+                curkart->f24 = 0;
+                curkart->f22++;
+                if (curkart->f18 == 0 || curkart->f18 == 5) {
+                    curkart->f1c = 0;
+                    curkart->f18 = 5;
+                }
+            } else {
+                anitimer = 0;
+                curkart->f22 = 0;
+            }
+            if (v88b98) {
+                curkart->f22 = 0;
+                curkart->f24++;
+                if (curkart->f18 == 0 || curkart->f18 == 5) {
+                    curkart->f1c = 4;
+                    curkart->f18 = 5;
+                }
+            } else
+                curkart->f24 = 0;
+            if (joy88b40) {
+                anitimer = 0;
+                if (curkart->fb4)
+                    joy88b40 = 0;
+            }
+            if (!twoplayer && !splitscreen && !netvoices) {
+                if (joy88b44 && v88c38) {
+                    if (anikick == 0 && anitimer >= 0x36) {
+                        anikick = 1;
+                        ani_dope();
+                        anitimer = 0;
+                    }
+                } else
+                    anitimer = 0;
+            }
+            if (joy88b44 && curkart->f42 > 0) {
+                joy88b40 = 0;
+                voice_check(0x11);
+                if (voicebusy == 0)
+                    voice_play(0x11);
+                curkart->f42 -= 8;
+                if (curkart->f42 < 0)
+                    curkart->f42 = 0;
+                curkart->f26 = tbl7e730[curkart->f42];
+            }
+            if (joy88b40 == 0 && players[v88b7e].f62 > 2)
+                players[v88b7e].f62 = 0;
+            if (v7edb0 && v88c3c == 0)
+                joy88b40 = 1;
+            if (joy88b40 || curkart->fb4) {
+                if (curkart->fb4 == 0) {
+                    if (v7edb0)
+                        curkart->f42 = 0x36;
+                    else if (twoplayer || netvoices)
+                        curkart->f42 += 6;
+                    else
+                        curkart->f42 += 0xa;
+                    if (curkart->f42 > 0x64)
+                        curkart->f42 = 0x64;
+                    if (players[v88b7e].f62 == 0) {
+                        players[v88b7e].f62 = 1;
+                        players[v88b7e].f54 = 0;
+                    }
+                } else if (--curkart->fb6 <= 0)
+                    curkart->fb4 = 0;
+            } else {
+                curkart->f42 -= 4;
+                if (curkart->f42 < 0)
+                    curkart->f42 = 0;
+            }
+            curkart->f26 = tbl7e730[curkart->f42];
+            if (curkart->f0a == 0 && curkart->f3c == 0 && curkart->f20 == 0 && curkart->f42
+                && joy88b46 && curkart->f06 == 0) {
+                voice_play(0x11);
+                curkart->f08 = 1;
+                curkart->f06 = (v88b98 != 0) + 1;
+                curkart->f32 = ticks2;
+                if (curkart->f06 == 1) {
+                    curkart->f3c = 1;
+                    curkart->f18 = 3;
+                    curkart->f1a = 0;
+                    curkart->f4e = &kd7b4d8[0][v88b7e];
+                } else {
+                    curkart->f1a = 6;
+                    curkart->f18 = 4;
+                    curkart->f3c = 2;
+                    curkart->f4e = &kd7b4d8[6][v88b7e];
+                }
+            }
+            if (curkart->f0a == 0 && v7e568 != 0xa)
+                kart_state();
+        }
+        v88b94 = curkart->f26;
+        v7d678 = curpos;
+        kart_move();
+        if (v7e568 == 2 && curkart->fb4 == 0) {
+            curkart->fb4 = 1;
+            curkart->fb4 = in_zone();
+            if (curkart->fb4) {
+                voice_play(0xc);
+                curkart->f42 = 0xa0;
+                curkart->fb6 = 0x10;
+                curkart->f26 = tbl7e730[curkart->f42];
+            }
+        } else if (curkart->f42 <= 0)
+            curkart->fb4 = 0;
+        if (curkart->f0a)
+            return;
+        if (v88c3c)
+            curkart->f18 = v88c36;
+        if ((curkart->f18 && since2(curkart->f32) >= 1) || curkart->f18 == 5) {
+            curkart->f32 = ticks2;
+            switch (curkart->f18) {
+            case 1:
+                if (curkart->f20)
+                    return;
+                if (--curkart->f1a > 6)
+                    curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                else
+                    ANIM_RESET()
+                break;
+            case 2:
+                if (curkart->f20)
+                    return;
+                if (++curkart->f1a < 6)
+                    curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                else
+                    ANIM_RESET()
+                break;
+            case 3:
+                if (curkart->f3c)
+                    return;
+                if (++curkart->f1a < 3)
+                    curkart->f4e = &kd7b4d8[curkart->f1a][v88b7e];
+                else
+                    ANIM_RESET()
+                break;
+            case 4:
+                if (curkart->f3c)
+                    return;
+                if (--curkart->f1a > 3)
+                    curkart->f4e = &kd7b4d8[curkart->f1a][v88b7e];
+                else
+                    ANIM_RESET()
+                break;
+            case 6:
+                if (curkart->f1a == 0) {
+                    if (ticks2 - *(int *)&curkart->f02 >= 3)
+                        curkart->f18 = 8;
+                } else if (--curkart->f1a == 0)
+                    *(int *)&curkart->f02 = ticks2;
+                curkart->f4e = &tb7b418[curkart->f1a][v88b7e];
+                break;
+            case 7:
+                if (curkart->f1a == 4) {
+                    if (ticks2 - *(int *)&curkart->f02 >= 3)
+                        curkart->f18 = 9;
+                } else if (++curkart->f1a == 4)
+                    *(int *)&curkart->f02 = ticks2;
+                curkart->f4e = &tb7b418[curkart->f1a][v88b7e];
+                break;
+            case 8:
+                if (++curkart->f1a < 2)
+                    curkart->f4e = &tb7b418[curkart->f1a][v88b7e];
+                else {
+                    curkart->f00 = 0;
+                    curkart->f18 = 0;
+                    curkart->f1a = 2;
+                    curkart->f1c = 2;
+                    curkart->f4e = &tb7b518[curkart->f1a][v88b7e];
+                }
+                break;
+            case 9:
+                if (--curkart->f1a > 2)
+                    curkart->f4e = &tb7b418[curkart->f1a][v88b7e];
+                else {
+                    curkart->f00 = 0;
+                    curkart->f18 = 0;
+                    curkart->f1a = 2;
+                    curkart->f1c = 2;
+                    curkart->f4e = &tb7b518[curkart->f1a][v88b7e];
+                }
+                break;
+            case 5:
+                if (curkart->f1a < curkart->f1c)
+                    curkart->f1a++;
+                else if (curkart->f1a > curkart->f1c)
+                    curkart->f1a--;
+                if (curkart->f1a == curkart->f1c)
+                    curkart->f18 = 0;
+                curkart->f4e = &tb7b518[curkart->f1a][v88b7e];
+                break;
+            case 10:
+                if (v88c9c <= 3) {
+                    voice_check(myplayer);
+                    if (voicebusy == 0) {
+                        voice_play(myplayer);
+                        v88c9c++;
+                    }
+                }
+                if (++v88c5c == v88c52) {
+                    v88c5c = 5;
+                    v88c3a++;
+                }
+                curkart->f4e = &kd7b378[v88c5c];
+                break;
+            case 13:
+                if (++v88c5a == v88c50) {
+                    v88c5a = 0;
+                    v88c3a++;
+                }
+                curkart->f4e = kd7b238[v88c5a];
+                break;
+            case 14:
+                if (++curkart->f1a < 8)
+                    curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+                else
+                    ANIM_RESET()
+                break;
+            }
+        }
+    }
+}
+
