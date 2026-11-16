@@ -662,6 +662,10 @@
 0x07ec68 v7ec68       # LIKELY: set by a race to end the demo (0x1e61a)
 0x088c08 w88c08       # SPECULATIVE: short, cleared before fn_17928 in demo_mode
 0x02fd8c f2fd8c       # LIKELY: runs a race (demo_mode 0x1e5d0 with countplays = 1)
+0x01e6dc fn_1e6dc       # CONFIRMED (rebuild src/ww.c): keeps the sample p7abc0 looping (FX_PlayVOC priority 1) with a 0x13-tick pause between plays; callers in 0x1e760
+0x07eb08 v7eb08       # LIKELY: int, "pause before replaying p7abc0" flag (fn_1e6dc)
+0x07eaf8 v7eaf8       # LIKELY: int, FX voice handle of p7abc0, -1 = none (fn_1e6dc)
+0x07abc0 p7abc0       # LIKELY: char *, a VOC sample played by fn_1e6dc
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

@@ -7348,3 +7348,30 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
     v88c20 = v7ee58;                  /* re-read as the setup does: movsx eax,di (0x1e6c0) */
     v7ea58 = v7ee5a;
 }
+
+/* ---- 0x1e6dc, 132 bytes: keeps one looping sample going (callers 0x1eab7, 0x1ecb5 in 0x1e760).
+ * With no voice (v7eaf8 == -1) it plays p7abc0 at fxvol, priority 1. When that voice ends it sets
+ * the pause flag v7eb08 and restarts ticks2, and the next start waits until ticks2 >= 0x13. */
+extern int v7eb08, v7eaf8;
+extern char *p7abc0;
+
+void fn_1e6dc(void)
+{
+    int play = 0;                     /* ECX */
+
+    if (v7eb08 != 0) {                /* 0x1e6e1 */
+        if (ticks2 >= 0x13)
+            v7eb08 = play;
+        return;
+    }
+    if (v7eaf8 != -1) {               /* 0x1e6fd; `play = 1` is the cold arm (0x1e730) */
+        if (!FX_SoundActive(v7eaf8)) {
+            v7eb08 = 1;
+            v7eaf8 = -1;
+            ticks2 = play;
+        }
+    } else
+        play = 1;
+    if (play)                         /* 0x1e735 */
+        v7eaf8 = FX_PlayVOC(p7abc0, 0, fxvol, fxvol, fxvol, 1, 0);   /* fxvol 0x77428, not sfxvol */
+}
