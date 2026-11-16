@@ -13742,3 +13742,83 @@ void overlay_draw(void)
     }
 }
 
+/* ---- 0x2b270, 744 bytes: the leader board between races (caller 0x2c1fb in 0x2bff0):
+ * " LEADER BOARD AFTER " + the race name (0x6aa68) centred at y 4 (11 px per character), two
+ * POINTS headers, then places 1..nplayers + 1 from the sorted table 0x799d8 (score, player) in
+ * two columns of four, 0x26 apart: the name padded to 8, the two-digit score and the face. The
+ * own player's (myplayer) and, in split screen, the second player's (v88c6a) place is returned
+ * through the pointers (x, y, player, place) instead of drawing the face, for the caller.
+ * differs: 14 blocks: the game spills x and keeps y in EBP (ours the reverse, so the pointer
+ * stores are ordered differently), loads the score with mov ax / cwde, and adds pnames after
+ * the imul; tried: ternary / temp for spr_x, int p, (short) casts. */
+struct standing { short score, player; int f04; };
+extern struct standing standings[];
+#pragma aux standings "_arr799d8"
+extern char racename[];
+#pragma aux racename "_arr6aa68"
+
+void leaderboard(short *x, short *y, short *who, short *place, short *x2, short *y2, short *who2, short *place2)
+{
+    char name[0x28];
+    char buf[0x28];
+    short i;
+    short p;
+    int row;
+    short draw;
+
+    strcpy(buf, " LEADER BOARD AFTER ");
+    strcat(buf, racename);
+    strcat(buf, " ");
+    wtext((short)((0x140 - (int)strlen(buf) * 0xb) / 2), 4, buf, 0);
+    row = 0x32;
+    strcpy(buf, "POINTS");
+    wtext(0x37, 0x22, buf, 0);
+    wtext(0xdf, 0x22, buf, 0);
+    for (i = 1; i <= nplayers + 1; i++) {
+        p = standings[i].player;
+        itoa(standings[i].score, buf, 10);
+        if (buf[1] == 0) {
+            buf[2] = 0;
+            buf[1] = buf[0];
+            buf[0] = '0';
+        }
+        if (i <= 4)
+            spr_x = 2;
+        else
+            spr_x = 0xaa;
+        if (i == 5)
+            row = 0x32;
+        spr_y = row;
+        strcpy(name, " ");
+        strcat(name, pnames[p]);
+        while (strlen(name) < 8)
+            strcat(name, " ");
+        print_at(spr_x, spr_y, name, 0);
+        spr_x += 8;
+        print_at(spr_x, spr_y, buf, 0);
+        draw = 1;
+        spr_x += 8;
+        if (p == myplayer) {
+            *x = spr_x;
+            *y = spr_y;
+            *who = p;
+            *place = i;
+            draw = 0;
+        }
+        if (splitscreen && p == v88c6a) {
+            *x2 = spr_x;
+            *y2 = spr_y;
+            *who2 = p;
+            *place2 = i;
+            draw = 0;
+        }
+        if (draw) {
+            spr_h = 0x26;
+            sprptr = faces[p].img[0];
+            spr_w = 0x1c;
+            drawsprite();
+        }
+        row += 0x26;
+    }
+}
+
