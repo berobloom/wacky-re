@@ -13363,3 +13363,84 @@ void time_draw(short x, short y, char *s)
     }
 }
 
+/* ---- 0x2a740, 491 bytes: the lap / finish banner for the two players (caller 0x2b15a in
+ * 0x2a92c), outside v7d998 modes. While cars[i].fd4 (the banner, 1-based into sp7b210) runs: the
+ * frame fe4 (0..3) of sp7b210[fd4 - 1] (0x688 bytes each), or with fe0 (finished) sp6a538[3 - fe4]
+ * moved down 8; shown for split-screen players (the second one p2offset higher) or the viewers in
+ * v7eb80; offset by the GIG.MOV path entry fe8 (0x7b548: x + 0xfa, y), which advances until fe0
+ * is 1 and after v88b80 restarts with fe0 = 1. n is reused for the 3 - f index and the show flag
+ * (one register in the game); 3 - f is written f + 3 - (f + f) for the game's lea/lea/sub. After frame 3 a finished banner ends (fd4/fdc 0, its sound stopped);
+ * an ended sound (FX_SoundActive) calls car_finished first. */
+struct gigpt { short x, y; };
+extern struct gigpt gig7b548[];
+#pragma aux gig7b548 "_arr7b548"
+extern short viewer7eb80[];
+#pragma aux viewer7eb80 "_v7eb80"
+int FX_SoundActive(int handle);
+
+void lap_banner(void)
+{
+    int i, n, f, k;
+
+    if (v7d998)
+        return;
+    for (i = 0; i <= 1; i++) {
+        n = cars[i].fd4;
+        if (n == 0)
+            continue;
+        if (soundon && cars[i].ff0 && !FX_SoundActive(cars[i].fec))
+            car_finished(i);
+        n--;
+        f = cars[i].fe4;
+        if (cars[i].fe0)
+        {
+            n = f + 3 - (f + f);
+            sprptr = sp6a538[n];
+        }
+        else
+            sprptr = sp7b210[n] + f * 0x688;
+        if (v88bde) {
+            n = 1;
+            if (i == 0)
+                spr_y = 0x78;
+            else
+                spr_y = 0x78 - (short)p2offset;
+        } else {
+            spr_y = 0x78;
+            if (viewer7eb80[i])
+                n = 1;
+            else
+                n = 0;
+        }
+        if (n) {
+            spr_h = 0x26;
+            k = cars[i].fe8;
+            if (cars[i].fe0) {
+                spr_w = 0x1c;
+                spr_y += 8;
+            } else
+                spr_w = 0x2c;
+            spr_x = 0xfa + gig7b548[k].x;
+            spr_y += gig7b548[k].y;
+            drawsprite();
+        }
+        if (cars[i].fe0 != 1 && ++cars[i].fe8 > v88b80) {
+            cars[i].fe8 = 0;
+            cars[i].fe0 = 1;
+            cars[i].fe4 = 0;
+        }
+        if (++f > 3) {
+            f = 0;
+            if (cars[i].fe0) {
+                if (soundon && cars[i].ff0) {
+                    FX_StopSound(cars[i].fec);
+                    cars[i].ff0 = f;
+                }
+                cars[i].fd4 = 0;
+                cars[i].fdc = 0;
+            }
+        }
+        cars[i].fe4 = f;
+    }
+}
+

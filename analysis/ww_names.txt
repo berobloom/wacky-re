@@ -338,6 +338,7 @@
 0x02a4ac minimap      # CONFIRMED (rebuild src/ww.c): img7eb3c plus a dot per player through the MAP.XY tables (arr802cc, arr7faca)
 0x02a618 time_str     # CONFIRMED (rebuild src/ww.c): (int tenths, char *out) "MM:SS:T"; over 0x8ca0 clears racetime
 0x02a6f8 time_draw    # CONFIRMED (rebuild src/ww.c): (x, y, s) 7 characters of the 7-wide font at 0x7d618
+0x02a740 lap_banner   # LIKELY (rebuild src/ww.c): cars[0..1] fd4 banner frames (sp7b210 / sp6a538), GIG.MOV path offset; meaning of fd4/fe0 inferred
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
 0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit
