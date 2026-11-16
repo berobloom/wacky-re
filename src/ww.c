@@ -410,7 +410,9 @@ struct car {
     char f08[0x1a - 8];
     int score;
     int score2;
-    char f22[0x82 - 0x22];
+    char f22[0x5a - 0x22];
+    short f5a;                  /* 0x5a: cleared with .face per race (fn_1dac0, fn_1832c 0x1839c) */
+    char f5c[0x82 - 0x5c];
     int f82;
     char f86[0x94 - 0x86];
     short f94, f96, f98, f9a;
@@ -418,7 +420,8 @@ struct car {
     short lastcell;
     short backward;
     short lap;
-    char fa4[0xc4 - 0xa4];
+    char fa4[0xc0 - 0xa4];
+    int fc0;                    /* 0xc0: v684e0 / v685e4 for cars 0 and 1 */
     int sndhandle;
     char fc8[0xd0 - 0xc8];
     int fd0;
@@ -4373,13 +4376,7 @@ extern short w88b1e, w88b10, v88b88, v88c58;
 extern char v88cec;
 extern char *pal7d84c;
 extern char p6aaae[];
-struct rec104 {                   /* 0x104 bytes, two of them at 0x68426 (fn_1dac0, fn_1832c 0x1839c) */
-    short f00;
-    char p02[0x52];
-    short f54;
-    char p56[0xae];
-};
-extern struct rec104 tbl68426[];
+
 extern int v684e0, v685e4;
 extern char str7c854[], str7c890[], str7c8cc[];
 void f26ec4(char *p);
@@ -4418,8 +4415,8 @@ retry:
     for (i = 0; i <= 7; i++)
         *(short *)(p6aaae + i * 0x68) = 0;
     for (i = 0; i <= 1; i++) {
-        tbl68426[i].f54 = 0;                 /* +0x54 first, then the inc, then +0 (0x183a7-0x183b1) */
-        tbl68426[i].f00 = 0;
+        cars[i].f5a = 0;                     /* +0x5a first, then the inc, then .face (0x183a7-0x183b1) */
+        cars[i].face = 0;
     }
     if (cursong != v7c658)
         music_start(v7c658, 1);
@@ -6951,15 +6948,15 @@ void fn_1d704(short which, int row)
 }
 
 /* ---- 0x1dac0, 39 bytes: clears the two words of fn_1832c's 0x1839c loop for both 0x104-byte
- * records of tbl68426 (+0x54 at 0x6847a, +0 at 0x68426). No caller in the image (no call, no stored address): dead code kept by
+ * cars (.f5a at 0x6847a, .face at 0x68426). No caller in the image (no call, no stored address): dead code kept by
  * the linker, like fn_1c88c. Defined after fn_1832c, so -oe cannot inline it there. */
 void fn_1dac0(void)
 {
     short i;                                  /* EDX: movsx eax,dx / cmp dx,1 */
 
     for (i = 0; i <= 1; i++) {
-        tbl68426[i].f54 = 0;                 /* +0x54 first, then the inc, then +0 (0x183a7-0x183b1) */
-        tbl68426[i].f00 = 0;
+        cars[i].f5a = 0;                     /* +0x5a first, then the inc, then .face (0x183a7-0x183b1) */
+        cars[i].face = 0;
     }
 }
 
@@ -7305,8 +7302,8 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
         v88b88 = v7ec58;
         strcpy(cls_name, "");
         for (k = 0; k <= 1; k++) {
-            tbl68426[k].f54 = 0;
-            tbl68426[k].f00 = 0;
+            cars[k].f5a = 0;
+            cars[k].face = 0;
         }
         fn_1be3c();                   /* 0x1e5b9 */
         w88c08 = 0;

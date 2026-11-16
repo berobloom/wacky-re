@@ -69,7 +69,7 @@
 0x0414e0 free         # CONFIRMED: clib nfree (libmatch)
 0x041450 strncmp      # CONFIRMED: clib (libmatch)
 0x041475 malloc       # CONFIRMED: clib nmalloc (libmatch)
-0x068420 cars         # SPECULATIVE: records of 0x104 bytes (base guessed; fields seen at +6 face, +0x1A score, +0x9C place, +0xC4 engine sound handle)
+0x068420 cars         # STRONGLY SUPPORTED: struct car[8], 0x104 bytes (fn_1dac0/fn_1832c/demo_mode clear .face +6 and .f5a +0x5a of cars 0-1 as one struct array - only that spelling puts the inc between the stores; v684e0/v685e4 = cars[0/1].fc0 +0xc0, .sndhandle +0xc4 = 0x684e4/0x685e8 FX_StopSound in the volume screen; fields seen at +6 face, +0x1A score, +0x9C place, +0xC4 engine sound handle)
 0x0774da enginevol    # SPECULATIVE: volume for the engine sample
 0x07b0f8 sfxchans     # LIKELY: 16-byte records {active, handle, plays, pitch}
 0x07d890 sfxvol       # LIKELY: volume for FX_PlayVOC in sfx_play
@@ -594,8 +594,8 @@
 0x07ecc8 v7ecc8           # SPECULATIVE: int, written only by classes_menu (0x19f55, = 1); read nowhere in the decoded set
 0x0609d0 (KID MODE help)  # CONFIRMED: the nine 34-byte literals 0x609d0,0x609f4,0x60a18,0x60a3c,0x60a60,0x60a84,0x60aa8,0x60acc,0x60af0, copied 0x19fc0-0x1a088
 0x07c854 str7c854         # CONFIRMED (supersedes the str7c854/str7c890/str7c8cc lines): a 0x3c-strided array of message lines; slots 0..2 in the bonus menus, slots 0..8 for the KID MODE help; both are followed by showlines(n,1,0) with n = the slots written
-0x0684e0 v684e0           # SPECULATIVE: int, classes_menu stores 0 there when twoplayer||splitscreen||netvoices (0x1a12d)
-0x0685e4 v685e4           # SPECULATIVE: int, ditto (0x1a137)
+0x0684e0 v684e0           # STRONGLY SUPPORTED alias of cars[0].fc0 (+0xc0); int, classes_menu stores 0 there when twoplayer||splitscreen||netvoices (0x1a12d)
+0x0685e4 v685e4           # STRONGLY SUPPORTED alias of cars[1].fc0; int, ditto (0x1a137)
 0x088bb0 v88bb0           # LIKELY (supports the 0x088bb0 line above): 6 = the class/mode menu (0x19f01)
 0x07edb0 v7edb0           # LIKELY (supports the 0x07edb0 line above): classes_menu sets it next to v88bb2 = 1 in KID MODE (0x1a054, 0x1a05d) - the child's engines are fixed
 0x01a148 laps_menu        # LIKELY: the lap-count menu cars_menu calls at 0x1bd4b: SIX/EIGHT/TEN LAP RACE rows, nlaps 6/8/10 (src/ww.c)
@@ -641,7 +641,6 @@
 0x07d704 sprptr                # see line 102; enter_name points it at gn7eb2c (0x1cce4) for the text caret, so sprptr also names the caret source
 0x01ce14 scores_screen   # CONFIRMED (rebuild src/ww.c): the record book - loads LEAD.PCX, runs enter_name, shifts and inserts the run score v7ed5c in this mode's group of tbl77758, then fn_1d704 draws the table; only caller 0x2d227 in 0x2bff0
 0x01d704 fn_1d704       # CONFIRMED (rebuild src/ww.c, near miss): the record table screen for (short which = class 1-3, int row = tbl77758 group); LEAD.PCX, msgbox "<CLASS> 12 HP"/"6 HP" (v7ecb8 == 1), four records of tbl77758[row] + (which-1)*0x170: name, face sprite, stamp, metal sprite sp7c800[(row-v7ecb4-1)*2], two-digit score; callers scores_screen 0x1d12d, race_records_menu 0x1d321
-0x068426 tbl68426     # STRONGLY SUPPORTED (rebuild src/ww.c): struct rec104[2], 0x104 bytes each, shorts at +0 and +0x54 (0x6847a) cleared together; only a struct-array spelling puts the inc between the two stores (fn_1dac0 0x1dad5, fn_1832c 0x183b0). The record may start below 0x68426
 0x01dae8 link_open    # CONFIRMED (rebuild src/ww.c): opens the serial link - MUSIC PAUSED box, "INTERBYTE DELAY IS SET TO n" when comdelay, com_open(comports[v7ec50].port, .irq, v7ebd4, v7ec50), wait_or_key(0x88), drain com_getc, comopen = 1; caller 0x20943
 0x077240 comports     # LIKELY: struct {int port; int irq; int f08;} per COM number, indexed by v7ec50 (link_open 0x1db4b)
 0x07ec50 v7ec50       # LIKELY: COM port number, comports index and com_open 4th arg (link_open 0x1dc2e)
