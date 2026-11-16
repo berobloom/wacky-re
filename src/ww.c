@@ -1408,16 +1408,20 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     char f7a[0x7c - 0x7a];
     short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
     short f7e;                  /* 0x7E: set by a shot hit in a human-player race (shot_hit) */
-    char f80[0x8a - 0x80];
+    short f80;                  /* 0x80: fire held (kart_fire) */
+    char f82[0x8a - 0x82];
     int f8a;                    /* 0x8A: ticks2 stamp of f14 */
-    char f8e[0xaa - 0x8e];
+    int f8e;                    /* 0x8E: ticks2 when fire was pressed (kart_fire) */
+    char f92[0xaa - 0x92];
     short faa;                  /* 0xAA: 1 when the move hit something or f3c was set (kart_move) */
     char fac[0xb4 - 0xac];
     short fb4;
     short fb6;                  /* 0xB6: set to 0x10 with fb4 (kart_boost) */
     char fb8[0xd4 - 0xb8];
     int fd4;                    /* 0xD4: = cars[].sndhandle */
-    char fd8[0x104 - 0xd8];
+    char fd8[0xe0 - 0xd8];
+    unsigned char fe0;          /* 0xE0: bits 0x10 / 8 pick weapon 3 / 8 when f16 is 0 (kart_fire) */
+    char fe1[0x104 - 0xe1];
 };
 #pragma pack()
 extern struct kart karts[];
@@ -10249,5 +10253,155 @@ void kart_boost(void)
         curkart->fb6 = 0x10;
         curkart->f26 = tbl7e730[curkart->f42];
         voice_play(12);
+    }
+}
+
+/* ---- 0x24364, 1232 bytes: fires curkart's weapon (callers 0x325de, 0x32718 in 0x30aae). joy88b42 is
+ * the fire key: held for 20 ticks2 without a weapon it makes the driver's call and sets weapon 8.
+ * The weapon is f16 (0: from the fe0 bits) or the ammo count f6a; nothing: voice 0x1a. Each kind
+ * sets the shot sprite v7eb04, its mode v88bc0 and the shot's track position v7eb9c (read by
+ * f2d548 from memory) and launches f2d548(kind, player); then the weapon voice and f16 = 0 or
+ * f6a--. players[].f12 blocks firing until the shot is gone.
+ * differs (near-miss, 254 vs 229 insns, 22 diff blocks): the game's build keeps the global v7eb9c in ECX for the
+ * whole function (load at entry, a store before every call and every exit, a reload after each
+ * call: GOTCHAS "promotes a global ... into a register"), ~25 instructions our 9.5b build does not
+ * emit; with ECX taken, the voice number v is in SI (ours CX) and ticks2 - f8e goes through EBX.
+ * Everything else lines up block for block. */
+extern int v7eb9c;
+extern char *v7eb04;
+extern short v88bc0;
+void f2d548(short kind, short player);
+
+void kart_fire(void)
+{
+    short k, i, v, a;
+
+    if (joy88b42 != 0 && curkart->f7e != 0)
+        return;
+    if (joy88b42 == 0)
+        curkart->f8e = ticks2;
+    if (joy88b42 == 0 && curkart->f80 != 0)
+        curkart->f80 = 0;
+    if (joy88b42 != 0) {
+        if (curkart->f80 == 0) {
+            curkart->f80 = 1;
+            curkart->f8e = ticks2;
+        } else
+            joy88b42 = 0;
+        if (ticks2 - curkart->f8e >= 0x14) {
+            curkart->f8e = ticks2;
+            if (curkart->f16 != 8 && v7e574 == 0) {
+                voice_play(myplayer);
+                curkart->f16 = 8;
+            }
+            joy88b42 = 0;
+        }
+    }
+    if (joy88b42 == 0 || curkart->f0a != 0 || players[v88b7e].f12 != 0)
+        return;
+    a = 0;
+    if (curkart->f16 != 0 || curkart->f6a != 0)
+        a = 1;
+    if (a != 0) {
+        k = curkart->f16;
+        if (k == 0) {
+            if (curkart->fe0 & 4)
+                k = 0;
+            if (curkart->fe0 & 0x10)
+                k = 3;
+            if (curkart->fe0 & 8)
+                k = 8;
+        }
+        switch (k) {
+        case 0:
+            v88bc0 = 3;
+            v7eb04 = hm7d740;
+            v7eb9c = 0;
+            f2d548(0, v88b7e);
+            players[v88b7e].f12 = 1;
+            v = 0x14;
+            break;
+        case 3:
+            v88bc0 = 1;
+            v7eb04 = hm7d73c;
+            v7eb9c = 0;
+            f2d548(0, v88b7e);
+            v88bc0 = 1;
+            v7eb04 = hm7d73c;
+            v7eb9c = 1;
+            f2d548(0, v88b7e);
+            v7eb9c = 2;
+            f2d548(0, v88b7e);
+            players[v88b7e].f12 = 3;
+            v = 0x13;
+            break;
+        case 4:
+            v = 0x17;
+            for (i = 1; i <= 2; i++) {
+                if (i == 1) {
+                    v7eb9c = curpos + 0x1e0;
+                    if (v7eb9c >= 0x780)
+                        v7eb9c -= 0x780;
+                } else {
+                    v7eb9c = curpos - 0x1e0;
+                    if (v7eb9c < 0)
+                        v7eb9c += 0x780;
+                }
+                v88bc0 = 1;
+                v7eb04 = hm7d738;
+                f2d548(1, v88b7e);
+            }
+            players[v88b7e].f12 = 0;
+            break;
+        case 5:
+            v = 0x17;
+            v7eb9c = curpos + 0x3c0;
+            if (v7eb9c >= 0x780)
+                v7eb9c = curpos - 0x3c0;
+            v88bc0 = 1;
+            v7eb04 = hm7d734;
+            f2d548(2, v88b7e);
+            players[v88b7e].f12 = 0;
+            break;
+        case 6:
+            v = 0x17;
+            v7eb9c = curpos + 0x3c0;
+            if (v7eb9c >= 0x780)
+                v7eb9c = curpos - 0x3c0;
+            v88bc0 = 1;
+            v7eb04 = hm7d730;
+            f2d548(3, v88b7e);
+            players[v88b7e].f12 = 0;
+            break;
+        case 7:
+            v = 0x17;
+            v7eb9c = curpos + 0x3c0;
+            if (v7eb9c >= 0x780)
+                v7eb9c = curpos - 0x3c0;
+            v88bc0 = 1;
+            v7eb04 = hm7d72c;
+            f2d548(4, v88b7e);
+            players[v88b7e].f12 = 0;
+            break;
+        case 8:
+            v88bc0 = 3;
+            v7eb04 = hm7d728;
+            v7eb9c = 0;
+            f2d548(5, v88b7e);
+            v = 0x14;
+            players[v88b7e].f12 = 0;
+            break;
+        }
+        voice_check(v);
+        if (voicebusy == 0)
+            voice_play(v);
+        if (curkart->f16 == 0)
+            curkart->f6a--;
+        else
+            curkart->f16 = 0;
+    } else {
+        voice_check(0x1a);
+        if (voicebusy == 0)
+            voice_play(0x1a);
     }
 }
