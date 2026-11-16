@@ -17216,3 +17216,98 @@ void faces_reset(void)
     }
 }
 
+/* ---- 0x32b14, 144 bytes (callers chat 0x1x after ESC, f-net paths): drains the BIOS key buffer,
+ * calls kbd_off, saves the current int 9 vector (DOS 0x3509: ES:EBX into oldkbd_seg/oldkbd_off) and
+ * installs the game's keyboard handler (asm at 0x40907, outside the C modules) with DOS 0x2509.
+ * The undo is in chat (0x2509 with oldkbd_off/oldkbd_seg, then kbd_off). */
+extern int ioldkbd_seg;
+#pragma aux ioldkbd_seg "_oldkbd_seg"
+void kbd_isr(void);
+
+void kbd_on(void)
+{
+    union REGS r;
+    struct SREGS s;
+
+    while (kbhit())
+        getch();
+    kbd_off();
+    r.x.eax = 0x3509;
+    s.es = 0;
+    s.ds = 0;
+    int386x(0x21, &r, &r, &s);
+    ioldkbd_seg = s.es;
+    oldkbd_off = r.x.ebx;
+    r.x.eax = 0x2509;
+    r.x.edx = FP_OFF(kbd_isr);
+    s.ds = FP_SEG(kbd_isr);
+    s.es = 0;
+    int386x(0x21, &r, &r, &s);
+}
+
+/* ---- 0x32ba4, 169 bytes (callers kbd_on, chat, 0x32c50): clears every key-state byte the int 9
+ * handler sets (0x88cc..0x88ce2 group, 0x7b6d9..0x7b6ef odd bytes) so no key stays held across a
+ * handler change. */
+extern char v88cd9, v88ce2, v88cd7, v88cda, v88cd4, v88cdc;
+extern char kv7b6df, kv7b6e1, kv7b6e3;
+#pragma aux kv7b6df "_v7b6df"
+#pragma aux kv7b6e1 "_v7b6e1"
+#pragma aux kv7b6e3 "_v7b6e3"
+
+void kbd_off(void)
+{
+    v88cce = 0;
+    key88ccd = 0;
+    v88cd9 = 0;
+    v88ce2 = 0;
+    v88cd7 = 0;
+    v88cda = 0;
+    v88cd4 = 0;
+    v88cdc = 0;
+    key88cdb = 0;
+    key88cd2 = 0;
+    key88cd1 = 0;
+    v88ce1 = 0;
+    v7b6d9 = 0;
+    v7b6db = 0;
+    v7b6dd = 0;
+    kv7b6df = 0;
+    kv7b6e1 = 0;
+    kv7b6e3 = 0;
+    v7b6e5 = 0;
+    v7b6e7 = 0;
+    v7b6e9 = 0;
+    v7b6eb = 0;
+    v7b6ed = 0;
+    v7b6ef = 0;
+}
+
+/* ---- 0x32c50, 71 bytes (no direct caller found): gives int 9 back (DOS 0x2509 with
+ * oldkbd_off/oldkbd_seg) and clears the key state; the same steps chat does inline. */
+void kbd_restore(void)
+{
+    union REGS r;
+    struct SREGS s;
+
+    r.x.eax = 0x2509;
+    r.x.edx = oldkbd_off;
+    s.ds = ioldkbd_seg;
+    s.es = 0;
+    int386x(0x21, &r, &r, &s);
+    kbd_off();
+}
+
+/* ---- 0x32c98, 41 bytes (no direct caller found): f375cd with p7d714 = p, v88b4a = n and pal_a = a
+ * for the call, pal_a restored after; the same steps race_run does inline for the demo records. */
+void pic_show(char *p, short n, short a)
+{
+    short save;
+
+    save = pal_a;
+    p7d714 = p;
+    v88b4a = n;
+    pal_a = a;
+    f375cd();
+    pal_a = save;
+}
+
