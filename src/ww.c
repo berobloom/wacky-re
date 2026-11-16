@@ -6305,13 +6305,8 @@ extern void dos_gettime(struct dostime *t);     /* 0x43164 */
  * game's 48-byte const at 0x10154 ("JAN\0FEB\0..."), indexed by the seconds byte minus one;
  * what the fields mean is SPECULATIVE, every address step below is CONFIRMED from the listing.
  * The loop tail (0x1ca83-0x1cac1) is entered twice, first with the itoa buffer in esi. */
-/* differs: near miss, 312 of the game's 313 bytes and four instruction diffs, all one thing:
- * the game keeps `edi = s` off the loop head (0x1ca83 starts straight at `push edi`, edi is still
- * s from the `pop edi` at 0x1ca74) and re-materialises it on the back edge at 0x1cabf; our build
- * puts `mov ebp,edi` at the loop head instead, which shifts the `jae`/`jmp` displacements (0x1cab8,
- * 0x1cabf). t1-t6 in analysis/shapes/SHAPES.C keep six of the 21 shapes scored; t1 (this one) is the
- * best at 4 diffs, and the pre-test `while (strlen(s) < 10) strcat(s, " ")` form is 8, so the game's
- * loop really is entered twice (findings/scores.md). */
+/* The loop's destination pointer is a second local (EDX/EDI) that the game re-arms from `s` (EBP)
+ * after the strcat and on the back edge; with one local both loads fold into the loop head. */
 void fn_1c994(char *s)                  /* arg1 = eax */
 {
     char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -6320,6 +6315,7 @@ void fn_1c994(char *s)                  /* arg1 = eax */
     struct dostime t;
     char *src;
     char c;
+    char *p;
 
     dos_gettime(&t);                    /* 0x1c9b8 (arg eax = esp+0x40) */
     itoa(t.hund, s, 10);                /* 0x1c9bd movzx eax,BYTE [esp+0x40]; call 0x425f9 */
@@ -6334,11 +6330,13 @@ void fn_1c994(char *s)                  /* arg1 = eax */
     strcat(s, " ");                     /* 0x1ca45 */
     itoa(t.minhrs, num, 10);            /* 0x1ca75 movzx eax,WORD [esp+0x42]; edx = esp+0x30 */
     src = num;
+    p = s;
     while (1) {
-        strcat(s, src);                 /* 0x1ca83 */
+        strcat(p, src);                 /* 0x1ca83 (edi re-armed from ebp = s at 0x1caa9, 0x1cabf) */
         if (strlen(s) >= 10)            /* 0x1caa9-0x1cab8: cmp ecx,0xa; jae exit */
             return;
         src = " ";                      /* 0x1caba */
+        p = s;
     }
 }
 

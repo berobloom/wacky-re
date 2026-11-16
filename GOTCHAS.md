@@ -433,6 +433,15 @@ it can be copied back into DREA.
   EDX form did not survive the whole file: 4 diff rows became 13). Probes rank spellings for one
   function in isolation; before keeping one, compile the whole file and diff (GOTCHAS iter 13, "the
   probe's scores are not the whole-file ones").
+- **A pointer the game re-materialises twice needs a second local, re-armed at the body's end**
+  (iter 17, [generic]): fn_1c994 0x1c994's stamp loop (0x1ca83-0x1cac1) opens at `push edi` with no
+  load (EDI is live-in), then `pop edi` + `mov edi,ebp` before the strlen and `mov edi,ebp` again on
+  the back edge. Written with one local (`strcat(s, src)` / `strlen(s)`) 9.5b folds that pair and
+  hoists a single `mov edi,ebp` to the loop head (5 rows); `char *p; p = s;` before the loop,
+  `strcat(p, src)` inside it and `p = s;` at the body end after `src = " ";` puts the three loads
+  exactly where the game has them (316 bytes, MATCH). The strlen argument stays `s`, so the copy is
+  not provable and the loads stay. Probed 7 shapes in one compile with the score cut at 0x1cac3,
+  before the shared epilogue (GOTCHAS "copies of one function share their identical tail").
 - **A constant the game stores to a global through a register comes from an `int` local assigned
   inside that arm** (iter 17, [generic]): msgbox 0x2a45c materialises the default row as
   `mov eax,0x5c` (inside the arm, after the `test si,si`/`jne` at 0x2a457) + `mov word [spr_y],ax`,
