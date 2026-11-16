@@ -45,6 +45,8 @@ Do exactly this, in order:
      move the first assignment, or split one local into two (main's two palette pointers needed
      two locals to get ESI and ECX right).
    - `short` vs `int` for a local or a loop counter; `char` vs `unsigned char`.
+   - EAX and EDX roles swapped in an address computation: put the temp into a local that already
+     lives in EAX (songs_load: `n = i * 12; f(path, (char *)names + n);` matched).
    - A loop bound written `<= 199` gives `jle`, `< 200` gives `jl`: match the game's compare.
    - Explicit stores in the game's order instead of an initializer; a temp variable
      (`x = cond; if (!x)`) for `setne/movzx` shapes.
