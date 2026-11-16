@@ -15257,3 +15257,84 @@ short net_sync(void)
     return 0;
 }
 
+/* ---- 0x2e238..0x2e3f4: demo recording and playback (v7d998 1 = record, 2/3 = play). The
+ * recording is the .MAC file (one control byte per frame, demo_rec); playback reads the .BMC
+ * entry, runs of (count, control byte) at 0x7d9a0. */
+#pragma pack(1)
+struct demorun { short n; unsigned char k; };
+#pragma pack()
+extern struct demorun demo7d9a0[];
+#pragma aux demo7d9a0 "_arr7d9a0"
+extern int v7d994, v7e564;
+extern FILE *v7eb68;
+extern unsigned char v88cca;
+
+/* 0x2e238, 145 bytes (caller 0x30f77): record: opens <level>.MAC for writing; play: first run. */
+void demo_start(void)
+{
+    if (v7d998 == 1) {
+        strcpy((char *)0x7d7b8, (char *)0x7d770);
+        strcat((char *)0x7d7b8, ".MAC");
+        v7eb68 = fopen((char *)0x7d7b8, "wb");
+        return;
+    }
+    v7d994 = 0;
+    v7e564 = demo7d9a0[0].n;
+}
+
+/* 0x2e2cc, 75 bytes (no caller found): loads the runs of DAT entry name. */
+void demo_load(char *name)
+{
+    short n;
+    int m;
+
+    datfind(name);
+    fread(&n, 2, 1, datfile);
+    m = n * 3;
+    fread(demo7d9a0, m, 1, datfile);
+}
+
+/* 0x2e318, 47 bytes (no caller found): packs this frame's controls and appends them.
+ * differs: only the call displacement to netkeys_pack (the near misses before it are 4 bytes
+ * shorter here in total); the code is identical. */
+void demo_rec(void)
+{
+    netkeys_pack();
+    v88cca = v88cf0;
+    fwrite(&v88cca, 1, 1, v7eb68);
+}
+
+/* 0x2e348, 169 bytes (no caller found): sets this frame's controls from the current run.
+ * differs: one block: the game loads the byte into BL and copies it to AL, ours the reverse
+ * (char / int / unsigned k, a run pointer, volatile v88cca tried). */
+void demo_play(void)
+{
+    unsigned char k;
+
+    k = v88cca = demo7d9a0[v7d994].k;
+    key88cd5 = k & 1;
+    key88cdd = k & 2;
+    joy88b40 = k & 4;
+    joy88b42 = k & 8;
+    joy88b44 = k & 0x10;
+    joy88b46 = k & 0x20;
+    v88cec = k & 0x40;
+    if (--v7e564 <= 0) {
+        v7d994++;
+        v7e564 = demo7d9a0[v7d994].n;
+    }
+    v88cef = k;
+}
+
+/* ---- 0x2e3f4, 172 bytes (no caller found): pads menu rows 1..n with spaces to the length of
+ * row a. */
+void rows_pad(int a, int n)
+{
+    int len, i;
+
+    len = strlen(mrows[a]);
+    for (i = 1; i <= n; i++)
+        while (strlen(mrows[i]) < len)
+            strcat(mrows[i], " ");
+}
+
