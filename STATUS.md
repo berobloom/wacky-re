@@ -10,9 +10,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
   `classes_menu` 0x19eac is that screen; `laps_menu` 0x1a148 (identical) sets `nlaps` 6/8/10.
 - Car select (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b, one 6861-byte C function, `ents[0..7]`
   car icons plus **`ents[8]` as the selection box** (0x73998); `v7d338[car]` = per-car lock (0x34463).
-- Race setup (findings/game-loop.md, both near misses): `fn_1be3c` builds the start grid
-  `v70720[0..7]` (permutation of 0..7, `myplayer` first, `v88c6a` second in 2p, the rest `rand()`-drawn
-  or counting up in splitscreen); `fn_1bf00` sets `players[i].f64`/`.face`.
+- Race setup (findings/game-loop.md, both near misses): `fn_1be3c` builds the start grid `v70720[0..7]`
+  (permutation of 0..7, `myplayer` first, `v88c6a` second in 2p, rest `rand()`-drawn); `fn_1bf00` sets
+  `players[i].f64`/`.face`.
 - Scores (findings/scores.md): `tbl77758` rows of 0x450 = 24 records of 0x2e (stamp +6 from
   `fn_1c994`, name +0x1a), row `v88bb6 + v7ecb4`; `fn_1cad0` picks one, `enter_name` 0x1cb44 (21 slot
   diffs), `scores_screen` 0x1ce14 (97 diffs) inserts `v7ed5c` among the group's first four - beating
@@ -23,14 +23,13 @@ Short: where the project stands, and what is next. History is in git; no diary.
   `strcpy(prefix)` + `strcat(row)` + padding to the first row's width.
 - Menus/help (findings/menus.md): `fn_1c0f4` 0x1c0f4-0x1c88b = the F1 controls screen; control names
   in 84-byte records at 0x77432.
-- Video (findings/video.md): `setpalette` 0x36f14 is **not** a palette op - asm `rep movsb` of
-  0x3e80 bytes A0000+`pal_b` to A0000+`pal_c`; its flippers stay `extern` (-oe loses `net_end`,
-  GOTCHAS); page flips are `if`/`else` pairs of stores, never ternaries.
+- Video (findings/video.md): `setpalette` 0x36f14 is **not** a palette op - asm `rep movsb` of 0x3e80
+  bytes A0000+`pal_b` to A0000+`pal_c`; its flippers stay `extern` (-oe loses `net_end`); page
+  flips are `if`/`else` pairs of stores, never ternaries.
 
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-
 1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1d33e, 87
    functions identical and 40 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
