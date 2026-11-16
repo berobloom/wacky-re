@@ -11755,7 +11755,12 @@ void read_line(char *s, FILE *f)
  * 0x133fe, 0x17dee, 0x18625, the menus).
  * differs (near-miss, 33 vs 33 insns, n and size swap ESI/EDI): tried declaration orders, five
  * parameter-name pairs, short n, the seek as one expression, a pointer temp. size - 0x380 up front
- * (the game's `sub edi,0x380` before the header read) is right. */
+ * (the game's `sub edi,0x380` before the header read) is right. 24 more spellings (iter 18,
+ * .work/probe_pcxload/{P,Q}.C): both locals' types (int/long/unsigned/long cast), separate, last
+ * and split declarations, register, n copied into a local, a pointer temp at the definition and at
+ * the use, a struct-pointer and a datidx temp, two-statement size, the sub at the use, whence 0,
+ * unsigned and long n, and the global externs declared in the other order - all give the same five
+ * rows, so the ESI/EDI pairing is a 9.5b tie-break (GOTCHAS "coin flip"), not a missing stmt. */
 extern char *p6a978s[];
 #pragma aux p6a978s "_p6a978"
 

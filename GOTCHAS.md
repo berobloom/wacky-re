@@ -119,7 +119,14 @@ it can be copied back into DREA.
   (never saved) and puts short-lived temps in a pushed register, the game the other way round (fn_19db8
   0x19dbb: game `mov dx,[0x88b84]` + `mov ax,[0x88bb2]`/`cmp ax,3`, ours the reverse; ~30 C shapes and
   every -o<letter> did not change it). When the two entry values of a function swap registers, treat it
-  as understood, mark `differs:`, and move on - it is question 1/2, not a missing statement. [generic]
+  as understood, mark `differs:`, and move on - it is question 1/2, not a missing statement. The same
+  tie-break picks which of two pushed-register locals gets ESI and which EDI: pcx_load 0x27060 homes
+  the incoming index in ESI (`mov esi,edx` 0x2706a) and the byte count in EDI, ours the other way
+  round, and 24 spellings - both locals' types, separate/last/split declarations, `register`, the
+  index copied into a fresh local, a pointer temp at the definition and at the use, struct-pointer
+  and index temps, a two-statement count, the `sub` moved to the use, `SEEK_SET` written 0, and the
+  *global externs declared in the other order* - leave the five rows untouched (.work/probe_pcxload,
+  iter 18). Global declaration order is not a lever either; stop after one probe compile. [generic]
 - **Literals land at the game's CONST addresses as long as functions are added in address order**: our
   "AMATEUR. "/"PRO. "/"CHAMPION. " got offsets 0x948/0x954/0x95c = 0x6094c/0x60958/0x60960 with the
   base check.sh prints (`segment CONST base 0x060004`). If that line splits into two bases, a literal
