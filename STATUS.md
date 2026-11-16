@@ -13,10 +13,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Race setup (findings/game-loop.md, both near misses): `fn_1be3c` builds the start grid `v70720[0..7]`
   (permutation of 0..7, `myplayer` first, `v88c6a` second in 2p, rest `rand()`-drawn); `fn_1bf00` sets
   `players[i].f64`/`.face`.
-- Scores (findings/scores.md): `tbl77758` rows of 0x450 = 24 records of 0x2e (stamp +6 from
-  `fn_1c994`, name +0x1a), row `v88bb6 + v7ecb4`; `fn_1cad0` picks one, `enter_name` 0x1cb44 (21 slot
-  diffs), `scores_screen` 0x1ce14 (97 diffs) inserts `v7ed5c` among the group's first four - beating
-  none still gets the last slot.
+- Scores (findings/scores.md): `tbl77758` rows of 0x450 = 24 records of 0x2e (stamp +6 from `fn_1c994`,
+  name +0x1a), row `v88bb6 + v7ecb4`; `fn_1cad0` picks one, `enter_name` 0x1cb44 (21 slot diffs) and
+  `scores_screen` 0x1ce14 (97 diffs) insert `v7ed5c` among the group's first four - beating none
+  still gets the last slot.
 - Record books (findings/scores.md): the drivers-by-class menu in `fn_1f858` (items 0x61410-0x61460)
   puts its choice in `v88c80`; 1-3 call `race_records_menu` 0x1d13c (`fn_1d704(class, v7ecb4 +
   choice)`, near miss), 4 calls 0x1d340 (TRIALS + five "TRACK n" rows, not read); row names are
