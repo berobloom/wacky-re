@@ -1373,7 +1373,12 @@ void track_setup(void)
 struct kart {                   /* what curkart points at; layout still unknown */
     char f00[0x0A];
     short f0a;
-    char f0c[0xB4 - 0x0C];
+    short f0c, f0e, f10;        /* 0x0C-0x10: set to 8, 0x28, 8 by kart_hit 0x216a0 */
+    char f12[0x44 - 0x12];
+    short f44;
+    char f46[0x5a - 0x46];
+    short f5a;
+    char f5c[0xB4 - 0x5C];
     short fb4;
 };
 
@@ -8080,4 +8085,37 @@ int line_points(void)
     *linep++ = ly0;
     n++;
     return n;
+}
+
+/* differs: near miss, 183 of 191 bytes, same statements: the game computes the sums in EBX and keeps
+ * curkart in ECX (pushing EBX/ECX/EDX, never using EDX), ours uses EAX/EDX and pushes only EDX. No
+ * arguments at the callers; f37b04 is asm with pushad. Eleven forms tried (operand and statement
+ * order, a kart local, int temporaries, `!f0a`, early return): none moves it. QUESTIONS 2. */
+/* ---- 0x216a0, 191 bytes: tests the point (lx0 + v88b68, ly0 + v88b6a) with f37b04 (callers in
+ * 0x21de0). Result 10 on a kart whose f0a is clear: sets f0a, clears f44 (and the player's f5c and
+ * the kart's f5a when f44 was set), plays voice 12 and sets f0c/f10 = 8, f0e = 0x28, v88bae = 4.
+ * Result 3: v88bae = 1. */
+extern short v88b68, v88b6a, v88bae;
+extern int v7d7a4, v7d7a8, v7e568;
+void f37b04(void);
+
+void kart_hit(void)
+{
+    v7d7a4 = lx0 + v88b68;
+    v7d7a8 = ly0 + v88b6a;
+    f37b04();
+    if (v7e568 == 10 && curkart->f0a == 0) {
+        if (curkart->f44 != 0) {
+            curkart->f44 = 0;
+            players[v88b7e].f5c = 0;
+            curkart->f5a = 0;
+        }
+        curkart->f0a = 1;
+        voice_play(12);
+        curkart->f0c = 8;
+        curkart->f10 = 8;
+        v88bae = 4;
+        curkart->f0e = 0x28;
+    } else if (v7e568 == 3)
+        v88bae = 1;
 }
