@@ -622,3 +622,8 @@
 0x036f14 setpalette        # CONFIRMED (the asm read at 0x36f14-0x36f54): NOT a palette op. pushal; out 0x3ce,0x4105; out 0x3c4,0x0f02; rep movsb 0x3e80 bytes from 0xa0000+pal_b to 0xa0000+pal_c; out 0x3ce,0x4005; popal. So pal_a/b/c/d are 320x200 screen page offsets (0x3e80 apart)
 0x01be3c fn_1be3c          # CONFIRMED (rebuild, src/ww.c): 196 bytes with the game's size, 13 instruction diffs - Watcom keeps a constant 0 in edi, the game materialises each zero (findings/game-loop.md, shapes k1-k4 in analysis/shapes/SHAPES.C)
 0x01bf00 fn_1bf00          # CONFIRMED (rebuild, src/ww.c): 97 of 125 bytes; the game keeps the store/continue block inside both arms (0x1bf36-0x1bf4c, 0x1bf5b-0x1bf6f) and our build merges them, and it loads nplayers first (0x1bf04). 27 shapes scored, best 14 diffs (findings/game-loop.md)
+0x01c994 fn_1c994          # CONFIRMED (rebuild, src/ww.c, near miss 312/313): builds a >=10-char stamp in its arg string - itoa of the DOS-time bytes, the month table 0x10154 indexed by (seconds-1), then spaces; dos_gettime 0x43164, called 0x1cf67 (findings/scores.md)
+0x01cad0 fn_1cad0          # CONFIRMED (rebuild, src/ww.c): 115 bytes byte-identical; sets v7d8a8 = tbl77758 + (v88bb6 + v7ecb4)*0x450 + {0,0x170,0x2e0} + rec*0x2e
+0x043164 dos_gettime       # CONFIRMED: INT 21h/2Ah into a 5-byte record (stores 0x4316d-0x43179: dl, dh, cx, al); sibling 0x4317f is the date call AH=2Ch; called from fn_1c994 at 0x1c9b8
+0x077758 tbl77758          # CONFIRMED data table read by fn_1cad0: rows of 0x450 = 24 records of 0x2e bytes; row 1 at 0x77ba8; zeros in the file, filled at run time (SPECULATIVE)
+0x07d8a8 v7d8a8            # CONFIRMED dword pointer, written by fn_1cad0 (0x1cb3d) and 0x1d8a8, read at 0x1cfa9..0x1d08c

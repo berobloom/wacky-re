@@ -6166,3 +6166,84 @@ void fn_1bf00(void)
     } while (i <= n);
     nplayers = n;                       /* 0x1bf71 */
 }
+
+/* ---- the DOS clock wrapper 0x43164: INT 21h/2Ah into a 5-byte record (stores at
+ * 0x4316d-0x43179: word [p+2] = cx, [p+1] = dh, [p] = dl, [p+4] = al). */
+
+struct dostime {
+    unsigned char hund;                 /* +0 dl: hundredths of a second */
+    unsigned char sec;                  /* +1 dh: seconds */
+    unsigned short minhrs;              /* +2 cl = minutes, +3 ch = hours; the game reads +2 as a
+                                       * word (movzx, WORD PTR [esp+0x42], 0x1ca75) */
+    unsigned char dst;                  /* +4 al: daylight-saving flag */
+};
+
+extern void dos_gettime(struct dostime *t);     /* 0x43164 */
+
+/* ---- 0x1c994: pads the string s into a fixed-width stamp. The month table (mth) is the
+ * game's 48-byte const at 0x10154 ("JAN\0FEB\0..."), indexed by the seconds byte minus one;
+ * what the fields mean is SPECULATIVE, every address step below is CONFIRMED from the listing.
+ * The loop tail (0x1ca83-0x1cac1) is entered twice, first with the itoa buffer in esi. */
+/* differs: near miss, 312 of the game's 313 bytes and four instruction diffs, all one thing:
+ * the game keeps `edi = s` off the loop head (0x1ca83 starts straight at `push edi`, edi is still
+ * s from the `pop edi` at 0x1ca74) and re-materialises it on the back edge at 0x1cabf; our build
+ * puts `mov ebp,edi` at the loop head instead, which shifts the `jae`/`jmp` displacements (0x1cab8,
+ * 0x1cabf). Shapes t1-t4 in analysis/shapes/SHAPES.C: t1 (this one) is the best of twelve tried at
+ * 4 diffs; the pre-test `while (strlen(s) < 10) strcat(s, " ")` form is 8 diffs, so the loop really
+ * is entered twice (findings/scores.md). */
+void fn_1c994(char *s)                  /* arg1 = eax */
+{
+    char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                        "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+    char num[16];
+    struct dostime t;
+    char *src;
+    char c;
+
+    dos_gettime(&t);                    /* 0x1c9b8 (arg eax = esp+0x40) */
+    itoa(t.hund, s, 10);                /* 0x1c9bd movzx eax,BYTE [esp+0x40]; call 0x425f9 */
+    if (s[1] == 0) {                    /* 0x1c9c7: a one-digit value gets a leading '0' */
+        s[2] = 0;
+        c = s[0];
+        s[0] = '0';
+        s[1] = c;
+    }
+    strcat(s, " ");                     /* 0x1c9db (inlined strcat, repnz scas + copy) */
+    strcat(s, mth[t.sec - 1]);          /* 0x1ca08: eax = sec*4 - 4, esi = esp + eax */
+    strcat(s, " ");                     /* 0x1ca45 */
+    itoa(t.minhrs, num, 10);            /* 0x1ca75 movzx eax,WORD [esp+0x42]; edx = esp+0x30 */
+    src = num;
+    while (1) {
+        strcat(s, src);                 /* 0x1ca83 */
+        if (strlen(s) >= 10)            /* 0x1caa9-0x1cab8: cmp ecx,0xa; jae exit */
+            return;
+        src = " ";                      /* 0x1caba */
+    }
+}
+
+extern char tbl77758[];                 /* 0x77758: two rows of 0x450 bytes = 24 records of 0x2e
+                                       * (the second row 0x77ba8 is +0x450) */
+extern char *v7d8a8;                    /* 0x7d8a8: record pointer, set here and at 0x1d8a8 */
+
+/* ---- 0x1cad0: points v7d8a8 at record `rec` of table group `which` (1, 2, 3) for the current
+ * row v88bb6 + v7ecb4; group 2 starts +0x170 = 8 records in, group 3 at +0x2e0 = 16. */
+void fn_1cad0(int which, int rec)       /* arg1 = eax, arg2 = edx */
+{
+    char *p;
+
+    rec *= 0x2e;                        /* 0x1cad0 */
+    switch (which) {                    /* 0x1cad3-0x1cadd: the compare chain 2 / <2 / 3 */
+    case 1:
+        p = tbl77758 + (v88bb6 + v7ecb4) * 0x450;              /* 0x1cae5-0x1caf8 */
+        break;
+    case 2:
+        p = tbl77758 + (v88bb6 + v7ecb4) * 0x450 + 0x170;      /* 0x1caff-0x1cb17 */
+        break;
+    case 3:
+        p = tbl77758 + (v88bb6 + v7ecb4) * 0x450 + 0x2e0;      /* 0x1cb1e-0x1cb36 */
+        break;
+    default:
+        return;                         /* 0x1cadf */
+    }
+    v7d8a8 = p + rec;                   /* 0x1cb3b-0x1cb40 */
+}

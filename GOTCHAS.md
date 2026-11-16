@@ -198,3 +198,9 @@ it can be copied back into DREA.
   keep it `extern` and write its C into the findings file instead. [generic]
 - **`tools/wc/wcc.sh` runs WCC386 inside DOSBox: a file name longer than 8.3 fails silently**
   (`Unable to open 'SETUP_PROBE.C'`, 0 lines, no OBJ). Keep probe names <= 8 characters. [generic]
+- **A candidate function start is not a function** (iter 9, [generic]): `tools/wc/starts.py`
+  also prints `after-ret` guesses. 0x1c66c / 0x1c88c / 0x1c968 look like three small
+  functions after `ret`s, but nothing calls them (`grep -c "call   0x1c66c" .work/ww_code.asm`
+  = 0) and 0x1c66c is the target of the `jbe` at 0x1c660 - they are jump targets inside
+  `fn_1c0f4`, which runs 0x1c0f4-0x1c993 (0x8a0 bytes). Check `call 0xADDR` counts, and
+  Ghidra's `FUN_<addr>` extent, before planning an iteration around them.

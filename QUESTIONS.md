@@ -143,3 +143,13 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    in another one, where a call is forced), and `#pragma on(off)/inlining`.
    Test: compile `src/ww.c` as two modules (the palette pair in its own) and see whether the 11
    call sites come back without losing the 84.
+
+7. **OPEN** (findings/scores.md): what are the 46-byte records of `tbl77758`
+   (0x77758, row 1 at 0x77ba8), who fills them, and are the two strings at +6 and
+   +0x1a a name and the stamp `fn_1c994` builds? Evidence so far: `fn_1cad0` picks
+   `row = v88bb6 + v7ecb4` and groups of 8 records (0, +0x170, +0x2e0); 0x1cfb4-0x1d01d
+   copies words at +0/+2/+4 and strings from +6/+0x1a; nothing in the image takes the
+   address of 0x77758 except four reads. Test: boot the original, dump 0x77758..0x77ff8
+   before and after a race (STATUS Next 7), and compare the +0x1a field with the string
+   `fn_1c994` builds - which also decides whether the month index (seconds - 1, 0x1ca08)
+   is a real bug in the shipping game.

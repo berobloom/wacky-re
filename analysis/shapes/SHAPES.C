@@ -6,8 +6,14 @@
    .work/venv/bin/python tools/wc/variants.py .work/shapes/SHAPES.OBJ ww 0x1be3c 0x1bf00 k1 k2 k3 k4
    .work/venv/bin/python tools/wc/variants.py .work/shapes/SHAPES.OBJ ww 0x1bf00 0x1bf7e m1 m2 m3 m4
 
+ *              .work/venv/bin/python tools/wc/variants.py .work/shapes/SHAPES.OBJ ww 0x1c994 0x1cacd t1 t2 t3 t4 t5 t6
+ *
  * Best here: k1 196 bytes (the game 196) with 13 instruction diffs, m1 100 bytes (the game 125)
- * with 14. Nothing tried reached 0; the two differs: marks in src/ww.c say what is left. */
+ * with 14, t1 312 (the game 313) with 4. Nothing tried reached 0; the differs: marks in src/ww.c say
+ * what is left. <string.h> is required for the t shapes: without it strcat/strlen are real clib
+ * calls, not the game's inline expansions, and every t score jumps to ~90 diffs. */
+#include <stdlib.h>
+#include <string.h>
 #pragma pack(1)
 struct player {
     short f00, f02, f04, f06, f08, f0a, f0c, f0e;
@@ -282,3 +288,92 @@ void m4(void)
     }
     nplayers = n;
 }
+
+/* ---- fn_1c994 (0x1c994-0x1cacc, the record stamp): shapes tried 2025 iter 9.
+ * Score with:  cp analysis/shapes/SHAPES.C .work/shapes/
+ *              tools/wc/wcc.sh .work/toolchains/inst/WC95B .work/shapes SHAPES.C -s -3r -oneatx
+ *              .work/venv/bin/python tools/wc/variants.py .work/shapes/SHAPES.OBJ ww 0x1c994 0x1cacd t1 t2 t3 t4 t5 t6
+ * Best t1 312 bytes (the game 313) with 4 instruction diffs - one register-setup placement, see the
+ * differs: mark in src/ww.c. t2/t3/t5/t6 all fall to 7-8 diffs, so the game's loop is entered twice
+ * (a do/while or while(1)), not the pre-test `while (strlen(s) < 10) strcat(s, " ")`. */
+
+struct dostime {                        /* filled by 0x43164 (INT 21h/2Ah), stores 0x4316d-0x43179 */
+    unsigned char hund;
+    unsigned char sec;
+    unsigned short minhrs;              /* read as one word at 0x1ca75 */
+    unsigned char dst;
+};
+
+extern void dos_gettime(struct dostime *t);
+
+#define STAMP_TAIL(name, tail) \
+void name(char *s) { \
+    char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" }; \
+    char num[16]; \
+    struct dostime t; \
+    char *src; \
+    char c; \
+    dos_gettime(&t); \
+    itoa(t.hund, s, 10); \
+    if (s[1] == 0) { s[2] = 0; c = s[0]; s[0] = '0'; s[1] = c; } \
+    strcat(s, " "); \
+    strcat(s, mth[t.sec - 1]); \
+    strcat(s, " "); \
+    itoa(t.minhrs, num, 10); \
+    src = num; \
+    tail \
+}
+
+/* the shape now in src/ww.c: 312 / 4 */
+STAMP_TAIL(t1, while (1) { strcat(s, src); if (strlen(s) >= 10) return; src = " "; })
+
+/* do/while, assignment before the test: 312 / 7 */
+STAMP_TAIL(t2, do { strcat(s, src); src = " "; } while (strlen(s) < 10); )
+
+/* for(;;) + break: 312 / 7 */
+STAMP_TAIL(t3, for (;;) { strcat(s, src); src = " "; if (strlen(s) >= 10) break; })
+
+/* the shape a reader would write first, pre-test: 308 / 8 */
+void t4(char *s)
+{
+    char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+    char num[16];
+    struct dostime t;
+    char c;
+
+    dos_gettime(&t);
+    itoa(t.hund, s, 10);
+    if (s[1] == 0) { s[2] = 0; c = s[0]; s[0] = '0'; s[1] = c; }
+    strcat(s, " ");
+    strcat(s, mth[t.sec - 1]);
+    strcat(s, " ");
+    itoa(t.minhrs, num, 10);
+    strcat(s, num);
+    while (strlen(s) < 10)
+        strcat(s, " ");
+}
+
+/* month through a variable (extra live value, changes the allocation): 308 / 11 */
+void t5(char *s)
+{
+    char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+    char num[16];
+    struct dostime t;
+    char *mo, *src;
+    char c;
+
+    dos_gettime(&t);
+    itoa(t.hund, s, 10);
+    if (s[1] == 0) { s[2] = 0; c = s[0]; s[0] = '0'; s[1] = c; }
+    strcat(s, " ");
+    mo = mth[t.sec - 1];
+    strcat(s, mo);
+    strcat(s, " ");
+    itoa(t.minhrs, num, 10);
+    src = num;
+    while (1) { strcat(s, src); if (strlen(s) >= 10) return; src = " "; }
+}
+
+/* itoa's return value as the source pointer: 326 / 12 (the game does not do this, it loads the
+ * buffer address with lea before the call, 0x1ca7a) */
+STAMP_TAIL(t6, src = itoa(t.minhrs, num, 10); do { strcat(s, src); src = " "; } while (strlen(s) < 10); )
