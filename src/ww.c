@@ -11759,3 +11759,69 @@ int pcxfile_load(char *name, int n)
     return 1;
 }
 
+/* ---- 0x2717c, 806 bytes: reads the track's .GAM text from WACKY.DAT (caller 0x27c01 in 0x279e8):
+ * the four 14-byte names gam7eabc[0..1] and gam7eaa0[0..1] (each given an "A_" prefix), the name
+ * gam6a4e0 (BLANK.PCX in a split/two-player game with v88bde), the start point v88b0a/v88b0e
+ * (+0x400), a skipped line, the eight start-order pairs order_a/order_b (+0x3e0) and, when v88b60,
+ * the three values v88b5a, v88b4e, v88b4c. str7d784 = the first name. */
+extern char gam7eabc[2][14], gam7eaa0[2][14], gam6a4e0[], str7d784[];
+#pragma aux gam7eabc "_arr7eabc"
+#pragma aux gam7eaa0 "_arr7eaa0"
+#pragma aux gam6a4e0 "_arr6a4e0"
+extern short v88b60, v88b5a, v88b4e, v88b4c;
+
+void gam_load(void)
+{
+    char buf[80];
+    char tmp[16];
+    short i, j;
+    char *p;
+
+    path_join(".GAM");
+    v88bd6 = datfind(str7d7b8);
+    if (v88bd6 == 0 && v88bea != 0)
+        logerr(str7d7b8);
+    read_line(gam7eabc[0], datfile);
+    read_line(gam7eabc[1], datfile);
+    read_line(gam7eaa0[0], datfile);
+    read_line(gam7eaa0[1], datfile);
+    read_line(gam6a4e0, datfile);
+    read_line(buf, datfile);
+    for (i = 0; i <= 1; i++) {
+        strcpy(tmp, "A_");
+        p = gam7eabc[i];
+        strcat(tmp, p);
+        strcpy(p, tmp);
+        strcpy(tmp, "A_");
+        p = gam7eaa0[i];
+        strcat(tmp, p);
+        strcpy(p, tmp);
+    }
+    v88b0a = atoi(buf) + 0x400;
+    read_line(buf, datfile);
+    v88b0e = atoi(buf) + 0x400;
+    read_line(buf, datfile);
+    for (j = 0; j <= 7; j++) {
+        read_line(buf, datfile);
+        order_a[j] = atoi(buf);
+        order_a[j] += 0x3e0;
+        read_line(buf, datfile);
+        order_b[j] = atoi(buf);
+        order_b[j] += 0x3e0;
+    }
+    read_line(buf, datfile);
+    v88b60 = atoi(buf);
+    if (v88b60) {
+        read_line(buf, datfile);
+        v88b5a = atoi(buf);
+        read_line(buf, datfile);
+        v88b4e = atoi(buf);
+        read_line(buf, datfile);
+        v88b4c = atoi(buf);
+        v88b60 = 1;
+    }
+    strcpy(str7d784, gam7eabc[0]);
+    if ((twoplayer || splitscreen) && v88bde)
+        strcpy(gam6a4e0, "BLANK.PCX");
+}
+
