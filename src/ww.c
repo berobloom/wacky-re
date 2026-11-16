@@ -1375,7 +1375,10 @@ void track_setup(void)
 
 #pragma pack(1)
 struct surf {                   /* 0x741f8, 0x12e bytes per surface class v7e568 (kart_move) */
-    char f00[0x120];
+    char k1[0x80];              /* per track [track - 1]: 3 = keep the kart's last animation (kart_draw) */
+    char k2[0x80];              /* the same for the second animation */
+    short f100, f102, f104, f106, f108, f10a, f10c, f10e;   /* f100/f104 animation ids, f108 frame size, */
+    short f110, f112, f114, f116, f118, f11a, f11c, f11e;   /* f10a/f10c h/w, f112 frames; f114-f11e the second */
     int f120;                   /* -> kart f36 */
     short f124;                 /* -> kart f3a */
     int f126, f12a;             /* -> kart f60, f64 */
@@ -1403,9 +1406,11 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     int f60, f64;               /* 0x60/0x64: from the surface record +0x126/+0x12a (kart_move) */
     char f68[0x6a - 0x68];
     short f6a;                  /* 0x6A: counts up by 4 per pickup, at most 99 (kart_bump) */
-    char f6c[0x76 - 0x6c];
+    short f6c;
+    int f6e;                    /* 0x6E: id of the surface animation playing (kart_draw) */
+    struct surf *f72;           /* 0x72: its surface record */
     struct surf *f76;           /* 0x76: &surfs[f56] (kart_move) */
-    char f7a[0x7c - 0x7a];
+    short f7a;                  /* 0x7A: its frame (kart_draw) */
     short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
     short f7e;                  /* 0x7E: set by a shot hit in a human-player race (shot_hit) */
     short f80;                  /* 0x80: fire held (kart_fire) */
@@ -9648,9 +9653,10 @@ void kart_state(void)
  * all worse: 33-35 blocks); (e) `sub ebx,[edx+0x3c]` folded in ours, loaded first in the game. */
 struct crec {
     short f00, f02, f04, f06;
-    char f08[0x0c - 0x08];
-    int f0c;
-    char f10[0x18 - 0x10];
+    short *f08;
+    int f0c;                    /* sprite */
+    char f10[0x14 - 0x10];
+    int f14;
     short f18, f1a, f1c, f1e, f20, f22, f24;
     char f26[0x28 - 0x26];
 };
@@ -10588,4 +10594,207 @@ void marker_draw(short n, short y, short x, short frame, short mode)
         spr_x += 0xb;
         drawsprite();
     }
+}
+
+/* ---- 0x24bcc, 2060 bytes: draws curkart from its arr79a28 record p7d86c (caller 0x254b0 in 0x253d8):
+ * the kart lifted by f10 while f0a (1 up to f0e, 2 down, then 3 and voice 0x17), the 4-frame flash
+ * f5a/f5c from f60 at (0x8d,0xa8), rec_marker (inlined), the surface animations: v7d868 walks the six
+ * 8-byte sprite sets of v7d884/v7d888 for the kart's sprite; found: surface animation 1 (f100, frames
+ * f126, f108 bytes apart, f112 of them) at +0x10, else marker_draw and animation 2 (f104/f12a/f114/f11e,
+ * 0x18 wide ones twice with voice 0x10); k1/k2[track-1] == 3 keeps the previous one (f6e/f72). Then
+ * the three tb80ae8 markers and the sparks f46/f4a. p2offset lifts everything for player 2.
+ * differs (near-miss, 434 vs 434 insns, 8 blocks): the game also keeps v7d868 in ESI (so does ours).
+ * Left: register choice in the two frame*size products (game loads f7a first in both; tried all four
+ * operand orders, best kept), the f46 spark x (game `lea eax,[ebx-1]`, ours `dec edx`; six forms
+ * tried) and the tb80ae8 operand (probably fixup noise). Fixed on the way: spr_y -= f10 written in
+ * both lift arms, the f5a==1 test nested, `sprptr == sets->spr`, spr_y before spr_x. */
+struct sprset { char *spr; short f04, f06; };
+extern struct sprset *sets;
+#pragma aux sets "_v7d868"
+extern short v88bfa;
+extern char *gn7c52c;
+void drawsprite_clip(void);
+
+void kart_draw(void)
+{
+    short two, side, i, j;
+
+    two = 0;
+    if (twoplayer || splitscreen)
+        two = 1;
+    spr_h = CR->f00;
+    spr_w = CR->f02;
+    spr_x = CR->f04;
+    spr_y = CR->f06;
+    p7d838 = CR->f08;
+    sprptr = (char *)CR->f0c;
+    if (v88b7e && two)
+        spr_y -= p2offset;
+    v7d878 = CR->f14;
+    if (curkart->f0a != 0) {
+        if (curkart->f0a == 1) {
+            curkart->f10 += 8;
+            if (curkart->f10 > curkart->f0e)
+                curkart->f10 = curkart->f0e;
+            spr_y -= curkart->f10;
+        } else {
+            curkart->f10 -= 8;
+            if (curkart->f10 <= 0) {
+                curkart->f10 = 0;
+                curkart->f0a = 3;
+                voice_check(0x17);
+                if (voicebusy == 0)
+                    voice_play(0x17);
+            }
+            spr_y -= curkart->f10;
+        }
+    }
+    if (curkart->f5a != 0 && curkart->f7e == 0) {
+        if (curkart->f5a == 1) {
+            if (curkart->f5c >= 2 && v88be0)
+                f37487();
+        } else if (v88be0)
+            f37487();
+        spr_h = 0x26;
+        spr_w = 0x1c;
+        spr_x = 0x8d;
+        spr_y = 0xa8;
+        if (v88b7e && two)
+            spr_y -= p2offset;
+        sprptr = (char *)curkart->f60 + curkart->f5c * 0x428;
+        if (v88be0)
+            drawsprite();
+        curkart->f5c++;
+        if (curkart->f5c == 4)
+            curkart->f5a = 0;
+    } else if (v88be0)
+        f37487();
+    if (v88c9e != 0 && curkart->f7e == 0 && curkart->f44 == 0 && v88be0)
+        rec_marker();
+    if (curkart->f0a == 0 && curkart->f44 == 0 && curkart->f7e == 0) {
+        v88bfa = 0;
+        v7d89c = curkart->f76;
+        if (v88b7e == 0)
+            sets = (struct sprset *)v7d884;
+        else
+            sets = (struct sprset *)v7d888;
+        for (i = 0; i <= 5; i++) {
+            if (sprptr == sets->spr) {
+                v88bfa = 1;
+                break;
+            }
+            sets++;
+        }
+        if (v88bfa) {
+            if (v7d89c->k1[track - 1] == 3) {
+                side = curkart->f6e;
+                v7d89c = curkart->f72;
+            } else
+                side = v7d89c->f100;
+            if (side != curkart->f6e) {
+                curkart->f7a = 0;
+                sprptr = (char *)v7d89c->f126;
+            } else {
+                curkart->f7a++;
+                if (curkart->f7a == v7d89c->f112)
+                    curkart->f7a = 0;
+                sprptr = (char *)v7d89c->f126 + curkart->f7a * v7d89c->f108;
+            }
+            if (curkart->f26 == 0) {
+                curkart->f7a = 0;
+            } else {
+                spr_y = CR->f06 + 0x10;
+                spr_x = CR->f04 + sets->f04;
+                spr_h = v7d89c->f10a;
+                spr_w = v7d89c->f10c;
+                if (v88b7e && two)
+                    spr_y -= p2offset;
+                if (v88be0)
+                    drawsprite();
+            }
+        } else {
+            spr_x = CR->f04;
+            spr_y = CR->f06;
+            if (v88b7e && two)
+                spr_y -= p2offset;
+            if (v88c3c == 0 && players[v88b7e].f58 == 0)
+                marker_draw(curkart->f42, spr_y, spr_x, players[v88b7e].f54, players[v88b7e].f62);
+            if (v7d89c->k2[track - 1] == 3) {
+                side = curkart->f6e;
+                v7d89c = curkart->f72;
+            } else
+                side = v7d89c->f104;
+            if (side != curkart->f6e) {
+                curkart->f7a = 0;
+                sprptr = (char *)v7d89c->f12a;
+            } else {
+                curkart->f7a++;
+                if (curkart->f7a == v7d89c->f11e)
+                    curkart->f7a = 0;
+                sprptr = (char *)v7d89c->f12a + v7d89c->f114 * curkart->f7a;
+            }
+            if (curkart->f26 == 0) {
+                curkart->f7a = 0;
+            } else {
+                spr_h = v7d89c->f116;
+                spr_w = v7d89c->f118;
+                if (spr_w == 0x18) {
+                    voice_check(0x10);
+                    if (voicebusy == 0)
+                        voice_play(0x10);
+                    spr_y = CR->f06 + 4;
+                    spr_x = CR->f04 + 1;
+                    if (v88b7e && two)
+                        spr_y -= p2offset;
+                    if (v88c44 == 2 && v88be0) {
+                        drawsprite();
+                        spr_x += 0x18;
+                        drawsprite();
+                    }
+                } else {
+                    spr_y = CR->f06 + 0x14;
+                    spr_x = CR->f04;
+                    if (v88b7e && two)
+                        spr_y -= p2offset;
+                    if (v88c44 == 2 && v88be0) {
+                        drawsprite();
+                        spr_x += 0x1c;
+                        drawsprite();
+                    }
+                }
+            }
+        }
+        curkart->f6e = side;
+        curkart->f72 = v7d89c;
+        curkart->f76 = v7d89c;
+    }
+    if (v88c8c != 0 && v88c8c != -1) {
+        sprptr = gn7c52c;
+        spr_h = 0x1c;
+        spr_w = 0xb;
+        spr_x = CR->f04 + 5;
+        if (v88be0)
+            for (j = 0; j <= 2; j++) {
+                spr_y = tb80ae8[j];
+                drawsprite_clip();
+            }
+    }
+    if (curkart->f46 != 0) {
+        spr_y = CR->f06 + 0x10;
+        if (v88b7e && two)
+            spr_y -= p2offset;
+        if (curkart->f46 == 3)
+            spr_x = CR->f04;
+        else if (curkart->f46 == 4)
+            spr_x = CR->f04 + 0x1e;
+        else
+            spr_x = (CR->f00 >> 1) - 1 + CR->f04;
+        spr_h = 0xa;
+        spr_w = 9;
+        sprptr = curkart->f4a;
+        if (v88be0)
+            drawsprite();
+    }
+    if (curkart->f0a == 3)
+        curkart->f0a = 0;
 }
