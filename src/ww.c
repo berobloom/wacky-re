@@ -1426,9 +1426,9 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     char fae[0xb4 - 0xae];
     short fb4;
     short fb6;                  /* 0xB6: set to 0x10 with fb4 (kart_boost) */
-    char fb8[0xd4 - 0xb8];
+    int fb8, fbc, fc0, fc4, fc8, fcc, fd0;  /* 0xC0-0xCC = cars[].fb0-fbc (second banner) */
     int fd4;                    /* 0xD4: = cars[].sndhandle */
-    char fd8[0xe0 - 0xd8];
+    int fd8, fdc;               /* = cars[].fc8 / fcc: banner sound handle, playing */
     unsigned char fe0;          /* 0xE0: bits 0x10 / 8 pick weapon 3 / 8 when f16 is 0 (kart_fire) */
     char fe1[0x104 - 0xe1];
 };
@@ -14754,5 +14754,82 @@ void car_finished(int i)
     cars[i].fec = FX_PlayVOC(gigs[n], 0, sfxvol, sfxvol, sfxvol, 0x22, 0);
     if (cars[i].fec > 0)
         cars[i].ff0 = 1;
+}
+
+/* ---- 0x2d6d0, 634 bytes: the human kart's special buttons (callers in 0x30aae). Outside race
+ * state 2 only fire stays; in two-player / split screen a pending v88ce0 starts the second
+ * banner (fbc counts them, voice 0x1a from the sixth) with its GIG sound. Keys and buttons are
+ * dropped while the kart is busy (f20, f7e, f06, v88c3c) or players[].f58 runs. Outside v7d998
+ * modes, buttons 2 + 1 with ability bit 1 start a boost (fb4, f42 0xa0, speed tbl7e730), and
+ * 2 + 0 with bit 2 a jump (f0a; ends a f44 state). */
+extern unsigned char v88ce0;
+
+void kart_buttons(void)
+{
+    if (v88c44 != 2) {
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+    }
+    if (twoplayer || splitscreen) {
+        if (v88ce0 && curkart->fbc >= 6) {
+            v88ce0 = 0;
+            voice_play(0x1a);
+        }
+        if (v88ce0 && curkart->fc0 == 0) {
+            curkart->fc4 = 0;
+            curkart->fc8 = 0;
+            curkart->fcc = 0;
+            curkart->fbc++;
+            curkart->fc0 = v88ce0;
+            if (soundon) {
+                if (curkart->fdc) {
+                    FX_StopSound(curkart->fd8);
+                    curkart->fdc = 0;
+                }
+                gig_sound2(v88b7e);
+            }
+        }
+    }
+    if (curkart->f20 || v88c3c || curkart->f7e || curkart->f06 || players[v88b7e].f58) {
+        key88cd3 = 0;
+        key88cd5 = 0;
+        key88cdd = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+    }
+    if (v7d998)
+        return;
+    if (joy88b44 && joy88b42 && (curkart->fe0 & 1)) {
+        if (curkart->fb4 == 0) {
+            curkart->fb4 = 1;
+            curkart->f42 = 0xa0;
+            curkart->fb6 = 0x10;
+            curkart->f26 = tbl7e730[curkart->f42];
+            voice_play(0xc);
+        }
+        joy88b44 = 0;
+        joy88b46 = 0;
+        return;
+    }
+    if (joy88b44 && joy88b40 && (curkart->fe0 & 2)) {
+        if (curkart->f0a == 0) {
+            if (curkart->f44) {
+                curkart->f44 = 0;
+                players[v88b7e].f5c = 0;
+                curkart->f5a = 0;
+            }
+            curkart->f0a = 1;
+            voice_play(0xc);
+            curkart->f0c = 8;
+            curkart->f10 = 8;
+            v88bae = 4;
+            curkart->f0e = 0x28;
+        }
+        joy88b44 = 0;
+        joy88b40 = 0;
+    }
 }
 

@@ -296,6 +296,7 @@
 0x07e718 lastlap      # SPECULATIVE: racetime at the last lap
 0x07d358 laptimes     # SPECULATIVE: int[], laps 1..6 of a single-player time trial (v88bb2 == 4)
 0x02d67c car_finished # CONFIRMED (rebuild src/ww.c): plays gigs[cars[i].fdc - 1] (the lap banner GIG sound), handle fec, flag ff0
+0x02d6d0 kart_buttons # LIKELY (rebuild src/ww.c): special buttons: second-banner start (v88ce0), key drop while busy, boost (fe0 bit 1) and jump (bit 2); button meanings inferred
 0x012f80 draw_status  # LIKELY: player names, SCORE labels, panels; "DEMO MODE " (v7d998 == 3), "TIME TRIAL"
 0x07d228 pnames       # LIKELY: char[12] player names, indexed by myplayer and v88c6a
 0x088ca0 v88ca0       # SPECULATIVE: short; 1 draws img7eb3c once, then 2
