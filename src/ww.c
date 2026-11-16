@@ -1373,11 +1373,12 @@ void track_setup(void)
 #pragma pack(1)
 struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same records as cars[] (0x68420), seen
                                  * 0x10 earlier (cars[].sndhandle +0xc4 = +0xd4 here); curkart points in */
-    char f00[0x0A];
+    short f00;
+    char f02[0x0A - 2];
     short f0a;
     short f0c, f0e, f10;        /* 0x0C-0x10: set to 8, 0x28, 8 by kart_hit 0x216a0 */
-    short f12, f14, f16, f18, f1a, f1c, f1e, f20;
-    char f22[0x32 - 0x22];
+    short f12, f14, f16, f18, f1a, f1c, f1e, f20, f22, f24;
+    char f26[0x32 - 0x26];
     int f32;                    /* 0x32: ticks2 stamp (shot_hit) */
     char f36[0x3c - 0x36];
     short f3c;
@@ -8179,7 +8180,8 @@ void kart_hit(void)
     }
 }
 
-/* differs: near miss, 1329 of 1338 bytes (323 vs 324 instructions), two causes:
+/* differs: near miss, 324 instructions each, 13 diff blocks (the byte size check.sh prints includes
+ * alignment padding to the next function), two causes:
  * 1. the AI path's flag lives in EDX in the game (the dead `kind` register), EBX in ours, so
  *    `f66 = 1` stores BX instead of an immediate (0x21aad-0x21aee); 24 declaration orders and using
  *    `kind` itself as the flag (much worse) do not fix it.
@@ -8560,4 +8562,61 @@ void shot_line(void)
         }
     }
     shot_hit();
+}
+
+/* ---- 0x22334-0x224eb: four kart animation starters (animation f1a, phase f18, frame pointer f4e into
+ * a table of int[2] rows indexed by the player). Each keeps only EDX and builds f4e through two
+ * stack temporaries. */
+extern int tb7b518[][2];
+extern short v88b90, v88b92;
+
+/* 0x22334 (callers 0x22609, 0x22659 in 0x224ec): animation 2 of tb7b518, f1c = 2. */
+void kart_anim2(void)
+{
+    curkart->f1a = 2;
+    curkart->f00 = 0;
+    curkart->f18 = 0;
+    curkart->f1c = 2;
+    curkart->f4e = &tb7b518[curkart->f1a][v88b7e];
+}
+
+/* 0x22390 (no caller found): the same after clearing v88b90/v88b92 and the kart's f1e-f24, f42. */
+void kart_anim2r(void)
+{
+    v88b92 = 0;
+    curkart->f1a = 2;
+    v88b90 = 0;
+    curkart->f1e = 1;
+    curkart->f20 = 0;
+    curkart->f22 = 0;
+    curkart->f24 = 0;
+    curkart->f42 = 0;
+    curkart->f00 = 0;
+    curkart->f18 = 0;
+    curkart->f1c = 2;
+    curkart->f4e = &tb7b518[curkart->f1a][v88b7e];
+}
+
+/* 0x2241c (no caller found): animation 7 (phase 1) when `which` is set, else 9 (phase 2), of tb7b448. */
+void kart_anim79(short which)
+{
+    curkart->f1e = 0;
+    if (which) {
+        curkart->f18 = 1;
+        curkart->f1a = 7;
+    } else {
+        curkart->f18 = 2;
+        curkart->f1a = 9;
+    }
+    curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+    curkart->f32 = ticks2;
+}
+
+/* 0x22494 (no caller found): animation 0 of tb7b448, phase 0xe. */
+void kart_anim0(void)
+{
+    curkart->f1a = 0;
+    curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
+    curkart->f18 = 0xe;
+    curkart->f32 = ticks2;
 }
