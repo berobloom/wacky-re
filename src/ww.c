@@ -10471,3 +10471,121 @@ void path_join(char *s)
     strcpy(str7d7b8, str7d770);
     strcat(str7d7b8, s);
 }
+
+/* ---- 0x249b0, 86 bytes: integer square root, two bits per step for 16 steps, rounded to nearest
+ * (callers 0x2572c, 0x25bc7, 0x26462). */
+int isqrt(int n)
+{
+    unsigned x, rem, root, d;
+    short i;
+
+    if (n <= 1)
+        return n;
+    x = n;
+    rem = 0;
+    i = 0;
+    root = 0;
+    do {
+        rem = (rem << 2) | ((x >> 30) & 3);
+        root += root;
+        d = root + root + 1;
+        x <<= 2;
+        if (rem >= d) {
+            root++;
+            rem -= d;
+        }
+        i++;
+    } while (i < 16);
+    if (n - root * root >= root - 1)
+        root++;
+    return root;
+}
+
+/* ---- 0x24a08, 148 bytes: is the slope (v88b0e - v88b22) / (v88b0a - v88b20), 16.16, inside the sector
+ * between the slopes tbl6e858[v7d674] and tbl6e858[v7d670]? (callers 0x25664, 0x25b08, 0x263a0)
+ * differs (near-miss, 57 vs 57 insns, 15 instrdiffs): scheduling only - the game computes dx in EAX
+ * and moves it to ESI, and loads the two table slopes after `shl edx,16`/`test esi,esi`; our build
+ * loads v7d674/v7d670 right after the first movsx and subtracts in ESI. Tried: dx/dy order, a/b
+ * order, `dy <<= 16` apart, four declaration orders (all 15-16). QUESTIONS 2 family. */
+extern short v88b20, v88b22;
+extern int v7d670, v7d674, tbl6e858[];
+
+int in_sector(void)
+{
+    int dx, dy, a, b, q, r;
+
+    dx = v88b0a - v88b20;
+    dy = (v88b0e - v88b22) << 16;
+    a = tbl6e858[v7d674];
+    b = tbl6e858[v7d670];
+    if (dx)
+        q = dy / dx;
+    else
+        q = dy;
+    r = 1;
+    if ((a > 0 && b > 0) || (a < 0 && b < 0)) {
+        if (q < a || q > b)
+            r = 0;
+    } else if ((a < 0 && q < 0) || (a > 0 && q > 0)) {
+        if (q < a)
+            r = 0;
+    } else if (q > b)
+        r = 0;
+    return r;
+}
+
+/* ---- 0x24a9c, 93 bytes, no callers (dead code): draws gn7c528 (11x28) above the arr79a28 record
+ * p7d86c, lifted by f10 while the kart's f0a is set. */
+extern char *gn7c528;
+
+void rec_marker(void)
+{
+    spr_x = CR->f04 + 5;
+    spr_y = CR->f06 + 0xc;
+    if (curkart->f0a != 0)
+        spr_y -= curkart->f10;
+    spr_h = 0x1c;
+    spr_w = 0xb;
+    sprptr = gn7c528;
+    drawsprite();
+}
+
+/* ---- 0x24afc, 208 bytes: draws a two-cell marker (13x18 frames of 0xea bytes) at (x+5, y+11) and
+ * 11 to the right when v88be0 is set (caller 0x25086 in 0x24bcc): mode 0 with n 0..10 hm7d724,
+ * mode 1 hm7d720 (voice 0x18 unless curkart->f44), n > 100 hm7d71c. */
+extern short v88be0;
+
+void marker_draw(short n, short y, short x, short frame, short mode)
+{
+    short ok;
+
+    ok = 0;
+    if (mode == 0) {
+        if (n >= 0 && n <= 10) {
+            sprptr = hm7d724;
+            ok = 1;
+        }
+    } else if (mode <= 1) {
+        if (curkart->f44 == 0) {
+            voice_check(0x18);
+            if (voicebusy == 0)
+                voice_play(0x18);
+        }
+        sprptr = hm7d720;
+        ok = 1;
+    }
+    if (n > 100) {
+        sprptr = hm7d71c;
+        ok = 1;
+    }
+    if (v88be0 && ok) {
+        spr_h = 0x12;
+        spr_w = 0xd;
+        spr_x = x + 5;
+        spr_y = y + 0xb;
+        sprptr += frame * 0xea;
+        drawsprite();
+        spr_x += 0xb;
+        drawsprite();
+    }
+}
