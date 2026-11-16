@@ -18104,3 +18104,47 @@ void release_check(void)
     }
 }
 
+/* ---- 0x347b4, 320 bytes (caller 0x348f4 at 0x34b63): draws the 60 32x32 tiles of v7d75c
+ * (0x400 bytes each) as a 10 x 6 grid with f3735c, then fills the 128 x 128 tile-pointer map at
+ * v7d6a4 (through v7d688) with them repeated: row r of the map uses tile row r % 6, column c tile
+ * c % 10. LIKELY the background of a menu screen. */
+void f3735c(void);
+
+void tiles_setup(void)
+{
+    int i, j, k, row;
+    char *p, *base;
+
+    spr_h = 0x20;
+    spr_w = 0x20;
+    spr_y = 0;
+    p = v7d75c;
+    for (j = 0; j <= 5; j++) {
+        spr_x = 0;
+        for (i = 0; i <= 9; i++) {
+            sprptr = p;
+            f3735c();
+            p += 0x400;
+            spr_x += 0x20;
+        }
+        spr_y += 0x20;
+    }
+    row = 0;
+    v7d688 = (int *)v7d6a4;
+    for (j = 0; j <= 0x7f; j++) {
+        p = v7d75c + row * 0x2800;
+        base = p;
+        k = 0;
+        for (i = 0; i <= 0x7f; i++) {
+            *v7d688++ = (int)p;
+            p += 0x400;
+            if (++k > 9) {
+                p = base;
+                k = 0;
+            }
+        }
+        if (++row > 5)
+            row = 0;
+    }
+}
+
