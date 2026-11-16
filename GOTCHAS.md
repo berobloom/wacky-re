@@ -266,7 +266,9 @@ it can be copied back into DREA.
   shorter, with AL where the game has DL, is this merge and not a wrong expression. Flipping the
   condition to `if (v7ecb4 != 0)` un-merges but turns the game's `jne` into `je`: two changes, not one.
 - **`-oe` sinks a zero argument constant into the following test but leaves a non-zero one alone**
-  (iter 15, [generic]): every inlined `music_start(song, 0)` in the game keeps `xor edx,edx` before the
+  (iter 15, [generic]): the four inlined `music_start(song, 0)` copies in WW.EXE (found by scanning
+  the code object for `66 c7 05 cc8b08 0000`, the `mov word [0x88bcc],0` of the body) all keep
+  `xor edx,edx` before the
   inlined stores (0x11885 music_jingle, 0x2b6a3 duck_screen, 0x2cad6 race_results, 0x2e729 trial_book),
   ours puts it after the `cursong` store - one moved instruction, 2 diffs, in all four functions.
   The inlined `music_start(song, 1)`'s `mov edx,1` is early in both builds, so it is the *zero* that
@@ -287,6 +289,13 @@ it can be copied back into DREA.
   5 in one block, 8 were its own cut-off `add esp,4`/`pop`/`ret`). Read the blocks and the
   instruction counts (`tools/wc/fncompare.py` prints both, plus pairs whose text agrees but whose
   byte length differs, e.g. rel8 vs rel32) before concluding anything from the number.
+- **A `tools/wc/variants.py` score counts the variant's own alignment filler, so it is one higher
+  than `fndiff.py`'s** (iter 15, [generic]): with `0x11884 0x118f6` music_jingle's control variant
+  scored 3 where `fndiff.py` reports 2 - the game range stops at the public after it, before the
+  game's `mov eax,eax` filler, while our 116-byte copy carries one and the variant that happened to
+  compile 114 bytes scored 2 for byte-identical instructions. Compare variants with each other at
+  equal byte size, never a variant score against a `fndiff.py` count, or a spelling that changed
+  nothing reads like a win by one.
 - **A `tools/wc/variants.py` probe file must `#include <string.h>` (and the same prototypes) or it
   compiles a different function** (iter 13, [generic]): my probe of `race_records_menu` (six spellings,
   no includes) gave 332-byte variants against the 514 bytes the same body produces inside `src/ww.c`,

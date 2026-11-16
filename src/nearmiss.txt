@@ -10,7 +10,7 @@
 1    0x032c98 pic_show               LAYOUT: code identical, only the padding after it differs (0x32cc1 is another function's tail)
 2    0x011884 music_jingle             SKIP: -oe sinks the zero loop-arg (xor edx,edx) below the inlined stores; int/short/register local, local in both calls, 2nd param, hand-spelled inline, store order in music_start, #pragma aux parm, for(;;) wait
 2    0x0124e8 track_setup              SKIP: one moved load (ours hoists the switch subject above the trk7ebc8 load, the game loads it last); assignment order, declaration order, register, unsigned, subject in a local, -3 without r
-2    0x019eac classes_menu
+2    0x019eac classes_menu             SKIP: documented dead end (GOTCHAS "But not every store placement is reachable", QUESTIONS 3): 72 placements of the v88bb2/v7edb0 pair, folded-away branches and v7edb0 = v88bb2 all leave the same one store out of place (game 0x1a05d, ours 0x1a080); no new lever found this iter
 3    0x0261fc anim_tick
 3    0x03360c songs_load             MATCH
 4    0x0182d0 fn_182d0
