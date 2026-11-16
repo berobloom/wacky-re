@@ -670,6 +670,7 @@
 0x01eee4 credits_page # CONFIRMED (rebuild src/ww.c): n centred credit lines from credits[first-1], boxes in cboxes[1..n]; callers in 0x1efb0
 0x0632f0 credits      # LIKELY: char[][0x2c] credit lines ("PROGRAMMING AND DESIGN" first)
 0x07b198 cboxes       # LIKELY: struct {short x, y, x2;}[], one per printed credit line, used from [1] (credits_page)
+0x01efb0 credits_screen # CONFIRMED (rebuild src/ww.c): the credits - five pages of 12 lines, a driver face walking along the lines; caller 0x21099
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f

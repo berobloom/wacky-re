@@ -7624,3 +7624,178 @@ void credits_page(int n, int first)
         spr_y += 10;
     }
 }
+
+/* differs: near miss, 1173 of the game's 1164 bytes, 235 vs 233 instructions, three causes:
+ * 1. slots: the game has dir at esp+0x08 and y at esp+0x10, ours the other way round (QUESTIONS 9/10
+ *    class); 48 declaration orders tried, `dir, page, first, y` is the closest (52 -> 47 scored).
+ * 2. `mov edx, 1` before the first credits_page (0x1f01f): the game reuses EDX = first from the
+ *    f375cd call. A void alias of f375cd (no return register) does not remove it.
+ * 3. scheduling of the palette restore and the face pointer around setpalette (0x1f0d0-0x1f10e).
+ * Levers that did matter: `int save` (movzx), `if (dir != 0)` arms in both places, and `++face`
+ * repeated in each direction arm. */
+/* ---- 0x1efb0, 1164 bytes: the credits (caller 0x21099 in fn_1f858). Up to five pages of 12 lines
+ * (credits_page); on each, a driver's face (faces[face].img[frame], frames 0-7) walks along the
+ * printed lines - right along one line, left along the next, skipping empty lines and switching to
+ * the next driver at each line - then runs in place for 0x88 ticks2 or until a key or button.
+ * ESC (key88cd0) leaves at any point. */
+void credits_screen(void)
+{
+    int dir, page, first, y;          /* esp+0x08, esp+0x00, esp+0x0c, esp+0x10: this order is the closest */
+    int k, x, face, frame;            /* EDX, EBX, ESI, ECX */
+    int save;                         /* EDI: movzx loads (0x1efd2) */
+
+    page = 1;
+    first = 1;
+    save = pal_a;
+    f27060((struct rec14 *)"CHECK.PCX", 2);   /* 0x1efd9 */
+    v88b4a = 0;
+    pal_a = 0x7d00;
+    p7d714 = p6a980;
+    f375cd(p6a980, first);
+    pal_a = 0xbb80;
+    pal_b = 0x7d00;
+    pal_c = 0xbb80;
+    setpalette();
+    face = 0;
+    credits_page(12, first);          /* 0x1f02b */
+    pal_a = save;
+    for (;;) {
+        k = 1;                        /* 0x1f037 */
+        x = cboxes[1].x2;
+        frame = 0;
+        dir = 1;
+        for (;;) {
+            y = cboxes[k].y - 10;     /* 0x1f049 */
+            ticks = 0;
+            save = pal_a;
+            pal_a = 0xbb80;
+            if (dir != 0)
+                spr_x = x;
+            else
+                spr_x = x + 0x26;
+            spr_h = 8;
+            spr_y = cboxes[k].y;
+            spr_w = 8;
+            sprptr = p6a97c;
+            blit372c7();              /* 0x1f0bd */
+            pal_a = 0x7d00;
+            f373ee();
+            pal_a = save;
+            pal_c = save;
+            pal_b = 0x7d00;
+            setpalette();
+            spr_h = 0x26;
+            spr_w = 0x1c;
+            spr_y = y;
+            sprptr = faces[face].img[frame];
+            spr_x = x;
+            drawsprite();             /* 0x1f121 */
+            f37de0();
+            if (key88ccd) {
+                screenshot();
+                while (key88ccd)
+                    ;
+            }
+            if (pal_a == 0)
+                pal_a = 0x3e80;
+            else
+                pal_a = 0;
+            while (ticks <= 4)
+                ;
+            if (key88cd0 == 1)        /* 0x1f172 */
+                return;
+            if (++frame > 7)
+                frame = 0;
+            if (dir != 0) {           /* 0x1f197 */
+                x += 8;
+                if (x <= cboxes[k].x2)
+                    continue;
+                k++;
+                if (k > 12)
+                    break;
+                if (cboxes[k].x2 == 0)
+                    k++;
+                if (k >= 12 && cboxes[k].x2 == 0)
+                    break;
+                dir = 0;
+                x = cboxes[k].x2 - 0x26;
+                if (++face > 7)
+                    face = 0;
+            } else {                  /* 0x1f205 */
+                x -= 8;
+                if (x > cboxes[k].x - 0x2e)
+                    continue;
+                k++;
+                if (k > 12)
+                    break;
+                if (cboxes[k].x2 == 0)
+                    k++;
+                if (k >= 12 && cboxes[k].x2 == 0)
+                    break;
+                dir = 1;
+                x = cboxes[k].x;
+                if (++face > 7)
+                    face = 0;
+            }
+        }
+        ticks2 = 0;                   /* 0x1f264 */
+        if (dir != 0)
+            x += 0x10;
+        else
+            x -= 0x10;
+        for (;;) {
+            ticks = 0;                /* 0x1f288 */
+            pal_b = 0xbb80;
+            pal_c = pal_a;
+            setpalette();
+            spr_h = 0x26;
+            spr_w = 0x1c;
+            spr_y = y;
+            sprptr = faces[face].img[frame];
+            spr_x = x;
+            drawsprite();
+            f37de0();
+            if (key88ccd) {
+                screenshot();
+                while (key88ccd)
+                    ;
+            }
+            while (ticks <= 12)
+                ;
+            ticks2++;
+            if (pal_a == 0)
+                pal_a = 0x3e80;
+            else
+                pal_a = 0;
+            if (ticks2 > 0x88)        /* 0x1f331 */
+                break;
+            joy88b40 = 0;
+            joy88b42 = 0;
+            joy88b44 = 0;
+            v7d8a4 = v7d8ac;
+            joy88b46 = 0;
+            f377ae();
+            if (v88cce || joy88b40 || joy88b42 || joy88b44 || joy88b46)
+                break;
+            if (key88cd0 == 1)
+                return;
+            if (++frame > 7)
+                frame = 0;
+        }
+        v88b4a = 0;                   /* 0x1f3c3 */
+        first += 12;
+        save = pal_a;
+        pal_a = 0x7d00;
+        p7d714 = p6a980;
+        f375cd(p6a980, first);
+        pal_a = 0xbb80;
+        pal_b = 0x7d00;
+        pal_c = 0xbb80;
+        setpalette();
+        page++;
+        credits_page(12, first);      /* 0x1f41c */
+        pal_a = save;
+        if (page > 5)                 /* 0x1f428 */
+            return;
+    }
+}
