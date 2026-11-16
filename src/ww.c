@@ -1922,7 +1922,7 @@ void players_project(void);
 void ents_project(void);
 void f26a3c(void);
 void f266a8(void);
-void f2632c(void);
+void shots_project(void);
 void sprites_draw(void);
 void f3c3e9(void);
 void f2a92c(void);
@@ -1967,7 +1967,7 @@ void frame_draw(void)
     f26a3c();
     if (v88c38)
         f266a8();
-    f2632c();
+    shots_project();
     if (v88b78)
         sprites_draw();
     if (twoplayer || splitscreen) {
@@ -1988,7 +1988,7 @@ void frame_draw(void)
         f26a3c();
         if (v88c38)
             f266a8();
-        f2632c();
+        shots_project();
         if (v88b78)
             sprites_draw();
         view2_out();
@@ -11299,5 +11299,101 @@ void anim_tick(void)
     }
     carv[0].f8c = 0;
     carv[1].f8c = 0;
+}
+
+/* ---- 0x2632c, 891 bytes: the same projection for the active shots (callers frame_draw 0x134ff,
+ * 0x13608; 0x289d7): size tab6e600[step], sprite spr + frame * fsize, record f1c = 0, f24 = f18 = -1.
+ * differs (near-miss, 220 vs 210 insns, 29 blocks): the game keeps v7d874 in ECX for the loop; ours
+ * reads it from memory, as in players_project/ents_project (QUESTIONS 2) - although our shots_move
+ * gets the same promotion of the same global. Not probed further. */
+extern short *tab6e600[];
+
+void shots_project(void)
+{
+    short dy, sx, k, c, h;
+    int i, sy, d, side, a, m, t;
+
+    for (v7d874 = shots, i = 0; i <= 0x3c; v7d874++, i++) {
+        if (v7d874->f04 == 0)
+            continue;
+        v88b20 = v7d874->x;
+        v88b22 = v7d874->y;
+        if (v88b20 < v88c16 || v88b20 > v88c2a || v88b22 < v88c18 || v88b22 > v88c2c)
+            continue;
+        if (in_sector() == 0)
+            continue;
+        sx = v88b20 - v88b0a;
+        sy = v88b22;
+        dy = v88b22 - v88b0e;
+        d = (v7d614 * sx + v7d5e4 * dy) >> 16;
+        a = (d * 0x93cd) >> 16;
+        side = (dy * v7d614 - sx * v7d5e4) >> 16;
+        if (dy < sy)
+            a = -a;
+        c = 0xa0;
+        if ((short)a != 0)
+            c = 0xa0 - side * 0xa0 / (short)a;
+        if (c < 0 || c > 0x13f)
+            continue;
+        d = isqrt(d * d + side * side);
+        m = tb6b7f8[c];
+        if (m) {
+            t = d * m;
+            d = t >> 14;
+            if (t - (d << 14) >= 0x1fa0)
+                d++;
+        }
+        if (d < 0x50 || d > 0x462)
+            continue;
+        k = (d - 0x7c) / 0x46;
+        if (k < 0)
+            k = 0;
+        if (k > 9)
+            k = 9;
+        spr_y = tb6bd00[d];
+        p7d838 = tab6e600[k];
+        p7d764 = p7d838;
+        h = *p7d764++;
+        p7d838 += 2;
+        spr_w = *p7d764;
+        spr_h = h;
+        spr_y -= spr_w;
+        if (spr_y > 0xc7)
+            continue;
+        c -= spr_h >> 1;
+        v7d878 = 0;
+        if (c < 0) {
+            c = -c;
+            spr_h -= c;
+            if (spr_h <= 0)
+                continue;
+            p7d838 = (short *)((char *)p7d838 + (short)(c * (spr_w + 1) * 4));
+            c = 0;
+        } else if (c + spr_h - 1 > 0x13f) {
+            spr_h -= spr_h - 1 + c - 0x13f;
+            if (spr_h <= 0)
+                continue;
+        }
+        if (spr_y + spr_w - 1 > 0xc7) {
+            spr_w -= spr_w - 1 + spr_y - 0xc7;
+            if (spr_w <= 0)
+                continue;
+            v7d878 = spr_w * 4;
+        }
+        p7d86c += 0x28;
+        CR->f1c = 0;
+        CR->f24 = -1;
+        CR->f18 = -1;
+        CR->f1a = k;
+        CR->f04 = c;
+        CR->f10 = d;
+        CR->f00 = spr_h;
+        CR->f02 = spr_w;
+        CR->f06 = spr_y;
+        CR->f08 = p7d838;
+        CR->f14 = v7d878;
+        v88b78++;
+        CR->f0c = (int)(v7d874->spr + v7d874->frame * v7d874->fsize);
+    }
 }
 

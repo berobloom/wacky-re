@@ -333,7 +333,7 @@
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c f26a3c       # SPECULATIVE: called from frame_draw
 0x0266a8 f266a8       # SPECULATIVE: called from frame_draw
-0x02632c f2632c       # SPECULATIVE: called from frame_draw
+0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608
 0x0253d8 sprites_draw # CONFIRMED (rebuild src/ww.c): depth-sorts the arr79a28 records by f10 and draws them (curkart via kart_draw); callers frame_draw 0x1350e, 0x13617
 0x0255d4 players_project # CONFIRMED (rebuild src/ww.c): projects the other players into the view and appends sprite records; callers frame_draw 0x134e1, 0x135ea
 0x025e6c shot_step    # CONFIRMED (rebuild src/ww.c): (short move) one step of the shot v7d874 along its heading; shot_line when moving; callers 0x26090, 0x2d5d3

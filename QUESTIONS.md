@@ -94,7 +94,10 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    pointer v7d800 (`for (v7d800 = players, v88b72 = 0; ...; v7d800++, v88b72++)`) into EBX, storing it
    before the in_sector/isqrt calls and at the exit; kart_draw 0x24bcc gets the same promotion of v7d868
    in our build, players_project does not, even cut down to the bounds test and the in_sector call, and
-   not with a local short counter (`v88b72 = i;` in the body) like kart_draw's either.
+   not with a local short counter (`v88b72 = i;` in the body) like kart_draw's either. Same in
+   ents_project 0x25a78 (v7d7f4/ECX) and shots_project 0x2632c (v7d874/ECX), while shots_move 0x2602c,
+   anim_tick 0x261fc (v7d874, v7d7f4, v800 and even twoplayer) do get it: the three that fail are the
+   ones that call in_sector and isqrt with the pointer live across the calls.
 3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
    `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
    and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;
