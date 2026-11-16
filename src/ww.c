@@ -14995,8 +14995,8 @@ extern unsigned char v7ed8c;
 void net_send(int type, unsigned char a, unsigned char b)
 {
     unsigned char buf[12];
-    unsigned short crc;
     unsigned char c3;
+    unsigned short crc;
     unsigned char *p;
     int i;
 

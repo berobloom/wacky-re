@@ -353,3 +353,7 @@ it can be copied back into DREA.
 - **Two-digit padding stores: `buf[1] = buf[0]` before `buf[2] = 0`** (iter 14): the game's
   itoa-then-pad idiom loads buf[0] first (bigdigits 0x2b558 MATCH, also in leaderboard and
   overlay_draw); not at every site (overlay_draw's third pad keeps the other order).
+- **fncompare "0 diff blocks" is not a MATCH** (iter 14, [generic]): it shows displacements that
+  differ as `@`, so `mov [esp+0x10],bl` vs `mov [esp+0x14],bl` compares equal. net_send 0x2dc38 had
+  0 diff blocks while check.sh said "differs at +13" (two locals' stack slots swapped; fixed by
+  declaration order). Always confirm with check.sh before writing "byte-identical".
