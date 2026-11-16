@@ -2,7 +2,7 @@
 
 Status: OPEN (the per-class users after `classes_menu` and the values at `tbl7e730` are not
 settled; the class menu itself is rebuilt, `classes_menu` 0x19eac in `src/ww.c`, one store
-out of place)
+out of place; the lap menu 0x1a148 and the pre-`cars_menu` setup 0x1a2f8 are byte-identical)
 
 ## Summary
 
@@ -77,6 +77,30 @@ maps 1..4 to three globals: the class line `cls_name` (0x6aa40), `v7ece0`
   it (all four returns jump to the pop sequence at 0x1a141).
 - CONFIRMED (0x1a141-0x1a146, the caller 0x1bd3c): the function returns nothing; `cars_menu` calls
   it, then re-tests `v88b9e` before calling 0x1a148, so `v88b9e` is how the menu chain aborts.
+- CONFIRMED (rebuild `laps_menu` in `src/ww.c`, 430 bytes byte-identical at 0x1a148; row literals
+  0x60b14/0x60b28/0x60b3c read out of the image): 0x1a148 is the **lap-count menu**, the next screen
+  of the same chain - `cars_menu` calls `classes_menu` 0x19eac at 0x1bd3c, `laps_menu` at 0x1bd4b
+  and `engines_menu` 0x167d8 at 0x1bd5f, each guarded by `v88b9e == 0` (0x1bd32, 0x1bd41, 0x1bd50).
+  Its three rows are " SIX LAP RACE   ", " EIGHT LAP RACE ", " TEN LAP RACE   " into
+  `mnames` + 0x3c*i with `v88bb0 = 0xd` and the cursor `v88c80 = 1` (0x1a1bb, 0x1a1c4); the rows are
+  1-based as always, so the switch at 0x1a21e maps nlaps 1, 2, 3 to 6, 8, 10 and leaves any other
+  value alone.
+- CONFIRMED (0x1a171-0x1a183): with `v7edb0 != 0` the race is **3 laps and there is no lap menu** -
+  that is the KID MODE path of `classes_menu`, so "engines locked" also fixes the race length
+  (supports the `v7edb0` line in the names file). `twoplayer || netvoices` returns without touching
+  `v88b9e`, `nlaps` or the rows (0x1a14d-0x1a162).
+- CONFIRMED (0x1a1de-0x1a1e6, 0x1a264-0x1a2ac): outside splitscreen, TIME TRIAL (`v88bb2 == 4`) gets
+  `nlaps = 6` with no menu; in splitscreen only the `v88b7e == 1` pass shows the menu, and after it
+  a net game with `net88c14 != 0` drops out without testing `v88b9e` - the same shape as in
+  `classes_menu`. Both passes carry their own copy of the switch tree, but the `nlaps = 6` store of
+  the TIME TRIAL path is shared with its case 1 (`je 0x1a246`), which is what pinned the C shape
+  (GOTCHAS, Watcom entry).
+- CONFIRMED (rebuild `fn_1a2f8`, 103 bytes byte-identical at 0x1a2f8): three call sites in
+  `fn_1f858` (0x1fd7a, 0x201fa, 0x20478) each call it immediately before `cars_menu`; it clears the
+  eight ints at `v7d338` through the clib filler (`fn_430f7`, the dword path 0x39 into the `__stos`
+  module at 0x430be) and then, when `netgame` with `v7ec9c == 1` or (non-net) `v7e574 != 0`, sets
+  `v7d338[0]`, `[1]`, `[5]`, `[6]` to 1 (0x1a334-0x1a356). What those four flags mean is open
+  (QUESTIONS.md).
 
 ## Traps
 
@@ -90,3 +114,7 @@ maps 1..4 to three globals: the class line `cls_name` (0x6aa40), `v7ece0`
   off-by-one class mapping (it did, this session).
 - `strcpy(cls_name, "")` is `mov al,[0x600ac]; mov [0x6aa40],al` - the pooled
   empty string, not a global (GOTCHAS).
+- A `switch` on a `short` with cases 1,2,3 compiles to a balanced compare tree, not a jump table
+  (`cmp ax,2 / jb / jbe / cmp ax,3 / je`, the global loaded once); writing the same thing as an
+  `if / else if` chain re-loads the global for every test and costs 30+ bytes. Match the tree first,
+  then the labels (this session: 58 instruction diffs as a chain, 1 as a switch).

@@ -5240,3 +5240,90 @@ void classes_menu(void)
         v685e4 = 0;
     }
 }
+
+/* ---- the lap-count menu (0x1a148), called from cars_menu at 0x1bd4b */
+
+/* Three rows into mnames with v88bb0 = 0xd and the cursor on row 1 (v88c80 = 1); menu() returns a
+ * 1-based row and rows 1/2/3 are SIX / EIGHT / TEN laps. A two-player or net-voice game does
+ * nothing here; with the KID MODE engines locked (v7edb0 != 0) the race is 3 laps with no menu, and
+ * so is a TIME TRIAL (v88bb2 == 4) outside splitscreen (there nlaps = 6); in splitscreen only the
+ * player-index-1 pass shows the menu, and it drops out in a net game with net88c14 set. */
+void laps_menu(void)
+{
+    if (twoplayer || netvoices)
+        return;
+    v88b9e = 0;
+    if (v7edb0) {
+        nlaps = 3;
+        return;
+    }
+    strcpy(&mnames[0], " SIX LAP RACE   ");
+    strcpy(&mnames[0x3c], " EIGHT LAP RACE ");
+    v88bb0 = 0xd;
+    v88c80 = 1;
+    strcpy(&mnames[0x78], " TEN LAP RACE   ");
+    if (!splitscreen) {
+        if (v88bb2 != 4) {                  /* TIME TRIAL outside splitscreen: 6 laps, no menu */
+            nlaps = menu(3, 0, 0, 0);
+            if (v7ecc0)
+                v88b9e = 1;
+            if (v88b9e == 0) {
+                switch (nlaps) {
+                case 1: nlaps = 6; break;
+                case 2: nlaps = 8; break;
+                case 3: nlaps = 10; break;
+                }
+            }
+        } else
+            nlaps = 6;
+        return;
+    }
+    if (v88b7e != 1)
+        return;
+    nlaps = menu(3, 0, 0, 0);
+    if (v7ecc0)
+        v88b9e = 1;
+    if (netgame && net88c14)
+        return;
+    if (v88b9e)
+        return;
+    switch (nlaps) {
+    case 1: nlaps = 6; break;
+    case 2: nlaps = 8; break;
+    case 3: nlaps = 10; break;
+    }
+}
+
+/* ---- the setup call made just before cars_menu (0x1a2f8; called from fn_1f858 at 0x1fd7a,
+ * 0x201fa and 0x20478, each immediately followed by a call to cars_menu). It clears the eight ints
+ * at v7d338 through the clib filler and, when the net/local condition holds, sets slots 0, 1, 5
+ * and 6 of that array to 1 (0x1a334, 0x1a33e, 0x1a348, 0x1a352).
+ * fn_430f7 is not a module start: the clib module `__stos` is at 0x430be (libmatch, 165 bytes) and
+ * this is its dword path 0x39 bytes in, taking eax = destination, edx = value, ecx = dword count -
+ * the game loads those three at 0x1a2fa-0x1a306 and leaves ebx alone. */
+
+extern int v7ec9c, v7e574;      /* v7d338[] is declared at 2536 */
+
+void fn_430f7();
+#pragma aux fn_430f7 parm [eax] [edx] [ecx] modify []
+
+void fn_1a2f8(void)
+{
+    int ok;
+
+    fn_430f7(v7d338, 0, 8);
+    ok = 0;
+    if (netgame) {
+        if (v7ec9c == 1)
+            ok = 1;
+    } else {
+        if (v7e574)
+            ok = 1;
+    }
+    if (ok) {
+        v7d338[0] = 1;
+        v7d338[1] = 1;
+        v7d338[5] = 1;
+        v7d338[6] = 1;
+    }
+}

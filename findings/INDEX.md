@@ -13,7 +13,7 @@ check, do not re-derive; **OPEN** = work remains (say what).
 | Video: mode, palette, blitter, back buffer, present | `video.md` | OPEN |
 | Menus: the bonus race / bonus zone order screens, palette flash | `menus.md` | OPEN |
 | Sound: driver, tracks, samples, music | `sound.md` | OPEN |
-| Classes and game modes: the class menu, the per-class line/value/index | `classes.md` | OPEN (menu 0x19eac rebuilt as a near miss; the users of the globals after it are not) |
+| Classes and game modes: the class menu, the per-class line/value/index, the lap-count menu | `classes.md` | OPEN (menus 0x19eac rebuilt as a near miss, 0x1a148 and 0x1a2f8 byte-identical; the users of the globals after them are not) |
 
 Add a row per subsystem. Keep each file to what is true now; history lives in
 git. Template: `_TEMPLATE.md`.

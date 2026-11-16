@@ -140,7 +140,10 @@ it can be copied back into DREA.
   lines and after all nine, both orders), a folded-away `if` around the second store, and
   `v7edb0 = v88bb2` to make it depend on the first all gave the same single instruction out of
   place (149 instructions, 667 bytes) - accept it as a near miss with `differs:` and move on
-  (QUESTIONS.md 3). [generic]
+  (QUESTIONS.md 3). Counter-case, laps_menu 0x1A148: `v88bb0 = 0xd; v88c80 = 1;` lands in the third
+  copy's unit from all three source placements (before the first copy, between the second and third,
+  after the third - same bytes, `.work/probe11`), so that pair slides all the way and its placement
+  is not a lever there. [generic]
 - **The register that homes a local follows the position of its first definition, not its
   declaration**: classes_menu's `short nrows` defined before the fourth row's strcpy got EDX (the
   game's home, 0x19f22); defined at its later use it got ECX, and `menu(nrows,0,0,0)`'s argument
@@ -151,3 +154,20 @@ it can be copied back into DREA.
   `if (!two) { ...big... } else v88bb2 = 4;`; writing the obvious `if (two) v88bb2 = 4; else if
   ...` makes 9.5b put the block inline and add a forward `jmp` (+1 byte, different jump
   displacements everywhere after it). [generic]
+- **A `switch` on a `short` with three cases is a balanced compare tree, not a jump table**: cases
+  1,2,3 give `mov ax,[global]` once, then `cmp ax,2 / jb <below> / jbe <case 2> / cmp ax,3 /
+  je <case 3>` with the three store blocks emitted as cold blocks after the chain (laps_menu
+  0x1A148, 0x1a21e and 0x1a2b8). Writing it as `if (nlaps == 1) ... else if ...` costs 30+ bytes:
+  every test re-loads the global (58 instruction diffs against 1 for the switch shape). Probe the
+  tree before anything else. [generic]
+- **Whether two identical store blocks merge depends on the C shape, not the constants**: the game
+  jumps from the TIME TRIAL test straight into the switch's `nlaps = 6` block (`je 0x1a246`,
+  0x1a1e6); `if (v88bb2 == 4) { nlaps = 6; return; }` before a `switch` emits the store twice, while
+  `if (v88bb2 != 4) { menu ... } else nlaps = 6;` shares it and matches byte for byte. Probe the
+  orientation of such a test with `tools/wc/variants.py` (30 shapes in one compile here) rather than
+  assuming the copy is a bug. [generic]
+- **A call target can be an interior label of a library module**: 0x430f7 is 0x39 bytes into the
+  clib `__stos` module at 0x430be (165 bytes, `libmatch.py -l ww .../DOS/CLIB3R.LIB`); declare it as
+  its own extern and pin the argument registers with what the call site loads (`#pragma aux
+  fn_430f7 parm [eax] [edx] [ecx]`, ebx untouched) - the fixup check then verifies it by name like
+  any other clib symbol. [generic]

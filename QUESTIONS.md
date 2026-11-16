@@ -99,6 +99,16 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    a block boundary? a second string-op unit in the same window?) - or accept the 1-instruction near
    miss (the game's `mov dword` at 0x1a05d needs no register, so no register-pressure story explains
    it).
+   Data point (laps_menu 0x1A148, matched this session): the pair `v88bb0 = 0xd; v88c80 = 1;` lands
+   inside the third strcpy's string-op unit (0x1a1bb, 0x1a1c4, between its `mov esi` and its
+   `rep movsd`) from ALL THREE source placements - before the first copy, between the second and the
+   third, and after the third (`.work/probe11`, 30 shapes) - so the pair slides as far up as it can go
+   and its source placement is not a lever; the classes_menu pair stops one unit earlier.
+4. What are the eight ints at `v7d338` (the names file calls it "int per ent")? `fn_1a2f8` clears
+   [0..7] and sets [0], [1], [5], [6] to 1 when `netgame && v7ec9c == 1` or, off-net, when `v7e574`
+   is nonzero; it is called immediately before `cars_menu` from `fn_1f858` (0x1fd7a, 0x201fa,
+   0x20478). What would settle it: xref the reads of `v7d338` (+4, +0x14, +0x18) once the entity
+   code is ported.
 
 ## Hypotheses
 
