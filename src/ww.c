@@ -6082,3 +6082,87 @@ animframe:
         goto animframe;
     myplayer = car;                         /* 0x1be29 */
 }
+
+/* ---- the start-seat shuffle (0x1be3c-0x1beff), called from fn_1e2e4 at 0x1e5b9 and from
+ * fn_1f858 at 0x1ffee and 0x202c9. v70720[0..7] (short) is filled with eight distinct seat
+ * numbers: [0] = myplayer, [1] = v88c6a when a second player takes part, the rest from rand()
+ * (single-player) or counting up with wrap (splitscreen). LIKELY: the calls and the stores. */
+/* differs: near miss, 196 bytes (the game's size exactly), 13 instructions off, all of them the
+ * same Watcom choice: it keeps a constant 0 in edi across the loop (`push edi`, `xor edi,edi`,
+ * `cmp splitscreen,di`, `mov edi,ebx`, `mov edi,edx`) where the game materialises each zero
+ * (`cmpw $0,splitscreen`, `xor ebx,ebx`, `xor edx,edx`). Every statement, jump and loop bound
+ * otherwise agrees byte for byte; 13 C shapes (declaration orders, `register`, goto vs break vs
+ * continue, do/while vs while; k1-k4 in analysis/shapes/SHAPES.C) all give the same 13. Same
+ * family as QUESTIONS.md 2 and 3. */
+void fn_1be3c(void)
+{
+    short i, seat, cd, cand;
+    int m;
+
+    m = racetime;
+    if (m < 8)
+        m = 8;
+    srand(m);                           /* 0x1be4e (clib srand at 0x430ac) */
+    for (i = 0; i <= 7; i++)
+        v70720[i] = -1;                 /* 0x1be59 */
+    v70720[0] = myplayer;               /* 0x1be75 */
+    seat = 1;
+    if (twoplayer != 0 || splitscreen != 0) {
+        v70720[1] = v88c6a;             /* 0x1be96 */
+        seat = 2;
+    }
+    cd = seat;                          /* 0x1bea6 (the pre-test 0x1bea8 is on seat, eax) */
+    cand = -1;                          /* 0x1bea1 */
+    while (cd <= 7) {                   /* 0x1beae */
+        if (splitscreen == 0) {
+            do {
+                cand = rand();          /* 0x1beb8 (clib rand at 0x43088) */
+            } while (cand < 0 || cand > 7);
+        }
+        cand++;                         /* 0x1beca */
+        if (cand > 7)
+            cand = 0;
+        for (i = 0; i <= 7; i++)        /* 0x1bed5 */
+            if (cand == v70720[i])
+                goto again;
+        v70720[cd++] = cand;            /* 0x1beed */
+    again:
+        ;
+    }
+}
+
+extern short v7ec6c, v7ec70;            /* 0x7ec6c / 0x7ec70: read as words here; elsewhere they
+ * are dwords multiplied by 0x98 (0x2b912, 0x2b950, 0x328a3) */
+
+/* ---- per-player setup (0x1bf00-0x1bf7d), called from fn_16f90 at 0x17098. The stores are
+ * CONFIRMED (players[i].f64 = 1 and players[i].face = v7ec6c for the first v7eca4 + 1 rows, max
+ * 0x15, and v7ec70 for the rest, i = 1..nplayers); what the two values mean is SPECULATIVE. */
+/* differs: near miss, 99 of the game's 125 bytes, and only two things are wrong. (1) The game
+ * loads nplayers into esi (0x1bf04) before v7eca4 into ebx (0x1bf0b); our build loads v7eca4
+ * first in every shape tried (initializer, statement, declaration order). (2) The game keeps the
+ * whole store-and-continue block inside each arm of the test (`movw $1,f64; inc edx; mov face` +
+ * `cmp si,dx; jg exit; jmp head` at 0x1bf36-0x1bf4c and again at 0x1bf5b-0x1bf6f); our build
+ * merges the two arms into one tail. 27 shapes scored (m1-m4 kept in analysis/shapes/SHAPES.C);
+ * the best is 14 instruction diffs and none of them avoids the merge. */
+void fn_1bf00(void)
+{
+    short n, cnt, i, val;
+
+    n = nplayers;                       /* 0x1bf04 (the game's first load) */
+    cnt = v7eca4 + 1;                   /* 0x1bf0b */
+    if (cnt > 0x15)
+        cnt = 0x15;
+    i = 1;                              /* 0x1bf1e */
+    do {
+        if (cnt > 0) {                  /* 0x1bf23 */
+            val = v7ec6c;               /* 0x1bf2e */
+            cnt--;
+        } else {
+            val = v7ec70;               /* 0x1bf54 */
+        }
+        players[i].f64 = 1;             /* 0x1bf36 / 0x1bf5b */
+        players[i].face = val;          /* 0x1bf40 / 0x1bf65 */
+        i++;
+    } while (i <= n);
+    nplayers = n;                       /* 0x1bf71 */
+}

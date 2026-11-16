@@ -8,9 +8,9 @@ check, do not re-derive; **OPEN** = work remains (say what).
 | Executables: format, size, sha256, entry, compiler, source file names, calling convention | `executables.md` | OPEN (compiler pinned to 9.5b; options open) |
 | File formats and archives on the disc | `formats.md` | OPEN |
 | Memory map: segments / LE objects, globals, tables | `memory.md` | OPEN |
-| Startup chain, main loop, frame timing | `game-loop.md` | OPEN |
+| Startup chain, main loop, frame timing; the race-start helpers `fn_1be3c` (start grid `v70720[]`) and `fn_1bf00` (per-player rows) | `game-loop.md` | OPEN (the two helpers mapped and rebuilt as near misses; the loop itself not) |
 | Input: keyboard handler, key table, mouse | `input.md` | OPEN |
-| Video: mode, palette, blitter, back buffer, present | `video.md` | OPEN |
+| Video: mode, palette, blitter, back buffer, present; `setpalette` 0x36f14 = a 0x3e80-byte screen page copy, `pal_a`-`pal_d` are page offsets | `video.md` | OPEN (the page-flip pair 0x1c068/0x1c0ac CONFIRMED byte-identical; mode/buffer open) |
 | Menus: the bonus race / bonus zone order screens, palette flash | `menus.md` | OPEN |
 | Sound: driver, tracks, samples, music | `sound.md` | OPEN |
 | Classes and game modes: the class menu, the per-class line/value/index, the lap-count menu | `classes.md` | OPEN (menus 0x19eac rebuilt as a near miss, 0x1a148 and 0x1a2f8 byte-identical; the users of the globals after them are not) |

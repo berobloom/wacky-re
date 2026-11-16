@@ -131,3 +131,15 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    the rebuild keeps in ECX/EDI/ESI).
    Test: a probe function with the game's 27 stores in the game's store order, then flip one pair
    at a time and diff the frame.
+6. **OPEN, narrowed** (findings/video.md, GOTCHAS): what makes the game's build *call* its small
+   user functions - `readdat` (0x1424c, called at 24+ sites, 11 bytes of body) and
+   `fn_1c068`/`fn_1c0ac` (68/69 bytes, 11 sites each) - when Watcom 9.5b `-oe` inlines every
+   user function of that size in our build? Data this session: adding `-oe=<N>` to the pinned
+   option set gives 73 / 76 / 84 / 84 / 84 / 78 byte-identical functions at N = 4 / 8 / 16 / 24 /
+   32 / 48 (bare `-oe`: 84), and **no level keeps `fn_1c068` a call** - so the threshold is not
+   the lever. A bare `#pragma aux name modify [...]` on the definition and a `volatile` function
+   pointer to it also do not stop it. Not yet tried: the module boundary (the game's program
+   clearly holds several OMF modules - objmatch's `_TEXT` base groups - and the helpers may live
+   in another one, where a call is forced), and `#pragma on(off)/inlining`.
+   Test: compile `src/ww.c` as two modules (the palette pair in its own) and see whether the 11
+   call sites come back without losing the 84.

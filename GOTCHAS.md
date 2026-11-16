@@ -189,3 +189,12 @@ it can be copied back into DREA.
 - **Read esp offsets per instruction, not per table**: Watcom's 5-argument calls push one dword,
   so every displacement after a `push 0` is 4 below the value that a slot table sorted by printed
   offset implies (`cars_menu` 0x1adf7/0x1ba75 read 0x138/0x15c, not 0x13c/0x160). [generic]
+- **Defining a small game function in `src/ww.c` lets `-oe` inline it into every caller and can
+  cost a function that already matches** (iter 8): `fn_1c068`/`fn_1c0ac` (68/69 bytes) rebuild
+  byte-identical but inlining them into `net_end` 0x110d4 broke that match. No per-function off
+  switch: `-oe=4/8/16/24/32/48`, a bare `#pragma aux name modify [...]`, and a `volatile`
+  function pointer all fail (only N<=8 stops inlining, and that build matches 73-76 not 84).
+  Check the callers first (`tools/le/xref.py ww 0xADDR`); if a byte-identical function calls it,
+  keep it `extern` and write its C into the findings file instead. [generic]
+- **`tools/wc/wcc.sh` runs WCC386 inside DOSBox: a file name longer than 8.3 fails silently**
+  (`Unable to open 'SETUP_PROBE.C'`, 0 lines, no OBJ). Keep probe names <= 8 characters. [generic]
