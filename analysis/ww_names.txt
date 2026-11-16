@@ -534,6 +534,8 @@
 0x02f4a8 net_input    # CONFIRMED (rebuild src/ww.c): net game frame controls: local read, F1..F6 gig in v88ce0, net_key exchange; player 2 drives with the peer's bits, own ones into key88cc3..cc7
 0x02f720 view_sprites # CONFIRMED (rebuild src/ww.c): v7ed6c = 1, view_box, f37e94 when v7eb80, then sprites_build's body inline
 0x02f794 race_frame2  # CONFIRMED (rebuild src/ww.c): rest of a race frame: cycles, curtain bars v88c8c/tb80ae8, second view + player-2 keys in split screen, overlays, faces, crack, Pause (scancode 0xc5)
+0x02fd8c race_run     # CONFIRMED (rebuild src/ww.c): one race session: setup, restart label, frame loop, crash / lives / finish / placings, demo record+playback inline, in-race menu; 10834 bytes
+0x0327b4 render_scales # CONFIRMED (rebuild src/ww.c): v7d648 = v7d644 = 0x80, v7d664 = v7d634 = 0x1000; no caller found
 0x070730 trial70730   # CONFIRMED (0x2e4b8): struct { char lapname[4][20]; int lap[4]; char racename[20]; int race; } [30], (group-1)*5 + track-1
 0x07ed34 v7ed34
 0x07ed20 v7ed20

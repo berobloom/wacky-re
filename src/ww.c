@@ -1417,20 +1417,26 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
     short f7e;                  /* 0x7E: set by a shot hit in a human-player race (shot_hit) */
     short f80;                  /* 0x80: fire held (kart_fire) */
-    char f82[0x8a - 0x82];
+    char f82[0x86 - 0x82];
+    int f86;                    /* 0x86: -1 at race start (race_run) */
     int f8a;                    /* 0x8A: ticks2 stamp of f14 */
     int f8e;                    /* 0x8E: ticks2 when fire was pressed (kart_fire) */
-    char f92[0xaa - 0x92];
+    char f92[0xa2 - 0x92];
+    short fa2, fa4, fa6, fa8;   /* cleared at race start (race_run) */
     short faa;                  /* 0xAA: 1 when the move hit something or f3c was set (kart_move) */
     short fac;                  /* 0xAC: 1..3 picks the catch-up step (kart_catchup) */
-    char fae[0xb4 - 0xae];
+    short fae;                  /* 0xAE: map cell under the kart (race_run) */
+    short fb0, fb2;             /* 0xB2: laps done (race_run: nlaps + 1 ends the race) */
     short fb4;
     short fb6;                  /* 0xB6: set to 0x10 with fb4 (kart_boost) */
     int fb8, fbc, fc0, fc4, fc8, fcc, fd0;  /* 0xC0-0xCC = cars[].fb0-fbc (second banner) */
     int fd4;                    /* 0xD4: = cars[].sndhandle */
     int fd8, fdc;               /* = cars[].fc8 / fcc: banner sound handle, playing */
     unsigned char fe0;          /* 0xE0: bits 0x10 / 8 pick weapon 3 / 8 when f16 is 0 (kart_fire) */
-    char fe1[0x104 - 0xe1];
+    char fe1[0xe4 - 0xe1];
+    int fe4, fe8, fec;
+    char ff0[0x100 - 0xf0];
+    int f100;
 };
 #pragma pack()
 extern struct kart karts[];
@@ -7303,7 +7309,7 @@ void fn_1e2cc(void)
  * v7ec58 passes 5. */
 extern short w88c98, w88c9a, w88bce, w88c08;
 extern int v7ec5c, v7ec58, v7ec60, v7ec90, v7ec68;
-void f2fd8c(void);
+void race_run(void);
 
 void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
 {
@@ -7388,7 +7394,7 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
         w88c08 = 0;
         fn_17928();
         countplays = 1;
-        f2fd8c();                     /* 0x1e5d0: the race */
+        race_run();                     /* 0x1e5d0: the race */
         countplays = 0;
         voices_reset();
         if (++v7ec60 > 7)             /* 0x1e5e0 */
@@ -8279,7 +8285,7 @@ void main_menu(void)
                     if (v88b9e == 0) {
                         w88c98 = 0;
                         countplays = 1;
-                        f2fd8c();
+                        race_run();
                         countplays = 0;
                         voices_reset();
                     }
@@ -8359,7 +8365,7 @@ void main_menu(void)
                         w88bce = 1;
                         music88bcc = 0;
                         countplays = 1;
-                        f2fd8c();
+                        race_run();
                         countplays = 0;
                         voices_reset();
                     }
@@ -8418,7 +8424,7 @@ void main_menu(void)
                         w88bce = 1;
                         music88bcc = 0;
                         countplays = 1;
-                        f2fd8c();
+                        race_run();
                         countplays = 0;
                         voices_reset();
                     }
@@ -8764,7 +8770,7 @@ void main_menu(void)
     }
 }
 
-/* ---- 0x213f0, 159 bytes: per-entity flags after loading a level (caller 0x301b6 in f2fd8c). The
+/* ---- 0x213f0, 159 bytes: per-entity flags after loading a level (caller 0x301b6 in race_run). The
  * iterator is the global v7d7f4. ents[].f2 = -1 marks a kind >= 2 sprite in a one-player, off-line
  * KID MODE (v88bb2 4) race; with netvoices set, every kind > 2 entity becomes sprite v7eda4. */
 extern struct ent *v7d7f4;
@@ -10428,7 +10434,7 @@ void kart_fire(void)
 }
 
 /* ---- 0x24834, 118 bytes: shifts the view offset v7d860 after a track drift (kart_move side 0 left,
- * 1 right, and 0x30a09 in f2fd8c), only when v7d998 is 0 or 3. Left: from the left stop v7d824 jump
+ * 1 right, and 0x30a09 in race_run), only when v7d998 is 0 or 3. Left: from the left stop v7d824 jump
  * to v7d82c, subtract f52, clamp at v7d824; right: from v7d830 jump to v7d828, add f54, clamp at
  * v7d830. */
 extern int v7d860, v7d824, v7d828, v7d82c, v7d830;
@@ -15985,5 +15991,1117 @@ void race_frame2(void)
             music_resume();
         engine_start();
     }
+}
+
+/* ---- 0x2fd8c, 10834 bytes: one race session (callers demo_mode 0x1e5d0, main_menu 0x20028 /
+ * 0x202ea / 0x204fd). Sets up the karts and views, then restarts at `restart` for every try
+ * (crash in split screen, lost life, menu "restart"), runs the frame loop at `loop` until the
+ * race is decided, and leaves through `out`. Single-player races outside time trials (v88ca8)
+ * start with the camera fly-in along the track; time trials end in trial_book; championship races add the placings to the scores
+ * (placed[], 9/6/3 .. 15/12/9 points by class v88bb2) and go to race_results; a kart that fails
+ * to qualify (place > 3) loses a life (f6c) and gets the TRY AGAIN menu. Demo record (v7d998 1)
+ * and playback (2, 3; v88c8e picks the shown record) are inlined (demo_rec, demo_play). Esc
+ * gives the in-race menu (BACK TO RACE / LEAVE RACE / SAVE AND QUIT / RESTART RACE).
+ * differs: 2029 vs 2028 insns, 64 blocks: the path vector (game `imul edx, [curpos], 8` hoisted),
+ * camera stores scheduled differently, surfs / tb7b518 index registers. */
+#pragma pack(1)
+struct rsave {
+    int myplayer, other, laps, cls, metal, track;
+    int f1e[8];
+    int seat[8];
+    int f5a0, face0, hits0, f5a1, face1, hits1;
+    int pad;
+};
+#pragma pack()
+extern struct rsave rsave774e8[2];
+#pragma aux rsave774e8 "_arr774e8"
+extern int iv7ecb0;
+#pragma aux iv7ecb0 "_v7ecb0"
+extern short v88ca8, v88b62, v88b64, w774e2;
+#pragma aux w774e2 "_v774e2"
+extern int v7ed18, v7ed58, v7ed54, v7ed50, v7ea64, v7ea6c, v7ec4c, v7ebac;
+extern int ctl775cc, ctl77558, ctl774e4;
+extern short ctl775d8, ctl775dc, ctl775d6, ctl775da;
+extern char key88cd1, v88ce1;
+extern short v88c92, v88c94;
+extern int v7c654;
+extern unsigned char v7b6e1, v7b6e3;
+void f36f55(void);
+void f29e0c(void);
+void track_setup_x(void);
+#pragma aux track_setup_x "track_setup_"
+void track_here_x(void);
+#pragma aux track_here_x "track_here_"
+void netkeys_in_x(void);
+#pragma aux netkeys_in_x "netkeys_in_"
+
+void race_run(void)
+{
+    char buf[0x28];
+    short placed[8];
+    int oldclock, first, go, crash, saverace;
+    short i, sel;
+    struct surf *sp;
+    int j, k;
+
+    v7ec88 = 0x4b0;
+    racetime = 0;
+    v7ec84 = 0;
+    v88ca8 = 0;
+    v7edb4 = 0;
+    v7ecc4 = 0;
+    v7ed20 = 0x440;
+    v7ed1c = 0x440;
+    if (!netvoices && !twoplayer && !splitscreen && v88bb2 != 4)
+        v88ca8 = 1;
+    if (v88ca0 && (v88bde || v7d998 == 2 || twoplayer || netvoices))
+        v88ca0 = 0;
+    first = 1;
+    kart7d5c0 = karts;
+    kart7d5bc = &karts[1];
+    curkart = kart7d5c0;
+    curkart->f6c = 3;
+    curkart++;
+    curkart->f6c = 3;
+    fn_16ca0();
+    nplayers = 7;
+    if (twoplayer)
+        nplayers = 1;
+    if (splitscreen) {
+        if (splitscreen == 2)
+            nplayers = 7;
+        else
+            nplayers = 1;
+    }
+    if (!twoplayer && !v7d998 && v88bb2 == 4)
+        nplayers = 0;
+    if (netvoices)
+        nplayers = 7;
+    if (twoplayer || netvoices)
+        music_start(v7eb00, 1);
+    if (!twoplayer && !netvoices && !netgame && v88bb2 != 4) {
+        k = splitscreen != 0;
+        rsave774e8[k].myplayer = myplayer;
+        rsave774e8[k].other = v88c6a;
+        rsave774e8[k].laps = nlaps;
+        rsave774e8[k].cls = v88bb2;
+        rsave774e8[k].metal = v88bb6;
+        rsave774e8[k].track = v88b88;
+        for (j = 0; j < 8; j++) {
+            rsave774e8[k].f1e[j] = players[j].f1e;
+            rsave774e8[k].seat[j] = v70720[j];
+        }
+        rsave774e8[k].f5a0 = cars[0].f5a;
+        rsave774e8[k].face0 = cars[0].face;
+        rsave774e8[k].hits0 = cars[0].fc0;
+        rsave774e8[k].f5a1 = cars[1].f5a;
+        rsave774e8[k].face1 = cars[1].face;
+        rsave774e8[k].hits1 = cars[1].fc0;
+    }
+restart:
+    if (v7d998) {
+        for (i = 0; i <= 1; i++) {
+            cars[i].f5a = 0;
+            cars[i].face = 0;
+        }
+    }
+    if (v88ca8) {
+        oldclock = optclock;
+        optclock = 0;
+    }
+    v7eccc = 0;
+    fn_430f7(laptimes, 0, 6);
+    anikick = 0;
+    anitimer = 0;
+    voices_reset();
+    v88c56 = 0;
+    v88c48 = 0;
+    shots_clear();
+    karts[0].f56 = 0;
+    karts[1].f56 = 0;
+    v88c9e = 0;
+    v88c8c = 0;
+    v88b7e = 0;
+    curkart = kart7d5c0;
+    if (!twoplayer && !netvoices) {
+        v88c38 = 1;
+        v88c5e = 0;
+        v88c44 = 0;
+    } else {
+        v88c38 = 0;
+        v88c44 = 2;
+    }
+    for (v88b72 = 0; v88b72 <= 7; v88b72++)
+        placed[v88b72] = 0;
+    curkart = kart7d5c0;
+    for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+        ents_flags();
+        curkart++;
+    }
+    finished = 0;
+    curkart = kart7d5c0;
+    ticks = 0;
+    ticks2 = 0;
+    v88c3c = 0;
+    v88c42 = 0;
+    track_setup_x();
+    if (nplayers > 1) {
+        karts[0].fac = 8;
+        karts[1].fac = 8;
+    } else {
+        karts[0].fac = 1;
+        karts[1].fac = 1;
+    }
+    for (v88b72 = 0; v88b72 <= 0x17; v88b72++) {
+        if (twoplayer || splitscreen || netvoices) {
+            cars[v88b72].f5a = 0;
+            cars[v88b72].face = 0;
+        }
+        karts[v88b72].f86 = -1;
+        karts[v88b72].f2e = 0;
+        *(int *)&karts[v88b72].f2a = 0;
+        karts[v88b72].fa2 = 0;
+        karts[v88b72].fb4 = 0;
+        karts[v88b72].fb2 = 0;
+        karts[v88b72].fe4 = 0;
+        karts[v88b72].fb0 = 0;
+        karts[v88b72].fa6 = 0;
+        karts[v88b72].fa8 = 0;
+        karts[v88b72].fa4 = 0;
+        karts[v88b72].faa = 0;
+        karts[v88b72].fb8 = 0;
+        karts[v88b72].fbc = 0;
+        karts[v88b72].fc0 = 0;
+        karts[v88b72].fdc = 0;
+        karts[v88b72].f100 = 0;
+        karts[v88b72].fe8 = 0;
+        karts[v88b72].fec = 0;
+        karts[v88b72].f8e = 0;
+        karts[v88b72].f06 = 0;
+        karts[v88b72].f7e = 0;
+        karts[v88b72].f28 = 0;
+        karts[v88b72].f80 = 0;
+        karts[v88b72].f7c = 0;
+        karts[v88b72].f44 = 0;
+        karts[v88b72].f5a = 0;
+        karts[v88b72].f5c = 0;
+        karts[v88b72].f5e = 0;
+        karts[v88b72].f46 = 0;
+        karts[v88b72].f48 = 0;
+        karts[v88b72].f4a = sparkdata;
+        karts[v88b72].f0a = 0;
+    }
+    iv7ecb0 = 7;
+    v7eca4 = 0;
+    fn_19db8();
+    fn_16f90();
+    curpos = 0x1e0;
+    v88b62 = 0;
+    v88b64 = 0;
+    curkart = kart7d5c0;
+    for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+        v88b7e = v88b72;
+        curkart->f1a = 2;
+        curkart->f00 = 0;
+        curkart->f18 = 0;
+        curkart->f1c = 2;
+        curkart->f4e = tb7b518[curkart->f1a] + v88b7e;
+        curkart++;
+    }
+    v88b7e = 0;
+    curkart = kart7d5c0;
+    v88b3a = 0;
+    v88b38 = 0;
+    v88b50 = 0;
+    v7d690 = (int *)(v7d6a0 + curpos * 8);
+    v7d5f8 = *v7d690++;
+    v7d5f4 = *v7d690--;
+    curkart = kart7d5c0;
+    for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+        curkart->f68 = 0;
+        curkart->f22 = 0;
+        curkart->f24 = 0;
+        curkart->f3a = 0;
+        curkart->f36 = 0;
+        curkart->f3c = 0;
+        curkart->f20 = 0;
+        curkart->f26 = 0;
+        curkart->f54 = 0;
+        curkart->f52 = 0;
+        curkart->f42 = 0;
+        curkart->f26 = tbl7e730[curkart->f26];
+        curkart++;
+    }
+    curkart = kart7d5c0;
+    v88b0a = players[0].x;
+    v88c4a = v88b0a + 0x28;
+    v88c4c = players[0].y - 10;
+    v88ca6 = players[1].y + 0x7c;
+    v88b92 = 0;
+    v88ca2 = players[1].x;
+    v88b90 = 0;
+    v88b0e = players[0].y - 0x7c;
+    curpos = 0x1e0;
+    if (splitscreen)
+        v7d5dc = 0x1e0;
+    else
+        v7d5dc = 0x5a0;
+    players[0].pos = curpos;
+    players[1].pos = v7d5dc;
+    curpos = players[0].pos;
+    track_here_x();
+    v7d608 = 0x7c;
+    f37bb1();
+    v7d7a4 = v88b0a + v7d610;
+    v7d7a8 = v88b0e + v7d620;
+    players[0].x = v7d7a4;
+    players[0].y = v7d7a8;
+    if (splitscreen) {
+        v88ca2 = v88b0a + 0x14;
+        v88ca6 = v88b0e;
+    }
+    if (twoplayer || splitscreen) {
+        curpos = players[1].pos;
+        v7d690 = (int *)(v7d6a0 + curpos * 8);
+        v7d608 = 0x7c;
+        v7d5f8 = *v7d690++;
+        v7d5f4 = *v7d690--;
+        f37bb1();
+        v7d7a4 = v88ca2 + v7d610;
+        v7d7a8 = v88ca6 + v7d620;
+        players[1].x = v7d7a4;
+        players[1].y = v7d7a8;
+        curpos = players[0].pos;
+    }
+    if (v7d998 && first && v7d998 != 3) {
+        palptr = pal7d850;
+        getpalette();
+        f1bf94(pal7d850);
+        pal_a = 0;
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+    }
+    if (v88ca8) {
+        v88c92 = v88b0a + 0x84;
+        v88c94 = v88b0e;
+        curpos = 0x3c0;
+        v88b0a = 0x708;
+        v88b0e = v88c94 + 0x84;
+        if (v7d998 != 2)
+            music_start(v7eb00, 1);
+    }
+    for (v88b72 = 0; v88b72 <= 1; v88b72++)
+        if ((karts[v88b72].fe0 & 4) || (karts[v88b72].fe0 & 0x10) || (karts[v88b72].fe0 & 8))
+            cars[v88b72].f5a = 0x63;
+    frame_draw();
+    if (v7d998 && first) {
+        first = 0;
+        f32cf8(p7d718);
+    }
+    if (v88ca8) {
+        go = 1;
+        for (;;) {
+            do {
+                v7e724 = ticks;
+                v88c44 = 0;
+                v7eba8 = 0;
+                view_box();
+                f37e94();
+                p7d86c = arr79a28;
+                v88bf4 = 0;
+                v88b78 = 0;
+                players_frames();
+                players_project();
+                ents_project();
+                self_project();
+                if (v88c38)
+                    lights_project();
+                shots_project();
+                if (v88b78)
+                    sprites_draw();
+                cycles_step();
+                overlay_draw();
+                anim_tick();
+                draw_faces();
+                f37de0();
+                if (key88ccd) {
+                    screenshot();
+                    if (key88ccd)
+                        while (key88ccd)
+                            ;
+                }
+                if (pal_a)
+                    pal_a = 0;
+                else
+                    pal_a = 0x3e80;
+                if (v7ea5c)
+                    while (ticks - v7e724 <= v7ea5c)
+                        ;
+                if (go == 1) {
+                    v88b0a -= 0x40;
+                    if (v88b0a <= v88c92) {
+                        v88b0a = v88c92;
+                        go = 0;
+                    }
+                }
+            } while (go);
+            f37a21();
+            v7d798 = v7d7a4;
+            v7d79c = v7d7a8;
+            curkart->f52++;
+            if (curkart->f52 > 4)
+                curkart->f52 = 4;
+            curpos -= 0x28;
+            if (curpos <= 0x1e0)
+                break;
+            f37a21();
+            v7d768 = v7d798 - v7d7a4;
+            v7d76c = v7d79c - v7d7a8;
+            v88b0a += v7d768;
+            v88b0e += v7d76c;
+            f24834(0);
+        }
+        curkart->f52 = 0;
+        v88b0a = v88c92 - 0x84;
+        v88b0e = v88c94;
+        curpos = 0x1e0;
+        optclock = oldclock;
+    }
+    joy88b40 = 0;
+    key88cd1 = 0;
+    v88ce1 = 0;
+    v88ce0 = 0;
+    v88cdf = 0;
+    if (twoplayer || splitscreen) {
+        curkart = kart7d5bc;
+        curpos = v7d5dc;
+        v7d678 = curpos;
+        v7d690 = (int *)(v7d6a0 + curpos * 8);
+        v7d608 = 0x7c;
+        v7d5f8 = *v7d690++;
+        v7d5f4 = *v7d690--;
+        f37bb1();
+        v7d7a4 = v88ca2 + v7d610;
+        v7d7a8 = v88ca6 + v7d620;
+        f37b04();
+        v88b68 = v7d7a4;
+        v88b6a = v7d7a8;
+        curkart->fae = map_at(v88b68, v88b6a);
+        curkart->f36 = surfs[v7e568].f120;
+        curkart->f3a = surfs[v7e568].f124;
+        curkart->f6e = -1;
+        sp = &surfs[v7e568];
+        curkart->f76 = sp;
+        curkart->f72 = sp;
+        curkart->f56 = v7e568;
+        v7d89c = sp;
+        curkart = kart7d5c0;
+    }
+    if (twoplayer || splitscreen || netvoices)
+        curpos = 0x1e0;
+    v7d678 = curpos;
+    v7d690 = (int *)(v7d6a0 + curpos * 8);
+    v7d608 = 0x7c;
+    v7d5f8 = *v7d690++;
+    v7d5f4 = *v7d690--;
+    f37bb1();
+    v7d7a4 = v88b0a + v7d610;
+    v7d7a8 = v88b0e + v7d620;
+    f37b04();
+    v88b68 = v7d7a4;
+    v88b6a = v7d7a8;
+    curkart->fae = map_at(v88b68, v88b6a);
+    curkart->f36 = surfs[v7e568].f120;
+    curkart->f3a = surfs[v7e568].f124;
+    curkart->f6e = -1;
+    sp = &surfs[v7e568];
+    curkart->f76 = sp;
+    v7d89c = sp;
+    curkart->f72 = sp;
+    v7ed18 = v7e568;
+    curkart->f56 = v7e568;
+    if (!netvoices) {
+        for (v88b72 = 0; v88b72 <= nplayers; v88b72++) {
+            if (v88b72) {
+                players[v88b72].cell = map_at(players[v88b72].x, players[v88b72].y);
+                players[v88b72].f0a = tbl7e730[players[v88b72].f0a];
+                players[v88b72].f08 = tbl7e730[players[v88b72].f08];
+                if (curkart->f36) {
+                    players[v88b72].f0a -= curkart->f36 * players[v88b72].f0a >> 16;
+                    players[v88b72].f08 -= curkart->f36 * players[v88b72].f08 >> 16;
+                }
+            }
+        }
+    }
+    for (v88b72 = 0; v88b72 <= 1; v88b72++)
+        karts[v88b72].fb2 = 0;
+    curkart = kart7d5c0;
+    for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+        v88b7e = v88b72;
+        curkart->f00 = 0;
+        curkart->f1a = 2;
+        curkart->f18 = 0;
+        curkart->f1c = 2;
+        curkart->f4e = tb7b518[curkart->f1a] + v88b7e;
+        curkart++;
+    }
+    v88b7e = 0;
+    curkart = kart7d5c0;
+    ticks = 0;
+    ticks2 = 0;
+    if (v88c38) {
+        v88c44 = 1;
+        v7eba8 = 0;
+    }
+    for (v88b72 = 0; v88b72 <= 1; v88b72++) {
+        v88b7e = v88b72;
+        curkart->f00 = 0;
+        curkart->f1a = 2;
+        curkart->f18 = 0;
+        curkart->f1c = 2;
+        curkart->f4e = tb7b518[curkart->f1a] + v88b7e;
+        curkart++;
+    }
+    v88b7e = 0;
+    curkart = kart7d5c0;
+    if (!v7d998) {
+        if (!twoplayer && !v88ca8 && !netvoices)
+            music_start(v7eb00, 1);
+    } else {
+        demo_start();
+        if (v7d998 == 2 && cursong != v7c654)
+            music_start(v7c654, 1);
+    }
+    if (netgame)
+        v7ea5c = 0xc;
+    for (k = 0; k < 2; k++)
+        cars[k].sndhandle = -1;
+    engine_start();
+    v88ca8 = 0;
+    ticks = 0;
+    racetime = 0;
+    overruns = 0;
+loop:
+    v7ed6c = 0;
+    v7ed74 = 0;
+    if (v88c44 != 2)
+        racetime = 0;
+    v7e724 = ticks;
+    if (netgame) {
+        net_input();
+        if (net88c14)
+            goto out;
+    } else if (key88cd0 == 1)
+        v88cec = 1;
+    else
+        v88cec = 0;
+    if (!v7ed6c) {
+        v7ed6c = 1;
+        view_box();
+        if (v7eb80)
+            f37e94();
+        sprites_build_x();
+    }
+    if (!v7ed74)
+        race_frame2();
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        if (key88ccd)
+            while (key88ccd)
+                ;
+    }
+    if (pal_a)
+        pal_a = 0;
+    else
+        pal_a = 0x3e80;
+    if (v7ea5c)
+        while (ticks - v7e724 < v7ea5c)
+            ;
+    if (v7ec84 && pal_a == 0x3e80) {
+        voices_reset();
+        duck_screen(1);
+        goto out;
+    }
+    ticks2++;
+    if (!netgame) {
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();
+        if (twoplayer || splitscreen) {
+            v7ed90 = ukey88cd0;
+            if (v7ed90 >= 0x3b && v7ed90 <= 0x40)
+                v88ce0 = v7ed90 - 0x3a;
+            else
+                v88ce0 = 0;
+            if (!netgame) {
+                if (!cfg7712c) {
+                    key88cc4 = joy88b44;
+                    key88cc5 = joy88b46;
+                } else if (cfg77128w)
+                    goto keys;
+                joy88b44 = (unsigned char)v7b6e1;
+                joy88b46 = (unsigned char)v7b6e3;
+            }
+        }
+    keys:
+        if (v7b6d9)
+            key88cd5 = 1;
+        if (v7b6db)
+            key88cdd = 1;
+    }
+    if ((twoplayer || splitscreen) && pal_a == 0x3e80) {
+        crash = 0;
+        if (karts[0].f7e || karts[1].f7e) {
+            if (karts[0].f7e && karts[1].f7e) {
+                if (splitscreen)
+                    strcpy(buf, "WHAT A CRASH!");
+                else
+                    strcpy(buf, "THAT WAS A DOUBLE KILL!");
+                if (players[0].f56 > 0xc && players[1].f56 > 0xc)
+                    crash = 1;
+            } else {
+                if (karts[0].f7e && players[0].f56 > 0xc) {
+                    strcpy(buf, pnames[myplayer]);
+                    strcat(buf, " HAS BEEN WAXED!");
+                    crash = 1;
+                }
+                if (karts[1].f7e && players[1].f56 > 0xc) {
+                    strcpy(buf, pnames[v88c6a]);
+                    strcat(buf, " HAS BEEN WAXED!");
+                    crash = 1;
+                }
+            }
+            if (crash) {
+                pal_a = 0;
+                msgbox(buf, 0);
+                ticks = 0;
+                while (ticks <= 0x190)
+                    ;
+                ticks = 0;
+                ticks2 = 0;
+                pal_a = 0x3e80;
+                if (splitscreen)
+                    goto restart;
+                if (karts[0].f7e)
+                    cars[1].fc0++;
+                if (karts[1].f7e)
+                    cars[0].fc0++;
+                if (cars[0].fc0 >= hits_target || cars[1].fc0 >= hits_target)
+                    crash = 2;
+                if (crash == 2) {
+                    voices_reset();
+                    overall_winner();
+                    for (k = 0; k < 2; k++)
+                        cars[k].fc0 = 0;
+                    goto out;
+                }
+                karts[0].f6c = 3;
+                karts[1].f6c = 3;
+                goto restart;
+            }
+        }
+    }
+    if (v88c42 == 4 && (j = v7e72c, ticks2 - j) >= 0xd && pal_a == 0x3e80) {
+        pal_b = 0;
+        pal_c = 0x3e80;
+        setpalette();
+        if (!v7d998)
+            curkart->f6c--;
+        f29e0c();
+        if (!curkart->f6c)
+            goto out;
+        goto restart;
+    }
+    if (splitscreen && (karts[0].fb2 == nlaps + 1 || karts[1].fb2 == nlaps + 1)) {
+        if (v88b88 == 5)
+            w88c08 = 0;
+        else
+            w88c08 = 3;
+        for (v88b72 = 0; v88b72 <= 0x2ff; v88b72++)
+            v7d858[v88b72] = p7d718[v88b72];
+        v7d854 = v7d858;
+        voices_reset();
+        for (v88b72 = 0; v88b72 <= nplayers; v88b72++)
+            players[v88b72].f1e += karts[v88b72].fac + 9 - 2 * karts[v88b72].fac;
+        v7ec80 = 0;
+        race_results();
+        return;
+    }
+    if (nlaps + 1 == curkart->fb2 && !v88c3c && !v88c42 && !splitscreen) {
+        if (v88bb2 == 4) {
+            v7eccc = 0;
+            for (v88c3c = 0; v88c3c <= 5; v88c3c++)
+                v7eccc += laptimes[v88c3c];
+        } else
+            v7eccc = racetime;
+        players[v88b7e].f5c = 0;
+        curkart->f44 = 0;
+        curkart->f24 = 0;
+        curkart->f22 = 0;
+        curkart->f3c = 0;
+        curkart->f20 = 0;
+        v88c3c = 1;
+        curkart->fb4 = 0;
+        v7ea64 = ticks;
+        if ((short)players[0].place >= 1 && (short)players[0].place <= 3) {
+            v88c5c = 0;
+            v88c36 = 0xa;
+            curkart->f4e = (int *)0x7b378;
+            v88c9c = 0;
+            voice_play(0x11);
+        } else {
+            v88c5a = 0;
+            v88c36 = 0xd;
+            curkart->f4e = (int *)0x7b238;
+        }
+        curkart->f18 = v88c36;
+        v88c3a = 0;
+        curkart->f32 = ticks2;
+    }
+    if (v88c3c) {
+        switch (v88bb2) {
+        case 1:
+            v7ed58 = 9;
+            v7ed54 = 6;
+            v7ed50 = 3;
+            break;
+        case 2:
+            v7ed58 = 0xc;
+            v7ed54 = 9;
+            v7ed50 = 6;
+            break;
+        case 3:
+            v7ed58 = 0xf;
+            v7ed54 = 0xc;
+            v7ed50 = 9;
+            break;
+        }
+        if (finished >= 3 || v88bb2 == 4) {
+            if (v88c3c != 2) {
+                for (v88b72 = 0; v88b72 <= 7; v88b72++) {
+                    switch (players[v88b72].place) {
+                    case 1:
+                        placed[v88b72] = v7ed58;
+                        break;
+                    case 2:
+                        placed[v88b72] = v7ed54;
+                        break;
+                    case 3:
+                        placed[v88b72] = v7ed50;
+                        break;
+                    }
+                }
+                if ((short)players[0].place >= 1 && (short)players[0].place <= 3)
+                    result_msg();
+                v7ea6c = ticks;
+                v88c3c = 2;
+            } else if ((j = v7ea6c, ticks - j) >= 0x320 && pal_a == 0x3e80) {
+                if ((short)players[0].place > 3) {
+                    w88c08 = 0;
+                    curkart->f6c--;
+                    f29e0c();
+                    if (curkart->f6c || (v88b88 != 5 && !v7ec80)) {
+                        if (!curkart->f6c)
+                            goto out;
+                        pal_b = 0;
+                        pal_c = 0x3e80;
+                        setpalette();
+                        ticks = 0;
+                        ticks2 = 0;
+                        w88c98 = 0;
+                        if (!netgame && v88bb2 != 4 && !v7edb0 && !v7ec80) {
+                            strcpy(mrows[2], " LEAVE RACE     ");
+                            strcpy(mrows[3], " SAVE AND QUIT  ");
+                            w88c98 = 1;
+                        } else
+                            strcpy(mrows[2], " LEAVE RACE     ");
+                        if (v88b88 != 5)
+                            strcpy(mnames, " TRY TO QUALIFY ");
+                        else
+                            strcpy(mnames, " TRY AGAIN      ");
+                        if (w88c98) {
+                            sel = menu(3, 0, 1, 0);
+                            v7ecc4 = 2;
+                            key88cc3 = 0;
+                            key88ccc = 0;
+                            key88cc4 = 0;
+                            key88cc5 = 0;
+                            key88cc6 = 0;
+                            key88cc7 = 0;
+                            v88cdf = 0;
+                            v88ce0 = 0;
+                            key88cd5 = 0;
+                            key88cdd = 0;
+                            key88cd6 = 0;
+                            key88cd3 = 0;
+                            joy88b40 = 0;
+                            joy88b42 = 0;
+                            joy88b44 = 0;
+                            joy88b46 = 0;
+                            v88cec = 0;
+                            if (sel == 3) {
+                                if (splitscreen) {
+                                    ctl775cc = splitscreen;
+                                    ctl775d8 = v7ee5a;
+                                    ctl77558 = 1;
+                                    ctl775dc = v7ecb4;
+                                } else {
+                                    ctl775d6 = v7ee5a;
+                                    ctl774e4 = 1;
+                                    ctl775da = v7ecb4;
+                                }
+                                save_config(0);
+                                return;
+                            }
+                            w88c98 = 0;
+                        } else {
+                            sel = menu(2, 0, 1, 0);
+                            v7ecc4 = 2;
+                            key88cc3 = 0;
+                            key88ccc = 0;
+                            key88cc4 = 0;
+                            key88cc5 = 0;
+                            key88cc6 = 0;
+                            key88cc7 = 0;
+                            key88cd5 = 0;
+                            key88cdd = 0;
+                            key88cd6 = 0;
+                            key88cd3 = 0;
+                            joy88b40 = 0;
+                            joy88b42 = 0;
+                            joy88b44 = 0;
+                            joy88b46 = 0;
+                            v88ce0 = 0;
+                            v88cdf = 0;
+                            v88cec = 0;
+                        }
+                        sprptr = p6a980;
+                        spr_h = v88c00;
+                        spr_w = v88bee;
+                        pal_a = 0;
+                        spr_x = v88bf0;
+                        sprptr += 0x6400;
+                        spr_y = v88bf2;
+                        f373ee();
+                        f37de0();
+                        if (key88ccd) {
+                            screenshot();
+                            if (key88ccd)
+                                while (key88ccd)
+                                    ;
+                        }
+                        pal_b = 0;
+                        pal_c = 0x3e80;
+                        setpalette();
+                        pal_a = 0x3e80;
+                        if (!v7d998 || v7d998 == 3) {
+                            v7eb54 = p6a980;
+                            f36f55();
+                        }
+                        if (sel == 2)
+                            goto out;
+                        goto restart;
+                    }
+                }
+                for (v88b72 = 0; v88b72 <= 7; v88b72++)
+                    players[v88b72].f1e += placed[v88b72];
+                pal_b = 0;
+                v7ed5c = players[0].f1e;
+                pal_c = 0x3e80;
+                setpalette();
+                pal_a = 0;
+                f37de0();
+                if (key88ccd) {
+                    screenshot();
+                    if (key88ccd)
+                        while (key88ccd)
+                            ;
+                }
+                pal_a = 0x3e80;
+                voices_reset();
+                if (v88bb2 != 4) {
+                    if (v7ec80) {
+                        v88b88 = 5;
+                        v7ec80 = 2;
+                    }
+                    if (v88b88 == 5)
+                        w88c08 = 0;
+                    else
+                        w88c08 = 3;
+                    for (v88b72 = 0; v88b72 <= 0x2ff; v88b72++)
+                        v7d858[v88b72] = p7d718[v88b72];
+                    v7d854 = v7d858;
+                    race_results();
+                    if (v7ec80 == 2)
+                        v7ec80 = 0;
+                    if (!v7ec80)
+                        goto out;
+                    v88b88 = 4;
+                    w88c08 = 3;
+                    return;
+                }
+                if (twoplayer || splitscreen || v7d998 || netvoices)
+                    goto out;
+                v88cec = 0;
+                trial_book(v88bb6 + v7ecb4, v88b88, 1);
+                v88cec = 0;
+                return;
+            }
+        }
+    }
+    if (v7d998) {
+        if (v7d998 == 1) {
+            netkeys_pack();
+            v88cca = v88cf0;
+            fwrite(&v88cca, 1, 1, v7eb68);
+            if (v88cec) {
+                v7d998 = 0;
+                fclose(v7eb68);
+                return;
+            }
+        } else {
+            if (ukey88cd0 == 1) {
+                v7ec68 = 1;
+                return;
+            }
+            go = 0;
+            if (v7d998 == 2) {
+                if (key88cd2 || key88cd3 || v88cce || joy88b40 || key88cdd) {
+                    if (v88c8e < w88c9a) {
+                        go = 1;
+                        v88c8e++;
+                    }
+                }
+                if (key88cdb || key88cd6 || key88cd5) {
+                    if (v88c8e > 1) {
+                        go = 1;
+                        v88c8e--;
+                    }
+                }
+                if (go) {
+                    pcx_load((char *)&rec7c208[v88c8e], 1);
+                    v88b4a = 0;
+                    sel = pal_a;
+                    pal_a = 0x7d00;
+                    p7d714 = p6a97c;
+                    f375cd();
+                    pal_a = sel;
+                }
+            }
+            v88cef = demo7d9a0[v7d994].k;
+            v88cca = v88cef;
+            netkeys_in_x();
+            if (--v7e564 <= 0) {
+                v7d994++;
+                v7e564 = demo7d9a0[v7d994].n;
+            }
+            if (v88cec) {
+                if (v7d998 == 3)
+                    goto out;
+                if (pal_a == 0x3e80)
+                    goto restart;
+                pal_b = 0x3e80;
+                pal_c = 0;
+                setpalette();
+                f37de0();
+                if (key88ccd) {
+                    screenshot();
+                    if (key88ccd)
+                        while (key88ccd)
+                            ;
+                }
+                pal_a = 0x3e80;
+                goto restart;
+            }
+        }
+    }
+    if (!v7d998 && !netgame) {
+        if (v7ee4a && w774e0) {
+            if (key88cd3 && !joy88b44)
+                joy88b44 = 1;
+            if (key88cd6 && !joy88b46)
+                joy88b46 = 1;
+        }
+        if ((twoplayer || (splitscreen && !netgame)) && w774e2 && !cfg7712c) {
+            if (v7ed70 && !key88cc6)
+                key88cc6 = 1;
+            if (v7ed88 && !key88cc7)
+                key88cc7 = 1;
+        }
+    }
+    if (v88cec && !v88c3c && !curkart->f7e && !v88c42 && pal_a == 0x3e80) {
+        w88c08 = 0;
+        pal_b = 0;
+        pal_c = 0x3e80;
+        setpalette();
+        saverace = racetime;
+        v7ec4c = ticks;
+        v7ebac = ticks2;
+        ticks = 0;
+        ticks2 = 0;
+        w88c98 = 0;
+        if (!twoplayer && !netvoices) {
+            strcpy(mnames, " BACK TO RACE  ");
+            if (!netgame && v88bb2 != 4 && !v7edb0 && !v7ec80) {
+                strcpy(mrows[2], " LEAVE RACE    ");
+                strcpy(mrows[3], " SAVE AND QUIT ");
+                w88c98 = 1;
+            } else
+                strcpy(mrows[2], " LEAVE RACE    ");
+        } else {
+            strcpy(mnames, " BACK TO ZONE   ");
+            strcpy(mrows[2], " LEAVE ZONE     ");
+        }
+        if (w88c98)
+            strcpy(mrows[4], " RESTART RACE  ");
+        else
+            strcpy(mrows[3], " RESTART RACE  ");
+        if (!twoplayer && !netvoices) {
+            v88b72 = (curkart->f6c != 1) + 2;
+            if (w88c98) {
+                if (curkart->f6c == 1)
+                    v88b72 = 3;
+                else
+                    v88b72 = 4;
+            }
+        } else
+            v88b72 = 2;
+        sel = menu(v88b72, 0, 1, 0);
+        v7ecc4 = 2;
+        if (netgame && net88c14) {
+            fn_1c068();
+            msgbox("EXCESSIVE ERRORS!", 0);
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks <= 0x12c)
+                ;
+            fn_1c0ac();
+            return;
+        }
+        key88cd5 = 0;
+        key88cdd = 0;
+        key88cd6 = 0;
+        key88cd3 = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+        key88cc3 = 0;
+        key88ccc = 0;
+        key88cc4 = 0;
+        key88cc5 = 0;
+        key88cc6 = 0;
+        key88cc7 = 0;
+        sprptr = p6a980;
+        v88ce0 = 0;
+        spr_h = v88c00;
+        v88cdf = 0;
+        spr_w = v88bee;
+        v88cec = 0;
+        pal_a = 0;
+        spr_x = v88bf0;
+        sprptr += 0x6400;
+        spr_y = v88bf2;
+        f373ee();
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            if (key88ccd)
+                while (key88ccd)
+                    ;
+        }
+        pal_b = 0;
+        pal_c = 0x3e80;
+        setpalette();
+        pal_a = 0x3e80;
+        if (!v7d998 || v7d998 == 3) {
+            v7eb54 = p6a980;
+            f36f55();
+        }
+        if (w88c98) {
+            if (sel == 3) {
+                if (splitscreen) {
+                    ctl775cc = splitscreen;
+                    ctl775d8 = v7ee5a;
+                    ctl77558 = 1;
+                    ctl775dc = v7ecb4;
+                } else {
+                    ctl775d6 = v7ee5a;
+                    ctl774e4 = 1;
+                    ctl775da = v7ecb4;
+                }
+                save_config(0);
+                return;
+            }
+            w88c98 = 0;
+        }
+        if (sel == 2)
+            goto out;
+        if (sel == 3 || sel == 4) {
+            if (!twoplayer && !splitscreen && !netvoices)
+                curkart->f6c--;
+            f29e0c();
+            if (!curkart->f6c)
+                goto out;
+            goto restart;
+        }
+        ticks = v7ec4c;
+        ticks2 = v7ebac;
+        racetime = saverace;
+        engine_start();
+    }
+    kart_buttons();
+    kart_frame();
+    players[0].x = v88b68;
+    players[0].y = v88b6a;
+    players[0].pos = curpos;
+    kart_fire();
+    if (twoplayer || splitscreen) {
+        view2_in();
+        v88ce0 = v88cdf;
+        key88cd5 = key88cc3;
+        key88cdd = key88ccc;
+        joy88b40 = (unsigned char)key88cc4;
+        joy88b42 = (unsigned char)key88cc5;
+        joy88b44 = (unsigned char)key88cc6;
+        joy88b46 = (unsigned char)key88cc7;
+        kart_buttons();
+        kart_frame();
+        players[1].x = v88b68;
+        players[1].y = v88b6a;
+        view2_save();
+        kart_fire();
+        view2_out();
+        if (splitscreen && v88c44 == 2) {
+            cpu_drive();
+            car_laps();
+        }
+    } else if (v88c44 == 2) {
+        cpu_drive();
+        if (!netvoices)
+            car_laps();
+    }
+    shots_move();
+    goto loop;
+out:
+    ;
+}
+
+/* ---- 0x327b4, 41 bytes (no caller found): resets four scale constants of the asm renderer
+ * (0x80, 0x80, 0x1000, 0x1000). */
+extern int v7d648, v7d644, v7d664, v7d634;
+
+void render_scales(void)
+{
+    v7d648 = 0x80;
+    v7d644 = 0x80;
+    v7d664 = 0x1000;
+    v7d634 = 0x1000;
 }
 
