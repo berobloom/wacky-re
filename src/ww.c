@@ -13976,3 +13976,110 @@ void duck_screen(int after)
     v88b9e = 0;
 }
 
+/* ---- 0x2bbd8, 1045 bytes: the two-player overall winner on ORDER.PCX (caller 0x31468 in
+ * 0x30aae): the scores cars[0/1].fc0 capped at hits_target; the higher one (myplayer for car 0,
+ * v88c6a for car 1) IS THE OVERALL WINNER! with the face, or YOU HAVE BOTH DRAWN! with both.
+ * PRESS FIRE (the net second player waits for player one); in a net game the fire is
+ * exchanged with net_key (player one sends 1), EXCESSIVE ERRORS! on failure. */
+void overall_winner(void)
+{
+    char buf[0x50];
+    int i, w, t;
+
+    if (cursong != v7c658)
+        music_start(v7c658, 1);
+    v7ecc4 = 0;
+    v7ed20 = 0x440;
+    v7ed1c = 0x2a8;
+    pcx_load("ORDER.PCX", 0);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    v88b4a = 0;
+    pal_a = 0;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = 0;
+    for (i = 0; i < 2; i++) {
+        if (cars[i].fc0 > hits_target)
+            cars[i].fc0 = hits_target;
+    }
+    if (cars[0].fc0 == cars[1].fc0)
+        w = 0xff;
+    else if (cars[0].fc0 > cars[1].fc0)
+        w = myplayer;
+    else
+        w = v88c6a;
+    if (w == 0xff)
+        strcpy(buf, "YOU HAVE BOTH DRAWN!");
+    else {
+        strcpy(buf, pnames[w]);
+        strcat(buf, " IS THE OVERALL WINNER!");
+    }
+    print_at((short)((0x140 - (int)strlen(buf) * 8) / 2), 0x36, buf, 0);
+    if (w == 0xff) {
+        spr_y = 0x56;
+        spr_h = 0x26;
+        spr_w = 0x1c;
+        sprptr = faces[myplayer].img[0];
+        spr_x = 0x78;
+        drawsprite();
+        sprptr = faces[v88c6a].img[0];
+        spr_x += 0x28;
+        drawsprite();
+    } else {
+        spr_y = 0x56;
+        spr_h = 0x26;
+        spr_w = 0x1c;
+        sprptr = faces[w].img[0];
+        spr_x = 0x8d;
+        drawsprite();
+    }
+    strcpy(buf, "PRESS FIRE");
+    if (netgame && netgame != 1)
+        strcpy(buf, "WAITING FOR PLAYER ONE TO PRESS FIRE");
+    print_at((short)((0x140 - (int)strlen(buf) * 8) / 2), 0xb4, buf, 0);
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    f32cf8(v7d854 = v7d85c);
+    if (netgame) {
+        v7ed20 = 0xaa0;
+        v7ed1c = 0x2a8;
+        key88cd5 = 0;
+        key88cdd = 0;
+        key88cd6 = 0;
+        key88cd3 = 0;
+        joy88b40 = 0;
+        joy88b42 = 0;
+        joy88b44 = 0;
+        joy88b46 = 0;
+        if (netgame == 1)
+            wait_input(0);
+        v88cf3 = 0;
+        v88cf0 = 0;
+        if (netgame == 1)
+            v88cf0 = 1;
+        net88c14 = net_key(v88cf0, v88cf3, 0);
+        t = ticks;
+        while (ticks - t < 0x2c)
+            ;
+        if (net88c14) {
+            fn_1c068();
+            msgbox("EXCESSIVE ERRORS!", 0);
+            ticks = 0;
+            ticks2 = 0;
+            while (ticks <= 0x12c)
+                ;
+            fn_1c0ac();
+        }
+    } else
+        wait_input(0);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+}
+
