@@ -7916,3 +7916,39 @@ void main_menu_names(void)
     v88bb0 = 1;                       /* 0x1f812, inside the last copy's unit */
     strcpy(&mnames[0x1e0], " LEAVE GAME           ");
 }
+
+/* differs: near miss, 208 of 222 bytes. The game recomputes `imul ebp, edi, 0x28` at each match and
+ * keeps only i (EDI); ours strength-reduces i*40 into an EBP pointer stepped by 40 in the outer loop,
+ * which shifts every register after it (QUESTIONS 2, the same as fn_16f90 (b)). Eleven forms tried
+ * (direct indexing, char-pointer arithmetic, goto, while, static i, declaration orders): none keeps the
+ * imul; this pointer form is the closest (31 scored vs 37). */
+/* ---- 0x21310, 221 bytes: loads the sprites the level's entities use (callers 0x21504, 0x2152c in
+ * ents_load 0x21490). For each SPRITE.ATR record i that some ents[j].id names, w*h*nframes bytes are
+ * read from the DAT entry named at +0x10 into the running buffer v7eb4c (from v7eb20), and the first
+ * kind-2 record (+0) is remembered in v7eda4. */
+extern char *v7eb20, *v7eb4c;
+extern int v7eda4;
+
+void ent_sprites_load(void)
+{
+    int i, j, size;
+    struct attr *a;
+
+    v7eda4 = -1;
+    v7eb4c = v7eb20;
+    for (i = 0; i < nsprattr; i++) {
+        for (j = 0; j < nents; j++) {
+            if (ents[j].id == i) {
+                a = (struct attr *)sprattr + i;
+                size = a->w * a->h * a->nframes;
+                a->data = v7eb4c;
+                datfind(a->f10);
+                fread(a->data, size, 1, datfile);
+                if (*(short *)a->f00 == 2 && v7eda4 == -1)
+                    v7eda4 = i;
+                v7eb4c += size;
+                break;
+            }
+        }
+    }
+}

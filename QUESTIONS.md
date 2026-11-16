@@ -85,6 +85,9 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    (0x19f22 `mov edx,4`, 0x19f43 `mov edx,5`, 0x19f75 `movsx eax,dx`); the same variable assigned at
    its use gets ECX, and `menu(nrows,0,0,0)`'s `xor ebx/xor ecx/xor edx` order changes with it.
    Declaration order, `unsigned short` and `register` do nothing there.
+   Data point (ent_sprites_load 0x21310): the game recomputes `imul ebp,edi,0x28` for `sprattr[i]` inside
+   the inner loop; ours strength-reduces it to an EBP pointer stepped in the outer loop. Eleven C forms
+   tried, none keeps the imul. Same kind as fn_16f90 (b): is the game built without loop SR here?
 3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
    `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
    and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;
