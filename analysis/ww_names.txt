@@ -191,6 +191,7 @@
 0x034458 release_check # CONFIRMED (rebuild src/ww.c): 42.GAM / 20.GAM decide v7eca0 3/2/1 (v7e574 shareware); CHECK.PCX with release text, copyright, PRESS FIRE; waits for fire
 0x0347b4 tiles_setup  # CONFIRMED (rebuild src/ww.c): draws the 10x6 32x32 tiles of v7d75c, fills the 128x128 pointer map v7d6a4 with them repeated
 0x0348f4 intro        # CONFIRMED (rebuild src/ww.c): APOGEE song, TABLES.DAT, APOG1 fly-over with the falling logo, BEAVIS.PCX, WINTRO karts; skipped with v7ecbc
+0x0352dc vga_check    # CONFIRMED (rebuild src/ww.c): int 10h mode 3, then AX 0x1a00; returns AL == 0x1a (VGA present)
 0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
 0x042c4d getch        # CONFIRMED: clib (libmatch)

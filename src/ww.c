@@ -18468,3 +18468,18 @@ out:
     pal_6bit_x((unsigned char *)pal);
 }
 
+/* ---- 0x352dc, 69 bytes (missing from the start list; caller see names file): sets text mode 3
+ * (int 10h AX 3), then asks for the display combination code (AX 0x1a00); returns 1 when the BIOS
+ * answers AL 0x1a, i.e. a VGA BIOS is present. */
+int vga_check(void)
+{
+    union REGS m, r;
+
+    m.h.ah = 0;
+    m.h.al = 3;
+    int386(0x10, &m, &m);
+    r.w.ax = 0x1a00;
+    int386(0x10, &r, &r);
+    return r.h.al == 0x1a;
+}
+
