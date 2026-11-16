@@ -1388,11 +1388,14 @@ struct kart {                   /* karts[] 0x68410, 0x104 bytes: the same record
     int f36;
     short f3a, f3c, f3e, f40;   /* 0x3A-0x40: charge threshold, phase, doubled threshold, countdown */
     short f42, f44;
-    char f46[0x4e - 0x46];
+    short f46, f48;             /* 0x46: spark kind by side (kart_bump) */
+    char *f4a;                  /* 0x4A: sparkdata (kart_bump) */
     int *f4e;                   /* 0x4E: &tb7b448[f1a][player] (shot_hit) */
     char f52[0x5a - 0x52];
     short f5a;
-    char f5c[0x7c - 0x5c];
+    char f5c[0x6a - 0x5c];
+    short f6a;                  /* 0x6A: counts up by 4 per pickup, at most 99 (kart_bump) */
+    char f6c[0x7c - 0x6c];
     short f7c;                  /* 0x7C: set to 1 on touching an entity or another player (kart_hit) */
     short f7e;                  /* 0x7E: set by a shot hit in a human-player race (shot_hit) */
     char f80[0x8a - 0x80];
@@ -1455,8 +1458,10 @@ struct player {                 /* 0x68 bytes; base 0x6AA90 (CONFIRMED by menu s
     short f1c, f1e;
     unsigned short place;       /* 0x20 */
     short lap, cell, face;      /* 0x22, 0x24, 0x26 */
-    short f28[8];               /* 0x28-0x37 */
-    short f38[10];              /* 0x38: per-player values, [v88b7e] (shot_hit) */
+    short f28[2], f2c[2], f30[2], f34[2];   /* 0x28-0x37: per viewing player [v88b7e] (kart_bump) */
+    short f38[2];               /* 0x38: per-player values, [v88b7e] (shot_hit) */
+    int f3c[2];                 /* 0x3C: ticks2 stamps (kart_bump) */
+    char f44[0x4c - 0x44];
     int f4c;                    /* 0x4C: ticks2 stamp of f58 (shot_hit) */
     int pos;                    /* 0x50 */
     short f54, f56, f58, f5a, f5c;
@@ -8874,6 +8879,309 @@ void kart_state(void)
             v88b92 = 0;
             curkart->f4e = &tb7b448[curkart->f1a][v88b7e];
             curkart->f32 = ticks2;
+        }
+    }
+}
+
+/* ---- 0x22bf4, 2993 bytes: the viewing kart against the other records of arr79a28 (0x28 bytes each,
+ * p7d86c from [1], v88b78 of them; caller 0x25486 in 0x253d8). v88c12 = the first record with
+ * f24 == 0 (the viewing kart's own). Each other record gets its side f1e (1 ahead, 2 behind, 3 level)
+ * and lane f20 (3 within 4, 4 left, 5 right); for a kart record (f24 > 0) the driver's horn/voice and
+ * per-viewer state f28-f34 run, and a touch (f1c with curkart->f7c) on an entity record (f24 == -1)
+ * picks it up, a bump (f24 > 0) can knock karts out; then sparks (f46-f4a) and voice 0x15/0x16.
+ * The compiler keeps v88c9e and spr_y in CX/SI for the whole function, writing them back before calls.
+ * The soundon/FX_StopSound blocks are engine_stop() inlined (index loaded before the soundon test).
+ * differs (near-miss, 605 vs 604 insns, 31 diff blocks, most register/slot): (a) stack slots: the
+ * game puts n at [esp+8], lo at [esp+4], m at [esp]; ours swaps n/sx/lo (21 orders of the decl list
+ * and the oy/ox statements tried, B04 best); (b) oy is computed in DI with `add di,[eax+6]` in the
+ * game, through EDX/EBX in ours; (c) index forms `[edx+eax*2+@]` vs `[eax+edx*2+@]` flip by site;
+ * (d) the tb7b418 store/f0c load order at 0x230d0 (chained, pointer-temp and m-placement variants were
+ * all worse: 33-35 blocks); (e) `sub ebx,[edx+0x3c]` folded in ours, loaded first in the game. */
+struct crec {
+    short f00, f02, f04, f06;
+    char f08[0x0c - 0x08];
+    int f0c;
+    char f10[0x18 - 0x10];
+    short f18, f1a, f1c, f1e, f20, f22, f24;
+    char f26[0x28 - 0x26];
+};
+struct sndrec18 { int n; char f04[0x18 - 4]; };
+struct sndrec10 { int n; char f04[0x10 - 4]; };
+#define CR ((struct crec *)p7d86c)
+extern struct crec crecs[];
+#pragma aux crecs "_arr79a28"
+extern short v88c12, v88c3c, v88bf6, v88c8c, v88c42, v88c32, v88c1a, v88bfc, v88bfe, v88c9e;
+extern struct sndrec18 s7a9dc[];
+extern struct sndrec10 s7b100[];
+extern int tb7b418[][2];
+extern short tb80ae8[];
+
+void kart_bump(void)
+{
+    short n, i, sy, sx, ox, oy, hi, lo, hit, k, pk;
+    int a, m;
+
+    p7d86c = arr79a28 + 0x28;
+    v88bf6 = 0;
+    v88c12 = 0;
+    for (i = 1; i <= v88b78; i++) {
+        if (CR->f24 == 0) {
+            sy = CR->f02 - 1 + CR->f06;
+            sx = (CR->f00 >> 1) - 1 + CR->f04;
+            v88c12 = i;
+            break;
+        }
+        p7d86c += 0x28;
+    }
+    if (curkart->f7e != 0 || v88c3c != 0)
+        return;
+    p7d86c = arr79a28 + 0x28;
+    for (n = 1; n <= v88b78; n++, p7d86c += 0x28) {
+        if (n == v88c12)
+            continue;
+        oy = CR->f02 - 1 + CR->f06;
+        ox = (CR->f00 >> 1) - 1 + CR->f04;
+        if (oy > sy)
+            CR->f1e = 2;
+        else if (oy == sy)
+            CR->f1e = 3;
+        else
+            CR->f1e = 1;
+        if (ox >= sx - 4 && ox <= sx + 4)
+            CR->f20 = 3;
+        else if (ox > sx)
+            CR->f20 = 5;
+        else
+            CR->f20 = 4;
+        if (CR->f24 > 0) {
+            v7d800 = &players[CR->f18];
+            if (v7d800->f30[v88b7e] != 0 && CR->f1a <= 2 && v7d800->f58 == 0 && v7d800->f5c == 0
+                && curkart->f7e == 0 && v7d800->f02 != 2 && (CR->f1e == 3 || CR->f1e == 1)) {
+                if (v88c44 == 2) {
+                    if (netvoices) {
+                        voice_check(v7d800->face);
+                        if (voicebusy == 0)
+                            voice_play(v7d800->face);
+                    } else {
+                        voice_check(v7d800->face);
+                        if (voicebusy == 0) {
+                            if (s7a9dc[v7d800->face].n >= 4) {
+                                voicebusy = sfx_busy(v7d800->face);
+                                if (voicebusy == 0) {
+                                    sfx_play(v7d800->face);
+                                    if (s7b100[v7d800->face].n > 1) {
+                                        s7b100[v7d800->face].n = 0;
+                                        s7a9dc[v7d800->face].n = 0;
+                                    }
+                                }
+                            } else
+                                voice_play(v7d800->face);
+                        }
+                    }
+                }
+                v7d800->f30[v88b7e] = 0;
+                if (netvoices == 0)
+                    v7d800->f28[v88b7e] = 1;
+                if (CR->f20 == 4) {
+                    v7d800->f2c[v88b7e] = 5;
+                    v7d800->f34[v88b7e] = 2;
+                } else {
+                    v7d800->f2c[v88b7e] = 4;
+                    v7d800->f34[v88b7e] = 0;
+                }
+            }
+            if (curkart->f00 == 0 && curkart->f44 == 0 && (CR->f1e == 3 || CR->f1e == 2)) {
+                if (netvoices) {
+                    voice_check(8);
+                    if (voicebusy == 0 && v88c44 == 2)
+                        voice_play(8);
+                } else if (v88c44 == 2) {
+                    voice_check(8);
+                    if (voicebusy == 0)
+                        voice_play(8);
+                    if (s7a9dc[8].n > 4) {
+                        voicebusy = sfx_busy(players[v88b7e].face);
+                        if (voicebusy == 0) {
+                            sfx_play(players[v88b7e].face);
+                            if (s7b100[players[v88b7e].face].n > 3) {
+                                s7a9dc[8].n = 0;
+                                s7b100[players[v88b7e].face].n = 0;
+                            }
+                        }
+                    }
+                }
+                if (curkart->f0a == 0) {
+                    curkart->f32 = ticks2;
+                    curkart->f00 = 1;
+                    if (CR->f20 == 4 || CR->f20 == 3) {
+                        curkart->f18 = 6;
+                        curkart->f1a = 1;
+                    } else {
+                        curkart->f18 = 7;
+                        curkart->f1a = 3;
+                    }
+                    curkart->f4e = &tb7b418[curkart->f1a][v88b7e];
+                    crecs[v88c12].f0c = *curkart->f4e;
+                }
+            }
+            if (v7d800->f28[v88b7e] != 0) {
+                m = v88b7e;
+                if (v7d800->f2c[m] == 4) {
+                    hi = 1;
+                    lo = 0;
+                } else {
+                    hi = 3;
+                    lo = 2;
+                }
+                CR->f0c = (int)faces[v7d800->face].img[8 + v7d800->f34[m]];
+                switch (v7d800->f28[m]) {
+                case 1:
+                    v7d800->f34[m] += 1;
+                    if (v7d800->f34[m] == hi) {
+                        v7d800->f28[m] = 2;
+                        v7d800->f3c[m] = ticks2;
+                    }
+                    break;
+                case 2:
+                    if (ticks2 - v7d800->f3c[m] >= 3)
+                        v7d800->f28[m] = 3;
+                    break;
+                case 3:
+                    v7d800->f34[m]--;
+                    if (v7d800->f34[m] < lo)
+                        v7d800->f28[m] = 0;
+                    break;
+                }
+            }
+        }
+        if (CR->f1c == 0 || curkart->f7c == 0)
+            continue;
+        hit = 1;
+        if (CR->f24 == -1) {
+            v7d7f4 = &ents[CR->f22];
+            k = ((struct attr *)sprattr)[v7d7f4->id].kind;
+            if (k > 0) {
+                if (k != 1) {
+                    if (curkart->f6a < 0x63) {
+                        pk = 0;
+                        if (curkart->f16 == 0 || k == 2)
+                            pk = 1;
+                        if (pk) {
+                            voice_play(myplayer);
+                            hit = 0;
+                            v7d7f4->f2 = -1;
+                            if (k != 2)
+                                curkart->f16 = k;
+                            else {
+                                curkart->f6a += 4;
+                                if (curkart->f6a > 0x63)
+                                    curkart->f6a = 0x63;
+                            }
+                        }
+                    }
+                } else if (v88c8c == 0 && splitscreen == 0) {
+                    voice_play(0x16);
+                    hit = 0;
+                    v7d7f4->f2 = -1;
+                    v88c8c = -1;
+                    spr_y = CR->f06;
+                    for (v88c9e = 0; v88c9e <= 2; v88c9e++) {
+                        tb80ae8[v88c9e] = spr_y;
+                        spr_y += 0xb;
+                    }
+                    v88c9e = 0;
+                }
+            } else if (curkart->f7e == 0 && curkart->f0a == 0 && curkart->f44 == 0 && twoplayer == 0
+                       && splitscreen == 0 && netvoices == 0 && v7edb0 == 0 && curkart->f42 >= 100
+                       && CR->f20 == 3) {
+                voice_play(0xd);
+                engine_stop(v88b7e);
+                curkart->f7e = 1;
+                curkart->f20 = 0;
+                curkart->f3c = 0;
+                curkart->f18 = 0;
+                curkart->f42 = 0;
+                curkart->f44 = 0;
+                v88c42 = 1;
+                v88c32 = 0;
+                v88c1a = crecs[v88c12].f06;
+            }
+        }
+        if (hit == 0)
+            continue;
+        v88bf4 = 1;
+        if (CR->f24 > 0) {
+            v88bf6 = 1;
+            if (curkart->f42 >= 100 && curkart->f7e == 0) {
+                a = 1;
+                if ((twoplayer || splitscreen) && CR->f18 > 1)
+                    a = 0;
+                if (netvoices || v7edb0)
+                    a = 0;
+                if (a) {
+                    if (v7d800->f38[v88b7e] == 0 || v7d800->f38[v88b7e] == 1 || v7d800->f38[v88b7e] == 7)
+                        a = 1;
+                    else
+                        a = 0;
+                }
+                if (a && curkart->f44 == 0 && curkart->f0a == 0) {
+                    voice_play(0xd);
+                    v7d800->f56 = 0;
+                    v7d800->f02 = 2;
+                    v7d800->f58 = 0;
+                    curkart->f20 = 0;
+                    curkart->f3c = 0;
+                    curkart->f18 = 0;
+                    curkart->f42 = 0;
+                    curkart->f7e = 1;
+                    engine_stop(v88b7e);
+                    if (twoplayer == 0 && splitscreen == 0 && netvoices == 0) {
+                        v88c42 = 1;
+                        v88c32 = 0;
+                        v88c1a = crecs[v88c12].f06;
+                    } else {
+                        for (k = 0; k <= 1; k++) {
+                            engine_stop(k);
+                            karts[k].f7e = 1;
+                            karts[k].f20 = 0;
+                            karts[k].f3c = 0;
+                            karts[k].f18 = 0;
+                            karts[k].f42 = 0;
+                            karts[k].f44 = 0;
+                            players[k].f56 = 0;
+                            players[k].f02 = 2;
+                            players[k].f58 = 0;
+                        }
+                    }
+                }
+            }
+        }
+        if (curkart->f3c != 0) {
+            curkart->f3c = 0;
+            curkart->f42 = 0;
+        }
+        if (curkart->f20 != 0) {
+            curkart->f20 = 0;
+            curkart->f42 = 0;
+        }
+        if (v88bf6 != 0)
+            voice_play(0x16);
+        else
+            voice_play(0x15);
+        curkart->f4a = sparkdata;
+        curkart->f48 = 0;
+        v88bfc = CR->f1e;
+        v88bfe = CR->f20;
+        switch (CR->f20) {
+        case 3:
+            curkart->f46 = 3;
+            break;
+        case 4:
+            curkart->f46 = 3;
+            break;
+        case 5:
+            curkart->f46 = 4;
+            break;
         }
     }
 }

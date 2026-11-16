@@ -717,6 +717,12 @@
 0x088c44 v88c44       # SPECULATIVE: short, kart_state runs only when 2 (race phase?)
 0x088b8c v88b8c       # SPECULATIVE: short, side flag selecting v88b92 (kart_state)
 0x088b98 v88b98       # SPECULATIVE: short, side flag selecting v88b90 (kart_state)
+0x022bf4 kart_bump    # CONFIRMED (rebuild src/ww.c): the viewing kart against the other arr79a28 records - side/lane, horn, entity pickups, knock-outs, sparks; caller 0x25486
+0x07a9dc s7a9dc       # SPECULATIVE: 0x18-byte sound records by face, int count first (kart_bump)
+0x07b100 s7b100       # SPECULATIVE: 0x10-byte sound records by face, int count first (kart_bump)
+0x07b418 tb7b418      # SPECULATIVE: int[][2], bump animation table (kart_bump)
+0x080ae8 tb80ae8      # SPECULATIVE: short[3], three y values 11 apart set on a kind-1 pickup (kart_bump)
+0x088c12 v88c12       # STRONGLY SUPPORTED: short, index of the viewing kart's own arr79a28 record (kart_bump)
 0x01dac0 fn_1dac0       # CONFIRMED (rebuild src/ww.c): zeroes tbl68426[i].f54 and .f00 for i = 0,1; no caller in the image (dead), the same loop is inline in fn_1832c
 0x03542c fn_3542c       # SPECULATIVE: builds a file name (strcpy of the string at 0x7c158, itoa(arg1), strcat "WACKY" 0x61f9c); called with v7ee5a from scores_screen 0x1d0d0
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
