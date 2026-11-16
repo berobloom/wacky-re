@@ -339,6 +339,7 @@
 0x02717c gam_load     # CONFIRMED (rebuild src/ww.c): reads the track .GAM text (names, start point, start orders); caller 0x27c01
 0x0274a4 ytab_init    # CONFIRMED (rebuild src/ww.c): tb6bd00[i] = ground screen row at distance i; caller 0x3677a
 0x02754c effects_load # CONFIRMED (rebuild src/ww.c): surface animations of the track from EFFECTS.SP into v7d80c, shared by offset; caller 0x17d6f
+0x0277b8 track_pics_load # CONFIRMED (rebuild src/ww.c): pcx_load of the four .GAM pictures, copied by asm 0x376d7 into v7d75c; caller 0x27f18
 0x027028 flength      # CONFIRMED (rebuild src/ww.c): ftell/fseek(END)/ftell/fseek - file length; inlined in file_pal
 0x0266a8 lights_project # CONFIRMED code, LIKELY meaning (rebuild src/ww.c): start-lights countdown (v88c44 1 -> 2, frame v88c5e) and projection; callers frame_draw 0x134fa, 0x13603
 0x02632c shots_project # CONFIRMED (rebuild src/ww.c): projects the active shots into the view and appends sprite records; callers frame_draw 0x134ff, 0x13608
@@ -578,7 +579,7 @@
 0x088b1e w88b1e       # LIKELY: short, the sound-card/sprite index the menus show (v88c96-1, card+4)
 0x088c58 v88c58       # LIKELY: short, set to 1 by both bonus menus
 0x026ec4 pal_6bit     # CONFIRMED (rebuild src/ww.c): 0x300 palette bytes >> 2 in place; callers 0x18537, 0x194e7, 0x27c46
-0x0278c4 f278c4       # SPECULATIVE: called with 0 after f32cf8 in both bonus menus
+0x0278c4 wait_release # CONFIRMED (rebuild src/ww.c): (short flag) waits until no key/joy flag is held; flag lets key88cd0 end it
 0x037cf1 f37cf1       # SPECULATIVE: called after each fn_182d0 palette flash (refreshes the palette)
 0x0377ae f377ae       # SPECULATIVE: called after ctl_setup(0) in the menu loops
 0x02da28 f2da28       # SPECULATIVE: netgame==1 menu branch, before net_key
@@ -644,7 +645,7 @@
 0x077128 cfg77128w          # CONFIRMED: 16-bit compare of cfg77128+0 in fn_1c0f4 0x1c18d (with v7ee4a -> vals[0])
 0x07712a cfg7712a           # CONFIRMED: fn_1c0f4 0x1c1d3 (player 2 device, -> vals[1])
 0x088bda v88bda             # short; set to 1 by fn_1c968 0x1c98a; menu()'s 2nd argument in trial_records_menu 0x1d662 (0 first draw, 1 after a track screen 0x1d6dd) - LIKELY "screen already up, no fade"
-0x027920 f27920             # SPECULATIVE: called with 0 right after f278c4(0) in fn_1c0f4 0x1c7ea/0x1c801
+0x027920 wait_input   # CONFIRMED (rebuild src/ww.c): (short mode) waits for a key/joy flag; 1 for key88cd0 with mode; mode 2 times out after 0x440 ticks
 0x088ce9 v88ce9             # char; set to 0x2c by fn_1c0f4 0x1c14b next to v88ce8 (0x26) - f371e4 box colours
 0x01cb44 enter_name       # CONFIRMED (rebuild src/ww.c: 718 bytes at 0x1cb44, 21 aligned instruction diffs, all stack slots - QUESTIONS 9): the "PLEASE ENTER NAME.." name-entry screen; arg1 = the name buffer, arg2 = the centred heading (0x600ac empty at 0x1ce78), arg3 = the last index a character may go at (0xb at 0x1ce3f); caret sprite gn7eb2c at x 0xaa+8i y 0x5b; DOS 2509h restores the keyboard vector at 0x1cc2f-0x1cc5b; callers 0x1ce78, 0x2b6d7, 0x2e769
 0x060d8c (name entry strings) # CONFIRMED: "PLEASE ENTER NAME.." 0x60d8c (20 bytes), 16 spaces 0x60da0, 12 spaces 0x60db4 - the pads enter_name copies into its arg1 (0x1cbbf, 0x1cc81, 0x1cc8d)

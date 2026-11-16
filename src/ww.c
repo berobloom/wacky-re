@@ -4458,7 +4458,7 @@ extern char p6aaae[];
 extern int v684e0, v685e4;
 extern char str7c854[], str7c890[], str7c8cc[];
 void pal_6bit(unsigned char *p);
-void f278c4(int a);
+void wait_release(short flag);
 void f37cf1(void);
 void f2e4b8(int a, int b, int c);
 
@@ -4542,7 +4542,7 @@ retry:
     for (i = 5; i <= 9; i++)
         fn_182d0(pal, i, 1, 0, (int)gp);
     f32cf8(pal);
-    f278c4(0);
+    wait_release(0);
     if (v88bb2 == 4 && v7ecf0 != -1) {
         v88b88 = (short)v7ecf0;
         palptr = pal;
@@ -4786,7 +4786,7 @@ joyopen:
     fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
     w88b10 = 1;
     f37cf1();
-    f278c4(0);
+    wait_release(0);
 joyloop:
     ticks = 0;
     v7ecf0 = v88b88;
@@ -4965,7 +4965,7 @@ void fn_193a8(void)
     fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
     f32cf8(pal);
     flash = 0;
-    f278c4(0);
+    wait_release(0);
     v88b9e = 0;
     ticks = 0;
     ticks2 = 0;
@@ -6365,7 +6365,7 @@ void fn_1cad0(int which, int rec)       /* arg1 = eax, arg2 = edx */
  * fresh ticks in EDX (0x1c821-0x1c831). */
 extern char ctl_names77432[];           /* 0x77432, inside cfg77128 (0x77128 + 0x30a) */
 extern short cfg77128w, cfg7712a;       /* 0x77128, 0x7712a: shorts inside cfg77128 */
-void f27920(int a);                     /* 0x27920: called with 0 wherever f278c4 is */
+int wait_input(short mode);                     /* 0x27920: called with 0 wherever f278c4 is */
 
 void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
 {
@@ -6485,13 +6485,13 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
     }
     while (key88cd0 == 0x3b)                            /* 0x1c7ce: wait for F1 to come up */
         ;
-    f278c4(0);                                          /* 0x1c7d9 */
+    wait_release(0);                                          /* 0x1c7d9 */
     if (netgame == 0) {
-        f27920(0);                                      /* 0x1c7ea */
+        wait_input(0);                                      /* 0x1c7ea */
     } else {
         v88cf0 = 0;                                     /* 0x1c7f1 */
         v88cf3 = 0;
-        f27920(0);                                      /* 0x1c801 */
+        wait_input(0);                                      /* 0x1c801 */
         net88c14 = net_key(v88cf0, v88cf3, 0);          /* 0x1c816-0x1c81f */
         t = ticks;                                      /* 0x1c821 */
         while (ticks - t < 60)
@@ -6599,7 +6599,7 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
     else
         pal_a = 0;
     f32cf8(v7d85c);                                 /* 0x1cc1f */
-    f278c4(0);                                      /* 0x1cc2a */
+    wait_release(0);                                      /* 0x1cc2a */
     r.x.edx = oldkbd_off;                           /* 0x1cc38 */
     r.x.eax = 0x2509;                               /* 0x1cc42 */
     s.ds = oldkbd_seg;                              /* 0x1cc4a */
@@ -6956,7 +6956,7 @@ void fn_1d704(short which, int row)
         pal_a = 0x3e80;
     else
         pal_a = 0;
-    f278c4(0);                                /* 0x1d7b0 */
+    wait_release(0);                                /* 0x1d7b0 */
     pal_b = 0x7d00;
     pal_c = pal_a;
     setpalette();                             /* 0x1d7d1 */
@@ -7015,12 +7015,12 @@ void fn_1d704(short which, int row)
         while (key88ccd)
             ;
     }
-    f27920(1);                                /* 0x1da77 */
+    wait_input(1);                             /* 0x1da77 */
     if (pal_a == 0)
         pal_a = 0x3e80;
     else
         pal_a = 0;
-    f278c4(0);                                /* 0x1da9c */
+    wait_release(0);                                /* 0x1da9c */
     while (key88cd0 == 1)                     /* 0x1daa1 */
         ;
 }
@@ -11917,4 +11917,92 @@ void effects_load(void)
 }
 #define seekdat seekdat_x
 #define readdat readdat_x
+
+/* ---- 0x277b8, 266 bytes: loads the track's pictures (caller 0x27f18 in 0x279e8): for each of the
+ * two gam7eabc / gam7eaa0 names, pcx_load into screen 2 and the asm 0x376d7 copies it (p6a978 ->
+ * v7d99c, p6a980 -> p7d714) to v7eb58, which steps through v7d75c by a quarter of v7d604, the second
+ * set starting half of v7d604 further on.
+ * differs (near-miss, 84 vs 83 insns, 2 real blocks): b = v7d75c + 2q - the game loads v7d75c into
+ * ECX, doubles q with `add eax,eax`, copies ECX to EBX (a) and adds; ours `lea ecx,[eax+eax]` and
+ * loads into EBX. Tried six orders/forms of the a/b setup and three declaration orders. */
+extern char *v7eb58, *v7d99c, *v7d75c;
+extern int v7d604;
+void f376d7(void);
+
+void track_pics_load(void)
+{
+    char tmp[16];
+    int q;
+    short i;
+    char *a, *b;
+
+    q = v7d604 / 4;
+    a = v7d75c;
+    b = v7d75c + q * 2;
+    for (i = 0; i <= 1; i++) {
+        strcpy(tmp, gam7eabc[i]);
+        pcx_load(tmp, 2);
+        v7eb58 = a;
+        p7d714 = p6a980;
+        v7d99c = p6a978;
+        f376d7();
+        strcpy(tmp, gam7eaa0[i]);
+        pcx_load(tmp, 2);
+        v7d99c = p6a978;
+        v7eb58 = b;
+        p7d714 = p6a980;
+        f376d7();
+        if (i != 1) {
+            a += q;
+            b += q;
+        }
+    }
+}
+
+/* ---- 0x278c4, 91 bytes: waits until no input is held - keyboard (v88cce sets joy88b40) and the four
+ * joy88b4x flags, polled through f377ae; with flag, the abort key (key88cd0 == 1) ends it early
+ * (callers 0x18767, 0x18e99, 0x195c0, 0x1c7d9, 0x1cc2a). */
+void wait_release(short flag)
+{
+    for (;;) {
+        if (flag && key88cd0 == 1)
+            return;
+        v7d8a4 = v7d8ac;
+        f377ae();
+        if (v88cce)
+            joy88b40 = 1;
+        if (joy88b40 == 0 && joy88b42 == 0 && joy88b44 == 0 && joy88b46 == 0)
+            return;
+    }
+}
+
+/* ---- 0x27920, 200 bytes: waits for an input; 1 for the abort key (with mode), else 0 on any key
+ * or joy88b4x flag or, in mode 2, after 0x440 ticks; the screenshot key is served while waiting
+ * (callers 0x17f24, 0x17fa0, 0x1c7ea, 0x1c801, 0x1da77). */
+int wait_input(short mode)
+{
+    joy88b40 = 0;
+    joy88b42 = 0;
+    joy88b44 = 0;
+    joy88b46 = 0;
+    if (mode == 2)
+        ticks = 0;
+    for (;;) {
+        v7d8a4 = v7d8ac;
+        f377ae();
+        if (mode == 2 && ticks >= 0x440)
+            return 0;
+        if (mode && key88cd0 == 1)
+            return 1;
+        if (v88cce)
+            return 0;
+        if (key88ccd) {
+            screenshot();
+            while (key88ccd)
+                ;
+        }
+        if (joy88b40 || joy88b42 || joy88b44 || joy88b46)
+            return 0;
+    }
+}
 
