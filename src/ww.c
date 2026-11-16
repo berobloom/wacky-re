@@ -14589,3 +14589,46 @@ done:
     pal_a = 0x3e80;
 }
 
+/* ---- 0x2d264, 406 bytes: the result message (caller 0x31896 in 0x30aae) into str6aa18 with
+ * v88c48 set and centred at v88b66 (8 px per character): in time trial (v88bb2 4) TIMES HAVE
+ * BEEN RECORDED, else by the place of player v88b7e the line of race v88b88 from the 0x28-byte
+ * tables 0x63d44 (1st), 0x63e0c (2nd), 0x63ed4 (3rd). The case bodies keep a dead v88bb2 == 4
+ * branch (YOU ARE (TOO) GOOD! TRY A REAL RACE!, except in race 5) that the game also has. */
+extern char praise1[][0x28], praise2[][0x28], praise3[][0x28];
+#pragma aux praise1 "_arr63d44"
+#pragma aux praise2 "_arr63e0c"
+#pragma aux praise3 "_arr63ed4"
+
+void result_msg(void)
+{
+    v88c48 = 1;
+    if (v88bb2 == 4)
+        strcpy(str6aa18, "TIMES HAVE BEEN RECORDED");
+    else {
+        switch (players[v88b7e].place) {
+        case 1:
+            if (v88bb2 == 4) {
+                if (v88b88 != 5)
+                    strcpy(str6aa18, "YOU ARE TOO GOOD! TRY A REAL RACE!");
+            } else
+                strcpy(str6aa18, praise1[v88b88 - 1]);
+            break;
+        case 2:
+            if (v88bb2 == 4) {
+                if (v88b88 != 5)
+                    strcpy(str6aa18, "YOU ARE GOOD! TRY A REAL RACE!");
+            } else
+                strcpy(str6aa18, praise2[v88b88 - 1]);
+            break;
+        case 3:
+            if (v88bb2 == 4) {
+                if (v88b88 != 5)
+                    strcpy(str6aa18, "YOU ARE GOOD! TRY A REAL RACE!");
+            } else
+                strcpy(str6aa18, praise3[v88b88 - 1]);
+            break;
+        }
+    }
+    v88b66 = (0x140 - (int)strlen(str6aa18) * 8) / 2;
+}
+
