@@ -608,7 +608,7 @@
 0x07399e ents[8].y           # CONFIRMED: ditto, written 0x8e at 0x1a598; 0x739a0/0x739a2 = ents[8].f8/frame, zeroed at 0x1a5a0 and toggled 0..1 at 0x1ae01
 0x006e5b0 tab6e5b0          # CONFIRMED (0x1a8a7 `movsx eax,[esp+0x128]`, 0x1a8c5 `mov eax,[eax*4+0x6e5b0]`, stored to 0x7d838/0x7d764 at 0x1a8d1/0x1a8d6): a dword table indexed by the stage-3 countdown local; LIKELY one sprite-data pointer per step (src/ww.c)
 0x07eda0 hits_target         # LIKELY: 5 * the " PLAY FOR 5/10/15/20 HITS " menu choice (0x1bcfb, 0x1bd03); compared with a counter in 0x2bbd8/0x30aae
-0x01c0f4 fn_1c0f4            # LIKELY: arg1 = a stack buffer; called when the F1/help control joy88b46 is set (0x1b2df, 0x1b415) on the "REMOTE IS VIEWING HELP" path
+0x01c0f4 fn_1c0f4            # CONFIRMED (rebuild, src/ww.c: 1944 bytes = the game's, 67 aligned instruction diffs, 0x1c0f4-0x1c88b): the F1 controls/help screen cars_menu reaches at 0x1b2df/0x1b415; arg1 = the caller's buffer, printed at (0x10,0x3c); twelve 80-byte frame slots + five dwords (findings/menus.md)
 0x07b6df v7b6df              # LIKELY: cfg 12-byte record byte, read as [v88b7e*12+0x7b6df] into joy88b40 when cfg7712c == 0 (0x1b392)
 0x088b88 v88b88              # LIKELY: short = v88c96 when the car menus are skipped (0x1be02); read by fn_17928
 0x07d338 v7d338              # STRONGLY SUPPORTED (supersedes the v7d338 line): int per car 0..7, nonzero = that car cannot be chosen - confirm blocked (0x1ac0e, 0x1b461), a 9x0x36 lock sprite lp7d804 over its icon (0x1462d-0x14659), and voice 0x1a + "PLEASE READ ORDERING INFO" on confirm (0x1b493-0x1b4dc); only writer fn_1a2f8
@@ -627,3 +627,11 @@
 0x043164 dos_gettime       # CONFIRMED: INT 21h/2Ah into a 5-byte record (stores 0x4316d-0x43179: dl, dh, cx, al); sibling 0x4317f is the date call AH=2Ch; called from fn_1c994 at 0x1c9b8
 0x077758 tbl77758          # CONFIRMED data table read by fn_1cad0: rows of 0x450 = 24 records of 0x2e bytes; row 1 at 0x77ba8; zeros in the file, filled at run time (SPECULATIVE)
 0x07d8a8 v7d8a8            # CONFIRMED dword pointer, written by fn_1cad0 (0x1cb3d) and 0x1d8a8, read at 0x1cfa9..0x1d08c
+0x01c88c fn_1c88c           # CONFIRMED: save_a/b/c, pal_a=pal_b=pal_d + pal_c=48000 + setpalette, msgbox(arg1,0), then ticks/ticks2=0 spin to 300, pal_b=48000/pal_a=pal_c=pal_d, setpalette, restore. Unreferenced in the image (no E8/E9 rel32 target in the code object, no absolute dword in either object) -> dead code kept by the linker
+0x01c968 fn_1c968           # CONFIRMED (disasm): pal7d850 -> palptr, pal_a=0, getpalette 0x36cca, f1bf94(pal7d850), word 0x88bda=1; also unreferenced
+0x077432 ctl_names77432     # CONFIRMED: inside cfg77128 (0x77128+0x30a); 84-byte per-player records of six 14-byte control names (+0,0xe,0x1c,0x2a,0x38,0x46), read by fn_1c0f4 0x1c43d/0x1c535
+0x077128 cfg77128w          # CONFIRMED: 16-bit compare of cfg77128+0 in fn_1c0f4 0x1c18d (with v7ee4a -> vals[0])
+0x07712a cfg7712a           # CONFIRMED: fn_1c0f4 0x1c1d3 (player 2 device, -> vals[1])
+0x088bda v88bda             # short; set to 1 by fn_1c968 0x1c98a
+0x027920 f27920             # SPECULATIVE: called with 0 right after f278c4(0) in fn_1c0f4 0x1c7ea/0x1c801
+0x088ce9 v88ce9             # char; set to 0x2c by fn_1c0f4 0x1c14b next to v88ce8 (0x26) - f371e4 box colours

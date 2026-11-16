@@ -1,6 +1,7 @@
 # Menus
 
-Status: OPEN (the two bonus menus are read; the main menu chain and fn_1f858 are not).
+Status: OPEN (the two bonus menus and the F1 controls screen are read; the main menu chain and
+fn_1f858 are not).
 
 ## Summary
 
@@ -93,8 +94,57 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   is not rebuilt and net_end 0x110d4 passes 4 after filling `netstats`, so which buffer it reads
   is not proven.
 
+### The F1 controls screen (fn_1c0f4, 0x1c0f4)
+
+- CONFIRMED (rebuild `src/ww.c`: 1944 bytes, the same size as the game's, 67 aligned instruction
+  diffs): `fn_1c0f4` runs 0x1c0f4-0x1c88b (0x798) and is the whole help screen cars_menu reaches at
+  0x1b2df/0x1b415. arg1 (EAX, kept in EBP) is the caller's buffer, printed at (0x10, 0x3c) at
+  0x1c3af - in `cars_menu` that buffer holds only the pooled empty string, which is why the screen
+  shows a blank line there.
+- CONFIRMED (frame `sub esp,0x3d4` at 0x1c0fa plus every esp displacement in the body): the frame is
+  twelve 80-byte slots (esp+0x000..0x3bf) and five dwords (esp+0x3c0..0x3d3). Rows 1..6 are the six
+  control rows, row 7 the empty line, row 8 the giggle-keys line, row 10 the centred title/line
+  buffer, row 11 the `itoa` target; rows 0 and 9 are never read or written, and the print loop
+  0x1c70c-0x1c746 walks rows 1..n (n = 6, or 8 in the two-player path) at y = 0x4c in steps of 10.
+- CONFIRMED (0x1c3b4/0x1c43d/0x1c47e/0x1c532): the control names are six 14-byte strings in an
+  84-byte per-player record at 0x77432 (= `cfg77128` + 0x30a), indexed +0, +0x0e, +0x1c, +0x2a,
+  +0x38, +0x46 in the order STEER LEFT, STEER RIGHT, ACCELERATE, FIRE WEAPONS, BRAKES, HAND BRAKE
+  TURN. All zero in the image, so the names are written at runtime; who writes them is open
+  (QUESTIONS.md).
+- CONFIRMED (0x1c183-0x1c1ea, and compare `ctl_label` 0x19cec-0x19d28): the five frame dwords are
+  this side's and the other player's device value (same three tests as ctl_label: v7ee4a and the
+  shorts at cfg77128+0 for player 1, cfg77128+2/+4 for player 2), the saved `pal_d`, the player
+  index (`v88b7e`, forced to 0 in a net game) and the saved `pal_a`.
+- CONFIRMED (0x1c538-0x1c5f5, 0x1c64f-0x1c6e6): rows 5 and 6 (BRAKES, HAND BRAKE TURN) show the
+  record's names when `vals[vals[3]] <= 1` and the literals "BUTTON3"/"BUTTON4" (0x60d20/0x60d28)
+  when it is 2, and nothing at all for any other value in the single-player path; rows 7 and 8
+  exist only in the `twoplayer || splitscreen` path, and the giggle-keys line says
+  "1  - 6  ARE YOUR GIGGLE KEYS!" only when the player index is not 0 and `netgame` is set
+  (0x1c607-0x1c648), "F1 - F6 ARE YOUR GIGGLE KEYS!" otherwise. LIKELY: 2 is the gamepad (the
+  value's meaning comes from the `v7ee4a` finding above), i.e. a gamepad side is told its last two
+  rows are its third and fourth buttons.
+- CONFIRMED (0x1c7ae-0x1c7d6): a screenshot is taken while `key88ccd` is set, then the screen spins
+  with `while (key88cd0 == 0x3b);` - 0x3b is the F1 make-code, so `key88cd0` holds a scancode, not
+  a boolean (the name `aborted` on 0x88cd0 is misleading here).
+- CONFIRMED (0x1c7d9-0x1c87c): after the wait, `f278c4(0)` and `f27920(0)` run; in a net game
+  `v88cf0`/`v88cf3` are zeroed, `net_key(v88cf0, v88cf3, 0)` fills `net88c14`, and the screen waits
+  60 ticks (`ticks` snapshot at 0x1c821). Then `pal_a = saved pal_d`, another retrace and screenshot
+  pair, and `pal_d`/`pal_a` are restored.
+- CONFIRMED (scan of every E8/E9 rel32 target in the code object, every `lea reg,[disp32]`, and
+  every absolute dword in both objects; `tools/le/xref.py` agrees): 0x1c88c and 0x1c968 are two
+  more functions in this module and nothing in the image refers to either. Both are rebuilt
+  byte-identical (`fn_1c88c` 0x1c88c-0x1c964: save the three page offsets, page to `pal_d` with
+  `pal_c` = 48000, `msgbox(arg1, 0)`, 300-tick wait, page back, restore; `fn_1c968` 0x1c968-0x1c993:
+  `palptr = pal7d850`, `pal_a = 0`, `getpalette`, `f1bf94(pal7d850)`, `v88bda = 1`). SPECULATIVE:
+  the linker kept them because the module was linked whole.
+
 ## Traps
 
+- `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands
+  it a string the game never fills adds a line to the help screen.
+- The help screen's rows are 80 bytes apart and the array has twelve of them; the frame size is
+  what pins that (0x3d4 = 12*80 + 20). Declaring nine rows plus separate buffers gives 0x384 and
+  moves every displacement.
 - fn_182d0 takes 4 register arguments plus one on the stack and pops it itself;
   reading a call site without checking that makes the stack slot map of the
   caller look wrong (the caller's locals are one frame offset after the push,

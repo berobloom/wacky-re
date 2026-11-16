@@ -68,9 +68,11 @@ helpers sit between the car-select chain and the pause/name-entry screen
 - `fn_1cad0` returns without touching `v7d8a8` for `which` not in 1..3
   (0x1cadf) - the callers at 0x1cf9f/0x1cfaf call it twice and then read
   `v7d8a8` for both, so a stale pointer changes both records.
-- `tools/wc/starts.py` lists 0x1c66c, 0x1c88c and 0x1c968 as candidate starts
-  inside `fn_1c0f4`; they are not starts. Nothing calls them (no `call
-  0x1c66c`/`0x1c88c`/`0x1c968` anywhere in the image) and 0x1c66c is the target
-  of `jbe` at 0x1c660. STRONGLY SUPPORTED (Ghidra's `FUN_0001c0f4` + those
-  greps): `fn_1c0f4` runs to 0x1c993, so it is 0x8a0 = 2208 bytes, not the 1396
-  bytes the earlier STATUS note had.
+- `tools/wc/starts.py` lists 0x1c66c, 0x1c88c and 0x1c968 inside `fn_1c0f4`. Only 0x1c66c is not a
+  start: it is the target of the `jbe` at 0x1c660 (and the byte before it ends a `jmp`-terminated
+  block, which is how starts.py picks it up). 0x1c88c and 0x1c968 ARE functions - each has its own
+  `push` prologue, its own `ret` (0x1c964, 0x1c993) and 4-byte padding - they are simply never
+  called; see findings/menus.md, and `fn_1c0f4` ends at the `ret` at 0x1c88b (0x798 = 1944 bytes,
+  not the 0x8a0 an earlier note measured by running on to 0x1c993, the next *named* function, past
+  these two. Ghidra's `FUN_0001c0f4` stops with them; `tools/le/disasm.py --func` stops at the first
+  `ret` and gets the end right too.

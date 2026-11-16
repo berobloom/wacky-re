@@ -6247,3 +6247,215 @@ void fn_1cad0(int which, int rec)       /* arg1 = eax, arg2 = edx */
     }
     v7d8a8 = p + rec;                   /* 0x1cb3b-0x1cb40 */
 }
+
+/* ---- the F1 / controls help screen (0x1c0f4-0x1c88b, 0x798 bytes), called from cars_menu at
+ * 0x1b2df and 0x1b415. Frame: sub esp,0x3d4 = twelve 80-byte slots (esp+0x000..0x3bf) plus five
+ * dwords (esp+0x3c0..0x3d3); rows[0] and rows[9] are never touched, rows[10] is the two-line
+ * centred buffer and rows[11] the itoa target. `0x1c66c`, reached only by the jbe at 0x1c660, is a
+ * jump target inside it (findings/scores.md).
+ *
+ * The six control names come from 84-byte records at 0x77432, six 14-byte strings per player
+ * (+0, +0xe, +0x1c, +0x2a, +0x38, +0x46), which is empty in the image and filled at runtime
+ * (ctl_setup 0x14b00). `vals[3]` (esp+0x3cc) is the player index, 0 in a net game (0x1c102);
+ * `vals[0]`/`vals[1]` hold 0, 1 or 2 picked from v7ee4a, cfg77128w and cfg7712a/cfg7712c
+ * (0x1c183-0x1c1ea), and `vals[vals[3]]` picks which of the two applies to this side (0x1c57a,
+ * 0x1c64f). findings/menus.md has the levels and the screen's layout.
+ *
+ * differs: 67 instructions of 1944 (same size, tools/wc/fndiff.py). All five are block shape:
+ * the third centred line swaps `mov eax,0x140` with `lea edx,[ecx*8]` and sets ecx before the
+ * spr_y load (0x1c35c, 0x1c37a); the twoplayer/splitscreen record is recomputed into ESI with the
+ * +0x46 name in EDX and its shared name block placed *before* the netgame test, which jumps back
+ * to it at 0x1c542 (ours tests first, 0x1c53f); the single-player chain tests 1 then 2 and jumps
+ * forward to both blocks (0x1c65d-0x1c667); the print loop's first row pointer is
+ * `mov edi,esp; add edi,0x50` (0x1c715); and the 60-tick wait keeps the snapshot in EAX and the
+ * fresh ticks in EDX (0x1c821-0x1c831). */
+extern char ctl_names77432[];           /* 0x77432, inside cfg77128 (0x77128 + 0x30a) */
+extern short cfg77128w, cfg7712a;       /* 0x77128, 0x7712a: shorts inside cfg77128 */
+void f27920(int a);                     /* 0x27920: called with 0 wherever f278c4 is */
+
+void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
+{
+    int vals[5];
+    char rows[12][80];
+    char *p, *q;
+    short x;
+    int i, n, t, v;
+
+    if (netgame != 0)                                   /* 0x1c102 */
+        vals[3] = 0;                                      /* 0x1c10c */
+    else
+        vals[3] = v88b7e;                                 /* 0x1c119-0x1c126 */
+    spr_x = 0;                                          /* 0x1c127 */
+    spr_y = 0;
+    spr_h = 0x140;
+    spr_w = 0xc8;
+    v88ce9 = 0x2c;                                      /* 0x1c14b */
+    vals[4] = pal_a;                                    /* 0x1c152-0x1c166 */
+    v88ce8 = 0x26;
+    vals[2] = pal_d;                                    /* 0x1c167 */
+    pal_a = 0xbb80;
+    f371e4();                                           /* 0x1c17e */
+    if (v7ee4a != 0) {                                  /* 0x1c183 */
+        if (cfg77128w != 0)
+            vals[0] = 2;                                /* 0x1c197 */
+        else
+            vals[0] = 1;                                /* 0x1c1a4 */
+    } else
+        vals[0] = 0;                                    /* 0x1c1b1 */
+    if (cfg7712c != 0)
+        vals[1] = 0;                                    /* 0x1c1c6 */
+    else if (cfg7712a != 0)
+        vals[1] = 2;                                    /* 0x1c1dd */
+    else
+        vals[1] = 1;                                    /* 0x1c1ea */
+    strcpy(rows[10], "PLAYER ");                        /* 0x1c1f5-0x1c215 */
+    itoa(v88b7e + 1, rows[11], 10);                     /* 0x1c225 */
+    strcat(rows[10], rows[11]);                         /* 0x1c22a-0x1c24f */
+    strcat(rows[10], " CONTROLS");                      /* 0x1c250-0x1c281 */
+    x = (0x140 - (int)strlen(rows[10]) * 8) / 2;        /* 0x1c282-0x1c2a8 */
+    spr_y = 8;                                          /* 0x1c2b6 */
+    spr_x = x;                                          /* 0x1c2c6 */
+    print_at(x, 8, rows[10], 0);                        /* 0x1c2d4 */
+    strcpy(rows[10], "USE LEFT AND RIGHT CONTROLS TO CHOOSE");  /* 0x1c2d9 */
+    x = (0x140 - (int)strlen(rows[10]) * 8) / 2;        /* 0x1c2e2-0x1c308 */
+    spr_y = 0x14;                                       /* 0x1c316 */
+    spr_x = x;
+    print_at(x, 0x14, rows[10], 0);                     /* 0x1c334 */
+    strcpy(rows[10], "THEN PRESS FIRE TO SELECT THE CAR");      /* 0x1c339 */
+    spr_y = 0x1e;                                       /* 0x1c349 */
+    x = (0x140 - (int)strlen(rows[10]) * 8) / 2;        /* 0x1c352-0x1c371 */
+    spr_x = x;
+    print_at(x, spr_y, rows[10], 0);                    /* 0x1c38a */
+    spr_x = 0x10;                                       /* 0x1c38f */
+    spr_y = 0x3c;                                       /* 0x1c3a6 */
+    print_at(0x10, 0x3c, buf, 0);                       /* 0x1c3af */
+    p = ctl_names77432 + vals[3] * 0x54;                /* 0x1c3b4, base added at 0x1c43d */
+    strcpy(rows[1], "STEER LEFT      - ");              /* 0x1c3bc */
+    strcpy(rows[2], "STEER RIGHT     - ");              /* 0x1c3d4 */
+    strcpy(rows[3], "ACCELERATE      - ");              /* 0x1c3ea */
+    strcpy(rows[4], "FIRE WEAPONS    - ");              /* 0x1c400 */
+    strcpy(rows[5], "BRAKES          - ");              /* 0x1c416 */
+    strcpy(rows[6], "HAND BRAKE TURN - ");              /* 0x1c42c */
+    spr_y += 0x10;                                      /* 0x1c449 */
+    strcat(rows[1], p);                                 /* 0x1c451 */
+    strcat(rows[2], p + 0x0e);                          /* 0x1c481 */
+    strcat(rows[3], p + 0x1c);                          /* 0x1c4b1 */
+    strcat(rows[4], p + 0x2a);                          /* 0x1c4e6 */
+    n = 6;                                              /* 0x1c4e1 */
+    if (twoplayer || splitscreen) {                     /* 0x1c50c-0x1c523 */
+        p = ctl_names77432 + vals[3] * 0x54 + 0x46;     /* 0x1c532: the game recomputes the
+                                                           record (0x1c524-0x1c52c) into ESI and
+                                                           puts this +0x46 name in EDX, then makes
+                                                           ESI the +0x38 name (q) */
+        q = ctl_names77432 + vals[3] * 0x54 + 0x38;
+        if (netgame == 0 || (v = vals[vals[3]]) <= 1) { /* 0x1c538-0x1c58b */
+            strcat(rows[5], q);                         /* 0x1c549 */
+            strcat(rows[6], p);                         /* 0x1c5d0 */
+        } else if (v == 2) {                            /* 0x1c58d */
+            strcat(rows[5], "BUTTON3");                 /* 0x1c59e */
+            strcat(rows[6], "BUTTON4");                 /* 0x1c5d0 */
+        }
+        strcpy(rows[7], "");                            /* 0x1c5f6-0x1c606 */
+        n = 8;                                          /* 0x1c5fb */
+        if (vals[3] != 0 && netgame != 0)               /* 0x1c607-0x1c619 */
+            strcpy(rows[8], "1  - 6  ARE YOUR GIGGLE KEYS!");   /* 0x1c635 */
+        else
+            strcpy(rows[8], "F1 - F6 ARE YOUR GIGGLE KEYS!");   /* 0x1c61b */
+    } else {
+        v = vals[vals[3]];                              /* 0x1c64f-0x1c656 */
+        if (v <= 1) {                                   /* 0x1c65d */
+            strcat(rows[5], p + 0x38);                  /* 0x1c676 */
+            strcat(rows[6], p + 0x46);                  /* 0x1c6e6 */
+        } else if (v == 2) {                            /* 0x1c662 */
+            strcat(rows[5], "BUTTON3");                 /* 0x1c6b4 */
+            strcat(rows[6], "BUTTON4");                 /* 0x1c6e6 */
+        }
+    }
+    for (i = 1; i <= n; i++) {                          /* 0x1c70c-0x1c746 */
+        spr_x = 0x10;
+        print_at(0x10, spr_y, rows[i], 0);
+        spr_y += 0xa;
+    }
+    strcpy(rows[10], "PRESS FIRE TO LEAVE HELP");       /* 0x1c748 */
+    spr_y = 0xba;                                       /* 0x1c763 */
+    x = (0x140 - (int)strlen(rows[10]) * 8) / 2;        /* 0x1c76c-0x1c78b */
+    spr_x = x;
+    print_at(x, spr_y, rows[10], 0);                    /* 0x1c7a4 */
+    waitretrace();                                      /* 0x1c7a9 */
+    if (key88ccd) {                                     /* 0x1c7ae */
+        screenshot();                                   /* 0x1c7b7 */
+        if (key88ccd)
+            do
+                ;
+            while (key88ccd);
+    }
+    while (key88cd0 == 0x3b)                            /* 0x1c7ce: wait for F1 to come up */
+        ;
+    f278c4(0);                                          /* 0x1c7d9 */
+    if (netgame == 0) {
+        f27920(0);                                      /* 0x1c7ea */
+    } else {
+        v88cf0 = 0;                                     /* 0x1c7f1 */
+        v88cf3 = 0;
+        f27920(0);                                      /* 0x1c801 */
+        net88c14 = net_key(v88cf0, v88cf3, 0);          /* 0x1c816-0x1c81f */
+        t = ticks;                                      /* 0x1c821 */
+        while (ticks - t < 60)
+            ;
+    }
+    pal_a = vals[2];                                    /* 0x1c833-0x1c83c */
+    waitretrace();                                      /* 0x1c840 */
+    if (key88ccd) {                                     /* 0x1c845 */
+        screenshot();                                   /* 0x1c84e */
+        if (key88ccd)
+            do
+                ;
+            while (key88ccd);
+    }
+    pal_d = vals[2];                                    /* 0x1c865-0x1c87c */
+    pal_a = vals[4];
+}
+
+/* ---- 0x1c88c: the same palette-page flip and tick wait as modem(), around msgbox. Nothing in
+ * the image refers to it: no E8/E9 rel32 target in the code object and no absolute dword for it
+ * in either object (scan, see findings/menus.md), so it is dead code the linker kept. Rebuild
+ * byte-identical, fixups included. */
+void fn_1c88c(char *s, int flag)        /* arg1 = eax, arg2 = edx */
+{
+    if (flag) {                                         /* 0x1c892 */
+        save_a = pal_a;                                 /* 0x1c896 */
+        save_b = pal_b;
+        save_c = pal_c;
+        pal_c = 0xbb80;
+        pal_a = pal_d;                                  /* 0x1c8c9 */
+        pal_b = pal_d;
+        setpalette();                                   /* 0x1c8d5 */
+    }
+    msgbox(s, 0);                                       /* 0x1c8de */
+    if (flag) {                                         /* 0x1c8e3 */
+        ticks = 0;
+        ticks2 = 0;
+        while (ticks <= 300)
+            ;
+        pal_b = 0xbb80;                                 /* 0x1c917-0x1c92e */
+        pal_a = pal_d;
+        pal_c = pal_d;
+        setpalette();                                   /* 0x1c935 */
+        pal_b = save_b;
+        pal_c = save_c;
+        pal_a = save_a;
+    }
+}
+
+/* ---- 0x1c968: saves the palette over pal7d850 and calls f1bf94, setting 0x88bda. Also
+ * unreferenced in the image (same scan as fn_1c88c). Rebuild byte-identical. */
+extern short v88bda;
+
+void fn_1c968(void)
+{
+    pal_a = 0;                                          /* 0x1c96d */
+    palptr = (unsigned char *)pal7d850;                 /* 0x1c968, 0x1c976 */
+    getpalette();                                       /* 0x1c97b */
+    f1bf94(pal7d850);                                   /* 0x1c985 */
+    v88bda = 1;                                         /* 0x1c98a */
+}

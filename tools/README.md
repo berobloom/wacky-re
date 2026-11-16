@@ -24,6 +24,7 @@ python. Every tool prints its usage with no arguments.
 | `tp/rtlcmp.py TARGET.EXE REF[,REF..] [SEG..]` | classify target routines against reference builds of one compiler: `same` (layout bytes as wildcards), `layout` (only numbers differ), `differ`; with `tp/rtltest/*.PAS` (built by `tp/tpc.sh`) it pins the Turbo Pascal version [SAM2] |
 | `tp/inventory.py UNPACKED.EXE OUT.json` | Turbo Pascal MZ: segments from the relocated words, routines by recursive descent, `frame_only` candidates; writes a matching-decomp recipe skeleton [SAM2] |
 | `wc/libmatch.py PROG LIB [LIB..]` | Watcom/OMF: which library modules occur byte for byte (fixups masked) in an LE program; compares patch levels to pin the compiler version [wacky] |
+| `wc/fndiff.py PROG OBJ FN` | Watcom near-miss function vs the game: aligned instruction-by-instruction diff (fixup bytes masked, addresses shown as `@`); use it instead of `wc/objdiff.py`, whose byte alignment marks everything after a 1-byte drift [wacky] |
 
 LE workflow:
 

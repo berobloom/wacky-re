@@ -198,9 +198,25 @@ it can be copied back into DREA.
   keep it `extern` and write its C into the findings file instead. [generic]
 - **`tools/wc/wcc.sh` runs WCC386 inside DOSBox: a file name longer than 8.3 fails silently**
   (`Unable to open 'SETUP_PROBE.C'`, 0 lines, no OBJ). Keep probe names <= 8 characters. [generic]
-- **A candidate function start is not a function** (iter 9, [generic]): `tools/wc/starts.py`
-  also prints `after-ret` guesses. 0x1c66c / 0x1c88c / 0x1c968 look like three small
-  functions after `ret`s, but nothing calls them (`grep -c "call   0x1c66c" .work/ww_code.asm`
-  = 0) and 0x1c66c is the target of the `jbe` at 0x1c660 - they are jump targets inside
-  `fn_1c0f4`, which runs 0x1c0f4-0x1c993 (0x8a0 bytes). Check `call 0xADDR` counts, and
-  Ghidra's `FUN_<addr>` extent, before planning an iteration around them.
+- **A candidate function start is not a function - but no-caller is not proof either** (iter 9,
+  corrected in iter 10, [generic]): `tools/wc/starts.py` prints `after-ret` guesses, and
+  `grep "call 0xADDR"` finds nothing for a jump target (0x1c66c is the target of the `jbe` at
+  0x1c660). But 0x1c88c and 0x1c968 in the same range ARE functions - own `push` prologue, own
+  `ret`, own 4-byte padding - that nothing in the image references (no E8/E9 rel32 to them in the
+  code object, no absolute dword in either object, `xref.py` agrees): Watcom kept dead code from
+  the module. Decide with the prologue/`ret`/padding, not with the caller count; measure the
+  previous function's extent from its own `ret`, not from the next *named* address.
+- **`MATCH (fixup bytes not compared)` can hide a wrong global order** (iter 10, [generic]):
+  objmatch masks the 4 bytes fixups fill, so a store sequence that assigns the same values in a
+  different order still says MATCH. Always read the `WRONG sym@addr:` lines after it - they showed
+  `fn_1c88c`'s tail loading `save_c` where the game loads `save_a`. Watcom's store order follows
+  the source statement order loosely: `pal_b; pal_c; pal_a` reproduced the game's bx/ax pairing
+  where the semantically equal `pal_b; pal_a; pal_c` did not (probe file `.work/sh2/S.C`). [generic]
+- **Diff a near miss with `tools/wc/fndiff.py`, not with two listings** (iter 10, [generic]):
+  `tools/wc/objdiff.py` aligns bytes, so one 1-byte drift marks the rest of a 1900-byte function;
+  fndiff aligns instructions and prints the differing pairs (it found 5 real shape differences
+  inside 119 marked lines).
+- **A local's type decides whether Watcom keeps it in a register** (iter 10, [generic]): the
+  centring temporary of `fn_1c0f4` as `int` got a stack slot at esp+0x3d4 (frame 0x3d8, every
+  displacement off by 4); as `short x` it stayed in EAX, the frame became the game's 0x3d4 and the
+  int-to-short argument became the game's `cwde`. Try the type before restructuring. [generic]

@@ -11,7 +11,7 @@ check, do not re-derive; **OPEN** = work remains (say what).
 | Startup chain, main loop, frame timing; the race-start helpers `fn_1be3c` (start grid `v70720[]`) and `fn_1bf00` (per-player rows) | `game-loop.md` | OPEN (the two helpers mapped and rebuilt as near misses; the loop itself not) |
 | Input: keyboard handler, key table, mouse | `input.md` | OPEN |
 | Video: mode, palette, blitter, back buffer, present; `setpalette` 0x36f14 = a 0x3e80-byte screen page copy, `pal_a`-`pal_d` are page offsets | `video.md` | OPEN (the page-flip pair 0x1c068/0x1c0ac CONFIRMED byte-identical; mode/buffer open) |
-| Menus: the bonus race / bonus zone order screens, palette flash | `menus.md` | OPEN |
+| Menus: the bonus race / bonus zone order screens, palette flash, the F1 controls screen (`fn_1c0f4` 0x1c0f4, twelve 80-byte frame slots, names from 84-byte records at 0x77432) | `menus.md` | OPEN |
 | Sound: driver, tracks, samples, music | `sound.md` | OPEN |
 | Classes and game modes: the class menu, the per-class line/value/index, the lap-count menu | `classes.md` | OPEN (menus 0x19eac rebuilt as a near miss, 0x1a148 and 0x1a2f8 byte-identical; the users of the globals after them are not) |
 | Score / record tables: `fn_1cad0` 0x1cad0 selects a 46-byte record of `tbl77758` (rows of 0x450) into `v7d8a8`, `fn_1c994` 0x1c994 builds the stamp string, `dos_gettime` 0x43164 | `scores.md` | OPEN (both helpers rebuilt - 0x1cad0 byte-identical, 0x1c994 4 diffs; the owner function 0x1ce14 and the table writer not) |

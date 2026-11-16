@@ -153,3 +153,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    before and after a race (STATUS Next 7), and compare the +0x1a field with the string
    `fn_1c994` builds - which also decides whether the month index (seconds - 1, 0x1ca08)
    is a real bug in the shipping game.
+
+8. **OPEN** (findings/menus.md): who writes the control names at `ctl_names77432` (0x77432,
+   `cfg77128` + 0x30a: eight 84-byte records of six 14-byte strings), and where do the strings
+   come from? Evidence: all zero in the image; only two reads reference the address directly
+   (`tools/le/xref.py ww 0x77432` -> `add edx,0x77432` at 0x1c43d and 0x1c52c, both in
+   `fn_1c0f4`), and `fn_1c0f4` replaces them with "BUTTON3"/"BUTTON4" for a device-2 side
+   (0x1c592) - so keyboard/joystick players must see per-action names. The neighbouring config
+   fields are named (`musicvol` 0x7742c, `ctl774e4` 0x774e4), so the writer addresses the region
+   through a computed base. Test: diff every write into `cfg77128` in the matched
+   `save_config`/`save_ctl`/`ctl_setup` 0x14b00 for a +0x30a form, and boot the original and
+   dump 0x77432..0x77584 at the car-select screen (STATUS Next item).
