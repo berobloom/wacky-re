@@ -15679,3 +15679,26 @@ void trial_book(int a, int b, int show)
     }
 }
 
+/* ---- 0x2f408, 158 bytes (no caller found): the view point for the track position curpos
+ * (as at the end of 0x288xx's track step): the path vector at v7d6a0[curpos] scaled to 0x7c
+ * (f37bb1), plus the camera v88b0a / v88b0e, into v7d7a4 / v7d7a8 and the shorts at
+ * 0x6aaa6 / 0x6aaa8.
+ * differs: one block: the game loads v7d610 first and parks v88b0e in a stack slot; operand
+ * orders and a temp tried. */
+extern short w6aaa6, w6aaa8;
+#pragma aux w6aaa6 "_v6aaa6"
+#pragma aux w6aaa8 "_v6aaa8"
+
+void view_at_curpos(void)
+{
+    v7d690 = (int *)(v7d6a0 + curpos * 8);
+    v7d608 = 0x7c;
+    v7d5f8 = *v7d690++;
+    v7d5f4 = *v7d690--;
+    f37bb1();
+    v7d7a4 = v7d610 + v88b0a;
+    v7d7a8 = v88b0e + v7d620;
+    w6aaa6 = v7d7a4;
+    w6aaa8 = v7d7a8;
+}
+
