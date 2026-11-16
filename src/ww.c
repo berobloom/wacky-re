@@ -3008,7 +3008,7 @@ extern short oldkbd_seg;
 extern unsigned char v88cf3, v88cf0, v88cef;
 void kbd_off(void);
 void kbd_on(void);
-short net_key(int key, int flag, int x);
+short net_key(unsigned char key, unsigned char flag, int x);
 
 /* differs: stack slots only (QUESTIONS 2): the save slots permute (sx 0x1b8, sw 0x1bc, s34 0x1c4 ... vs our
    0x1b8 s34 ...) and the five 80-byte buffers too: game mine@0, blank@0x50, theirs@0xa0, buf@0xf0,
@@ -14990,7 +14990,7 @@ int net_recv(void)
 /* ---- 0x2dc38, 247 bytes: sends one packet (callers in 0x2dd30): type, a, b (zero for 'Z' and
  * 'W'), v7ed8c, then the CRC of those four, low byte first. buf[12] puts the CRC at esp+0xc
  * as in the game; the send loop is unrolled by the compiler, which keeps buf in memory. */
-extern unsigned char v7ed8c;
+extern int v7ed8c;
 
 void net_send(int type, unsigned char a, unsigned char b)
 {
@@ -15020,5 +15020,121 @@ void net_send(int type, unsigned char a, unsigned char b)
     buf[5] = *p;
     for (i = 0; i < 6; i++)
         com_putc(buf[i]);
+}
+
+/* ---- 0x2dd30, 576 bytes: one exchange of the control bytes with the other machine (key, flag;
+ * x set while racing). A 'D' packet carries ours, the reply 'D' carries theirs (into v88cef /
+ * v88cf2) and is acknowledged with 'Z'; 'W' means wait. The sequence byte v7ed8c advances when
+ * the exchange completes; a stale packet (v88cb0 < v88cae) makes us resend 'W'. With x the game
+ * draws (view_box, sprites_build, 0x2f794) while waiting. A half-done exchange is parked in
+ * v7ed94 / v7edac / v7edb8 / v88cf1 / v88cf4 and resumed by the next call. Returns 1 once more
+ * than v7ed34 errors (v7ed60) pile up, else 0. The inner switch has case 'Z' first (layout).
+ * differs: 3 blocks: the game loads v88cae as `mov ax,[v7ed8c]; xor ah,ah` (= v7ed8c & 0xff,
+ * which in our build moves x from the stack into EBP and costs 11 more blocks), and one store
+ * of the parked bytes is scheduled one load later. */
+extern int v7ed6c, v7ed74, v7edac, v7edb8, v7ed94;
+extern short v88cae;
+extern unsigned char v88cf1, v88cf4;
+extern unsigned char b88cf2;
+#pragma aux b88cf2 "_v88cf2"
+void f2f794(void);
+void view_box_x(void);
+#pragma aux view_box_x "view_box_"
+void sprites_build_x(void);
+#pragma aux sprites_build_x "sprites_build_"
+
+short net_key(unsigned char key, unsigned char flag, int x)
+{
+    int state, send, wait, resend, r, seq, t;
+
+    v88cae = v7ed8c;
+    wait = 0;
+    resend = 0;
+    if (v7ed94) {
+        v88cef = v88cf1;
+        b88cf2 = v88cf4;
+        v88cf6 = v88cef;
+        v88cf5 = b88cf2;
+        send = 'Z';
+        net_send('D', key, flag);
+        state = send;
+        wait = v7edac;
+        resend = v7edb8;
+    } else {
+        state = 'D';
+        send = state;
+    }
+    v7ed94 = 0;
+    v7ed60 = 0;
+    net88c14 = 0;
+    for (;;) {
+        if (!wait) {
+            if (!resend)
+                net_send(send, key, flag);
+            else
+                net_send('W', 0, 0);
+        }
+        if (x) {
+            if (!v7ed6c) {
+                v7ed6c = 1;
+                view_box_x();
+                if (v7eb80)
+                    f37e94();
+                sprites_build_x();
+            }
+            if (v7ed6c && !v7ed74)
+                f2f794();
+        }
+        r = net_recv();
+        if (v88cb0 < v88cae && r != 'N') {
+            resend = 1;
+            continue;
+        }
+        resend = 0;
+        if (wait && (r == 'D' || r == 'Z'))
+            wait = 0;
+        seq = v7ed8c + 1;
+        switch (r) {
+        case 'W':
+            wait = 1;
+            break;
+        case 'D':
+            t = ticks;
+            switch (state) {
+            case 'Z':
+                if (v88cb0 > v88cae) {
+                    v7ed94 = 1;
+                    v7edac = wait;
+                    v7edb8 = resend;
+                    v88cf1 = v88cf6;
+                    v88cf4 = v88cf5;
+                    v7ed8c = seq;
+                    return 0;
+                }
+                send = 'D';
+                break;
+            case 'D':
+                v88cef = v88cf6;
+                send = 'Z';
+                state = send;
+                b88cf2 = v88cf5;
+                break;
+            }
+            break;
+        case 'Z':
+            switch (state) {
+            case 'D':
+                send = 'D';
+                break;
+            case 'Z':
+                v7ed8c = seq;
+                return 0;
+            }
+            break;
+        default:
+            if (v7ed60 > v7ed34)
+                return 1;
+        }
+    }
 }
 
