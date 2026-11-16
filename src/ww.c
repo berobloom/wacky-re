@@ -14083,3 +14083,509 @@ void overall_winner(void)
     f1bf94(pal7d850);
 }
 
+/* ---- 0x2bff0, 4722 bytes: after a race (callers 0x315fa, 0x31e01 in 0x30aae). The points
+ * players[].f1e / face go to standings[1..] (0x799d8), sorted by score with f36f8c, and
+ * leaderboard draws them on ORDER.PCX; the own (and split-screen second) face then talks
+ * (faces[].img[0..7]) until fire (net: exchanged with net_key). After the last race (v88b88 5):
+ * the places with equal scores are grouped onto the three rostrum steps (two in a two-player
+ * game; a player not on it stands left / right), or with a bonus track won (v88bb2 3, v7ed98)
+ * three showlines lines and v7ec80 = 1. Else THE ROSTRUM on WIN.PCX: the karts drop in
+ * (sp6a538 frames, phase 1), then stand as faces, the own kart animated (kd7b378) and the side
+ * ones (kd7b238), a duck (sp7c800) walks to the winner, and the flags (gn7eb24[g]) rise on
+ * each step with voice 0x17; fire ends it (the own winner first goes to scores_screen).
+ * differs: 885 = 885 insns; the rest is register choice (the palette save in EDX, the sort and
+ * grouping loop counters), store order in the flag set-up and the duck start, and one dead je
+ * at the fire test. Tried: loop forms, a save local, operand order, exit-test shapes. */
+struct ptgroup { int n; int pl[10]; };
+extern char *flags7eb24[];
+extern volatile char vk88cd5, vk88cdd, vk88cd6, vk88cd3;    /* written by the keyboard handler; */
+#pragma aux vk88cd5 "_key88cd5"                              /* volatile here keeps the game's */
+#pragma aux vk88cdd "_key88cdd"                              /* re-test of netgame after the */
+#pragma aux vk88cd6 "_key88cd6"                              /* stores (global volatile loses */
+#pragma aux vk88cd3 "_key88cd3"                              /* a match elsewhere) */
+#pragma aux flags7eb24 "_gn7eb24"
+struct podium { short x, y, n; short pl[10]; short g, gx, gy, gyend, done; };
+extern char *v7d858;
+extern short v88bec;
+void scores_screen(void);
+
+void race_results(void)
+{
+    char buf[0x28];
+    char *pp;
+    struct ptgroup grp[9];
+    struct podium pods[6];
+    short x, y, who, place, x2, y2, who2, place2;
+    short np1, npod, r, first, mypod, pod2;
+    short dx, dy, phase, dstate, dt, dfr, ft, songdone;
+    short i, j, k, n, frame, tick;
+    int w;
+
+    if (cursong != v7c658)
+        music_start(v7c658, 1);
+    np1 = nplayers + 1;
+    npod = (np1 != 2) + 2;
+    for (k = 1; k <= 8; k++)
+        grp[k].n = 0;
+    for (i = 0; i <= nplayers; i++) {
+        standings[i + 1].score = players[i].f1e;
+        standings[i + 1].player = players[i].face;
+        if (splitscreen) {
+            if (i == 0)
+                place = i;
+            if (i == 1)
+                place2 = i;
+        } else if (i == 0)
+            place = i;
+    }
+    v7d864 = 2;
+    v7d894 = (struct crec *)standings;
+    for (i = 1; i <= nplayers; i++) {
+        for (j = i; ++j <= nplayers + 1;) {
+            if (standings[i].score < standings[j].score) {
+                v7d88c = (struct crec *)&standings[i];
+                v7d880 = (struct crec *)&standings[j];
+                f36f8c();
+            }
+        }
+    }
+    pcx_load("ORDER.PCX", 0);
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    pal_a = 0;
+    v88b4a = 0;
+    pal_a = 0;
+    p7d714 = p6a978;
+    f375cd();
+    pal_a = 0;
+    leaderboard(&x, &y, &who, &place, &x2, &y2, &who2, &place2);
+    pal_b = 0;
+    pal_c = 0x7d00;
+    setpalette();
+    frame = 0;
+    sprptr = faces[who].img[0];
+    spr_h = 0x26;
+    spr_x = x;
+    spr_w = 0x1c;
+    spr_y = y;
+    drawsprite();
+    if (splitscreen) {
+        sprptr = faces[who2].img[0];
+        spr_h = 0x26;
+        spr_x = x2;
+        spr_w = 0x1c;
+        spr_y = y2;
+        drawsprite();
+    }
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    pal_a = 0x3e80;
+    f32cf8(v7d854 = v7d85c);
+    pal_b = 0x7d00;
+    ticks = 0;
+    ticks2 = 0;
+    w = 0xc;
+    for (;;) {
+        ticks = 0;
+        pal_c = pal_a;
+        setpalette();
+        spr_x = x;
+        spr_y = y;
+        spr_h = 0x26;
+        sprptr = faces[who].img[frame];
+        spr_w = 0x1c;
+        drawsprite();
+        if (splitscreen) {
+            spr_x = x2;
+            spr_y = y2;
+            spr_h = 0x26;
+            sprptr = faces[who2].img[frame];
+            spr_w = 0x1c;
+            drawsprite();
+        }
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();
+        if (v88cce)
+            joy88b40 = 1;
+        if (netgame) {
+            v7ed20 = 0x220;
+            v7ed1c = 0x2a8;
+            if (netgame != 1) {
+                vk88cd5 = 0;
+                vk88cdd = 0;
+                vk88cd6 = 0;
+                vk88cd3 = 0;
+                joy88b40 = 0;
+                joy88b42 = 0;
+                joy88b44 = 0;
+                joy88b46 = 0;
+            }
+            v88cf0 = 0;
+            v88cf3 = 0;
+            if (netgame == 1) {
+                if (joy88b40)
+                    v88cf0 = 1;
+                else
+                    v88cf0 = 0;
+            }
+            net88c14 = net_key(v88cf0, v88cf3, 0);
+            if (netgame != 1 && v88cef == 1)
+                joy88b40 = 1;
+            if (net88c14) {
+                fn_1c068();
+                msgbox("EXCESSIVE ERRORS!", 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 0x12c)
+                    ;
+                fn_1c0ac();
+                goto done;
+            }
+        }
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            while (key88ccd)
+                ;
+        }
+        if (pal_a == 0)
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        while (w >= ticks)
+            ;
+        if (joy88b40)
+            break;
+        if (++frame > 7)
+            frame = 0;
+        ticks = 0;
+        ticks2 = 0;
+    }
+    v88b4a = 0;
+    {
+        short save;
+        p7d714 = p6a978;
+        save = pal_a;
+        pal_a = 0;
+        f375cd();
+        pal_b = 0;
+        pal_c = 0x3e80;
+        pal_a = save;
+    }
+    setpalette();
+    pal_a = 0;
+    f37de0();
+    if (key88ccd) {
+        screenshot();
+        while (key88ccd)
+            ;
+    }
+    if (v88b88 != 5)
+        goto done;
+    r = 1;
+    k = 1;
+    do {
+        first = r;
+        n = 0;
+        for (j = r; j <= np1; j++) {
+            if (standings[first].score != standings[j].score)
+                break;
+            grp[k].pl[++grp[k].n] = standings[j].player;
+            n++;
+        }
+        if (n == 0)
+            r++;
+        else
+            r += n;
+        k++;
+    } while (k <= npod && r <= np1);
+    mypod = 0;
+    pod2 = 0;
+    for (k = 1; k <= 5; k++)
+        pods[k].n = 0;
+    for (k = 1; k <= npod; k++) {
+        pods[k].n = grp[k].n;
+        for (j = 1; j <= pods[k].n; j++) {
+            n = pods[k].pl[j] = grp[k].pl[j];
+            if (n == myplayer)
+                mypod = k;
+            if (n == v88c6a)
+                pod2 = k;
+        }
+        pods[k].done = 0;
+    }
+    pods[4].n = 0;
+    pods[5].n = 0;
+    if (mypod == 0) {
+        pods[4].n = 1;
+        pods[4].x = 0xa;
+        pods[4].y = 0x9e;
+        pods[4].pl[1] = myplayer;
+    }
+    if (splitscreen && pod2 == 0) {
+        pods[5].n = 1;
+        pods[5].x = 0x110;
+        pods[5].y = 0x9e;
+        pods[5].pl[1] = v88c6a;
+    }
+    if (mypod && v7ec80 != 2 && v88bb2 == 3 && v7ed98 && !splitscreen) {
+        strcpy(str7c854, " YOU HAVE WON THE RIGHT TO ENTER ");
+        strcpy(str7c890, " THE BONUS TRACK! THIS GIVES YOU ");
+        strcpy(str7c8cc, " THE CHANCE TO GET MORE POINTS!! ");
+        showlines(3, 0, 0x220);
+        v7ec80 = 1;
+        goto done;
+    }
+    pods[1].x = 0x8e;
+    pods[1].y = 0x96;
+    pods[2].x = 0x55;
+    pods[2].y = 0x92;
+    pods[3].x = 0xc5;
+    pods[3].y = 0x8f;
+    for (k = 1; k <= npod; k++) {
+        pods[k].gx = pods[k].x + 0xb;
+        pods[k].gy = 0;
+        pods[k].gyend = pods[k].y - (pods[k].n - 1) * 0x1c;
+        pods[k].gyend -= 0xb;
+    }
+    strcpy(buf, "THE ROSTRUM");
+    pods[1].g = 2;
+    pods[2].g = 1;
+    pods[3].g = 0;
+    v88c5a = 0;
+    x = (0x140 - (int)strlen(buf) * 8) / 2;
+    dx = 0;
+    dy = 0xaa;
+    print_at(x, 0x3c, buf, 0);
+    ticks = 0;
+    ticks2 = 0;
+    pcx_load("WIN.PCX", 0);
+    pp = v7d858;
+    datfind("WIN.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pp, 0x300);
+    pal_6bit_x(pp);
+    while (ticks < 0x190)
+        ;
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    v88b4a = 0;
+    {
+        short save;
+        p7d714 = p6a978;
+        save = pal_a;
+        pal_a = 0;
+        f375cd();
+        pal_b = 0;
+        pal_c = 0x7d00;
+        pal_a = save;
+    }
+    setpalette();
+    f32cf8(v7d858);
+    music88bcc = 0;
+    music_start(v7c64c, 0);
+    pal_a = 0x3e80;
+    phase = 1;
+    pal_b = 0x7d00;
+    ticks = 0;
+    ticks2 = 0;
+    v88bec = (v88bb6 - 1) * 2;
+    frame = 0;
+    tick = 0;
+    dstate = 0;
+    dt = 0;
+    ft = 0;
+    songdone = 0;
+    if (!musicon)
+        songdone = 1;
+    voice_play(0x12);
+    for (;;) {
+        v7e724 = ticks;
+        pal_c = pal_a;
+        setpalette();
+        if (musicon && !songdone && !MUSIC_SongPlaying()) {
+            songdone = 1;
+            music_start(menusong, 1);
+        }
+        switch (phase) {
+        case 1:
+            spr_h = 0x26;
+            spr_w = 0x1c;
+            sprptr = sp6a538[frame];
+            for (k = 1; k <= 5; k++) {
+                spr_y = pods[k].y;
+                spr_x = pods[k].x;
+                for (j = 1; j <= pods[k].n; j++) {
+                    drawsprite();
+                    spr_y -= 0x1c;
+                }
+            }
+            if (tick > 2) {
+                frame++;
+                tick = 0;
+            }
+            if (frame == 4) {
+                ft = 0;
+                frame = 5;
+                phase = 2;
+                tick = 0;
+            }
+            break;
+        case 2:
+            if (tick >= 0x20 && dstate == 0) {
+                dstate = 1;
+                tick = 0;
+                dfr = 0;
+                dt = tick;
+            }
+            spr_h = 0x26;
+            spr_w = 0x1c;
+            for (k = 1; k <= 5; k++) {
+                spr_x = pods[k].x;
+                spr_y = pods[k].y;
+                for (j = 1; j <= pods[k].n; j++) {
+                    if (!splitscreen && pods[k].pl[j] == myplayer)
+                        sprptr = (char *)*(curkart->f4e = &kd7b378[frame]);
+                    else if (k == 4 || k == 5) {
+                        if (k == 4)
+                            curkart->f4e = &kd7b238[v88c5a][0];
+                        else
+                            curkart->f4e = &kd7b238[v88c5a][1];
+                        sprptr = (char *)*curkart->f4e;
+                    } else
+                        sprptr = faces[pods[k].pl[j]].img[0];
+                    drawsprite();
+                    spr_y -= 0x1c;
+                }
+            }
+            if (ft > 2) {
+                ft = 0;
+                frame++;
+            }
+            v88c5a++;
+            if (frame == v88c52)
+                frame = 5;
+            if (v88c5a == 8)
+                v88c5a = 0;
+            if (dstate) {
+                sprptr = sp7c800[v88bec + dfr];
+                spr_h = 0x1c;
+                spr_x = dx;
+                spr_w = 0x17;
+                spr_y = dy;
+                drawsprite();
+                if (dt > 1) {
+                    dt = 0;
+                    dfr++;
+                }
+                if (dfr == 2)
+                    dfr = 0;
+                if (dstate == 1) {
+                    dx += 0x10;
+                    if (dx >= pods[1].x + 6) {
+                        dstate = 2;
+                        tick = 0;
+                        dx = pods[1].x + 6;
+                    }
+                }
+            }
+            break;
+        }
+        if (phase > 1) {
+            for (k = 1; k <= npod; k++) {
+                sprptr = flags7eb24[pods[k].g];
+                spr_h = 0xf;
+                spr_x = pods[k].gx;
+                spr_w = 0xd;
+                spr_y = pods[k].gy;
+                drawsprite();
+                pods[k].gy += 0xe;
+                if (pods[k].gy >= pods[k].gyend) {
+                    pods[k].gy = pods[k].gyend;
+                    if (!pods[k].done)
+                        voice_play(0x17);
+                    pods[k].done = 1;
+                }
+            }
+        }
+        v7d8a4 = v7d8ac;
+        ctl_setup(0);
+        f377ae();
+        if (v88cce)
+            joy88b40 = 1;
+        if (netgame) {
+            v7ed20 = 0x220;
+            v7ed1c = 0x2a8;
+            if (netgame != 1) {
+                vk88cd5 = 0;
+                vk88cdd = 0;
+                vk88cd6 = 0;
+                vk88cd3 = 0;
+                joy88b40 = 0;
+                joy88b42 = 0;
+                joy88b44 = 0;
+                joy88b46 = 0;
+            }
+            v88cf0 = 0;
+            v88cf3 = 0;
+            if (netgame == 1) {
+                if (joy88b40)
+                    v88cf0 = 1;
+                else
+                    v88cf0 = 0;
+            }
+            net88c14 = net_key(v88cf0, v88cf3, 0);
+            if (netgame != 1 && v88cef == 1)
+                joy88b40 = 1;
+            if (net88c14) {
+                fn_1c068();
+                msgbox("EXCESSIVE ERRORS!", 0);
+                ticks = 0;
+                ticks2 = 0;
+                while (ticks <= 0x12c)
+                    ;
+                fn_1c0ac();
+                for (i = 0; i <= 0x2ff; i++)
+                    p7d718[i] = v7d858[i];
+                goto done;
+            }
+        }
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            while (key88ccd)
+                ;
+        }
+        while (v7e724 + 6 > ticks)
+            ;
+        dt++;
+        ft++;
+        tick++;
+        if (pal_a == 0)
+            pal_a = 0x3e80;
+        else
+            pal_a = 0;
+        if (joy88b40) {
+            if (mypod != 1)
+                break;
+        }
+        if (joy88b40 && splitscreen)
+            break;
+        if (mypod == 1 && joy88b40) {
+            scores_screen();
+            break;
+        }
+    }
+    for (i = 0; i <= 0x2ff; i++)
+        p7d718[i] = v7d858[i];
+done:
+    pal_a = 0x3e80;
+}
+

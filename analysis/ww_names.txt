@@ -345,6 +345,7 @@
 0x02b558 bigdigits    # CONFIRMED (rebuild src/ww.c): two-digit number in font 0x6e350 (0x16 x 0x1d) at x, y
 0x02b5e8 duck_screen  # CONFIRMED (rebuild src/ww.c): Duck Shoot intro / result on ORDER.PCX; hall of fame 0x6e768 (4 x {name[0x14], score}); strings
 0x02bbd8 overall_winner # CONFIRMED (rebuild src/ww.c): two-player overall winner / draw screen; net fire handshake
+0x02bff0 race_results # CONFIRMED (rebuild src/ww.c): post-race leaderboard + talking face; after the last race THE ROSTRUM (WIN.PCX) or the bonus-track message
 0x025a78 ents_project # CONFIRMED (rebuild src/ww.c): projects the ents into the view and appends sprite records; callers frame_draw 0x134e6, 0x135ef
 0x026a3c self_project # CONFIRMED (rebuild src/ww.c): the viewer's own kart sprite record (bottom centre), the v88c42 drive-in/out intro; callers frame_draw
 0x026eec dat_pal      # CONFIRMED (rebuild src/ww.c): no callers; last 0x300 bytes of a DAT entry into buf, 6-bit

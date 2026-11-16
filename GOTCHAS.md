@@ -344,3 +344,12 @@ it can be copied back into DREA.
   `p1 = (p0 = base) + size0` ... The game's code is a plain `mov/add eax,[mem]` chain; with char *
   globals our build hoists the size loads into ECX/EDX (+8 insns). The same expression on int
   aliases of the globals (`extern int a; #pragma aux a "_v7d6a0"`) matched byte for byte.
+- **A re-test the game makes and we skip means the stores between were volatile** (iter 14,
+  [generic]): race_results 0x2bff0 does `if (netgame != 1) { clear key bytes }` then
+  `if (netgame == 1)` and the game emits a second `cmp`; our 9.5b reuses the flags across plain
+  byte stores. Writing the key bytes through `volatile` aliases (`extern volatile char vk;
+  #pragma aux vk "_key88cd5"`) restores the cmp. Making the global itself volatile lost a match
+  elsewhere, so alias per function.
+- **Two-digit padding stores: `buf[1] = buf[0]` before `buf[2] = 0`** (iter 14): the game's
+  itoa-then-pad idiom loads buf[0] first (bigdigits 0x2b558 MATCH, also in leaderboard and
+  overlay_draw); not at every site (overlay_draw's third pad keeps the other order).
