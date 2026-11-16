@@ -479,6 +479,7 @@
 0x088cf0 v88cf0
 0x088cef v88cef
 0x0155c0 menu         # STRONGLY SUPPORTED: every caller copies item strings to mnames, calls it, stores ax as the choice; draws names + cursor sprites; pumps net_key/chat; "REMOTE IS CONTROLLING MENU"
+0x07bc00 mrows        # STRONGLY SUPPORTED (rebuild src/ww.c): char[][0x3c], the menu rows indexed from 1; trial_records_menu 0x1d579/0x1d584 forms &mrows[i] as i*0x3c + 0x7bc00 for i = 1..5, which only a base at 0x7bc00 compiles to (byte-identical); mrows[1] = mnames
 0x07bc3c mnames       # LIKELY: menu item strings, 0x3c apart
 0x06a528 sp6a528      # SPECULATIVE: second cursor sprite table
 0x06a978 p6a978       # SPECULATIVE: back-buffer source for f375cd
@@ -632,7 +633,7 @@
 0x077432 ctl_names77432     # CONFIRMED: inside cfg77128 (0x77128+0x30a); 84-byte per-player records of six 14-byte control names (+0,0xe,0x1c,0x2a,0x38,0x46), read by fn_1c0f4 0x1c43d/0x1c535
 0x077128 cfg77128w          # CONFIRMED: 16-bit compare of cfg77128+0 in fn_1c0f4 0x1c18d (with v7ee4a -> vals[0])
 0x07712a cfg7712a           # CONFIRMED: fn_1c0f4 0x1c1d3 (player 2 device, -> vals[1])
-0x088bda v88bda             # short; set to 1 by fn_1c968 0x1c98a
+0x088bda v88bda             # short; set to 1 by fn_1c968 0x1c98a; menu()'s 2nd argument in trial_records_menu 0x1d662 (0 first draw, 1 after a track screen 0x1d6dd) - LIKELY "screen already up, no fade"
 0x027920 f27920             # SPECULATIVE: called with 0 right after f278c4(0) in fn_1c0f4 0x1c7ea/0x1c801
 0x088ce9 v88ce9             # char; set to 0x2c by fn_1c0f4 0x1c14b next to v88ce8 (0x26) - f371e4 box colours
 0x01cb44 enter_name       # CONFIRMED (rebuild src/ww.c: 718 bytes at 0x1cb44, 21 aligned instruction diffs, all stack slots - QUESTIONS 9): the "PLEASE ENTER NAME.." name-entry screen; arg1 = the name buffer, arg2 = the centred heading (0x600ac empty at 0x1ce78), arg3 = the last index a character may go at (0xb at 0x1ce3f); caret sprite gn7eb2c at x 0xaa+8i y 0x5b; DOS 2509h restores the keyboard vector at 0x1cc2f-0x1cc5b; callers 0x1ce78, 0x2b6d7, 0x2e769
@@ -644,4 +645,4 @@
 0x060dc4 (LEAD.PCX)     # CONFIRMED: "LEAD.PCX" 0x60dc4, the f27060 argument of scores_screen 0x1ce1c and fn_1d704 0x1d71f
 0x07ed5c v7ed5c         # CONFIRMED: the score of the finished run; compared against the four table entries at 0x1cf3f/0x1cf77, stored into record+4 at 0x1d040-0x1d047
 0x01d13c race_records_menu  # CONFIRMED (rebuild src/ww.c): the class record-book menu (AMATEUR/PRO/CHAMP drivers), rows -> fn_1d704(class, v7ecb4 + choice); caller 0x2108f  - rows built as strcpy(prefix) then strcat(row text): " BONUS" x3 + "" when v7ecb4 != 0 (0x1d16f-0x1d1c7), then the pad loop while (strlen(row3) < strlen(row0)) strcat(row3," ") 0x1d28e; v88c80 saved at 0x1d147, rewritten with the previous choice at 0x1d168 and restored at 0x1d32b
-0x01d340 trial_records_menu  # LIKELY (not rebuilt): the TIME TRIAL variant of race_records_menu: " BRONZE TRIALS   "/" SILVER TRIALS   "/" GOLD TRIALS       " 0x60e14/0x60e28/0x60e3c + " LEAVE THIS MENU ", v88bb0 = 0xd, reads v88c80 itself (0x1d349) so it takes no argument; after the metal choice it builds five "TRACK n" rows in mnames with itoa 0x425f9 (0x1d53a-0x1d648) and runs menu(6, v88bda, 0, 0) at 0x1d671; caller 0x2107e = the drivers-by-class menu's choice 4 " TIME TRIAL DRIVERS" (0x6143c)
+0x01d340 trial_records_menu  # CONFIRMED (rebuild src/ww.c, byte-identical): the TIME TRIAL record book; metal menu (BRONZE/SILVER/GOLD TRIALS) then five "<metal>TRACK n" rows through menu(6, v88bda, 0, 0) 0x1d671, a track -> f2e4b8(metal + v7ecb4, track, 0) 0x1d6ca and CHECK.PCX reload; no argument (reads v88c80 itself 0x1d349); caller 0x2107e

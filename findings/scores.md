@@ -147,11 +147,24 @@ car-select chain and the name entry.
   is 0x600a0). `v88bb0 = 0xd` and `v88c80 = <previous choice>` are re-set on every pass of the loop
   (the back edge 0x1d326 jumps to 0x1d156), and `v88c80` is saved on entry (0x1d147) and restored on
   exit (0x1d32b-0x1d331).
-- STRONGLY SUPPORTED: 0x1d340-0x1d703 is the same screen for TIME TRIAL (` BRONZE TRIALS   `,
-  ` SILVER TRIALS   `, ` GOLD TRIALS       `, 0x60e14/0x60e28/0x60e3c), and after the class choice a
-  second menu of five generated rows - `mnames[0x3c*k] = <metal> + "TRACK " + itoa(1..5) + "  "`
-  (0x1d53a-0x1d648, `itoa` 0x425f9 writing into the frame's first slot) plus " LEAVE THIS MENU " at
-  0x7bd68 - run through `menu(6, v88bda, 0, 0)` at 0x1d671. Not rebuilt.
+- CONFIRMED (rebuild `src/ww.c`, byte-identical at 0x1d340, 964 bytes; caller 0x2107e):
+  `trial_records_menu` 0x1d340-0x1d703 is the TIME TRIAL record book. Its metal menu is
+  `race_records_menu`'s with ` BRONZE TRIALS   ` / ` SILVER TRIALS   ` / ` GOLD TRIALS     `
+  (0x60e14/0x60e28/0x60e3c) and the same " BONUS" prefix and padding rules. A metal choice copies
+  " BRONZE "/" SILVER "/" GOLD   " (0x60e50/0x60e5c/0x60e68) into a frame buffer and opens a
+  second menu: rows 1-5 are `metal + "TRACK " + itoa(i) + "  "` and row 6 is " LEAVE THIS MENU ",
+  run through `menu(6, v88bda, 0, 0)` (0x1d671). `v88bda` is 0 for the first draw and set to 1
+  after each track screen; LIKELY a "skip the fade-in" flag passed as menu()'s second argument.
+  A track choice calls `f2e4b8(metal + v7ecb4, track, 0)` (0x1d6ca), with `v88cec = 0` before and
+  after, then `f27060("CHECK.PCX", 0)` reloads the menu backdrop (0x60e80). LEAVE (6) or escape
+  returns to the metal menu, and metal 4 or escape exits with `v88c80` restored.
+- LIKELY: `f2e4b8(group, track, 0)` shows one track's time-trial records. The other caller,
+  `fn_1832c` 0x1911f, passes `(v88bb6 + v7ecb4, v88b88, 0)`. Not read.
+- STRONGLY SUPPORTED: the menu row array starts one row **before** `mnames`. `mrows` at 0x7bc00 is
+  `char[][0x3c]`, indexed from 1, so `mrows[1]` == `mnames` 0x7bc3c. The track rows' pointer is
+  formed as `mov ebp,0x3c; add ebp,0x7bc00` (0x1d579/0x1d584), which only `&mrows[i][0]` for
+  `i = 1..5` compiles to: `&mnames[(i-1)*0x3c]` gives `mov ebp,mnames` (38 diffs), `mnames - 0x3c
+  + i*0x3c` 10 diffs. What `mrows[0]` holds is not known (`arr7bba0` ends at 0x7bc00).
 
 ## Traps
 

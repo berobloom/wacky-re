@@ -274,3 +274,9 @@ it can be copied back into DREA.
   verbatim, and confirm the probe's size is within a few bytes of the real one before believing a
   ranking. For whole-file answers, edit `src/ww.c` and diff with `tools/wc/fncompare.py` (aligned
   pairs, instruction counts per side, and pairs whose text agrees but whose length differs).
+- **`mov r, N*stride` + `add r, sym` in a loop names the array's real base** (iter 14, [generic]):
+  trial_records_menu 0x1d579/0x1d584 is `mov ebp,0x3c; add ebp,0x7bc00`, which is i*0x3c + base with
+  i starting at 1, so the base is 0x7bc00 (`mrows`), one row before `mnames`. `&mnames[(i-1)*0x3c]`
+  folds to `mov ebp,mnames` (38 diffs) and `mnames - 0x3c + i*0x3c` gives 10. Declaring
+  `extern char mrows[][0x3c]` at 0x7bc00 and writing `&mrows[i][0]` was byte-identical. When the
+  `add` immediate is not a known symbol, name a new array there before rewriting the index.

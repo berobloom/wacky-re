@@ -19,8 +19,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
   still gets the last slot.
 - Record books (findings/scores.md): the drivers-by-class menu in `fn_1f858` (items 0x61410-0x61460)
   puts its choice in `v88c80`; 1-3 call `race_records_menu` 0x1d13c (`fn_1d704(class, v7ecb4 +
-  choice)`, near miss), 4 calls 0x1d340 (TRIALS + five "TRACK n" rows, not read); row names are
-  `strcpy(prefix)` + `strcat(row)` + padding to the first row's width.
+  choice)`, near miss), 4 calls `trial_records_menu` 0x1d340 (byte-identical: metal, then five
+  "TRACK n" rows, then `f2e4b8(metal + v7ecb4, track, 0)`). Menu rows are `mrows[][0x3c]` at
+  0x7bc00 indexed from 1 (`mnames` = `mrows[1]`); names are `strcpy(prefix)` + `strcat` + padding.
 - Menus/help (findings/menus.md): `fn_1c0f4` 0x1c0f4-0x1c88b = the F1 controls screen; control names
   in 84-byte records at 0x77432.
 - Video (findings/video.md): `setpalette` 0x36f14 is **not** a palette op - asm `rep movsb` of 0x3e80
@@ -30,13 +31,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1d33e, 87
+1. Matching rebuild, in progress: `src/ww.c` covers 0x10260-0x1bf7d and 0x1c0f4-0x1d703, 88
    functions identical and 40 near misses (`src/check.sh`; the register/scheduling ones are
    QUESTIONS.md 2, 3, 9, 10). arg1=EAX arg2=EDX arg3=EBX arg4=ECX; stack args `ret 4`; player 0x68.
-2. Next in address order: `trial_records_menu` 0x1d340-0x1d703 (0x3c4 bytes; start from
-   `race_records_menu`'s body - its 0x1d378-0x1d3c6 name block is the tail-merged form ours already
-   emits; scalars in slots esp+0x24/0x28/0x2c/0x30, a row buffer at esp+0x14), then `fn_1d704` (the
-   score table screen, LEAD.PCX 0x1d71f; `starts.py` 0x1d6d0/0x1d6f0 need the padding rule).
+2. Next in address order: `fn_1d704` 0x1d704 (the score table screen, LEAD.PCX 0x1d71f, frame
+   0x9c, copies 0x1e dwords from 0x10184 into esp first; `starts.py` 0x1d6d0/0x1d6f0 need the
+   padding rule). Then `f2e4b8` (LIKELY the per-track trial table, two other callers).
 3. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
    0x600ac into EDX, ours into EAX, which lets -oe tail-merge a store (GOTCHAS iter 13 - and the six
    probes in `.work/rrmv.c` were useless, that file has no `#include <string.h>`). Diff with

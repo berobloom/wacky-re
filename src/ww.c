@@ -6753,3 +6753,82 @@ void race_records_menu(int mode)              /* arg1 = eax (0x1d145: mov ebp,ea
     }
     v88c80 = saved;                                    /* 0x1d32b-0x1d331 */
 }
+
+extern char mrows[][0x3c];       /* 0x7bc00: the menu rows indexed from 1, mrows[1] == mnames (0x1d579:
+                                   * mov ebp,0x3c + add ebp,0x7bc00 is i*0x3c + &mrows[0]; spelling it
+                                   * &mnames[(i-1)*0x3c] gives mov ebp,mnames and 38 diffs) */
+
+/* 0x1d340, 0x3c4 bytes: the TIME TRIAL record books. Called from fn_1f858 at 0x2107e (the
+ * drivers-by-class menu's choice 4). The metal menu is race_records_menu's with TRIALS rows; a metal
+ * choice opens a second menu of five "<metal> TRACK n" rows plus LEAVE, and a track choice runs
+ * f2e4b8(metal + v7ecb4, track, 0) between two v88cec = 0, then reloads CHECK.PCX. */
+void trial_records_menu(void)
+{
+    char num[0x14];                           /* esp+0x00: itoa's buffer (0x1d590, 0x1d5e7) */
+    char metal[0x10];                         /* esp+0x14: " BRONZE " etc., 9 bytes used */
+    int saved = v88c80;                       /* esp+0x2c (0x1d349-0x1d358) */
+    int sel = 1;                              /* esp+0x24 */
+    int track, i;                             /* esp+0x28, esp+0x30 */
+
+    for (;;) {
+        v88bb0 = 0xd;                         /* 0x1d35c */
+        v88b9e = 0;                           /* 0x1d369 */
+        v88c80 = sel;                         /* 0x1d372 */
+        if (v7ecb4 == 0) {                    /* 0x1d378: three stores here, the fourth at the join */
+            strcpy(&mnames[0], "");
+            strcpy(&mnames[0x3c], "");
+            strcpy(&mnames[0x78], "");
+            strcpy(&mnames[0xb4], "");
+        } else {
+            strcpy(&mnames[0], " BONUS");
+            strcpy(&mnames[0x3c], " BONUS");
+            strcpy(&mnames[0x78], " BONUS");
+            strcpy(&mnames[0xb4], "");
+        }
+        strcat(&mnames[0], " BRONZE TRIALS   ");    /* 0x1d3cb */
+        strcat(&mnames[0x3c], " SILVER TRIALS   "); /* 0x1d3fb */
+        strcat(&mnames[0x78], " GOLD TRIALS     "); /* 0x1d42b */
+        strcat(&mnames[0xb4], " LEAVE THIS MENU "); /* 0x1d45b */
+        while (strlen(&mnames[0xb4]) < strlen(&mnames[0]))
+            strcat(&mnames[0xb4], " ");             /* 0x1d48b-0x1d4db */
+        sel = menu(4, 0, 0, 0);                      /* 0x1d4dd-0x1d4ee */
+        if (v7ecc0 != 0)                            /* 0x1d4f2 */
+            v88b9e = 1;
+        if (v88b9e != 0)                            /* 0x1d504 */
+            sel = 4;
+        if (sel == 4)                               /* 0x1d516 -> 0x1d6f0 */
+            break;
+        switch (sel) {                              /* 0x1d521: the tree 2 / <2 / 3 */
+        case 1: strcpy(metal, " BRONZE "); break;
+        case 2: strcpy(metal, " SILVER "); break;
+        case 3: strcpy(metal, " GOLD   "); break;
+        }
+        track = 1;                                  /* 0x1d55c */
+        v88bda = 0;                                 /* 0x1d564 */
+        for (;;) {
+            v88c80 = track;                         /* 0x1d57e */
+            for (i = 1; i <= 5; i++) {              /* 0x1d571, the test at 0x1d643 */
+                strcpy(&mrows[i][0], metal);
+                strcat(&mrows[i][0], "TRACK ");
+                itoa(i, num, 10);                   /* 0x1d5e9 */
+                strcat(&mrows[i][0], num);
+                strcat(&mrows[i][0], "  ");
+            }
+            strcpy(&mnames[0x12c], " LEAVE THIS MENU ");  /* 0x1d64e-0x1d66b */
+            track = menu(6, v88bda, 0, 0);          /* 0x1d671 */
+            if (v7ecc0 != 0)                        /* 0x1d67b */
+                v88b9e = 1;
+            v88bda = 0;                             /* 0x1d68d */
+            if (v88b9e != 0)                        /* 0x1d696 */
+                track = 6;
+            if (track == 6)                         /* 0x1d6a8 -> 0x1d35c */
+                break;
+            v88cec = 0;                             /* 0x1d6c3 */
+            f2e4b8(sel + v7ecb4, track, 0);         /* 0x1d6b3-0x1d6ca */
+            v88cec = 0;                             /* 0x1d6cf */
+            v88bda = 1;                             /* 0x1d6dd */
+            f27060((struct rec14 *)"CHECK.PCX", 0); /* 0x1d6d6-0x1d6e6 */
+        }
+    }
+    v88c80 = saved;                                 /* 0x1d6f0-0x1d6f4 */
+}
