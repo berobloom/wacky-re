@@ -18674,3 +18674,382 @@ void end_screen(char *name)
     getch();
 }
 
+/* ---- 0x35ca4, 3498 bytes: main (called from the C start-up 0x4374a). Initialises the globals,
+ * opens WACKY.DAT and reads WACKY.ING into cfg7ee1c, finds WACKY.CFG (in %APOGEECD% when set),
+ * checks its size (0xada) and its 0xfa marker, parses the command line (cheats TURBO 1, JUMP 2,
+ * HOG 4, ICE 8, FIRE 0x10 into the karts' fe0 flags; NOW skips the intro; /1 /2 /3 the frame
+ * rate v7ed08 12 / 6 / 0; /DEBUG the error log), checks for VGA, allocates (mem_alloc), starts
+ * sound and the three timer tasks, loads songs, sprites and tables (VEL.TAB, VEL2.TAB, VIEW,
+ * SLP), sets mode 0x13 with the BEACH.PCX palette, installs the keyboard handler, runs the
+ * release check, the intro and the main menu; on the way out END1.PCX for the shareware
+ * release, shuts everything down and shows the DOS end screen (WWSW.BIN / WWREG.BIN).
+ * differs: near miss, 22 blocks, all register / stack-slot choices (k in eax not edx, argv
+ * pointer in ecx not esi, the two palette pointers swapped, the REGS temporaries of the inlined
+ * setvmode calls in other slots, `bad` via eax); the CONST strings and the control flow agree. */
+struct task *TS_ScheduleTask(void (*f)(struct task *), int rate, int prio, void *data);
+void TS_Dispatch(void);
+void TS_Terminate(struct task *t);
+void MUSIC_Shutdown(void);
+void FX_Shutdown(void);
+void f36d42(void);
+void f37e41(void);
+extern struct task *t7ee00, *t7ee04;
+#pragma aux t7ee00 "_v7ee00"
+#pragma aux t7ee04 "_v7ee04"
+extern struct task *comtask_t;
+#pragma aux comtask_t "_comtask"
+extern int v7ecdc, v7ec78, v7d990, v7ec54, v7eb84, v7d81c, v7d818, w775e6;
+#pragma aux w775e6 "_v775e6"
+extern short v88caa, v88c78, v88c1c, v88b30;
+extern short w7d328[8];
+#pragma aux w7d328 "_arr7d328"
+extern int kfe0_684f0, kfe0_685f4;
+#pragma aux kfe0_684f0 "_v684f0"
+#pragma aux kfe0_685f4 "_v685f4"
+extern short tab706a0[8][8];
+#pragma aux tab706a0 "_arr706a0"
+extern short vel7e8c4[200];
+#pragma aux vel7e8c4 "_arr7e8c4"
+extern short vel2_7e584[200];
+#pragma aux vel2_7e584 "_arr7e584"
+extern char slp6e858[];
+#pragma aux slp6e858 "_arr6e858"
+extern short w77430;
+#pragma aux w77430 "_v77430"
+extern char cfg77128[];
+#pragma aux cfg77128 "_cfg77128w"
+
+void setvmode_x(char mode);
+#pragma aux setvmode_x "setvmode_"
+short datopen_s(char *name);
+#pragma aux datopen_s "datopen_"
+short save_config_s(short keep);
+#pragma aux save_config_s "save_config_"
+short mem_alloc_s(void);
+#pragma aux mem_alloc_s "mem_alloc_"
+extern short w88c46;
+#pragma aux w88c46 "_v88c46"
+
+int main(int argc, char **argv)
+{
+    char *env;
+    FILE *f;
+    int bad, iscd, size, pos, vga, n;
+    short i, j, k, v;
+    char *pal, *endpal;
+    union REGS r;
+
+    v7ebd4 = 0x2580;
+    v7ecac = 0;
+    signal(7, (void (*)(int))1);
+    signal(4, (void (*)(int))1);
+    v7ed34 = 0x50;
+    v7ed08 = 0xc;
+    countplays = 0;
+    v7ecbc = 0;
+    v7ecdc = 0;
+    v88ca0 = 0;
+    musicpaused = 0;
+    v7ec78 = 0;
+    v7d8ac = (int)cfg7b6d8;
+    v7d8b0 = (int)cfg7b6d8 + 0xc;
+    v7d990 = (int)cfg7b6d8;
+    v7d8a4 = (int)cfg7b6d8;
+    netvoices = 0;
+    v7d998 = 0;
+    v7ea68 = 0;
+    netgame = 0;
+    net7ed78 = 0;
+    net88c14 = 0;
+    v7ec54 = 0;
+    v88caa = 0;
+    music88bcc = 0;
+    w88bce = 0;
+    if (datopen_s("WACKY.DAT") == -1) {
+        setvmode(3);
+        printf("\n");
+        printf("Could not find WACKY.DAT \n");
+        waitkey_x();
+        exit(1);
+    }
+    datfind("WACKY.ING");
+    fread(cfg7ee1c, 0x492, 1, datfile);
+    v7eba4 = *(int *)(cfg7ee1c + 0x18);
+    v7eba0 = *(int *)(cfg7ee1c + 0x14);
+    strcpy(savedir, "");
+    strcpy(cfgname, "");
+    iscd = 0;
+    env = getenv("APOGEECD");
+    if (env) {
+        strcpy(cfgname, env);
+        size = strlen(cfgname);
+        if (size == 0)
+            strcpy(cfgname, "\\");
+        else if (cfgname[size - 1] != '\\')
+            strcat(cfgname, "\\");
+        strcpy(savedir, cfgname);
+        printf("APOGEECD enviroment label found\n");
+        printf("Path=%s\n", cfgname);
+        printf("WACKY.CFG will be written here.\n");
+        iscd = 1;
+    }
+    strcat(cfgname, "WACKY.CFG");
+    f = fopen(cfgname, "rb");
+    if (!f) {
+        setvmode(3);
+        printf("Wacky Wheels Config File not found. Please run SETUP.EXE\n");
+        printf("Press a key..\n");
+        while (kbhit())
+            getch();
+        getch();
+        exit(1);
+    }
+    pos = ftell(f);
+    fseek(f, 0, 2);
+    bad = ftell(f);
+    fseek(f, pos, 0);
+    bad = bad != 0xada;
+    if (!bad) {
+        fread(cfg7ee1c, 0x492, 1, f);
+        fread(cfg7b6d8, 0x18, 1, f);
+        fread(cfg77128, 0x630, 1, f);
+        if (w77430 != 0xfa)
+            bad = 1;
+    }
+    fclose(f);
+    if (bad) {
+        setvmode(3);
+        printf("Incorrect Wacky Wheels Config File!\n");
+        printf("Please run SETUP.EXE to correct this\n");
+        printf("If this error persists your SETUP.EXE\n");
+        printf("May not be the correct version.\n");
+        printf("Your WACKY.CFG file may also be corrupted\n");
+        printf("Delete this file and run SETUP.EXE\n");
+        printf("Press a key..\n");
+        while (kbhit())
+            getch();
+        getch();
+        exit(1);
+    }
+    if (!save_config_s(0))
+        exit(1);
+    if (iscd)
+        waitkey_x();
+    v88c78 = 0;
+    kfe0_684f0 = 0;
+    kfe0_685f4 = 0;
+    v88bea = 0;
+    if (argc - 1 > 0)
+    for (i = 1; i < argc; i++) {
+        strupr(argv[i]);
+        if (!strcmp(argv[i], "TURBO"))
+            kfe0_684f0++;
+        if (!strcmp(argv[i], "JUMP"))
+            kfe0_684f0 += 2;
+        if (!strcmp(argv[i], "HOG"))
+            kfe0_684f0 += 4;
+        if (!strcmp(argv[i], "ICE"))
+            kfe0_684f0 += 8;
+        if (!strcmp(argv[i], "FIRE"))
+            kfe0_684f0 += 0x10;
+        if (!strcmp(argv[i], "NOW"))
+            v7ecbc = 1;
+        if (!strcmp(argv[i], "/1"))
+            v7ed08 = 0xc;
+        if (!strcmp(argv[i], "/2"))
+            v7ed08 = 6;
+        if (!strcmp(argv[i], "/3"))
+            v7ed08 = 0;
+        if (!strcmp(argv[i], "/DEBUG")) {
+            printf("Debug ON\n");
+            v88bea = 1;
+        }
+    }
+    kfe0_685f4 = kfe0_684f0;
+    net7ed64 = kfe0_684f0;
+    net7ed68 = kfe0_684f0;
+    setvmode_x(3);
+    r.w.ax = 0x1a00;
+    int386(0x10, &r, &r);
+    vga = r.h.al == 0x1a;
+    if (!vga) {
+        printf("WACKY WHEELS requires a VGA card you do not seem to have one\n");
+        exit(1);
+    }
+    w88c46 = 4;
+    w7d328[6] = 4;
+    w7d328[7] = 5;
+    w7d328[0] = 6;
+    w7d328[1] = 7;
+    w7d328[2] = 0;
+    w7d328[3] = 1;
+    w7d328[4] = 2;
+    w7d328[5] = 3;
+    v88c1c = 1;
+    render_scales();
+    if (v88bea || v7ec78)
+        errlog = fopen("ERR.LOG", "wt");
+    if (v7ec78)
+        printf("Trace on\n");
+    if (!mem_alloc_s()) {
+nomem:
+        setvmode(3);
+        printf("Insufficient memory/Allocation failure. ");
+        printf("Allocated %d bytes\n", v7ebb8 - v7eb88);
+        printf("Needed a further %d bytes \n", v7eb88);
+        printf("Please execute HELP_ME.EXE for possible solutions.\n");
+        waitkey_x();
+        exit(1);
+    }
+    if (!sound_init())
+        exit(1);
+    v7edbc = w775e6;
+    if (v7edbc < 0 || v7edbc > 0x63)
+        v7edbc = 0;
+    ticks = 0;
+    ticks2 = 0;
+    racetime = 0;
+    ticks3 = 0;
+    t7ee00 = TS_ScheduleTask(tick_task, 0x88, 1, (void *)&ticks);
+    t7ee04 = TS_ScheduleTask(tick_task, 10, 1, (void *)&racetime);
+    comtask_t = TS_ScheduleTask(tick_task, 1, 1, (void *)&ticks3);
+    TS_Dispatch();
+    printf("Loading...\n");
+    sounds_load();
+    if (!songs_load())
+        goto nomem;
+    for (i = 0; i <= 0x2ff; i++)
+        v7d858[i] = 0;
+    kbd_off();
+    ticks = 0;
+    ticks2 = 0;
+    sprites_load();
+    k = 6;
+    for (i = 0; i <= 7; i++) {
+        v = k;
+        for (j = 0; j <= 7; j++) {
+            tab706a0[i][j] = v;
+            if (++v > 7)
+                v = 0;
+        }
+        if (--k < 0)
+            k = 7;
+    }
+    v7eb84 = 0x7cbe8;
+    f36d42();
+    v7d81c = 0x462;
+    v7d818 = 0x460;
+    v88bd6 = datfind("VEL.TAB");
+    if (!v88bd6 && v88bea)
+        logerr("vel.tab");
+    fread(vel7e8c4, 0x190, 1, datfile);
+    datfind("VEL2.TAB");
+    fread(vel2_7e584, 0x190, 1, datfile);
+    for (n = 0; n <= 199; n++)
+        tbl7e730[n] = vel7e8c4[n];
+    v88bd6 = datfind("VIEW");
+    if (!v88bd6 && v88bea)
+        logerr("view");
+    fread(tb6b7f8, 0x500, 1, datfile);
+    v88bd6 = datfind("SLP");
+    if (!v88bd6 && v88bea)
+        logerr("slp");
+    fread(slp6e858, 0x1e00, 1, datfile);
+    v7d6d0 = v7d758 + 0x87;
+    w88b10 = 0x100;
+    palptr = v7d858;
+    w88b1e = 0;
+    setvmode_keep(0x13);
+    f37cf1();
+    f37e41();
+    pal = v7d758;
+    datfind("BEACH.PCX");
+    seekdat(telldat() + datsize() - 0x300);
+    readdat(pal, 0x300);
+    pal_6bit_x((unsigned char *)pal);
+    while (kbhit())
+        getch();
+    kbd_on();
+    data_load();
+    faces_reset();
+    ytab_init();
+    release_check();
+    intro();
+    v7d824 = 0xa7d00;
+    v7d828 = 0xa7d50;
+    v7d82c = 0xa7da0;
+    v7d830 = 0xa7df0;
+    v7d860 = 0xa7d50;
+    v7d840 = 0xa7d50;
+    pal_a = 0x3e80;
+    v88b30 = 0;
+    key88cd5 = 0;
+    key88cd6 = 0;
+    key88cd3 = 0;
+    key88cdd = 0;
+    key88cd0 = 0;
+    v88bb2 = 4;
+    v88b86 = 1;
+    v88bb8 = 1;
+    v88c20 = v7ee58;
+    v88bb6 = 1;
+    v7ea58 = v7ee5a;
+    pnames_init();
+    comopen = 0;
+    duckfame_load();
+    main_menu();
+    if (v7e574) {
+        palptr = pal7d850;
+        getpalette();
+        f1bf94(pal7d850);
+        pcx_load("END1.PCX", 2);
+        endpal = pal7d850;
+        datfind("END1.PCX");
+        seekdat(telldat() + datsize() - 0x300);
+        readdat(endpal, 0x300);
+        pal_6bit_x((unsigned char *)endpal);
+        v88b4a = 0;
+        i = pal_a;
+        p7d714 = p6a980;
+        f375cd();
+        pal_a = i;
+        f37de0();
+        if (key88ccd) {
+            screenshot();
+            while (key88ccd)
+                ;
+        }
+        fade_in((unsigned char *)pal7d850);
+        wait_release(0);
+        wait_input(1);
+    }
+    v88caa = 1;
+    palptr = pal7d850;
+    getpalette();
+    f1bf94(pal7d850);
+    TS_Terminate(t7ee00);
+    TS_Terminate(t7ee04);
+    TS_Terminate(comtask_t);
+    if (musicon) {
+        MUSIC_StopSong();
+        MUSIC_Shutdown();
+    }
+    if (sfxon)
+        FX_Shutdown();
+    save_config(1);
+    kbd_restore();
+    setvmode_keep(3);
+    setvmode(3);
+    while (kbhit())
+        getch();
+    if (v88bea)
+        fclose(errlog);
+    if (v7e574)
+        end_screen("WWSW.BIN");
+    else
+        end_screen("WWREG.BIN");
+    if (datfile)
+        fclose(datfile);
+    exit(0);
+}
+

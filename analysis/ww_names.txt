@@ -199,6 +199,7 @@
 0x0357ac records_load # CONFIRMED (rebuild src/ww.c): WACKY<n>.TIM into trial70730 and WACKY<n>.HI into tbl77758 + 0x450, created from WAC<n>.OTT / .HTT in the DAT when missing
 0x035b78 cursor_at    # CONFIRMED (rebuild src/ww.c): int 10h AH 2 at (x-1, y-1), or parked at row 0x19 without show
 0x035bb0 end_screen   # CONFIRMED (rebuild src/ww.c): DOS end screen from the DAT (0xfa0 bytes via p6a978, f36a4e), or "Cannot find DOS end screen"
+0x035ca4 main         # CONFIRMED (rebuild src/ww.c): start-up, command line (TURBO/JUMP/HOG/ICE/FIRE cheats, NOW, /1 /2 /3, /DEBUG), config checks, allocation, tasks, data, intro, main menu, shutdown
 0x07c158 savedir      # LIKELY: directory prefix of the .TIM / .HI save files
 0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
