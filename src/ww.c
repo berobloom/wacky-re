@@ -10691,10 +10691,17 @@ void marker_draw(short n, short y, short x, short frame, short mode)
  * f126, f108 bytes apart, f112 of them) at +0x10, else marker_draw and animation 2 (f104/f12a/f114/f11e,
  * 0x18 wide ones twice with voice 0x10); k1/k2[track-1] == 3 keeps the previous one (f6e/f72). Then
  * the three tb80ae8 markers and the sparks f46/f4a. p2offset lifts everything for player 2.
- * differs (near-miss, 434 vs 434 insns, 8 blocks): the game also keeps v7d868 in ESI (so does ours).
+ * differs (near-miss, 434 vs 434 insns, 8 blocks): 4 of the 17 rows are the masked-displacement
+ * artefact (0x25056/0x25067/0x2506e/0x252d9) and 1 is tail padding. The 12 real rows are three
+ * register homes: EBX/ECX for f7a and the stride in both products (0x24f53/0x24f5c); the game keeping
+ * the v7d89c base in EAX while f7a already sits in EBX (0x250ff/0x25103) where ours chains
+ * `mov ebx,[v7d89c]` + `movsx ebx,[ebx+0x7a]` (0x2510c); and EAX/EDX in the f46 spark x (0x2536c-
+ * 0x25375). The game also keeps v7d868 in ESI (so does ours).
  * Left: register choice in the two frame*size products (game loads f7a first in both; tried all four
  * operand orders, best kept), the f46 spark x (game `lea eax,[ebx-1]`, ours `dec edx`; six forms
- * tried) and the tb80ae8 operand (probably fixup noise). Fixed on the way: spr_y -= f10 written in
+ * tried) and the tb80ae8 operand (probably fixup noise). New this iter: an `int h` local for
+ * `CR->f00 >> 1` (so the -1 could become the game's `lea eax,[ebx-1]`) costs 12 bytes of spills and
+ * takes the function 17 -> 28 rows; not kept. Fixed on the way: spr_y -= f10 written in
  * both lift arms, the f5a==1 test nested, `sprptr == sets->spr`, spr_y before spr_x. */
 struct sprset { char *spr; short f04, f06; };
 extern struct sprset *sets;
