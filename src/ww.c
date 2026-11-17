@@ -1227,7 +1227,13 @@ short datfind(char *name);
 long datsize(void);
 void readdat(void *buf, int n);
 
-/* differs: first and the priority counter swap ebx/ecx in the first loop (+110); bytes otherwise equal */
+/* differs: first and the priority counter swap ebx/ecx in the first loop (+110); bytes otherwise equal.
+ * Rows to subtract first (iter 33): 20 of the 33 are masked-fixup pairs - `[reg - 0x6f6f6f70]` on our
+ * side is an unlinked relocation where the game has the resolved `[reg + 0x6508e]`-style literal
+ * (0x11fb0, 0x11fe3, 0x12035, 0x1207c-0x120d9); the 13 real rows are the EBX/ECX colour of `first`
+ * (game EBX 0x12005 `xor ebx,ebx`/0x12010 `mov ebx,0x1a`, ours ECX) and of the data temp + priority
+ * counter (game ECX 0x12015 `mov ecx,0x1b`), i.e. the documented register-home dead end
+ * (QUESTIONS.md 2) - SKIP at 0 variants, no new lever offered. */
 void voices_load(void)
 {
     long *offs;
@@ -13465,12 +13471,15 @@ void minimap(void)
 
 /* ---- 0x2a618, 224 bytes: formats a race time t (tenths) as "MM:SS:T" into out (callers 0x2a9a4,
  * 0x2aa19 in 0x2a92c); a time over 0x8ca0 (one hour) shows as 0 and clears racetime.
- * differs (near-miss, 76 vs 77 insns, 13 blocks, registers only): the game keeps t in EBP and the
- * divisor 10 in EBX, ours t in EBX and 10 in EBP. Tried: 24 declaration orders, a separate t/10
- * local, nested divisions, long t, statement orders, buf sizes. */
+ * differs (near-miss, 31 rows, registers and slots only): the game keeps t in EBP and the divisor
+ * 10 in EBX, ours t in EBX and 10 in EBP, and the two int locals land in [esp+4]/[esp+0xc] where the
+ * game has [esp+0xc]/[esp+8]. Tried: 24 declaration orders, a separate t/10 local, nested divisions,
+ * long t, statement orders, buf sizes. New here (kept, 33 -> 31): `char buf[4]` - the largest itoa
+ * writes is "599"+NUL - and the frame becomes the game's 0x10 instead of 0x14. SKIP at 1 variant:
+ * the rest is the documented register-home / slot dead ends (GOTCHAS "Dead ends", QUESTIONS 1/2/9/10). */
 void time_str(int t, char *out)
 {
-    char buf[8];
+    char buf[4];                   /* 0x8ca0/60 = 599 is the largest itoa writes here: 3 + NUL */
     int tenths, min, sec;
 
     if (t > 0x8ca0) {

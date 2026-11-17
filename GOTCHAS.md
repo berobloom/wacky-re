@@ -189,7 +189,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   order (arrays DO follow declaration order, ascending from esp+0). 43 orders in enter_name, also
   release_check, wtext, scores_screen, fn_1c0f4, showlines, cars_menu. Size a local array from the
   frame, not its largest index (scores_screen `long sc[10]`); never-used locals are dropped, so a
-  frame gap means the game used those slots. [generic]
+  frame gap means the game used those slots. The reverse too: an over-sized buffer inflates the frame
+  and every slot displacement (`char buf[8]` gave time_str 0x2a61d a 0x14 frame where the game has
+  0x10; `buf[4]` fixed it, 33 -> 31 rows). [generic]
 - **A global kept in a register across a loop** (load at entry, store at exit; QUESTIONS 2:
   players_project, wait_or_key 0x14c7c). Do not add a local copy. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
