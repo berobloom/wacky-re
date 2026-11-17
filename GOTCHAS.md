@@ -180,6 +180,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   registers survive). The "EAX/EDX arguments, result in DX" were the caller's `p7d714 = p` value and a
   `short` save of pal_a held in DX across the call: `p7d714 = p; fs = pal_a; f375cd(); pal_a = fs;`
   (0x1ce57/0x1ce6c). Retired the old "16-bit EDX argument" dead end; credits_screen 44 -> 32. [generic]
+- **A ternary as a call argument blocks 9.5b's strength reduction of the loop index**; the same
+  call in an `if`/`else` lets it replace `k` by stepped pointers/offsets like the game
+  (kartsets_load 0x28038, 48 -> 36). [generic]
 - **Strings:** a byte-loop strcpy is `strcpy(buf, &"LIT"[0])` (keeps the literal in CONST; songs_pick
   0x32e60); `strcpy(p, "")` is a 1-byte copy of the pooled "" at 0x600ac (the NUL of "WACK").
   Watch check.sh's `segment CONST` line after every new string: one base = literals in place.

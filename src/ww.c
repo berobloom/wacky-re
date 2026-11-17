@@ -12351,11 +12351,14 @@ void track_load(void)
  * 0x3491a, 0x34e95): with `one`, ACTION.SP (0x5e2 bytes into p6a980) and the single set 251X6.INF;
  * else the six sets named in kartset[]. Each set is 10 frames: w, h (shorts) then (h + 1) * w * 4
  * bytes; tab6e470[set * 20 + frame] points at each.
- * differs (near-miss, 86 vs 85 insns, outer loop): the game strength-reduces the set name too
- * (`mov eax,4; add eax,kartsets` start, +0x16 per set), drops k and tests the 0x50-byte row offset
- * against n * 0x50, with n in ESI; ours keeps k and an imul by 0x16 for the name. Tried: ternary,
- * if/else, hoisted name pointer, short/unsigned/short n k, while loop, char[][0x16] + 4. The inner
- * loop matches. */
+ * differs (26 rows, iter 36: 48 -> 26): only stack slots left (the game has its three loop temps -
+ * name pointer, row offset, n * 0x50 - at esp+0/4/8, `one` at 0xc, w/h at 0x10/0x14; ours another
+ * permutation, the dead-end class), one entry load order (0x2806a) and where `p7d838 += 2` lands.
+ * What fixed the rest: datfind in an if/else instead of a ternary argument (9.5b then strength-
+ * reduces k away like the game, 48 -> 36), p7d838 += sz through an int alias (`add [p7d838],eax`,
+ * 31) and the table store written before `p = p7d838` (load into EDX, copy to ESI, 26). Tried:
+ * a 1-D `tab6e470[k * 20 + i]` index (steps by 0x14, not 0x50), `n > k`, w/h declared first or
+ * after p, `p = kartfr[k][i] = p7d838`, `int wh[2]` (24 rows but at esp+0, not the game's 0x10). */
 struct kartset { int f00; char name[0x12]; };
 extern struct kartset kartsets[];
 #pragma aux kartsets "_arr7d8b4"
@@ -12363,6 +12366,8 @@ extern short *v7d844;
 extern short *kartfr[][20];
 #pragma aux kartfr "_tab6e470"
 
+extern int a7d838x;                   /* p7d838 as an int: `add [p7d838],eax` (0x2814f) */
+#pragma aux a7d838x "_p7d838"
 void kartsets_load(int one)
 {
     int n, k;
@@ -12378,10 +12383,13 @@ void kartsets_load(int one)
     } else
         n = 6;
     for (k = 0; k < n; k++) {
-        datfind(one ? "251X6.INF" : kartsets[k].name);
+        if (one)
+            datfind("251X6.INF");
+        else
+            datfind(kartsets[k].name);
         for (i = 0; i <= 9; i++) {
+            kartfr[k][i] = p7d838;
             p = p7d838;
-            kartfr[k][i] = p;
             fread(&w, 2, 1, datfile);
             *p++ = w;
             fread(&h, 2, 1, datfile);
@@ -12389,7 +12397,7 @@ void kartsets_load(int one)
             sz = (h + 1) * w * 4;
             p7d838 += 2;
             fread(p7d838, sz, 1, datfile);
-            p7d838 = (short *)((char *)p7d838 + sz);
+            a7d838x += sz;
         }
     }
 }

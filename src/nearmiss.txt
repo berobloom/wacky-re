@@ -73,7 +73,7 @@
 44   0x02a4ac minimap                MATCH
 33   0x034208 players_ahead          SKIP: the game caches the global v7d800 in ECX across the loop, ours never does; `v7d800 = v7d800 + 1` 44 -> 33; diagnostics (local counter, no store, no call, fresh alias) all leave it uncached
 48   0x012f80 draw_status
-48   0x028038 kartsets_load
+26   0x028038 kartsets_load          SKIP: stack slots (dead end), one entry load order, the p7d838 += 2 position; if/else datfind + int alias add + store-before-copy took it 48 -> 26
 48   0x02b5e8 duck_screen
 49   0x014380 ents_show
 51   0x0114c8 screenshot
