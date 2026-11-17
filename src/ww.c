@@ -5017,16 +5017,19 @@ joyretry:
    differs (near-miss): (a) the game's build caches the global v7ebc0 (connected) in EBP
    across the menu's loops - 10 loads at loop entries and 5 stores at loop exits, ~90
    bytes, none of which our 9.5b build emits for this function (it does the same dance
-   for wait_or_key itself, whose body this inlines); (b) frame 0x32c vs our 0x310 - 28
-   bytes of slots the game uses somewhere (no [esp+0x30c..0x327] reference appears in
-   its code, and an unused array we declare is dropped from the frame); (c) i lands in
+   for wait_or_key itself, whose body this inlines); (b) gone since iter 42 - the frame gap was the
+   name buffer: `char name[0x28]` (pal 0x300 + name 0x28 + flash at esp+0x328 = the game's 0x32c; the
+   code only ever writes 12 of those 40 bytes, which is why no [esp+0x30c..0x327] reference appears);
+   (c) i lands in
    EDI and idx in a stack slot for us (SI/DI in the game), so the flash-toggle slot
    encodings at 0x19a19 differ; (d) the telldat/datsize/seekdat/readdat expression at
    0x194bc accumulates in EAX in the game and in EDX for us; (e) gone since iter 36 (`void f375cd(void)`,
    the DX save of pal_a). Blocks that do reproduce the game's bytes: the three message
    copies, the palette copy loops, the fn_182d0 flash loops, the input blocks for
    netgame 0/1/2, the net_key/v7ecc4 block, the two error/escape blocks and the two
-   nav blocks. */
+   nav blocks. nmrefs: the one DIFFER is the game's pal_6bit call at 0x194e7, which -oe inlines for
+   us; calling it through the pal_6bit_x alias was tried (nmrefs goes clean) and costs 10 rows - 148 ->
+   158, ours 2048 bytes. */
 
 extern char *pal7d848;
 extern short v88c96;
@@ -5038,7 +5041,7 @@ void f37cf1(void);
 void fn_193a8(void)
 {
     char pal[0x300];            /* esp+0x000: working palette */
-    char name[0x0c];            /* esp+0x300: "(B)SBCS.PCX" */
+    char name[0x28];            /* esp+0x300: "(B)SBCS.PCX"; 0x28 = the game's frame (flash at esp+0x328) */
     int flash;                  /* esp+0x328: fn_182d0 a4 toggle */
     short i, idx, enter;
 
