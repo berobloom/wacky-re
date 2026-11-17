@@ -128,6 +128,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   `v = *p; v <<= 2; *p++ = v;` (pal_shift 0x114b0, whole-register shift + the game's registers);
   `m = v88b88 - 1; m *= 0xf3c;` with m declared first (track_load 0x27a49 `movsx ecx` + `dec ecx`).
   [generic]
+- **A slot swap with a pointer the compiler made from `a[i]`: make the pointer an explicit local,**
+  declared BEFORE the scalar it swaps with and assigned where the game first stores it
+  (`char *nm;` ... after the preceding call `nm = names[0];` ... `nm += 12;`): sounds_load 0x12124,
+  0x168/0x16c, MATCH. Declared after, or assigned earlier, keeps a swap. [generic]
 - **One local shared by two switch arms has one home, two locals get two:** one `short b` for the
   receive and transmit byte fixed com_isr 0x106c8 and com_isr_fifo. [generic]
 - **A 0/1 value in its own home: braced `if (c) { x = 1; } else { x = 0; }`**, not `x = (c)` (which
@@ -176,7 +180,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### Dead ends: SKIP at once (0 variants) unless you bring a new idea
 
-- **Stack-slot permutation of scalar locals** (QUESTIONS 9, 10): neither declaration nor first-use
+- **Stack-slot permutation of scalar locals** (QUESTIONS 9, 10), unless one of the swapped slots
+  is a compiler-made pointer (lever above): neither declaration nor first-use
   order (arrays DO follow declaration order, ascending from esp+0). 43 orders in enter_name, also
   release_check, wtext, scores_screen, fn_1c0f4, showlines, cars_menu. Size a local array from the
   frame, not its largest index (scores_screen `long sc[10]`); never-used locals are dropped, so a

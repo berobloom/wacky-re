@@ -53,7 +53,7 @@
 20   0x011adc voices_reset          SKIP: -1/0 constant homes EBX/EDX swapped (coin flip; 18 of 20 rows masked fixups); locals for the constants propagate, 8 spellings
 20   0x0237e4 kart_move              SKIP: one [esp] spill slot vs our two (compiler spills, frame 4 vs 8); volatile t variants worse (39-88 rows)
 21   0x0348f4 intro                  SKIP: several scheduling rows + pal_a save in BX vs DX (f375cd call form = 32-bit dead end; save locals worse), 6 spellings
-22   0x012124 sounds_load
+22   0x012124 sounds_load            MATCH
 22   0x01bf00 fn_1bf00
 22   0x01cb44 enter_name
 22   0x028b20 kart_catchup

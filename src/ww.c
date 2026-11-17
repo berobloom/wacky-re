@@ -1260,8 +1260,8 @@ void voices_load(void)
 extern char *gigdata;
 extern char *gigs[7];
 
-/* differs: pri and the second loop's name pointer swap stack slots (0x168/0x16C; QUESTIONS 2); renaming
-   pri and reordering declarations do not move them */
+/* The second loop's name pointer is the explicit `nm`, declared before i/pri and set after the
+   MOTOR.VOC read: with `names[i]` the compiler's own pointer took pri's slot (0x168/0x16C swapped). */
 void sounds_load(void)
 {
     char names[27][12] = {
@@ -1273,6 +1273,7 @@ void sounds_load(void)
     char num[16];
     char *p, *q;
     short len;
+    char *nm;
     int i, pri;
 
     if (!sfxon)
@@ -1298,8 +1299,9 @@ void sounds_load(void)
     q = voicedata;
     datfind("MOTOR.VOC");
     readdat(enginedata, 0x942);
+    nm = names[0];
     for (i = 0; i < 27; i++) {
-        strcpy(fname, names[i]);
+        strcpy(fname, nm);
         strcat(fname, ".VOC");
         datfind(fname);
         len = datsize();
@@ -1310,6 +1312,7 @@ void sounds_load(void)
         voices[i].plays = 0;
         voices[i].priority = pri--;
         q += len;
+        nm += 12;
     }
     voices[25].priority = 0x20;
     voices[26].priority = voices[18].priority;
