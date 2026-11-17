@@ -14417,9 +14417,11 @@ void overall_winner(void)
  * (sp6a538 frames, phase 1), then stand as faces, the own kart animated (kd7b378) and the side
  * ones (kd7b238), a duck (sp7c800) walks to the winner, and the flags (gn7eb24[g]) rise on
  * each step with voice 0x17; fire ends it (the own winner first goes to scores_screen).
- * differs: 885 = 885 insns; the rest is register choice (the palette save in EDX, the sort and
- * grouping loop counters), store order in the flag set-up and the duck start, and one dead je
- * at the fire test. Tried: loop forms, a save local, operand order, exit-test shapes. */
+ * differs: 110 = scalar-slot permutation of the 20-odd locals (GOTCHAS dead end; arrays DO
+ * match now) + the EAX/ECX sort-pair and EAX/EDX product coin flips + one dead je at the fire
+ * test + the trailing lea/nop pad. Frame gap solved this iter: grp[10] and pods[8] (not 9/6) -
+ * array rows +0x2c, scalar rows +0x74, padding unchanged (175 -> 110). Tried before: loop forms,
+ * a save local, operand order, exit-test shapes. The 1x extra joy88b40 ref in nmrefs predates. */
 struct ptgroup { int n; int pl[10]; };
 extern char *flags7eb24[];
 extern volatile char vk88cd5, vk88cdd, vk88cd6, vk88cd3;    /* written by the keyboard handler; */
@@ -14437,8 +14439,8 @@ void race_results(void)
 {
     char buf[0x28];
     char *pp;
-    struct ptgroup grp[9];
-    struct podium pods[6];
+    struct ptgroup grp[10];
+    struct podium pods[8];
     short x, y, who, place, x2, y2, who2, place2;
     short np1, npod, r, first, mypod, pod2;
     short dx, dy, phase, dstate, dt, dfr, ft, songdone;
