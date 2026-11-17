@@ -3,6 +3,9 @@
 
 usage: fndiff.py PROG FILE.OBJ NAME [0xADDR]
 
+Columns: OURS (the .OBJ) on the LEFT, the game on the RIGHT (iter 20 - an overnight prompt got this
+backwards; check a full disassembly of one side before writing prose about a diff).
+
 Like tools/wc/variants.py this ignores the bytes fixups fill and prints absolute addresses as '@',
 but it lists the differing pairs instead of only counting them, and it aligns the two listings with
 difflib so a 1-byte drift does not shift the whole function. A pair on one line means one side has

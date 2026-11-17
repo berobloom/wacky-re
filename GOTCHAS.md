@@ -263,6 +263,8 @@ it can be copied back into DREA.
   docstring never says so, and a `differs:` note written from its output can swap the two sides
   (track_pics_load's note described the game's shape as ours since iter 14). `A` is the .OBJ,
   `B` the game bytes; confirm with a full disassembly of one side before writing prose about a diff.
+  The nightly prompt's own parenthetical says the reverse - the `fndiff.py` docstring now states the
+  order (iter 21, after a `release_check` note was written backwards once more).
 - **A local's type decides whether Watcom keeps it in a register** (iter 10, [generic]): the
   centring temporary of `fn_1c0f4` as `int` got a stack slot at esp+0x3d4 (frame 0x3d8, every
   displacement off by 4); as `short x` it stayed in EAX, the frame became the game's 0x3d4 and the

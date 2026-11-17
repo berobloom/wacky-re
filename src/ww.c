@@ -18087,9 +18087,9 @@ void pic_at(int d, int lift, short x)
  * v7e574 1). Shows CHECK.PCX (palette from its last 0x300 bytes into v7d858) with the release
  * lines, the copyright and PRESS FIRE; unless v7ecbc, fades in and waits up to 2000 ticks for fire
  * (or the v88cce key) or Esc.
- * differs: only the stack slots of n and y swap (game n esp+0x194 - the `mov dword [esp+0x194],2`
- * at 0x344f5 - and y esp+0x190 - the `mov dword [esp+0x190],0x54` at 0x345f0; ours the reverse);
- * declaration order, placement and int/short mixes do not move them. Documented dead end: Watcom's
+ * differs: only the stack slots of n and y swap (game n esp+0x190 and y esp+0x194 - fndiff's game
+ * column at 0x344f5 is `mov dword [esp+0x190],2` and at 0x345f0 `mov dword [esp+0x194],0x54`; ours
+ * the reverse); declaration order, placement and int/short mixes do not move them. Documented dead end: Watcom's
  * scalar slot permutation (GOTCHAS "Watcom does not allocate scalar stack slots in declaration
  * order", 43 declaration orders probed for enter_name). */
 extern int v7ecbc;
