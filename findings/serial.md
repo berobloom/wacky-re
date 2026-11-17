@@ -58,6 +58,16 @@ The rings are 16 KB: `rxbuf` 0x84b00 with `rxhead`/`rxtail`/`rxcount`
   `pop gs/fs/es/ds; popal; iretd`. 9.5b duplicates that epilogue for one of
   the two defaults in some layouts (GOTCHAS "the duplicated ISR epilogue").
 
+- CONFIRMED (rebuild `src/ww.c` byte-identical at 0x2dd30-0x2df70, `src/check.sh` MATCH, iter 21;
+  bytes 0x2dd42-0x2dd4e): `net_key` keeps `v88cae` as the **low byte** of the sequence counter
+  `v7ed8c` - `mov ax,word [0x7ed8c]; xor ah,ah; mov word [0x88cae],ax` - so the stale-packet test
+  `v88cb0 < v88cae` compares truncated sequence bytes, and `v88cb0` is the byte the reply carried
+  (`net_recv` stores `buf[3]`). The packet itself is `type, a, b, v7ed8c(byte), crc16 low first`
+  (`net_send` 0x2dc38; the `'Z'`/`'W'` types zero `a` and `b`). A half-done exchange is parked in
+  `v7ed94` (resume flag) / `v7edac` (wait) / `v7edb8` (resend) / `v88cf1`, `v88cf4` (our `a`, `b`),
+  and resumed at 0x2dd5d-0x2dd8f by byte-copying `v88cf1`->`v88cef` and `v88cf4`->`v88cf2`
+  (each value loaded back out of the global it was just stored to - five load/store pairs).
+
 ## Traps
 
 - Watcom's placement of the shared `done:` epilogue is not a function-local
