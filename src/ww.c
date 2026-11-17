@@ -18458,11 +18458,13 @@ void tiles_setup(void)
  * eight karts driving past one by one (players_ahead, voice 8 as each starts) until the last is
  * gone, 0x3c ticks and a key. Ends with the WINTRO palette copied to v7d858 and CHECK.PCX loaded
  * (palette into v7d85c). v7d998 is 1 during the fly-over and restored after.
- * differs (9 blocks): the fread size is loaded before its buffer, music88bcc is stored after the
- * song load, the frame wait keeps ticks in EDX, the final palette copy loads the source first;
- * and the pal_a save around f375cd is in DX in the game, BX in ours (0x34b26). Tried (iter 30):
- * `pal_a = f375cd(p6a978, pal_a)` (DX but movzx edx: the f375cd 32-bit-argument dead end, 49
- * rows), a separate `short save` / `int save` local in three positions (24-51 rows vs 21). */
+ * differs (15 rows, iter 36): the fread buffer is loaded before its size in the game (0x3499a);
+ * music88bcc = 0 sinks below the inlined music_start loads (0x34c5e, the zero-argument dead end); the
+ * game hoists v7ea70 into EAX above the wait loop (0x3515d) where ours reads it in the loop; and the
+ * `k + 1 == j` compare has its operands swapped (0x351ae `cmp esi,ecx`). The pal_a save went with
+ * `void f375cd(void)` (21 -> 17) and `k + 1 == j` (was `j == k + 1`) fixed the homes (17 -> 15).
+ * Tried iter 36: `t = v7ea70;` + `ticks - t` (37), `-v7ea70 + ticks` (15), `< 9` (38), `t = v7eb00`
+ * for the fread buffer (31), `(int)` casts on k or j (15). */
 void f37e23(void);
 void f36e66(void);
 extern int v7aa98;
@@ -18739,7 +18741,7 @@ void intro(void)
             done = v7d800->f00 == 2;
             if (v7d800->f00)
                 v7d800->y += 0x1c;
-            if (!v7d800->f00 && j == k + 1 && abs(v7d800->y - players[k].y) >= 400) {
+            if (!v7d800->f00 && k + 1 == j && abs(v7d800->y - players[k].y) >= 400) {
                 if (sfxon) {
                     if (FX_SoundActive(v7aa98))
                         FX_StopSound(v7aa98);
