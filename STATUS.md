@@ -23,7 +23,14 @@ Short: where the project stands, and what is next. History is in git; no diary.
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
    overnight/prompt.md step 2). Next open: `main` 0x035ca4 (80), `kart_fire` 0x024364 (108),
    `car_laps` 0x012b44 (109). (iter 38: volume_menu 64 -> 48, fn_1c0f4 67 -> 14, ent_sprites_load
-   SKIP.) A game `cmp eax,1; jbe` + `cmp eax,2; je` + `jmp` is a `switch` with `case 0: case 1:`. Before probing, run the GOTCHAS scans on the game's code: a
+   SKIP.) A game `cmp eax,1; jbe` + `cmp eax,2; je` + `jmp` is a `switch` with `case 0: case 1:`.
+   Run `tools/wc/nmrefs.py ww .work/src/WW.OBJ` after a near-miss change: it compares the
+   addresses each function uses (globals, calls, strings, jump-target blocks), which fndiff masks.
+   iter 38 it found four behaviour bugs (fn_1c0f4, credits_screen, fn_1832c, fn_173c4); the six
+   DIFFER lines left are explained (inlined pal_6bit, jump tables, folded pointer inits).
+2. Later (the human's plan, not started): an isledecomp/isle-style README with per-file progress:
+   split src/ww.c by subsystem, percentage = byte-identical functions per file, cover from
+   original/FRNTCOVR.PCX and screens from the original in DOSBox-X, laid out like redcat-rrr-re. Before probing, run the GOTCHAS scans on the game's code: a
    cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
    the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
    the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).

@@ -203,6 +203,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   0x32e60); `strcpy(p, "")` is a 1-byte copy of the pooled "" at 0x600ac (the NUL of "WACK").
   Watch check.sh's `segment CONST` line after every new string: one base = literals in place.
   [generic]
+- **A near miss can hide a behaviour bug the row count never shows:** a wrong field (cboxes[1].x2
+  for .x), a swapped string, a store into the wrong table, or code made unreachable (no label after
+  a `goto`, which 9.5b drops without a warning: fn_1832c lost its joystick path and trial_book
+  call). `tools/wc/nmrefs.py` compares what both sides reference; run it after every change. [generic]
 - **An unsigned `cmp eax,1; jbe A` + `cmp eax,2; je B` + `jmp` chain is a `switch` with `case 0: case
   1:`**, not `if (v <= 1) ... else if (v == 2)` (signed `jg`, other block order). A block the game
   jumps BACK into from a later test is the same statements written twice in the source and
