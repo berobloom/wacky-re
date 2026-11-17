@@ -200,7 +200,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **A global kept in a register across a loop** (load at entry, store before each call and at exit)
   is NOT a dead end: the game's source used the global itself as the working variable. Drop the
   local copy and compute in the global (`spr_x = p->x - 0x400; if (spr_x < 0) spr_x = 0; ...`):
-  minimap 0x2a4ac 44 -> MATCH. Re-try players_project, wait_or_key 0x14c7c with this. [generic]
+  minimap 0x2a4ac 44 -> MATCH, fn_16eac (`n = nplayers` copy removed) 11 -> MATCH. Signature to
+  scan for: `mov [G],r; call; mov r,[G]` in the game. A global that is already the working
+  variable and still is not cached (players_ahead's v7d800) is unexplained. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
   com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared
