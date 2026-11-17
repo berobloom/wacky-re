@@ -6645,7 +6645,8 @@ void fn_1c968(void)
  * the parameter order and the frame size follow, the permutation of the seven locals does not
  * (QUESTIONS.md 9). The two palette flips are byte-identical as if/else statements - the
  * `pal_a = pal_a ? 0 : 0x3e80` form compiles to a value select in EAX, which the game never
- * emits (GOTCHAS). */
+ * emits (GOTCHAS). SKIPped iter 31 with 0 variants: every fndiff row is a slot displacement,
+ * no lever outside the class in this note. */
 void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, arg3 = ebx */
 {
     char prompt[0x28];
