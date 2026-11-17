@@ -9879,12 +9879,19 @@ void kart_state(void)
  * picks it up, a bump (f24 > 0) can knock karts out; then sparks (f46-f4a) and voice 0x15/0x16.
  * The compiler keeps v88c9e and spr_y in CX/SI for the whole function, writing them back before calls.
  * The soundon/FX_StopSound blocks are engine_stop() inlined (index loaded before the soundon test).
- * differs (near-miss, 605 vs 604 insns, 31 diff blocks, most register/slot): (a) stack slots: the
- * game puts n at [esp+8], lo at [esp+4], m at [esp]; ours swaps n/sx/lo (21 orders of the decl list
- * and the oy/ox statements tried, B04 best); (b) oy is computed in DI with `add di,[eax+6]` in the
- * game, through EDX/EBX in ours; (c) index forms `[edx+eax*2+@]` vs `[eax+edx*2+@]` flip by site;
- * (d) the tb7b418 store/f0c load order at 0x230d0 (chained, pointer-temp and m-placement variants were
- * all worse: 33-35 blocks); (e) `sub ebx,[edx+0x3c]` folded in ours, loaded first in the game. */
+ * differs (49 rows at the game's 3000 bytes, fndiff): (a) stack slots: the game puts n at [esp+8],
+ * lo at [esp+4], m at [esp]; ours swaps n/sx/lo (21 orders of the decl list and the oy/ox
+ * statements tried, B04 best); (b) oy is computed in DI with `add di,[eax+6]` in the game, through
+ * EDX/EBX in ours (ox written first: 62 -> 68; `oy = CR->f02 - 1; oy += CR->f06;`: 62 -> 83);
+ * (c) index forms `[edx+eax*2+@]` vs `[eax+edx*2+@]` flip by site; (d) the tb7b418 store/f0c load
+ * order at 0x230d0 (chained, pointer-temp and m-placement variants all worse) plus the EDI/EBX
+ * pairing of the faces[] index at 0x2312f (6 rows, the coin flip); (e) `sub ebx,[edx+0x3c]` folded
+ * in ours, loaded first in the game; (f) 0x234df ours `lea edx,[eax*2]` where the game has
+ * `mov edx,[v7d800]; add eax,eax; add eax,edx`. Iter 40 levers that worked: `if (v88bf6 == 0)
+ * voice_play(0x15); else voice_play(0x16);` (the game jumps away for the 0x16 case), the f20 switch
+ * arms ordered 4, 5, 3, and `m = v88b7e;` moved below the f28/f2c tests so the players address is
+ * recomputed from the global there (the game's `movsx eax,[v88b7e]; mov [esp],eax` 0x23139):
+ * 71 -> 49 rows, size 2992 -> the game's 3000. */
 struct crec {
     short f00, f02, f04, f06;
     short *f08;
@@ -10014,14 +10021,14 @@ void kart_bump(void)
                 }
             }
             if (v7d800->f28[v88b7e] != 0) {
-                m = v88b7e;
-                if (v7d800->f2c[m] == 4) {
+                if (v7d800->f2c[v88b7e] == 4) {
                     hi = 1;
                     lo = 0;
                 } else {
                     hi = 3;
                     lo = 2;
                 }
+                m = v88b7e;
                 CR->f0c = (int)faces[v7d800->face].img[8 + v7d800->f34[m]];
                 switch (v7d800->f28[m]) {
                 case 1:
@@ -10153,23 +10160,23 @@ void kart_bump(void)
             curkart->f20 = 0;
             curkart->f42 = 0;
         }
-        if (v88bf6 != 0)
-            voice_play(0x16);
-        else
+        if (v88bf6 == 0)
             voice_play(0x15);
+        else
+            voice_play(0x16);
         curkart->f4a = sparkdata;
         curkart->f48 = 0;
         v88bfc = CR->f1e;
         v88bfe = CR->f20;
         switch (CR->f20) {
-        case 3:
-            curkart->f46 = 3;
-            break;
         case 4:
             curkart->f46 = 3;
             break;
         case 5:
             curkart->f46 = 4;
+            break;
+        case 3:
+            curkart->f46 = 3;
             break;
         }
     }
