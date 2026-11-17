@@ -86,7 +86,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **Line up the two listings' loads before probing:** load ORDER differs = 9.5b's scheduler, only a
   statement reordering can move it (net_input, fn_16ca0 fixed that way; fn_19db8's switch
   controlling expression is not a statement: SKIP). Order equal, homes permuted = the colourer, try
-  the levers below, then SKIP. [generic]
+  the levers below, then SKIP. A whole function whose temporaries mirror the game's EAX<->EDX is
+  that class: four C spellings of race_run's `x * 8` pointer walk (0x3066d, four sites) all scored
+  equal to the control. [generic]
 - **Read the width of a compare:** `cmp r16,r16` = both shorts in C, `cmp r32,r32` = at least one
   int. Fix the C types before logging a register pairing (fn_16eac: `int cnt` 17 -> 11 rows). A
   `short` that the game keeps in a register may take a stack slot in ours and the reverse
@@ -122,8 +124,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 - **Frame size first: our `sub esp, N` differs from the game's = a local array has the wrong size.**
   Read the array sizes off the game's slots: overlay_draw's frame 0x34 with buf at [esp+0x14] and
-  dword slots from 0x20 meant `char buf[0xc]`, not 0x14 (62 -> 46, every scalar slot moved back).
-  Also scores_screen `long sc[10]`, time_str `buf[4]`. iter 39 lead list: STATUS.md. [generic]
+  dword slots from 0x20 meant `char buf[0xc]`, not 0x14 (62 -> 46, every scalar slot moved back);
+  race_run's word array at [esp+0x28] with two slots from 0x3c meant `short placed[10]` although its
+  largest index is 7 (0x2fd8c, 128 -> 120). Also scores_screen `long sc[10]`, time_str `buf[4]`. [generic]
 - **The game CALLS a function our -oe inlines:** call an alias at those sites,
   `void f_x(int); #pragma aux f_x "f_"` (com_getc_x, waitkey_x, makepath_x, setvmode_x, ...); for
   a function called everywhere `#define readdat readdat_x` after its definition. Where the game
@@ -154,7 +157,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   `short` parameter** (or `(short)n`): duck_screen's three centred x values are an `int w` (game slot
   0xc8), its loop keeps `short x` (cwde); screenshot's file counter is `int n` with `itoa((short)n)`
   (51 -> 6). Scan: `mov dword [esp+N],r` followed within 4 instructions by `movsx r2, word [esp+N]`.
-  [generic]
+  A local the game only tests and divides with is `short` as well: `cmp ax,word [esp+4]` 0x267db and
+  `movsx ebx,di` + `idiv ebx` 0x26803, where an int gives `cmp r32` + `idiv dword [esp]`
+  (lights_project `short sy`, `short a`: 112 -> 85). [generic]
 - **`(int)` casts on both arms of a short ternary index** give per-arm `movsx` with no `cwde` after
   the join (draw_status `pnames[v7eb80 ? (int)myplayer : (int)v88c6a]`, 48 -> 30). [generic]
 - **A `je` straight to the epilogue is an early `return`, not the end of an `if`:** duck_screen
@@ -239,7 +244,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **Stack-slot permutation of scalar locals** (QUESTIONS 9, 10), unless one of the swapped slots
   is a compiler-made pointer (lever above): neither declaration nor first-use
   order (arrays DO follow declaration order, ascending from esp+0). 43 orders in enter_name, also
-  release_check, wtext, scores_screen, fn_1c0f4, showlines, cars_menu. Size a local array from the
+  release_check, wtext, scores_screen, fn_1c0f4, showlines, cars_menu. In a function that already
+  has 20+ scalar slots the pointer lever backfires - it renumbers every slot (trial_book 0x2e4b8,
+  four spellings: probe 155 -> 256). Size a local array from the
   frame, not its largest index (scores_screen `long sc[10]`); never-used locals are dropped, so a
   frame gap means the game used those slots. The reverse too: an over-sized buffer inflates the frame
   and every slot displacement (`char buf[8]` gave time_str 0x2a61d a 0x14 frame where the game has
