@@ -1854,8 +1854,16 @@ extern int v7ec7c;
 extern char *img7eb5c, *img7eb3c, *img7d83c, *img7eb60, *img7d814, *img7d810;
 void blit372c7(void);
 
-/* differs: pnames[v88c6a] is built in esi (imul esi; add $pnames) in the game, via eax here, in every
-   strcpy that uses v88c6a; the v7eb80 ternary loads each index with movswl; 11 bytes short */
+/* differs (30 rows, 11 bytes short): (int) casts on both arms of the v7eb80 ternary give the game's
+   per-arm movsx (no cwde) and, as a side effect, the esi form (movsx esi; imul esi; add esi,$pnames) at
+   the first v88c6a strcpy: 48 -> 30. Left: (a) the ternary strcpy - 9.5b hoists `mov ebx,esp` and
+   `xor ecx,ecx` (print_at args) above the inline strcpy, the game issues them after `pop edi`; (b) the
+   second netgame==1 if/else - the game builds v88c6a in the esi form in the first arm and myplayer in
+   the eax form in the second (no tail merge, 11 bytes), 9.5b emits one form and merges the two arms
+   into one imul. Tried: 7 index spellings (all canonicalise), strcpy before/between the spr stores,
+   ternary as arms/an int or short local k (if/else and ?:), single-arm casts, != 0, (int)/(short)/+0
+   on the netgame sites, both if/else orders, a ternary there, spr_y = spr_y + 0x1E; permute.py 12
+   rounds: nothing */
 void draw_status(void)
 {
     char buf[80];
@@ -1888,7 +1896,7 @@ void draw_status(void)
         if (!twoplayer) {
             spr_x = 4;
             spr_y = 0x32;
-            strcpy(buf, pnames[v7eb80 ? myplayer : v88c6a]);
+            strcpy(buf, pnames[v7eb80 ? (int)myplayer : (int)v88c6a]);
             print_at(spr_x, spr_y, buf, 0);
             spr_x = 0x11;
             spr_y = 6;
