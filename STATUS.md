@@ -21,8 +21,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `volume_menu` 0x01e760 (64), `fn_1c0f4` 0x01c0f4 (67),
-   `ent_sprites_load` 0x021310 (75). Before probing, run the GOTCHAS scans on the game's code: a
+   overnight/prompt.md step 2). Next open: `main` 0x035ca4 (80), `kart_fire` 0x024364 (108),
+   `car_laps` 0x012b44 (109). (iter 38: volume_menu 64 -> 48, fn_1c0f4 67 -> 14, ent_sprites_load
+   SKIP.) A game `cmp eax,1; jbe` + `cmp eax,2; je` + `jmp` is a `switch` with `case 0: case 1:`. Before probing, run the GOTCHAS scans on the game's code: a
    cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
    the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
    the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).

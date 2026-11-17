@@ -203,6 +203,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   0x32e60); `strcpy(p, "")` is a 1-byte copy of the pooled "" at 0x600ac (the NUL of "WACK").
   Watch check.sh's `segment CONST` line after every new string: one base = literals in place.
   [generic]
+- **An unsigned `cmp eax,1; jbe A` + `cmp eax,2; je B` + `jmp` chain is a `switch` with `case 0: case
+  1:`**, not `if (v <= 1) ... else if (v == 2)` (signed `jg`, other block order). A block the game
+  jumps BACK into from a later test is the same statements written twice in the source and
+  cross-jumped: `if (netgame == 0) { A } else switch (v) { case 0: case 1: A; break; case 2: B; }`
+  (fn_1c0f4 0x1c538-0x1c58b, 67 -> 14). [generic]
+- **A row loop over `char rows[N][K]` from 1: an explicit `char *r` declared last and stepped in the
+  for header** (`for (i = 1, r = rows[1]; i <= n; i++, r += K)`) took volume_menu 0x1e9cc 64 -> 48
+  and fixed the scalar slots after it; declared first or set in the body, no gain. [generic]
 - **Stores near an inline strcpy slide into its setup unit**; which ones is a source-position fact,
   probe every position (classes_menu 0x19f01-0x19f27). [generic]
 
