@@ -79,7 +79,7 @@
 42   0x021554 line_points             SKIP: homes only, the frames agree (game err EAX / dy ESI / dx [esp+0xc] / n [esp+0x10]; ours n and err in registers, dy spilled) - coin flip; new tries: `volatile int n` 93 (the game's in-place `inc dword [esp+0x10]` is a plain spilled local), a dummy extra int local 42
 44   0x02a4ac minimap                MATCH
 57   0x02d548 shot_fire              MATCH (iter 37: walk the cached global v7d874 itself, no local p; v7d5d0 = curpos after the y store - permute.py)
-64   0x01e760 volume_menu
+48   0x01e760 volume_menu            SKIP: explicit row pointer r (declared after vol, set in the for header) 64 -> 48 + barx = (spr_h - 2) + spr_x; left: 30 rows scalar-slot permutation, pointer init hoisted above the n >= 1 guard, the frame wait (documented)
 67   0x01c0f4 fn_1c0f4
 73   0x02b270 leaderboard            SKIP: x/y parameter homes (game x spilled, y in EBP; ours the reverse) drive the pointer-store order; int col for spr_x 75 -> 73; permute.py's probe winner loses whole-file
 75   0x021310 ent_sprites_load

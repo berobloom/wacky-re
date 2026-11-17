@@ -7596,7 +7596,12 @@ void fn_1e6dc(void)
         v7eaf8 = FX_PlayVOC(p7abc0, 0, fxvol, fxvol, fxvol, 1, 0);   /* fxvol 0x77428, not sfxvol */
 }
 
-/* differs: near miss, 1921 of the game's 1922 bytes, 402 vs 403 instructions, two causes:
+/* differs: near miss, 48 rows (iter 38: an explicit row pointer `r`, declared after vol and set in the
+ * for header, 64 -> 50 -> 48 and blink takes the game's 0x110; `barx = (spr_h - 2) + spr_x` loads
+ * spr_h first, 3 rows). Left: 30 rows of scalar-slot permutation (dead end), the game's pointer
+ * init inside the n >= 1 guard (`mov esi,esp; add esi,0x28`; ours hoists `lea esi,[esp+0x28]`
+ * above it), the barx add direction (`add edx,eax` vs ours `add eax,edx`, every spelling) and:
+ * Older note (1921 of the game's 1922 bytes, 402 vs 403 instructions), two causes:
  * 1. the frame wait (0x1ecba): the game loads both operands, `mov eax,[v7e724]; mov edx,[ticks];
  *    sub edx,eax`, ours `mov ebx,[ticks]; sub ebx,[v7e724]`. cars_menu's identical-looking
  *    `ticks - v7ea70` loop (0x1a9f7) matches, but there no call sits in the loop. Tried: volatile
@@ -7625,6 +7630,7 @@ void volume_menu(void)
     int textx;                        /* esp+0x114: x after the label text */
     int barx;                         /* esp+0x118 */
     int vol;                          /* esp+0x128 */
+    char *r;
     int n, sel, i, changed, k;        /* EBP, ESI, ECX, EDX, EAX */
 
     if (!musicready && !sfxsoft) {    /* 0x1e76c */
@@ -7679,11 +7685,11 @@ void volume_menu(void)
     spr_x = (0x140 - (int)strlen(buf) * 8) / 2;
     print_at(spr_x, spr_y, buf, 0);   /* 0x1e9b6 */
     spr_y += 0x14;
-    for (i = 1; i <= n; i++) {        /* 0x1e9c3-0x1ea63 */
+    for (i = 1, r = rows[1]; i <= n; i++, r += 0x28) {        /* 0x1e9c3-0x1ea63 */
         ys[i] = spr_y;
         spr_x = 10;
-        textx = spr_x + strlen(rows[i]) * 8;
-        print_at(spr_x, spr_y, rows[i], 0);
+        textx = spr_x + strlen(r) * 8;
+        print_at(spr_x, spr_y, r, 0);
         spr_y += 0x14;
     }
     pal_c = 0xbb80;                   /* 0x1ea65 */
@@ -7725,7 +7731,7 @@ void volume_menu(void)
             v88ce8 = 0x26;
             f371e4();                 /* 0x1ebc2: the bar */
             if (i == sel)
-                barx = spr_x + (spr_h - 2);
+                barx = (spr_h - 2) + spr_x;
         }
         spr_x = barx;                 /* 0x1ebf1 */
         spr_y = ys[sel] - 8;
