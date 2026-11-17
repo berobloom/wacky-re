@@ -22,7 +22,7 @@
 4    0x02e348 demo_play             SKIP: one slot only: 9.5b puts the v88cca store before the mask copy (0x2e35f store, 0x2e365 copy), the game the other way round (copy 0x2e35f, store 0x2e361). Kept: the two-statement load/store homes k in BL and stores from BL (168 -> 172 bytes = the game's length), and the volatile alias v88ccav pins the store there: 5 -> 4 rows (2 of the 4 are masked-fixup artefacts). 46 spellings, six probe compiles: chained forms both ways, k as char/short/int/unsigned, register, a second byte local carrying mask1 (7 spellings), mask1 through a temp, the store inside the AND's left/right operand (comma forms), a local pointer to v88cca, the store at all nine source positions, a read of v88cca after the loop
 6    0x0106c8 com_isr              MATCH
 6    0x0114a8 pal_shift             MATCH
-6    0x0277b8 track_pics_load
+6    0x0277b8 track_pics_load             MATCH
 6    0x02f408 view_at_curpos
 7    0x0146d4 wtext
 7    0x034458 release_check

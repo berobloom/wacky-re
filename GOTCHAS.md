@@ -171,6 +171,15 @@ it can be copied back into DREA.
   game's home, 0x19f22); defined at its later use it got ECX, and `menu(nrows,0,0,0)`'s argument
   setup reordered with it. Try moving the assignment before the preceding copy before re-probing
   types, `register` or -o letters (same family as question 2). [generic]
+- **A shared load lands in the register of the pointer local defined from it FIRST, and a doubled
+  scalar written at the use site becomes a `lea` where a local holding the double gives
+  `add reg,reg`** (track_pics_load 0x277b8, iter 20): the game loads v7d75c into ECX, spills q, then
+  `add eax,eax`, `mov ebx,ecx`, `add ecx,eax` (0x277db-0x277e9); `a = v7d75c; b = v7d75c + q * 2;`
+  loads into EBX and doubles with `lea ecx,[eax+eax]` because q stays live. Two temps fix both:
+  `d = q + q; c = v7d75c; a = c; b = c + d;` with **`c` declared before `a` and `b`** reproduces all
+  five instructions (0 instruction diffs, `.work/tp2/TP.C` tp_d; the same body with `c` declared last
+  is 7 diffs, tp_c). Local declaration order does pick the register here even though it does not pick
+  the stack slots (two entries above). [generic]
 - **An EAX/EDX swap in an address computation yields to an EAX-homed local** (songs_load 0x3360c,
   iter 14): `makepath_x(path, names[i])` built the offset in EDX, the game in EAX; seven index
   spellings and a fresh temp did not change it, `n = i * 12; makepath_x(path, (char *)names + n);`

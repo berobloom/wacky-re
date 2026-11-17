@@ -11961,24 +11961,23 @@ void effects_load(void)
 /* ---- 0x277b8, 266 bytes: loads the track's pictures (caller 0x27f18 in 0x279e8): for each of the
  * two gam7eabc / gam7eaa0 names, pcx_load into screen 2 and the asm 0x376d7 copies it (p6a978 ->
  * v7d99c, p6a980 -> p7d714) to v7eb58, which steps through v7d75c by a quarter of v7d604, the second
- * set starting half of v7d604 further on.
- * differs (near-miss, 84 vs 83 insns, 2 real blocks): b = v7d75c + 2q - the game loads v7d75c into
- * ECX, doubles q with `add eax,eax`, copies ECX to EBX (a) and adds; ours `lea ecx,[eax+eax]` and
- * loads into EBX. Tried six orders/forms of the a/b setup and three declaration orders. */
+ * set starting half of v7d604 further on. */
 extern char *v7eb58, *v7d99c, *v7d75c;
 extern int v7d604;
 void f376d7(void);
 
 void track_pics_load(void)
 {
-    char tmp[16];
-    int q;
     short i;
-    char *a, *b;
+    char *c, *a, *b;
+    char tmp[16];
+    int q, d;
 
     q = v7d604 / 4;
-    a = v7d75c;
-    b = v7d75c + q * 2;
+    d = q + q;
+    c = v7d75c;
+    a = c;
+    b = c + d;
     for (i = 0; i <= 1; i++) {
         strcpy(tmp, gam7eabc[i]);
         pcx_load(tmp, 2);
