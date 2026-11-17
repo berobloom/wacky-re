@@ -9,13 +9,22 @@ their remaining instruction rows from tools/wc/fndiff.py. Functions of the game'
 src/ww.c does not have yet come from tools/le/funcs.py's list (.work/le/ww_funcs.tsv), named from
 analysis/ww_names.txt. Subsystems come from analysis/ww_subsystems.txt. The library rows come from
 tools/wc/libmatch.py against Watcom 9.5b's CLIB3R.LIB.
+
+It also writes docs/WWPROGRESS.HTML (every function, searchable and filterable, with its instruction
+diff against the game; laid out like reccmp's reports for isledecomp/isle, template tools/progress.html)
+and docs/WWPROGRESS.SVG (the progress badge the README shows).
 """
+import base64
+import difflib
+import json
 import os
 import re
 import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'le'))
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'wc'))
 PY = os.path.join(ROOT, '.work', 'venv', 'bin', 'python')
 CLIB = os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B', 'LIB386', 'DOS', 'CLIB3R.LIB')
 
@@ -52,6 +61,95 @@ def subsystems():
     return order, of
 
 
+def align_all(near):
+    """For each near miss {addr: name}: our instructions and the game's aligned as fndiff.py does,
+    the count of differing rows, the similarity ratio and diff hunks with 3 rows of context."""
+    import fndiff as F
+    import libmatch as L
+    import objmatch as M
+    meta = json.load(open(os.path.join(ROOT, '.work', 'le', 'ww.json')))
+    code = open(os.path.join(ROOT, '.work', 'le', 'ww.obj1.bin'), 'rb').read()
+    cbase = meta['objects'][0]['base']
+    (_, recs), = list(L.modules(open(os.path.join(ROOT, '.work', 'src', 'WW.OBJ'), 'rb').read()))
+    segs = L.code_of(recs)
+    pubs = sorted(p for p in M.publics(recs) if p[0] in segs)
+    out = {}
+    for addr, name in near.items():
+        hit = [p for p in pubs if p[2] == name or M.plain(p[2]) == name]
+        if not hit:
+            continue
+        seg, off, _ = hit[0]
+        end = next((q[1] for q in pubs if q[0] == seg and q[1] > off), len(segs[seg][0]))
+        buf, mask = segs[seg]
+        ours = bytes(b if not mask[off + k] else 0x90 for k, b in enumerate(buf[off:end]))
+        A = F.dis(ours, addr, addr + len(ours))
+        B = F.dis(code[addr - cbase:addr - cbase + len(ours)], addr, addr + len(ours))
+        sm = difflib.SequenceMatcher(None, [t[2] for t in B], [t[2] for t in A], autojunk=False)
+        d = sum(max(i2 - i1, j2 - j1) for t, i1, i2, j1, j2 in sm.get_opcodes() if t != 'equal')
+        hunks = []
+        for grp in sm.get_grouped_opcodes(3):
+            h = []
+            for t, i1, i2, j1, j2 in grp:
+                if t == 'equal':
+                    h += [[' ', B[i][0], A[j][0], B[i][2]] for i, j in zip(range(i1, i2), range(j1, j2))]
+                else:
+                    h += [['-', B[i][0], 0, B[i][2]] for i in range(i1, i2)]
+                    h += [['+', 0, A[j][0], A[j][2]] for j in range(j1, j2)]
+            hunks.append(h)
+        eq = sum(i2 - i1 for t, i1, i2, j1, j2 in sm.get_opcodes() if t == 'equal')
+        out[addr] = {'d': d, 'i': eq + d, 'r': round(sm.ratio(), 4), 'h': hunks}
+    return out
+
+
+def logo_png():
+    """The Wacky Wheels logo cut from the main-menu capture (docs/media/menu.jpg), as PNG."""
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.open(os.path.join(ROOT, 'docs', 'media', 'menu.jpg')).convert('RGB').crop((180, 0, 470, 145)).save(buf, 'PNG')
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+def write_html(path, allf, sub_of, order, al, head):
+    fs = []
+    for a, n, s in allf:
+        f = {'a': a, 'n': n, 's': s, 'sub': sub_of.get(n, 'unsorted')}
+        if s == 'near' and a in al:
+            f.update(al[a])
+        elif s == 'near':
+            f.update({'d': 0, 'i': 0, 'r': 0.0, 'h': []})
+        fs.append(f)
+    subs = [g for g in order if any(f['sub'] == g for f in fs)]
+    subs += ['unsorted'] if any(f['sub'] == 'unsorted' for f in fs) else []
+    data = json.dumps({'commit': head, 'subsystems': subs, 'functions': fs}, separators=(',', ':'))
+    t = open(os.path.join(ROOT, 'tools', 'progress.html')).read()
+    t = t.replace('/*ICON*/', logo_png()).replace('/*DATA*/', data.replace('</', '<\\/'))
+    open(path, 'w').write(t)
+
+
+def write_svg(path, done, total):
+    """The README badge: the logo, WW.EXE, and a bar filled to the byte-identical share."""
+    pct = 100.0 * done / total
+    w = 290 * pct / 100
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
+        'width="320" height="240" viewBox="0 0 320 240">\n'
+        '<rect width="320" height="240" rx="8" fill="#00004a"/>\n'
+        '<image x="15" y="8" width="290" height="145" style="image-rendering:pixelated" '
+        'xlink:href="data:image/png;base64,%s"/>\n'
+        '<text x="160" y="180" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="22" '
+        'fill="#f8c840">WW.EXE</text>\n'
+        '<clipPath id="fill"><rect x="15" y="196" width="%.2f" height="24"/></clipPath>\n'
+        '<rect x="15" y="196" width="290" height="24" fill="#000" stroke="#eef0ff" stroke-width="1.5"/>\n'
+        '<text x="160" y="213" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="14" '
+        'fill="#eef0ff">%.1f%%</text>\n'
+        '<g clip-path="url(#fill)"><rect x="15" y="196" width="290" height="24" fill="#f8c840"/>\n'
+        '<text x="160" y="213" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="14" '
+        'fill="#00004a">%.1f%%</text></g>\n'
+        '</svg>\n') % (logo_png(), w, pct, pct)
+    open(path, 'w').write(svg)
+
+
 def main():
     out = os.path.join(ROOT, 'PROGRESS.md')
     if '--out' in sys.argv:
@@ -77,12 +175,8 @@ def main():
             missing[a] = named.get(a, 'f%x' % a)
     asm_found = sum(ASM_START <= a < LIB_START for a in found)
 
-    rows = {}
-    for a, (n, _, ok) in funcs.items():
-        if not ok:
-            d = run([PY, 'tools/wc/fndiff.py', 'ww', '.work/src/WW.OBJ', n, '0x%x' % a]).strip().splitlines()
-            m = re.search(r'(\d+) instruction diffs', d[-1] if d else '')
-            rows[a] = int(m.group(1)) if m else None
+    al = align_all({a: n for a, (n, _, ok) in funcs.items() if not ok})
+    rows = {a: v['d'] for a, v in al.items()}
 
     lib = run([PY, 'tools/wc/libmatch.py', 'ww', CLIB], timeout=1200)
     m = re.search(r'found\s+(\d+) \((\d+) bytes\)', lib)
@@ -113,6 +207,9 @@ def main():
     w('the same bytes as the game at the same address, with every address it refers to checked as')
     w('well. A near miss behaves the same as far as we know, but its code still differs: the number')
     w('is how many instructions differ (`tools/wc/fndiff.py`).')
+    w('')
+    w('To search and filter the functions and see each near miss\'s diff, open')
+    w('[`docs/WWPROGRESS.HTML`](docs/WWPROGRESS.HTML) in a browser.')
     w('')
     w('## WW.EXE part by part')
     w('')
@@ -161,6 +258,8 @@ def main():
         w('| 0x%05X | `%s` | %s | %s |' % (a, n, sub_of.get(n, 'unsorted'), st))
     w('')
     open(out, 'w').write('\n'.join(L))
+    write_html(os.path.join(ROOT, 'docs', 'WWPROGRESS.HTML'), allf, sub_of, order, al, head)
+    write_svg(os.path.join(ROOT, 'docs', 'WWPROGRESS.SVG'), done, total)
     print('%s: %d of %d byte-identical (%s), %d near misses, %d not written'
           % (os.path.relpath(out, ROOT), done, total, pct(done, total), near, total - done - near))
 

@@ -31,13 +31,17 @@ changes or redistributes the original files.
 
 ## Progress
 
+<a href="docs/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
+
 **198 of the game's 285 C functions compile to the original's exact bytes.**
 83 more are near misses and 4 are not written yet. The game's assembler
 module and the libraries are outside that count.
 
-[`PROGRESS.md`](PROGRESS.md) has the numbers part by part, by subsystem and
-for every function. `tools/progress.py` writes it from a fresh build of the
-source, not from hand counts.
+[`docs/WWPROGRESS.HTML`](docs/WWPROGRESS.HTML) lists every function: search it,
+filter it by status or subsystem, and click a near miss to see its instruction
+diff against the game. [`PROGRESS.md`](PROGRESS.md) has the same numbers as
+tables, part by part and by subsystem. `tools/progress.py` writes all three from a fresh build of
+the source, not from hand counts.
 
 ## Building and checking
 
