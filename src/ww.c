@@ -5213,11 +5213,11 @@ void ctl_label(char *label, char *line)
         if (dev && ((short *) cfg77128)[0])
             dev = 2;
     } else {
-        /* differs: the game zero-extends the comparison into EAX (movzx eax,al, 0x19d0e); our 9.5b
-         * keeps this boolean in EBX and adds `mov ebx,eax`. Those +2 bytes are the whole gap (321 vs
-         * 319); every other instruction of 0x19c68-0x19da6 matches, only the jumps that cross the
-         * extra mov differ (their displacements are 2 smaller). */
-        dev = (((short *) cfg77128)[2] == 0);
+        if (((short *) cfg77128)[2] == 0) {
+            dev = 1;
+        } else {
+            dev = 0;
+        }
         if (dev && ((short *) cfg77128)[1])
             dev = 2;
     }

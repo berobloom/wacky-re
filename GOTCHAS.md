@@ -658,6 +658,16 @@ it can be copied back into DREA.
   `0xf3c *` first, a `(long)` cast on either operand, the product in its own local, and
   `t + v88b88 * 0xf3c - 0xf3c`, which does get ECX but re-shapes the chain (28 rows). Try
   `x = <expr>; x *= <factor>;` before logging a load home as the coin flip.
+- **`x = (cond)` puts the 0/1 in a scratch register; the if/else form gives the game's `sete` +
+  `movzx` in the value's own home** (iter 29, [generic]): ctl_label 0x19d0e is
+  `cmp word [0x7712c],0` + `sete al` + `movzx eax,al` + `test eax,eax` (dev's home is EAX, the other
+  arm loads it there); `dev = (((short *) cfg77128)[2] == 0);` gives `movzx ebx,al` + `mov eax,ebx` +
+  `test ebx,ebx` - 3 instructions, 2 extra bytes, and 16 fndiff rows of jump-displacement drift over
+  the rest of the function. `if (((short *) cfg77128)[2] == 0) { dev = 1; } else { dev = 0; }` written
+  braced with each assignment on its own line gives exactly the game's two instructions and its home.
+  Ranked in a 12-variant probe (0 vs 5 for control): `!= 0`, `!x`, `? 0 : 1`, `* 1`,
+  `1 - (cond != 0)`, an `unsigned short` cast, `dev = dev + 0`, `short`/`int` temps holding the
+  compared word, and a second local copied into dev all stay at 5. 192 -> 193.
 - **Watcom's cold-tail duplication depends on source line layout, not only on the syntax**
   (iter 19, [generic]): in a two-function probe, com_isr's merged-local form written with braced
   `if (rxhead >= 0x4000)` / newline / `rxhead = 0;` came out 338 bytes with the `done:` epilogue
