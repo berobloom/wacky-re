@@ -2471,7 +2471,7 @@ void fn_17888(char *s, short y)
 
 /* ---- my DAT player record load (0x173C4) */
 
-/* differs (100 rows, 1152 vs the game's 1183 bytes; iter 45 220 -> 100): use `myplayer` itself,
+/* differs (100 rows, 1152 vs the game's 1183 bytes; iter 45 189 -> 100): use `myplayer` itself,
    not a `short mp` local - 9.5b then re-reads it after each call (mov di,[0x88b96] 0x17405,
    0x17435, 0x17483) and recomputes `myplayer * 0x98` at the top of every loop like the game; a
    local CSEs all of it away (nmrefs showed 3 extra `faces` refs, and 6 jump blocks only one side).

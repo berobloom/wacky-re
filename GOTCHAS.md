@@ -206,7 +206,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   i++)` is re-sorted (anim_tick 0x261fc); a pointer re-loaded twice in a loop needs a second local
   re-armed at the body end (fn_1c994 0x1ca83); a retry loop is `while (1) { if (x != 0) {...return;}
   if (y != 0) break; }` (answer_call 0x1e0f4); 9.5b unrolls constant-count loops itself, write the
-  plain `for` (crack_draw). [generic]
+  plain `for` (crack_draw); a `while (i <= g)` keeps 9.5b's TOP test where the game has the test at
+  the bottom re-reading the global - write `for (i = 1, x = 4; i <= g; i++)` (fn_173c4 0x175d9). [generic]
 - **Control-flow shapes:** a cold `then` block after the chain = `if (!c) { big } else small;`
   (classes_menu 0x19f61); a 3-case `switch` on a short is a compare tree with cold blocks
   (laps_menu 0x1a148), not an if-chain; `if (c != 4) { ... } else x = 6;` shares a store block that
@@ -272,7 +273,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   the working variable and still is not cached (players_ahead's v7d800) is unexplained. The lever
   also fails when the cached global is a struct pointer used hundreds of times: kart_frame 0x290a0
   with `k = curkart` at entry, `k->` at all 139 sites and `curkart = k; k = curkart;` around every
-  call and return scored 535 -> 533, and the game still had 19 more 0x7d5b0 references. [generic]
+  call and return scored 535 -> 533, and the game still had 19 more 0x7d5b0 references. It works for
+  a global only READ, and 9.5b does the promoting itself: fn_173c4's `short mp` local (myplayer) had
+  to go to get the load-at-entry/reload-after-call/store-at-exit trio (0x173ca/0x17405/0x17855) - a
+  local also lets 9.5b CSE every derived `index * stride` address out of the loops, which is how it
+  hid 3 array references and 6 jump blocks from nmrefs there (0x173c4, 189 -> 100). [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
   com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared

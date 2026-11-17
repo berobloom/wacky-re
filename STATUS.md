@@ -20,13 +20,14 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: `src/nearmiss.txt` has no open status left (iter 44 took the last three). Re-rank it
-   first - `tools/wc/nearmiss.sh` (its first column is stale on several lines) - then take the
-   partial-gain lines whose `differs:` note lists an untried lever. Frame-size leads (`sub esp`
-   differs): menu, fn_1832c, cars_menu, fn_1d704, kart_state, players_ahead, pic_at (ents_project
-   0x10 vs 0x14, race_results solved with grp[10]+pods[8]) - size arrays off the game's slots; the
-   width scan (GOTCHAS "Read the width of a compare AND of a load") on a fresh per-side instruction
-   counter is what found menu/cars_menu this iter; nmrefs after every change.
+1. Near misses: no open status in `src/nearmiss.txt`; iter 45 took fn_173c4 189 -> 100 rows (use the
+   global, not a local copy of it: 9.5b then promotes it - load at entry, reload after each call,
+   store at exit - and recomputes `index * stride` per loop; GOTCHAS "cached global" + "Loop shapes:
+   `for` vs `while`"). Next leads, all from `nmrefs.py ww .work/src/WW.OBJ` (its `game more`/`ours
+   more` counts = a local copy or an extra read, not noise): draw_status 0x12f80 (game reads pnames
+   once more), chat 0x14d00 (ours reads spr_y once more), race_results 0x2bff0 (ours reads joy88b40
+   once more), players_ahead 0x34208 (v7d800 promoted in ECX there and not here). Re-rank with
+   `tools/wc/nearmiss.sh` - its first column is stale on several lines. nmrefs after every change.
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
