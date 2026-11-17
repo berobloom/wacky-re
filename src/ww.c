@@ -15739,7 +15739,13 @@ void trial_book(int a, int b, int show)
  * (f37bb1), plus the camera v88b0a / v88b0e, into v7d7a4 / v7d7a8 and the shorts at
  * 0x6aaa6 / 0x6aaa8.
  * differs: one block: the game loads v7d610 first and parks v88b0e in a stack slot; operand
- * orders and a temp tried. */
+ * orders and a temp tried. SKIP (iter 20): ours spills v7d610 too (`movsx eax,[v7d610];
+ * mov [esp],eax; mov edx,[esp]` at 0x2f457, 2 insns/9 bytes too many) while the game loads it
+ * straight into EDX; 30 spellings - both operand orders in both sums, sum and read-back statement
+ * order, casts, a temp for the sum, temps for the first operands, and an `int y = v88b0e`
+ * local - none drops the spill; every local costs a SECOND frame slot (`sub esp,8`) so the game
+ * really has no locals, and the isolated 4-statement block spills the same way (`wd` in
+ * .work/tp4/TW.C loads EDX fine with the second sum left out, so it is pure allocation). */
 extern short w6aaa6, w6aaa8;
 #pragma aux w6aaa6 "_v6aaa6"
 #pragma aux w6aaa8 "_v6aaa8"
