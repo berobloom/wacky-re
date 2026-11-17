@@ -11288,23 +11288,29 @@ void players_project(void)
 /* ---- 0x25a78, 1011 bytes: the same projection for the ents (callers frame_draw 0x134e6, 0x135ef;
  * 0x289be): every ent with f2 != -1 in the view box and in_sector gets a sprite record (f24 = f18 =
  * -1, f1c = f2, f22 = its index); sprite sprattr[id].data + frame * w*h, size tab6e470[f0c*20 + step].
- * differs (near-miss, 243 vs 226 insns, 29 blocks): the game keeps the global iterator v7d7f4 in ECX
- * for the whole loop (stores before in_sector/isqrt, reload after); ours reads it from memory - the
- * players_project case again (QUESTIONS 2). `int i, id` (the game's `inc dword [esp+0x10]`) helped. */
+ * differs (175 rows; local `struct ent *e` iterator + `v7d7f4 = e;` after the f2 guard, GOTCHAS
+ * local-pointer lever, 189 -> 175: the pointer rides one register, the global gets one store per
+ * iteration). Left: the game reloads v7d7f4 twice more per iteration (nmrefs game-more 6x), never
+ * re-reads v88b20/v88b22, and homes the iterator in ECX and sx in DI (the players_project colourer
+ * case, QUESTIONS 2). Tried: store at all three body positions (equal), reading frame/f2 through
+ * the global (188), `sy = e->y; v88b22 = sy;` (187), for-init order swap (175).
+ * `int i, id` (the game's `inc dword [esp+0x10]`) helped. */
 extern struct attr attrs[];
 #pragma aux attrs "_sprattr"
 
 void ents_project(void)
 {
+    struct ent *e;
     short n, dy, sx, k, c;
     int i, id, sy, d, side, a, m, t;
 
-    for (v7d7f4 = ents, i = 0; i < nents; v7d7f4++, i++) {
-        if (v7d7f4->f2 == -1)
+    for (e = ents, i = 0; i < nents; e++, i++) {
+        if (e->f2 == -1)
             continue;
-        v88b20 = v7d7f4->x;
-        id = v7d7f4->id;
-        v88b22 = v7d7f4->y;
+        v7d7f4 = e;
+        v88b20 = e->x;
+        id = e->id;
+        v88b22 = e->y;
         if (v88b20 < v88c16 || v88b20 > v88c2a || v88b22 < v88c18 || v88b22 > v88c2c)
             continue;
         if (in_sector() == 0)
@@ -11339,7 +11345,7 @@ void ents_project(void)
             k = 9;
         spr_y = tb6bd00[d];
         p7d838 = tab6e470[attrs[id].f0c * 20 + k];
-        sprptr = attrs[id].data + v7d7f4->frame * (short)(attrs[id].w * attrs[id].h);
+        sprptr = attrs[id].data + e->frame * (short)(attrs[id].w * attrs[id].h);
         p7d764 = p7d838;
         p7d838 += 2;
         spr_h = *p7d764++;
@@ -11371,7 +11377,7 @@ void ents_project(void)
         p7d86c += 0x28;
         CR->f24 = -1;
         CR->f18 = -1;
-        CR->f1c = v7d7f4->f2;
+        CR->f1c = e->f2;
         CR->f1a = k;
         CR->f04 = c;
         CR->f10 = d;

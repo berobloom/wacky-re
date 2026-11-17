@@ -106,7 +106,7 @@
 167  0x0173c4 fn_173c4               (iter 38: img[5] goes to sp7b4d8b+0x30 (0x7b508), not sp7b518b+0x30 - found by tools/wc/nmrefs.py; 224 -> 220)
 194  0x014d00 chat             SKIP: stack-slot permutation (dead end) + scheduling + 16 bytes over; kept the declaration order blank,mine,theirs,buf,ch (196 -> 194). Eight buffer orders in one compile (.work/probe_sp/SP6.C): best 182 vs control 184, none lands the game's buffer slots
 110  0x02bff0 race_results             SKIP: frame gap solved (grp[10] pods[8], not 9/6: array rows shifted +0x2c, scalars +0x74, padding same; 175 -> 110, kept). The rest is the documented scalar-slot permutation + register-home coin flips + the dead je at the fire test (1 variant spent, dead-end class)
-189  0x025a78 ents_project
+175  0x025a78 ents_project             SKIP: kept the local-pointer lever (struct ent *e + v7d7f4 = e after the guard, 189 -> 175; 7 variants); rest is the colourer (ECX iterator, DI sx) + the game's two extra v7d7f4 reloads (QUESTIONS 2 class); store placement/for-init order/`sy = e->y`/global re-reads all equal or worse
 241  0x016f90 fn_16f90
 270  0x0155c0 menu
 512  0x01a380 cars_menu
