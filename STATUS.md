@@ -21,13 +21,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `shots_project` 0x02632c (140), `fn_193a8` 0x0193a8
-   (150), `chat` 0x014d00 (176) (`scores_screen` 50 carries a partial-gain note). iter 41:
-   lights_project 112 -> 85 (`short sy`, `short a`, `spr_h = *p7d764++`, untried in
-   `shots_project`/`players_project`), race_run 128 -> 120 (`short placed[10]` off the frame),
-   trial_book SKIP (92 of 121 rows slot permutation). Frame-size leads (`sub esp` differs): chat,
-   menu, fn_1832c, fn_193a8, cars_menu, fn_1d704, kart_state, ents_project, shots_project,
-   race_results, players_ahead, pic_at - size arrays off the game's slots; nmrefs after a change.
+   overnight/prompt.md step 2). Next open: `race_results` 0x02bff0 (176), `ents_project` 0x025a78
+   (189), `fn_16f90` 0x016f90 (241), `menu` 0x0155c0 (270). Frame-size leads (`sub esp` differs):
+   menu, fn_1832c, cars_menu, fn_1d704, kart_state, ents_project, race_results, players_ahead,
+   pic_at - size arrays off the game's slots; nmrefs after every change.
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,

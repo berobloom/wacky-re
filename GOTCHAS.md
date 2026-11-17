@@ -248,7 +248,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   has 20+ scalar slots the pointer lever backfires - it renumbers every slot (trial_book 0x2e4b8,
   four spellings: probe 155 -> 256). Size a local array from the
   frame, not its largest index (scores_screen `long sc[10]`); never-used locals are dropped, so a
-  frame gap means the game used those slots. The reverse too: an over-sized buffer inflates the frame
+  frame gap means the game used those slots - but a gap BETWEEN two arrays is the earlier array being
+  bigger than the code writes (fn_193a8: `char name[0x28]`, 12 bytes of a 40-byte buffer used, frame
+  0x310 -> the game's 0x32c). The reverse too: an over-sized buffer inflates the frame
   and every slot displacement (`char buf[8]` gave time_str 0x2a61d a 0x14 frame where the game has
   0x10; `buf[4]` fixed it, 33 -> 31 rows). [generic]
 - **A global kept in a register across a loop** (load at entry, store before each call and at exit)
@@ -257,7 +259,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   minimap 0x2a4ac 44 -> MATCH, fn_16eac (`n = nplayers` copy removed) 11 -> MATCH. Signature to
   scan for: `mov [G],r ... call; mov r,[G]` in the game - the store can sit up to a dozen
   instructions before the call (shot_fire 0x2d5ad: v7d874 walks the shot table, 57 -> MATCH;
-  fn_16d68: `v7d7f8 = &trklines[k]`, stored once at the exit, 58 -> 26). A global that is already
+  fn_16d68: `v7d7f8 = &trklines[k]`, stored once at the exit, 58 -> 26). Mirror image: if the game ALSO
+  reloads the global after its calls (`mov r,[G]` 0x26403/0x26491/0x2667e), the source used a local
+  pointer plus `G = p;` in the body - shots_project 0x2632c 155 -> 117 that way (open in
+  players_project/ents_project). A global that is already
   the working variable and still is not cached (players_ahead's v7d800) is unexplained. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
