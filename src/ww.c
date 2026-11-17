@@ -8170,7 +8170,11 @@ void main_menu_names(void)
  * keeps only i (EDI); ours strength-reduces i*40 into an EBP pointer stepped by 40 in the outer loop,
  * which shifts every register after it (QUESTIONS 2, the same as fn_16f90 (b)). Eleven forms tried
  * (direct indexing, char-pointer arithmetic, goto, while, static i, declaration orders): none keeps the
- * imul; this pointer form is the closest (31 scored vs 37). */
+ * imul; this pointer form is the closest (31 scored vs 37). iter 38: indexing the typed alias
+ * `attrs[i]` directly (declaration moved above) brings back the game's `imul edi,esi,0x28` but
+ * datfind's `attrs[i].f10` is still a reduced EBP pointer (81 rows); `sprattr + i * sizeof(struct
+ * attr) + 0x10` reduces both (74 rows, 22 real); `(char *)&attrs[i] + 0x10`, `&sprattr[i * 40] +
+ * 0x10` and four more spellings 81. 53 of the 75 rows are the padding after our shorter body. */
 /* ---- 0x21310, 221 bytes: loads the sprites the level's entities use (callers 0x21504, 0x2152c in
  * ents_load 0x21490). For each SPRITE.ATR record i that some ents[j].id names, w*h*nframes bytes are
  * read from the DAT entry named at +0x10 into the running buffer v7eb4c (from v7eb20), and the first

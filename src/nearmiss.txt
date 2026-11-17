@@ -82,7 +82,7 @@
 48   0x01e760 volume_menu            SKIP: explicit row pointer r (declared after vol, set in the for header) 64 -> 48 + barx = (spr_h - 2) + spr_x; left: 30 rows scalar-slot permutation, pointer init hoisted above the n >= 1 guard, the frame wait (documented)
 14   0x01c0f4 fn_1c0f4               SKIP: both v chains are switch (case 0: case 1:), two-player one in the else of if (netgame == 0) with the pair written twice (cross-jumped): 67 -> 14; left: one centred-line order, the print loop pointer init, the tick-wait registers
 73   0x02b270 leaderboard            SKIP: x/y parameter homes (game x spilled, y in EBP; ours the reverse) drive the pointer-store order; int col for spr_x 75 -> 73; permute.py's probe winner loses whole-file
-75   0x021310 ent_sprites_load
+75   0x021310 ent_sprites_load       SKIP: 53 rows are padding after our shorter body, 22 real = the i*40 strength reduction (QUESTIONS 2); direct attrs[i] gets the imul back but datfind's f10 address stays reduced (81); 9 spellings, none below 75
 80   0x035ca4 main
 108  0x024364 kart_fire
 109  0x012b44 car_laps
