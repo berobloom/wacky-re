@@ -10,31 +10,27 @@ Short: where the project stands, and what is next. History is in git; no diary.
   `src/nearmiss.txt` entries (12 MATCH, 30 SKIP, 2 LAYOUT, 56 open); C covers 0x10260-0x36a4d bar
   the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the hand-written asm.
 - Levers that worked (each in GOTCHAS "This project's traps" with its evidence): **a 0/1 assignment
-  written as a braced `if (cond) { x = 1; } else { x = 0; }` gives the game's `sete al` +
-  `movzx eax,al` in x's home, where `x = (cond)` puts it in a scratch register and adds a
-  `mov eax,ebx`** (ctl_label 0x19c68, 19 -> 0); **split the arithmetic onto a local so the value
-  stays live in its home: `m = v88b88 - 1; m *= 0xf3c; seekdat_in(t + m);` wins the `movsx ecx` +
-  `dec ecx` home the one-expression form never gives** (track_load 0x27a49, 7 -> 0); **`volatile` on
-  a local to force the game's `sub esp,4` + `[esp]` spill/reload of a temp** (shot_step); **a
-  compare's operand width pins the C type, and the type pins the register pairing** (fn_16eac);
-  **a tail-tested loop whose end is computed from the loop variable** (`p = arr; end = p + N;
-  do {...} while (p != end);` - track_load's .SIN loop); **un-merge a tail-merge by moving one
-  arm's copy of a both-arms statement to that arm's head** (race_records_menu); **independent bit
-  tests in the game's load order** (net_input, 15 -> 9).
+  as a braced `if (cond) { x = 1; } else { x = 0; }` gives the game's `sete al` + `movzx eax,al` in
+  x's home, where `x = (cond)` uses a scratch register and adds `mov eax,ebx`** (ctl_label 0x19c68,
+  19 -> 0); **split the arithmetic onto a local so the value stays live in its home -
+  `m = v88b88 - 1; m *= 0xf3c; seekdat_in(t + m);` wins the `movsx ecx` + `dec ecx` home the
+  one-expression form never gives** (track_load 0x27a49, 7 -> 0); **`volatile` on a local for the
+  game's `sub esp,4` + `[esp]` spill/reload** (shot_step); **a compare's operand width pins the C
+  type, and the type pins the register pairing** (fn_16eac); **a tail-tested loop whose end comes
+  from the loop variable** (`end = p + N; do {...} while (p != end);` - track_load's .SIN loop);
+  **un-merge a tail-merge by moving one arm's copy of a both-arms statement to that arm's head**
+  (race_records_menu); **independent bit tests in the game's load order** (net_input, 15 -> 9).
 - Diagnostics that save variants (GOTCHAS iter 16-29): **equal instruction counts + a byte compare
   that starts on a branch displacement = a register home, not a missing instruction** (an absolute
   store from EAX is 5 bytes, `a3`, from any other register 6: shots_move 460 against 462); **line the
   two listings' loads up before probing** - order differs = 9.5b's scheduler (fn_19db8), order equal
   = permuted homes (shots_move, net_recv); **count the rows that are only a stack-slot or fixup
-  displacement before spending anything** - same mnemonic on both sides = the dead class, SKIP at once
+  displacement before spending anything** - same mnemonic both sides = the dead class, SKIP at once
   (showlines 0x2a268: 10 of 18 rows, 0 variants spent).
-- Not reachable so far: one or two locals' homes, one moved load, a straight-line head's schedule and
-  a two-load order - see the BLOCKED classes below, each `differs:` note lists the spellings spent.
-- `fndiff.py`'s fake rows (GOTCHAS iter 16-29): a `[reg +/- @]` pair whose displacement is a fixup is
-  the 0x90 mask filler (7 of `self_project`'s 10, 4 of `shots_move`'s 17); tail rows of a function
-  shorter than the game's are alignment (`ctl_label`'s 11 nops of 19); the game's `mov eax,eax`/
-  `lea eax,[eax]` filler after the last matched byte costs a row; a variant can score *fewer* rows by
-  matching less.
+- `fndiff.py`'s fake rows: a `[reg +/- @]` pair whose displacement is a fixup is the 0x90 mask filler
+  (7 of `self_project`'s 10, 4 of `shots_move`'s 17); tail rows of a function shorter than the game's
+  are alignment (`ctl_label`'s 11 nops of 19); the game's `mov eax,eax`/`lea eax,[eax]` filler after
+  the last matched byte costs a row; a variant can score *fewer* rows by matching less.
 - Findings, evidence at the links: serial (findings/serial.md) rings 0x84b00/0x80afa, wrap 0x4000;
   classes (findings/classes.md) `v88bb2` is 1 AMATEUR..5 KID MODE **signed**; car select
   (findings/car_select.md) `ents[8]` 0x73998 is the selection box; scores (findings/scores.md)
@@ -42,14 +38,14 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `voices_reset` 0x11adc / `kart_move` 0x237e4 (20 rows, next open near-miss lines): subtract the
-   masked-fixup and alignment rows first (iter-29 diagnostic), then decide scheduler vs home;
+1. `voices_reset` 0x11adc / `kart_move` 0x237e4 (20 rows, the next open near-miss lines): subtract
+   the masked-fixup and alignment rows first (iter-29 diagnostic), then decide scheduler vs home;
    `kart_move` shares shot_step's `[esp]` slot - the `volatile int t` lever applies there.
-2. `intro` 0x348f4 (21) and `sounds_load` 0x12124 (22): look first for a 0/1 assignment or a folded
-   multiply the new iter-29 levers cover (grep the bodies for `= .*== 0` and `* 0x`), then probe.
+2. `intro` 0x348f4 (21) and `sounds_load` 0x12124 (22): grep the bodies for a 0/1 assignment
+   (`= .*== 0`) or a folded multiply (`* 0x`) the iter-29 levers cover, then probe.
 3. Try the split-arithmetic lever on the functions whose note says a load home never flips
-   (`pcx_load`, `shots_move`, `net_recv`, `netkeys_*`): `x = <expr>; x *= <factor>;` or `x += <term>;`
-   as separate statements has never been tried on those (GOTCHAS iter 29).
+   (`pcx_load`, `shots_move`, `net_recv`, `netkeys_*`): `x = <expr>; x *= <factor>;` as separate
+   statements has never been tried there (GOTCHAS iter 29).
 4. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
    index), "BSBCS.PCX", `tbl77758`'s writer.
 
