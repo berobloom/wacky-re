@@ -154,7 +154,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   global changes other functions. [generic]
 - **A second typed name for one global** (`extern short w7ed8c; #pragma aux w7ed8c "_v7ed8c"`): a
   word load + `xor ah,ah` truncation (net_key 0x2dd42); int aliases of char* globals stop the
-  scheduler hoisting a pointer chain (data_load 0x28180). [generic]
+  scheduler hoisting a pointer chain (data_load 0x28180). No alias needed for the same effect: write
+  `(int *)charbase + i * 2` where the address is the same as `(int *)(charbase + i * 8)` - the cast
+  around the whole sum keeps the sum's load late and re-pairs the index registers (track_around
+  0x283a4, 31 rows -> MATCH). [generic]
 - **Chained assignment computes through a scratch:** `k = g = x` loads into AL; `k = x; g = k;`
   loads into k's home (demo_play). `t = dx >> 1; err = t;` computes in EAX and moves, `err = dx >> 1`
   computes in place (kart_line 0x21de0) - which one the game used varies per function. [generic]
@@ -199,7 +202,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   (classes_menu 0x1a05d, QUESTIONS 3), two independent load chains interleaved (in_sector 0x24a08; a
   statement written below a branch sinks past the whole branch), a dead copy of an incoming register
   (fn_182d0 `mov esi,ebx`), an allocator spill `mov [esp],eax; mov edx,[esp]` with no room for a
-  local (view_at_curpos). `-3` vs `-3r` is not the cause (identical object). [generic]
+  local (view_at_curpos), a param a copy into a local will not spill the way the game does (its
+  mirror image: the incoming value lands in the new slot at the prologue and the register is
+  reloaded after the call - fn_1d704 0x1d7b5, 11 spellings). `-3` vs `-3r` is not the cause
+  (identical object). [generic]
 - **Address constants 9.5b folds:** `&netstats[1]` as one immediate vs the game's `mov esi,0x3c;
   add esi,0x7c818` (showlines 0x2a359). But `mov r,N*stride; add r,sym` in a loop names an array
   base one row earlier - declare it (`mrows` 0x7bc00, trial_records_menu) before writing it off.

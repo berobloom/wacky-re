@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **194 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+- **195 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
   0x10260-0x36a4d bar the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
@@ -21,11 +21,13 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `fn_1d704` 0x01d704, `netkeys_in` 0x02d94c,
-   `track_around` 0x0283a4, `time_str` 0x02a618.
-2. Re-try the newest levers on SKIPped lines whose cause is a register home (not the dead-end
-   classes): split arithmetic `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`,
-   `net_recv`, `shots_move`; `intro` 0x348f4 and `sounds_load` 0x12124 for a `= .*== 0` assignment.
+   overnight/prompt.md step 2). Next open: `com_open` 0x0102f4, `voices_load` 0x11f98,
+   `time_str` 0x02a618, `engines_menu` 0x0167d8.
+2. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
+   the `(int *)charbase + i * 2` spelling of every `(int *)(v7d6a0 + curpos * 8)` site
+   (`view_at_curpos` 0x2f408, `view_box`, `in_sector`, `cpu_drive`), split arithmetic
+   `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`, `net_recv`, `shots_move`;
+   `intro` 0x348f4 and `sounds_load` 0x12124 for a `= .*== 0` assignment.
 3. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
 4. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s

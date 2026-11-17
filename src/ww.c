@@ -12397,31 +12397,28 @@ void data_load(void)
 }
 
 /* ---- 0x283a4, 168 bytes: the track pairs around the heading (callers in kart_move): v7d678's
- * pair -> (v7d614, v7d5e4); the one 0x12 steps behind curpos (wrapping at 0x780) -> (v7d618,
- * v7d5e8), its index v7d5cc; the one 0x12 ahead -> (v7d61c, v7d5ec), index v7d5c8; v7d690 left
- * at the last pair's second word.
- * differs (near-miss, 44 vs 45 insns, 5 blocks): the game loads curpos after the first pair's
- * stores (`mov eax,[curpos]; lea ebx,[eax-0x12]`) and holds the behind index in EBX, the ahead one in
- * ECX; ours hoists curpos into ECX for the behind index. Tried: locals b/c (both orders, register,
- * store orders), assignment-in-condition, `x = curpos; x -= 0x12`, <= -1 / > 0x77f, int alias of
- * v7d6a0 with both operand orders, pair reads as [0] / *++p. */
+ * pair -> (v7d614, v7d5e4); the one 0x12 steps behind curpos (wrapping at 0x780) -> (v7d618, v7d5e8),
+ * its index v7d5cc; the one 0x12 ahead -> (v7d61c, v7d5ec), index v7d5c8; v7d690 left at the last
+ * pair's second word. Same bytes as `(int *)(v7d6a0 + i * 8)`, but the int-pointer form puts the
+ * curpos load after the first pair's stores, as the game does (0x283ca), and EBX/ECX the right way
+ * round: 31 rows -> MATCH (iter 32). */
 extern int v7d5c8, v7d5cc;
 
 void track_around(void)
 {
-    v7d690 = (int *)(v7d6a0 + v7d678 * 8);
+    v7d690 = (int *)v7d6a0 + v7d678 * 2;
     v7d614 = *v7d690++;
     v7d5e4 = *v7d690;
     v7d5cc = curpos - 0x12;
     if (v7d5cc < 0)
         v7d5cc += 0x780;
-    v7d690 = (int *)(v7d6a0 + v7d5cc * 8);
+    v7d690 = (int *)v7d6a0 + v7d5cc * 2;
     v7d618 = *v7d690++;
     v7d5e8 = *v7d690;
     v7d5c8 = curpos + 0x12;
     if (v7d5c8 >= 0x780)
         v7d5c8 -= 0x780;
-    v7d690 = (int *)(v7d6a0 + v7d5c8 * 8);
+    v7d690 = (int *)v7d6a0 + v7d5c8 * 2;
     v7d61c = *v7d690++;
     v7d5ec = *v7d690;
 }
