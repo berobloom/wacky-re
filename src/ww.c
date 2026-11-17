@@ -7910,7 +7910,7 @@ void credits_screen(void)
     pal_a = save;
     for (;;) {
         k = 1;                        /* 0x1f037 */
-        x = cboxes[1].x2;
+        x = cboxes[1].x;              /* 0x1f03c: .x (0x7b19e), not .x2 */
         frame = 0;
         dir = 1;
         for (;;) {
