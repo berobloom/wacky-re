@@ -84,8 +84,11 @@ def align_all(near):
         ours = bytes(b if not mask[off + k] else 0x90 for k, b in enumerate(buf[off:end]))
         A = F.dis(ours, addr, addr + len(ours))
         B = F.dis(code[addr - cbase:addr - cbase + len(ours)], addr, addr + len(ours))
-        sm = difflib.SequenceMatcher(None, [t[2] for t in B], [t[2] for t in A], autojunk=False)
-        d = sum(max(i2 - i1, j2 - j1) for t, i1, i2, j1, j2 in sm.get_opcodes() if t != 'equal')
+        ops = F.align([t[2] for t in B], [t[2] for t in A])
+        d = F.rows(ops)
+        eq = sum(i2 - i1 for t, i1, i2, j1, j2 in ops if t == 'equal')
+        sm = difflib.SequenceMatcher(None, [], [])
+        sm.get_opcodes = lambda: ops
         hunks = []
         for grp in sm.get_grouped_opcodes(3):
             h = []
@@ -96,8 +99,7 @@ def align_all(near):
                     h += [['-', B[i][0], 0, B[i][2]] for i in range(i1, i2)]
                     h += [['+', 0, A[j][0], A[j][2]] for j in range(j1, j2)]
             hunks.append(h)
-        eq = sum(i2 - i1 for t, i1, i2, j1, j2 in sm.get_opcodes() if t == 'equal')
-        out[addr] = {'d': d, 'i': eq + d, 'r': round(sm.ratio(), 4), 'h': hunks}
+        out[addr] = {'d': d, 'i': eq + d, 'r': round(2.0 * eq / (len(A) + len(B)), 4), 'h': hunks}
     return out
 
 

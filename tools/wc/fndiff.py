@@ -8,7 +8,7 @@ backwards; check a full disassembly of one side before writing prose about a dif
 
 Like tools/wc/variants.py this ignores the bytes fixups fill and prints absolute addresses as '@',
 but it lists the differing pairs instead of only counting them, and it aligns the two listings with
-difflib so a 1-byte drift does not shift the whole function. A pair on one line means one side has
+difflib so a 1-byte drift does not shift the whole function (the better of autojunk on and off: align()). A pair on one line means one side has
 an instruction the other lacks.
 """
 import difflib
@@ -36,6 +36,24 @@ def dis(buf, vma, upto):
             if i.address < upto]
 
 
+def rows(ops):
+    return sum(max(i2 - i1, j2 - j1) for t, i1, i2, j1, j2 in ops if t != 'equal')
+
+
+def align(a, b):
+    """difflib opcodes for the two instruction-text lists, the better of two alignments. difflib's
+    default autojunk ignores lines that make up over 1% of a 200+ line list (`call @`, `mov eax,@`), and
+    on long functions that misaligns whole blocks (iter 39: fn_17928 171 rows with it, 35 without);
+    without it a few short functions align worse (netkeys_in 29 vs 48). Both are real alignments, so
+    each count is an upper bound: keep the smaller."""
+    best = None
+    for junk in (True, False):
+        ops = difflib.SequenceMatcher(None, a, b, autojunk=junk).get_opcodes()
+        if best is None or rows(ops) < rows(best):
+            best = ops
+    return best
+
+
 def main():
     if len(sys.argv) < 4:
         print(__doc__)
@@ -59,9 +77,8 @@ def main():
     ours = bytes(b if not mask[off + k] else 0x90 for k, b in enumerate(buf[off:end]))
     A = dis(ours, addr, addr + len(ours))
     B = dis(code[addr - cbase:addr - cbase + len(ours)], addr, addr + len(ours))
-    sm = difflib.SequenceMatcher(None, [t[2] for t in A], [t[2] for t in B])
     n = 0
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+    for tag, i1, i2, j1, j2 in align([t[2] for t in A], [t[2] for t in B]):
         if tag == 'equal':
             continue
         n += max(i2 - i1, j2 - j1)

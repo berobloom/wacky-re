@@ -62,6 +62,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### Reading a near-miss diff (do this before spending variants)
 
+- **difflib's autojunk inflates row counts on long functions.** `SequenceMatcher`'s default ignores
+  lines that make up over 1% of a 200+ line list (`call @`, `mov eax,@`), so whole blocks misalign:
+  fn_17928 counted 171 rows with it and 35 without, race_run 697 vs 213, and a harmless edit to main
+  read 80 -> 192. Turning it off is not always better (netkeys_in 29 -> 48), so `fndiff.align()` takes
+  the smaller of the two; fndiff, variants.py and progress.py use it (iter 39). Use it in any new
+  scorer. [generic]
 - **`src/check.sh` is the verdict, every other count is a hint.** `fndiff.py` (ours LEFT, game
   right) and `fncompare.py` print displacements as `@`, so swapped stack slots show 0 rows while
   check.sh says "differs" (net_send 0x2dc38). A MATCH masks fixup bytes, so read the `WRONG sym@addr`

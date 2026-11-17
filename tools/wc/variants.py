@@ -15,6 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 import capstone
 import libmatch as L
 import objmatch as M
+import fndiff
 
 ROOT = L.ROOT
 obj, prog, addr, endg = sys.argv[1], sys.argv[2], int(sys.argv[3], 16), int(sys.argv[4], 16)
@@ -49,9 +50,9 @@ for name in want:
     buf, mask = segs[seg]
     ours = bytes(b if not mask[off + k] else 0x90 for k, b in enumerate(buf[off:end]))
     A = dis(ours, addr, endg)          # cut both sides at END, as the docstring says (iter 16)
-    sm = difflib.SequenceMatcher(None, [t[2] for t in A], [t[2] for t in game])
-    n = sum(max(i2 - i1, j2 - j1) for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag != 'equal')
-    sz = sum(1 for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag == 'equal'
+    ops = fndiff.align([t[2] for t in A], [t[2] for t in game])    # better of autojunk on/off (iter 39)
+    n = fndiff.rows(ops)
+    sz = sum(1 for tag, i1, i2, j1, j2 in ops if tag == 'equal'
              for x, y in zip(A[i1:i2], game[j1:j2]) if x[1] != y[1])
     res.append((n, sz, len(ours), name))
 for n, sz, ln, name in sorted(res)[:12]:
