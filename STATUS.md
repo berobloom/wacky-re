@@ -22,7 +22,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
    overnight/prompt.md step 2). Next open: `volume_menu` 0x01e760 (64), `fn_1c0f4` 0x01c0f4 (67),
-   `leaderboard` 0x02b270 (73). Before probing, run the GOTCHAS scans on the game's code: a
+   `ent_sprites_load` 0x021310 (75). Before probing, run the GOTCHAS scans on the game's code: a
    cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
    the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
    the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).
