@@ -142,7 +142,16 @@ it can be copied back into DREA.
   the **order of the initializers in a comma `for`**: `for (i = 0, k = 0; ...)` and
   `for (k = 0, i = 0; ...)` home i in EBX and k in EDX either way and only swap the emission order of
   the two `xor`s (fade_in 0x32cf8 init loop, .work/probe_fi, iter 25: 13 rows vs 14). Two homes among
-  *pushed* registers (neither is EAX) are as unpinnable as the EAX choice. [generic]
+  *pushed* registers (neither is EAX) are as unpinnable as the EAX choice - **but check the C types
+  first** (width rule below): fn_16eac's EBX/ECX swap was not a flip at all, it was `short cnt`. [generic]
+- **The register width in a compare is a fact about the C types: widen the local before writing a
+  pairing off as the coin flip** (fn_16eac 0x16eac, iter 27): with `short n, cnt` our counter went to
+  ECX and the sign-extended loop bound to EBX, the game the other way round, and the `cnt >= n` test
+  compiled to `cmp cx,si` where the game has `cmp ebx,ecx` (0x16eec, 32-bit). Declaring the counter
+  `int cnt` - which is what that compare says the game's counter was - moved the counter to EBX and
+  the `movsx`'d bound to ECX in one edit, and the loop's `inc`/`movsx`/`cmp` rows went with them:
+  17 rows -> 11. `cmp reg16,reg16` means both sides are short in C, `cmp reg32,reg32` means at least
+  one is int; read the width off the game before spending a probe compile on the pairing. [generic]
 - **The coin flip also decides whether a lone local's register is saved, and 9.5b cannot be told
   otherwise** (netkeys_out 0x2d9e4, iter 23): with exactly one byte accumulator and no other pseudo,
   9.5b homes it in EAX and emits no prologue (`xor al,al`), the game homes it in EDX and saves it

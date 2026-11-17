@@ -4095,10 +4095,23 @@ void fn_16d68(int a, int b, int face)   /* arg regs: EAX, EDX, EBX */
 
 void fn_16f90(void);
 
+/* differs: 11 fndiff rows, 5 of them real (2 are the masked-displacement artefact, 4 the tail
+ * alignment because ours is 3 bytes shorter): `mov si,[nplayers]` (game 0x16eb0) is emitted before
+ * the loop inits in the game and after them here; 9.5b folds `n = 0x12; nplayers = n;` into
+ * `mov word [nplayers],0x12` where the game materialises it in SI (0x16f06) and stores from SI
+ * (0x16f0b); and the tail read of nplayers lands in AX (n is dead) where the game uses SI (0x16f17).
+ * Tried: 22 spellings in three probe compiles (.work/probe_16eac) - declaration and statement order,
+ * comma init, i/cnt in their own statements before the loop, chained `nplayers = n = 0x12`, the clamp
+ * store outside the if, a local `short *np = &nplayers`, a `lim` local for the bound, `short cnt` vs
+ * `int cnt`, and volatile-alias stores and reads (a volatile store still folds: z19/z20). What fixed
+ * the rest: `int cnt` moves the counter to EBX and the sign-extended bound to ECX, the game's homes. */
+extern volatile short vnplayers;
+#pragma aux vnplayers "_nplayers"
+
 void fn_16eac(void)
 {
-    short n, cnt;
-    int i;
+    short n;
+    int cnt, i;              /* cnt is 32-bit: the game compares cnt with the promoted n (`cmp ebx,ecx` 0x16eec) */
 
     n = nplayers;
     cnt = 0;
@@ -4115,7 +4128,7 @@ void fn_16eac(void)
             nplayers = n;
         }
         fn_16f90();
-        nplayers = nplayers;
+        n = vnplayers;       /* the game reloads it at 0x16f17 after the call */
     }
 }
 
