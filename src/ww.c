@@ -6522,16 +6522,22 @@ void fn_1cad0(int which, int rec)       /* arg1 = eax, arg2 = edx */
  * (0x1c183-0x1c1ea), and `vals[vals[3]]` picks which of the two applies to this side (0x1c57a,
  * 0x1c64f). findings/menus.md has the levels and the screen's layout.
  *
- * differs: 14 instructions (1948 bytes vs 1944). iter 38: both control-name chains are `switch`es
- * with `case 0: case 1:` (the game's unsigned `cmp eax,1; jbe` + `cmp eax,2; je` + `jmp`), and the
- * two-player one sits in the else of `if (netgame == 0)` with the name pair written twice: the
- * compiler cross-jumps the copy, which is the game's shared block before the netgame test with the
- * `jbe` back into it (0x1c542, 0x1c58b): 67 -> 18 -> 14. Left: the third centred line swaps
- * `mov eax,0x140` with `lea edx,[ecx*8]` and sets ecx before the spr_y load (0x1c35c, 0x1c37a);
- * the print loop's first row pointer is `mov edi,esp; add edi,0x50` (0x1c715; &rows[i][0],
- * *(rows + i), rows[0] + i * 80 and an explicit pointer all keep ours or get worse); the 60-tick
- * wait keeps the snapshot in EAX and the fresh ticks in EDX (0x1c821-0x1c831; i/n/t as the
- * snapshot, declaration order, unsigned, <= 59, for/break: no change). */
+ * differs: 8 instructions, size now the game's 1944. iter 38: both control-name chains are
+ * `switch`es with `case 0: case 1:` (the game's unsigned `cmp eax,1; jbe` + `cmp eax,2; je` +
+ * `jmp`), and the two-player one sits in the else of `if (netgame == 0)` with the name pair
+ * written twice: the compiler cross-jumps the copy, which is the game's shared block before the
+ * netgame test with the `jbe` back into it (0x1c542, 0x1c58b): 67 -> 18 -> 14. iter 46 (14 -> 8):
+ * the third centred line is `t = (int)strlen(rows[10]) * 8; x = (0x140 - t) / 2;` - the temp puts
+ * `lea edx,[ecx*8]` before `mov eax,0x140` AND sinks `xor ecx,ecx` before the spr_y load like the
+ * game (0x1c35c, 0x1c37a; the same expression inline at the other three sites already matches);
+ * and the print loop's row pointer is `for (i = 1, q = rows[0], q += 80; ...)` - the split init
+ * gives the game's `mov edi,esp; add edi,0x50` (0x1c715) where one expression gives `lea edi,
+ * [esp+0x50]`. Left (both scheduling/coin flip): that pair sits 9 bytes early, above the loop's
+ * `mov esi,1; cmp ebp,esi; jl` (rows[1], rows[0]+80, &rows[i][0], *(rows+i), rows[0]+i*80 -> lea;
+ * the same split as two statements scores the same; an `if (n >= 1)` guard around the loop costs 9
+ * rows and 1952 bytes); and the 60-tick wait keeps the snapshot in EAX and the fresh ticks in EDX
+ * (0x1c821-0x1c831; i/n/t as the snapshot, declaration order, unsigned, <= 59, for/break: no
+ * change). */
 extern char ctl_names77432[];           /* 0x77432, inside cfg77128 (0x77128 + 0x30a) */
 extern short cfg77128w, cfg7712a;       /* 0x77128, 0x7712a: shorts inside cfg77128 */
 int wait_input(short mode);                     /* 0x27920: called with 0 wherever f278c4 is */
@@ -6586,7 +6592,8 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
     print_at(x, 0x14, rows[10], 0);                     /* 0x1c334 */
     strcpy(rows[10], "THEN PRESS FIRE TO SELECT THE CAR");      /* 0x1c339 */
     spr_y = 0x1e;                                       /* 0x1c349 */
-    x = (0x140 - (int)strlen(rows[10]) * 8) / 2;        /* 0x1c352-0x1c371 */
+    t = (int)strlen(rows[10]) * 8;                      /* 0x1c35c: the game computes len*8 first */
+    x = (0x140 - t) / 2;                                /* 0x1c352-0x1c371 */
     spr_x = x;
     print_at(x, spr_y, rows[10], 0);                    /* 0x1c38a */
     spr_x = 0x10;                                       /* 0x1c38f */
@@ -6644,9 +6651,9 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
             break;
         }
     }
-    for (i = 1; i <= n; i++) {                          /* 0x1c70c-0x1c746 */
+    for (i = 1, q = rows[0], q += 80; i <= n; i++, q += 80) {    /* 0x1c70c-0x1c746 */
         spr_x = 0x10;
-        print_at(0x10, spr_y, rows[i], 0);
+        print_at(0x10, spr_y, q, 0);
         spr_y += 0xa;
     }
     strcpy(rows[10], "PRESS FIRE TO LEAVE HELP");       /* 0x1c748 */
