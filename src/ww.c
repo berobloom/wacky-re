@@ -1045,7 +1045,10 @@ extern struct voice voices[27];
 extern short voicebusy;
 void FX_StopAllSounds(void);
 
-/* differs: edx/ebx constants swapped in the first unrolled loop (+27); statement order tried */
+/* differs: the -1/0 constants of the unrolled first loop live in EBX/EDX, the game's in EDX/EBX
+ * (0x11b1e); the other 18 fndiff rows are masked-fixup artifacts. Tried: statement order in both
+ * loops, int m = -1 / z = 0 locals (before or inside the loop, both declaration orders: the
+ * constants propagate, same bytes), short i (worse). The coin-flip class (GOTCHAS dead ends). */
 void voices_reset(void)
 {
     int i;
