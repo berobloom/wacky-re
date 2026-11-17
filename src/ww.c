@@ -9549,6 +9549,10 @@ void kart_anim0(void)
  *    the registers change: v88b7e lands in EBX, not EDX (6 declaration orders tried, all worse).
  * 2. the two charge-start tails (f3a == 0) are cross-jumped in the game (0x22aeb -> 0x22bd5), with
  *    `v88b92 = 0` scheduled late; ours keeps both and schedules that store early (5 spellings tried).
+ * New this iter (0 kept, 5 probed): reusing `t` for both spills (`t = curkart->f1a * 8;` then
+ * `(char *)tb7b448 + t + pl * 4` at 0x22660) DOES give the game's 4-byte frame and `[esp]` spill,
+ * but the whole function is then 42 rows - the `pl * 4` (`lea edx,[edx*4]` 0x225ab) is still late
+ * and a named local for it is worse (55); dropping `t` from the tick test is 101.
  * Levers that mattered: calling kart_anim2 through an aux alias (-oe inlined it: 395 -> 369
  * instructions) and the `pl = v88b7e` local (the game keeps it in EDX for players[] and the row). */
 /* ---- 0x224ec, 1799 bytes: per-frame kart state (caller 0x297c9 in 0x290a0); runs only while the
