@@ -18349,7 +18349,10 @@ void tiles_setup(void)
  * gone, 0x3c ticks and a key. Ends with the WINTRO palette copied to v7d858 and CHECK.PCX loaded
  * (palette into v7d85c). v7d998 is 1 during the fly-over and restored after.
  * differs (9 blocks): the fread size is loaded before its buffer, music88bcc is stored after the
- * song load, the frame wait keeps ticks in EDX, the final palette copy loads the source first. */
+ * song load, the frame wait keeps ticks in EDX, the final palette copy loads the source first;
+ * and the pal_a save around f375cd is in DX in the game, BX in ours (0x34b26). Tried (iter 30):
+ * `pal_a = f375cd(p6a978, pal_a)` (DX but movzx edx: the f375cd 32-bit-argument dead end, 49
+ * rows), a separate `short save` / `int save` local in three positions (24-51 rows vs 21). */
 void f37e23(void);
 void f36e66(void);
 extern int v7aa98;
