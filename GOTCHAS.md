@@ -127,6 +127,18 @@ it can be copied back into DREA.
   and index temps, a two-statement count, the `sub` moved to the use, `SEEK_SET` written 0, and the
   *global externs declared in the other order* - leave the five rows untouched (.work/probe_pcxload,
   iter 18). Global declaration order is not a lever either; stop after one probe compile. [generic]
+- **The coin flip also decides whether a lone local's register is saved, and 9.5b cannot be told
+  otherwise** (netkeys_out 0x2d9e4, iter 23): with exactly one byte accumulator and no other pseudo,
+  9.5b homes it in EAX and emits no prologue (`xor al,al`), the game homes it in EDX and saves it
+  (`push edx` ... `pop edx`, 0x2d9e4/0x2da20); netkeys_pack 0x2da28 and netkeys_in 0x2d94c (c in DL,
+  AL as the mask temp) are the same flip. Nothing moves it: local type (char/signed char/short/int),
+  `register`, an unused second local (int/char, both declaration orders), an unused parameter, a
+  non-void return type with no `return` (W107), `return c`, an `unsigned char ca[1]`, `|=` vs `+=`,
+  `c = c + N`, store order - 21 spellings score 10 in .work/probe_nko/.work/probe_nk2, and WC95,
+  WC95A and WC95B compile the control shape to the same 60 bytes (masked function bytes equal in all
+  three OBJs). And 9.5b has **no explicit register variables**:
+  `register unsigned char c @ edx;` is E1009 ("Expecting ';' but found '@'"), so a local's register
+  cannot be pinned by the declaration at all. Treat the whole `c in DL` net family as this flip. [generic]
 - **Literals land at the game's CONST addresses as long as functions are added in address order**: our
   "AMATEUR. "/"PRO. "/"CHAMPION. " got offsets 0x948/0x954/0x95c = 0x6094c/0x60958/0x60960 with the
   base check.sh prints (`segment CONST base 0x060004`). If that line splits into two bases, a literal

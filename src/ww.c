@@ -14905,7 +14905,10 @@ void netkeys_in1(void)
 /* ---- 0x2d9e4, 65 bytes (no caller found): packs keys cd6/cd3, button b40 and v7ecc0 into the
  * byte v88cf0 to send (v88cf3 cleared).
  * differs: the game keeps c in DL (push/pop edx) where ours uses AL; an unused int parameter,
- * other types and store orders keep AL. */
+ * other types and store orders keep AL. 21 spellings (register, an unused second local int/char in
+ * both orders, non-void return with and without `return c`, an `unsigned char ca[1]`, `|=`,
+ * `c = c + N`, store order) score 10 in .work/probe_nko + .work/probe_nk2, and 9.5/9.5a/9.5b give
+ * the same AL: the one-local case of the EAX coin flip (GOTCHAS), same in netkeys_pack/netkeys_in. */
 void netkeys_out(void)
 {
     unsigned char c;
