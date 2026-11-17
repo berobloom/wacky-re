@@ -109,6 +109,6 @@
 175  0x025a78 ents_project             SKIP: kept the local-pointer lever (struct ent *e + v7d7f4 = e after the guard, 189 -> 175; 7 variants); rest is the colourer (ECX iterator, DI sx) + the game's two extra v7d7f4 reloads (QUESTIONS 2 class); store placement/for-init order/`sy = e->y`/global re-reads all equal or worse
 185  0x016f90 fn_16f90             SKIP: the three documented dead ends (QUESTIONS fn_16f90 a/b/c: zero stored via a CSEd CX, byte-counter loop without strength reduction, interleaved order_a/b loads); new idea spent: `#pragma loopopt OFF` on the definition is inert under WCC386 (WPP-only pragma) - committed code re-measures 185, not 241
 233  0x0155c0 menu             SKIP: slots permuted (dead end) + frame 0xd4 vs 0xe0 + our 5 epilogues vs the game's 1 + one dead inline strlen(mnames); kept isnet as int (267 -> 233); tried one-epilogue goto, int state, int four
-512  0x01a380 cars_menu
+476  0x01a380 cars_menu             SKIP: slot permutation (dead end) + frame 4 bytes short; kept cd15c/slide_up/slide_dn as shorts (499 -> 476); tried short slide pair alone (521), short stage (483)
 577  0x01832c fn_1832c               (iter 38: the wait's timeout exit restored, joystick nav + trial_book were unreachable and dropped; 611 -> 926 only because the body is now its full size, 4320 vs the game's 4220 bytes)
 677  0x0290a0 kart_frame

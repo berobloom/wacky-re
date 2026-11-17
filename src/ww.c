@@ -5573,16 +5573,24 @@ extern short cfg7712c;            /* 0x7712c = cfg77128 + 4 */
 extern char *v7d854;              /* 0x7d854 (v7d85c is declared at 3095) */
 void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a caller buffer */
 
-/* differs: near miss at +8 (6562 vs 6861). The statements are in the game's order - with the
- * `disp(%esp)` and the relocation bytes masked, 71 % of the disassembly rows agree - but Watcom
+/* differs (476 rows, was 499: `cd15c` and `slide_up`/`slide_dn` are shorts - the game compares them
+ * `cmp word ptr [esp+0x15c],9` / `cmp word ptr [esp+0x130],8`; `short slide_up, slide_dn` on their own is
+ * 521, with cd15c 476). Near miss at +8 (6684 vs 6861). The statements are in the game's order - with the
+ * `disp(%esp)` and the relocation bytes masked, 72 % of the disassembly rows agree - but Watcom
  * gave our 26 spilled scalars a permutation of the game's 27 slots and kept one local the game
  * spills in a register, so the frame is 4 bytes short. Probe recipe: QUESTIONS.md 5.
- * Frame: 3 char[0x50] at esp+0/0x50/0xa0, short[8] iconx/carstat at 0xf0/0x100, scalars 0x110-. */
+ * Frame: 3 char[0x50] at esp+0/0x50/0xa0, short[8] iconx/carstat at 0xf0/0x100, scalars 0x110-.
+ * Not reachable: the byte-mask block 0x1aca4-0x1ad1d (the game masks v88cef's bits in AH/BH/DH/BL/DL and
+ * stores bytes - our declarations of v88cef/key88cd5/v88cec are already char, so it is the register coin
+ * flip), the game's `test ax,ax` after its own word store (store->load forwarding), and `short stage` for
+ * the `switch (stage - 1)` subject (game `cmp ax,3` 0x1bba6): 476 -> 483. nmrefs' six game-only
+ * 0x7bc00(mrows) references are the 177-byte length gap (same on the committed code). */
 void cars_menu(void)
 {
     char buf0[0x50], buf1[0x50], buf2[0x50];   /* esp+0x00, esp+0x50, esp+0xa0 */
     short iconx[8], carstat[8];                /* esp+0xf0, esp+0x100 */
-    int c110, idle, savepal, slide_up, slide_dn, yrow134, yrow138, yrow13c, boxy, cd15c, flip, stage, boxx;
+    int c110, idle, savepal, yrow134, yrow138, yrow13c, boxy, flip, stage, boxx;
+    short cd15c, slide_up, slide_dn;
     short x2e, f120, capy, cd, row0y, car, f144, longwait, move, add158, col0x, curgy, curgx, pbase;
     int y, sv, blink, ok, done, i, j;
     short capx, n;
