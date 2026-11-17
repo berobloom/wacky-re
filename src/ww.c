@@ -6216,7 +6216,11 @@ animframe:
  * (`cmpw $0,splitscreen`, `xor ebx,ebx`, `xor edx,edx`). Every statement, jump and loop bound
  * otherwise agrees byte for byte; 13 C shapes (declaration orders, `register`, goto vs break vs
  * continue, do/while vs while; k1-k4 in analysis/shapes/SHAPES.C) all give the same 13. Same
- * family as QUESTIONS.md 2 and 3. */
+ * family as QUESTIONS.md 2 and 3, and as iter 23's netkeys_out (ours homes a long-lived value in a
+ * pushed register where the game rematerialises the constant: here 0 in EDI with `push/pop edi`, the
+ * game `cmp word [splitscreen],0`, `xor ebx,ebx`, `xor edx,edx` and no EDI in its prologue).
+ * 3 of the 13 rows are the masked-fixup artifact (`[eax*2 - @]` vs `[eax*2 + @]`, GOTCHAS iter 16);
+ * 2 more are one EAX/EDX choice at 0x1be6a (`mov ax,[myplayer]`+store vs the game's `mov dx`). */
 void fn_1be3c(void)
 {
     short i, seat, cd, cand;

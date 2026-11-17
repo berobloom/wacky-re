@@ -34,7 +34,7 @@
 10   0x016ca0 fn_16ca0               MATCH
 10   0x026a3c self_project             SKIP: 3 real rows are the coin-flip swap (GOTCHAS "Which pseudo gets EAX is a coin flip"); the game starts the bottom-clip sum from spr_y (`movsx edx,[spr_w]`, `movsx eax,cx`, `dec edx`, `add eax,edx` 0x26df2-0x26dfd), ours from spr_w. 7 of the 10 rows are the fixup-masking sign artifact (GOTCHAS). New this iter: `spr_y + spr_w - 1` (the form the other four project functions use) costs a row, 10 -> 11; six sum forms were tried before.
 10   0x02d9e4 netkeys_out             SKIP: the one-local EAX coin flip (game `push edx` + c in DL, ours c in AL unpreserved); 21 spellings across two compiles (register, unused 2nd local both orders, non-void return w/ and w/o `return c`, unused param, `unsigned char ca[1]`, `|=`, `c = c + N`, store order) all score 10, and 9.5/9.5a/9.5b give the same AL; 9.5b has no explicit register variables (`register char c @edx` = E1009). Same cause as netkeys_pack/netkeys_in
-13   0x01be3c fn_1be3c
+13   0x01be3c fn_1be3c             SKIP: documented dead end (QUESTIONS 2/3 + the iter-23 tie-break family) - 3 of the 13 rows are the masked-fixup artifact (`[eax*2 - @]`/`[eax*2 + @]`, GOTCHAS iter 16), 2 are one EAX/EDX choice at 0x1be6a; what is left is 9.5b keeping the constant 0 in a pushed EDI (`xor edi,edi`, `cmp di,[g]`, `mov ebx,edi`) where the game rematerialises it (`cmp word [g],0`, `xor ebx,ebx`, `xor edx,edx`, no EDI in its prologue); 13 C shapes tried earlier (SHAPES.C k1-k4) - 0 variants spent this iter
 13   0x01d13c race_records_menu
 13   0x02d4fc shots_clear
 13   0x02da28 netkeys_pack
