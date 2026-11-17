@@ -6,8 +6,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md). Options pinned by probes.
-- **188 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
-  entries in `src/nearmiss.txt` (7 MATCH, 8 SKIP, 2 LAYOUT, 83 open). The C rebuild covers
+- **189 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
+  entries in `src/nearmiss.txt` (8 MATCH, 10 SKIP, 2 LAYOUT, 80 open). The C rebuild covers
   0x10260-0x36a4d except the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is
   the hand-written assembly module.
 - Compiler levers that worked (GOTCHAS "This project's traps"): a constant stored through a register
@@ -15,14 +15,15 @@ Short: where the project stands, and what is next. History is in git; no diary.
   times = a **second local re-armed at the loop body's end** (fn_1c994); a `for` tail with two
   increments is rescheduled, so put the pointer step in the body (anim_tick); an assignment chain
   computes in a scratch, so **write the two statements** when the game's load lands in the local's
-  home (demo_play); **`volatile` on a global pins a store 9.5b defers** (demo_play 0x2e35f); **one
-  local used by two switch arms has one home register** (com_isr, com_isr_fifo: the receive arm's
-  copy drags the shared local into EDX, the register that arm needs); **a shift the game does on the
-  whole register is the operator assignment** (`v = *p; v <<= 2; *p++ = v;` - `*p++ = v << 2` shifts
-  only the byte *and* swaps the two locals' registers, pal_shift). Not reachable so far: a
-  loop-carried local's home (net_recv), a dead incoming-register copy (fn_182d0), one moved load
-  (track_setup, music_jingle), the v88bb2/v7edb0 pair (classes_menu), the int shift into `err`
-  (line_draw), ESI vs EDI for two pushed locals (pcx_load), one copy one slot late (demo_play).
+  home (demo_play); **`volatile` pins a store 9.5b defers** (demo_play 0x2e35f); **one local used by
+  two switch arms has one home register** (com_isr, com_isr_fifo: the receive arm's copy drags the
+  shared local into EDX); **a shift the game does on the whole register is the operator assignment**
+  (pal_shift); **a shared base load plus a copy = a temp local declared before both consumers, and
+  `d = q + q` gives `add eax,eax` where `q * 2` at the use gives `lea`** (track_pics_load 0x277b8).
+  Not reachable so far: a loop-carried local's home (net_recv), a dead incoming-register copy
+  (fn_182d0), one moved load (track_setup, music_jingle), the v88bb2/v7edb0 pair (classes_menu), the
+  int shift into `err` (line_draw), ESI vs EDI for two pushed locals (pcx_load), one copy one slot
+  late (demo_play), a `short + short` sum's first operand (spilled by 9.5b, view_at_curpos).
 - Probe caution (GOTCHAS iter 19): a probe's line layout and its other functions decide whether a
   shared `done:` epilogue is duplicated (328 vs 338 bytes, same source). Decide in `src/ww.c`.
 - Serial link (findings/serial.md): `com_isr` 0x106c8 / `com_isr_fifo` 0x10810 byte-identical - one
@@ -53,28 +54,27 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses (QUEUE.md overrides these): first empty-status line of `src/nearmiss.txt` (procedure
-   in overnight/prompt.md step 2). Next open: `track_pics_load` 0x277b8, `view_at_curpos` 0x2f408,
-   `wtext` 0x146d4, `release_check` 0x34458. Read the `differs:` note first, then `fndiff.py` (LEFT
-   is the game; a `[eax + @]` vs `[eax - @]` row is the fixup mask, not a diff).
-2. Try the two iter-19 levers on those four: a value two arms or blocks touch (one local), and a
-   shift/`>>` written inside a store (operator assignment + local). Probe with `tools/wc/variants.py
-   OBJ ww 0xADDR 0xEND n1 n2 ...`, END before the shared epilogue, rest verbatim.
+   in overnight/prompt.md step 2). Next open: `release_check` 0x34458, `net_key` 0x2dd30,
+   `com_wait_byte` 0x2df70, `com_expect` 0x2e008. Read the `differs:` note first, then
+   `tools/wc/fndiff.py` - **its left column is OURS, the right one the game** (GOTCHAS iter 20); a
+   `[eax + @]` vs `[eax - @]` row is the fixup mask, not a diff.
+2. Use the iter-20 lever on those four: give the shared subexpression a temp local **declared
+   before** the locals that consume it, and spell a doubled value as its own local (`d = q + q`).
+   Probe with `tools/wc/variants.py OBJ ww 0xADDR 0xEND n1 n2 ...`, END before the shared epilogue,
+   rest verbatim; compare prologues (frame size, pushes) before believing a low score.
 3. `pal_shift` 0x114a8 has no caller: scan the LE **fixup records** (not the applied bytes) and any
    far-pointer table for 0x114a8 to settle dead-code vs computed call, and say what the 768 bytes
    are (QUESTIONS 15).
 4. Stop early where a near miss is one moved instruction: `music_jingle` 0x11884, `track_setup`
    0x124e8, `classes_menu` 0x19eac, `fn_182d0` 0x182d0, `line_draw` 0x21f04, `net_recv` 0x2db00,
-   `pcx_load` 0x27060 are SKIP (tried spellings in their notes); `demo_rec`/`pic_show` are LAYOUT.
-   One probe compile is enough to call a tie-break (GOTCHAS "coin flip").
-5. `demo_play` 0x2e348 is down to 4 rows, 2 of them mask artefacts: one register copy sits one slot
-   late (9.5b store,copy,and / game copy,store,and at 0x2e35f). If a front end (WPP386?) or option
-   that splits a copy from its AND is found, this is the test case (QUESTIONS 14).
-6. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
+   `pcx_load` 0x27060, `demo_play` 0x2e348, `view_at_curpos` 0x2f408, `wtext` 0x146d4 (slots only)
+   are SKIP - one probe compile is enough to call a tie-break (GOTCHAS "coin flip").
+5. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
    0x600ac into EDX, ours into EAX, so -oe tail-merges a store (GOTCHAS iter 13). Diff with
    `tools/wc/fncompare.py` (instruction counts per side, unlike fndiff).
-7. Local-slot probes (QUESTIONS 9, 10): `enter_name` 21 diffs, all displacements; `scores_screen` 97;
+6. Local-slot probes (QUESTIONS 9, 10): `enter_name` 21 diffs, all displacements; `scores_screen` 97;
    `fn_1c0f4` 67 aligned. Vary one lever per try, and check *which register's value* an instruction
    reads before believing a probe's low score (iter 16).
-8. Inventory: archives and formats (WACKY.DAT), strings - the `42.GAM`/`20.GAM` dat records
+7. Inventory: archives and formats (WACKY.DAT), strings - the `42.GAM`/`20.GAM` dat records
    (`v7eca0` 1/2/3, 0x34463-0x344d4, `v88bd6` = `datfind`'s index), "BSBCS.PCX", `tbl77758`'s writer;
    and the original under the harness (boot segments/LE deltas, one save state in `captures/`).

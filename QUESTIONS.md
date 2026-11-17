@@ -26,7 +26,12 @@ pointer to the finding, and leave it here so the number stays valid.
    that is only stored to a 16-bit global.
    Data point (engines_menu 0x167D8): the game keeps a multi-assigned int local in EDX (xor edx / mov $1,edx /
    movsx edx / mov edx,[esp]) while our compile spills it to slot 8 with identical C; `register` and declaration
-   order did not change it. screen_menu 0x16984 MATCHED only when the loop result got a second single-block
+   order did not change it. Data point (view_at_curpos 0x2F408, iter 20): the same shape with NO
+   locals at all - the game does `movsx edx,[v7d610]` for the first operand of a `short + short` sum,
+   ours `movsx eax,[v7d610]; mov [esp],eax; mov edx,[esp]` in the slot the next sum reuses; 30
+   spellings (both operand orders, statement order, casts, temps for the sum and for each first
+   operand) leave it, and every local grows the frame to `sub esp,8` where the game has one slot, so
+   no C form is left there. screen_menu 0x16984 MATCHED only when the loop result got a second single-block
    variable (`m = menu(...); sel = m;` then switch on m) — switching on the loop-carried variable made Watcom
    reload from the slot instead of using EAX. Tree shape: `if (m == 3) break;` before `switch (m)` with two
    cases gives cmp3/je + cmp1/jb/jbe; a 3-case switch probes 2 first (game probes 3 first, so 3 is NOT a case).

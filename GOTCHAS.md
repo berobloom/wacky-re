@@ -180,6 +180,13 @@ it can be copied back into DREA.
   five instructions (0 instruction diffs, `.work/tp2/TP.C` tp_d; the same body with `c` declared last
   is 7 diffs, tp_c). Local declaration order does pick the register here even though it does not pick
   the stack slots (two entries above). [generic]
+- **A `mov [esp],eax` immediately followed by `mov edx,[esp]` is an allocator spill, not source**
+  (view_at_curpos 0x2f408, iter 20): the game loads the first operand of `v7d7a4 = v7d610 + v88b0a`
+  straight into EDX, ours routes it through the slot it uses later for the second sum's first
+  operand. 30 spellings - both operand orders in both sums, statement order, casts, a temp for the
+  sum, temps for the operands, an `int y = v88b0e` local - never drop it, and the frame rules out
+  the local route: any local adds a SECOND slot (`sub esp,8`) where the game has one. Check the
+  prologue first: if our frame already equals the game's, the function has no locals to add. [generic]
 - **An EAX/EDX swap in an address computation yields to an EAX-homed local** (songs_load 0x3360c,
   iter 14): `makepath_x(path, names[i])` built the offset in EDX, the game in EAX; seven index
   spellings and a fresh temp did not change it, `n = i * 12; makepath_x(path, (char *)names + n);`
@@ -252,6 +259,10 @@ it can be copied back into DREA.
   `tools/wc/objdiff.py` aligns bytes, so one 1-byte drift marks the rest of a 1900-byte function;
   fndiff aligns instructions and prints the differing pairs (it found 5 real shape differences
   inside 119 marked lines).
+- **`fndiff.py` prints OURS on the left and the game on the right** (iter 20, [generic]): the
+  docstring never says so, and a `differs:` note written from its output can swap the two sides
+  (track_pics_load's note described the game's shape as ours since iter 14). `A` is the .OBJ,
+  `B` the game bytes; confirm with a full disassembly of one side before writing prose about a diff.
 - **A local's type decides whether Watcom keeps it in a register** (iter 10, [generic]): the
   centring temporary of `fn_1c0f4` as `int` got a stack slot at esp+0x3d4 (frame 0x3d8, every
   displacement off by 4); as `short x` it stayed in EAX, the frame became the game's 0x3d4 and the
