@@ -13302,7 +13302,11 @@ void hud_draw(void)
  * the ECX pass-through.
  * differs (near-miss, 103 vs 104 insns, 10 blocks): the game keeps t in EBP, the line pointer in
  * ESI and i in EDI, with x/y and n/wait in stack slots (x at [esp], y [esp+4]); ours spills t and
- * orders the slots the other way. Tried: all 120 declaration orders, int x/y, an indexed loop. */
+ * orders the slots the other way. Tried: all 120 declaration orders, int x/y, an indexed loop.
+ * 18 fndiff rows and 10 of them are only the slot displacements (same mnemonic), so the rest cannot
+ * buy a MATCH: 2 rows are 9.5b folding `&netstats[1]` into one relocated immediate where the game
+ * has `mov esi,0x3c` + `add esi,0x7c818` (0x2a359/0x2a35d), 2 are our `mov ax,word[spr_x]`/
+ * `mov ax,word[spr_y]` (0x2a331/0x2a340) vs the game's `movsx eax`, 2 the tail filler. */
 void showlines_def(int n, int wait, int t);
 #pragma aux showlines_def "showlines_"
 
