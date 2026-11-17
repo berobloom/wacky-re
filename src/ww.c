@@ -13732,10 +13732,13 @@ void lap_banner(void)
  * toward 2 * f26; the place icons (0x6e6ec); the pickup counts karts[].f6a; the blinking light
  * f96/f98 (lp6e720/lp6e724); in v7d998 modes 2/3 the ofont2 panel instead of the rest; else
  * lap_banner and LAP n / LAST LAP! / FINISHED! (v88c3c) while f94, unless banner fd4 runs.
- * differs: 18 blocks, register / stack-slot choice only: the banner's 3 - f temp (EAX vs EBX),
- * the loop counters (game i in EBP / ESI swapped vs ours in the speedometer loop; EDX/ECX in
- * the place, pickup and light loops). Declaration order down, up put up on the stack as the
- * game does. */
+ * differs (46 rows; iter 39 62 -> 46): the frame is the game's 0x34 with `buf[0xc]` (the game has buf
+ * at [esp+0x14] and its dword slots from 0x20; 0x14 for both arrays gave 0x3c and moved every slot),
+ * the pitch is `f26 * 0x14 - 0x708` (the game's `imul; lea edx,[eax-0x708]` 0x2ad2c, size back to
+ * 2372), the banner index is written into the sp6a538 subscript (no k), and `up, down` are declared in
+ * that order. Left, register / stack-slot choice only: the banner's `f + 3 - (f + f)` (EAX/EBX
+ * swapped), the scalar slots (game lim at [esp+0x20], down at 0x30; ours 0x30 and 0x24), the pitch's
+ * EAX vs our EDX, and the loop counters (EBP/ESI, EDX/ECX, EBX/ECX in the later loops). */
 extern int v7eccc, v7ec88, v7ec84;
 extern short v88c48, v88b66;
 extern char str6aa18[];
@@ -13749,8 +13752,8 @@ void FX_SetPitch(int handle, int pitchoffset);
 void overlay_draw(void)
 {
     char str[0x14];
-    char buf[0x14];
-    int one, lim, i, n, f, k, t, down, up, s, v;
+    char buf[0xc];
+    int one, lim, i, n, f, k, t, up, down, s, v;
 
     minimap();
     one = 1;
@@ -13808,10 +13811,7 @@ void overlay_draw(void)
             n--;
             f = cars[i].fb8;
             if (cars[i].fb4)
-            {
-                k = f + 3 - (f + f);
-                sprptr = sp6a538[k];
-            }
+                sprptr = sp6a538[f + 3 - (f + f)];
             else
                 sprptr = sp7b210[n] + f * 0x688;
             if (v88bde) {
@@ -13871,7 +13871,7 @@ void overlay_draw(void)
             down = 0xa;
         }
         if (soundon)
-            FX_SetPitch(cars[i].sndhandle, (karts[i].f26 - 0x5a) * 0x14);
+            FX_SetPitch(cars[i].sndhandle, karts[i].f26 * 0x14 - 0x708);
         if (viewer7eb80[i] && !netvoices && !twoplayer && !v7d998 && optspeed) {
             v = karts[i].f28;
             if (v > 0x63)
