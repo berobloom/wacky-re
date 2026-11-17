@@ -23,7 +23,11 @@ pointer to the finding, and leave it here so the number stays valid.
    buf@0xf0, ch@0x140. Neither declaration order nor reverse-of-first-use explains ours. Counter-evidence on types:
    print_at 0x148F4 got its slots (x +4, mode 0) only with `short x` instead of `int x`, while names did
    nothing there. So types of parameters do move slots in some functions; try `short` for each parameter
-   that is only stored to a 16-bit global.
+   that is only stored to a 16-bit global. Data point (com_open 0x102F4, iter 33): its three parameter
+   slots (+4/0/+8) became the game's +8/+4/0 when an unrelated register-allocated `char mcr` temp was
+   added in the middle of the body, and went back when the temp was removed - the parameter permutation
+   follows the whole allocation state, not the parameter list, so com_open is no longer an example
+   of this question (13 rows left, all register homes).
    Data point (engines_menu 0x167D8): the game keeps a multi-assigned int local in EDX (xor edx / mov $1,edx /
    movsx edx / mov edx,[esp]) while our compile spills it to slot 8 with identical C; `register` and declaration
    order did not change it. Data point (view_at_curpos 0x2F408, iter 20): the same shape with NO

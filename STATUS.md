@@ -21,8 +21,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `com_open` 0x0102f4, `voices_load` 0x11f98,
-   `time_str` 0x02a618, `engines_menu` 0x0167d8.
+   overnight/prompt.md step 2). Next open: `voices_load` 0x11f98, `time_str` 0x02a618,
+   `engines_menu` 0x0167d8, `pic_at` 0x0343a0.
+2. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
+   `shot_step` 0x25e6c, `fn_182d0` 0x182d0 are 2-3 rows - only take them with an idea the
+   `differs:` note does not list.
 2. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
    the `(int *)charbase + i * 2` spelling of every `(int *)(v7d6a0 + curpos * 8)` site
    (`view_at_curpos` 0x2f408, `view_box`, `in_sector`, `cpu_drive`), split arithmetic

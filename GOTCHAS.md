@@ -83,7 +83,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **Read the width of a compare:** `cmp r16,r16` = both shorts in C, `cmp r32,r32` = at least one
   int. Fix the C types before logging a register pairing (fn_16eac: `int cnt` 17 -> 11 rows). A
   `short` that the game keeps in a register may take a stack slot in ours and the reverse
-  (fn_1c0f4 vs scores_screen): try the type before restructuring. [generic]
+  (fn_1c0f4 vs scores_screen): try the type before restructuring. `xor ah,ah` before `cmp ax,N` says
+  `short`, not `unsigned char` (com_open's `iir` 0x10401: 33 -> 19 rows). [generic]
 - **A lower row count can be a worse function**: a variant that drops one of the game's
   instructions realigns the rest (shots_clear lost `push ebx`, scored 11 vs 13). And a variant can
   print the game's text while reading the wrong value (line_draw: dx/dy rotation moved above its

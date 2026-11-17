@@ -68,6 +68,17 @@ The rings are 16 KB: `rxbuf` 0x84b00 with `rxhead`/`rxtail`/`rxcount`
   and resumed at 0x2dd5d-0x2dd8f by byte-copying `v88cf1`->`v88cef` and `v88cf4`->`v88cf2`
   (each value loaded back out of the global it was just stored to - five load/store pairs).
 
+- CONFIRMED (com_open 0x102f4-0x104fb, iter 33): the divisor is `1843200UL / (rate * 16)` with
+  `rate = baud` first and `rate = 19200` only when `baud == 14400` (0x10392 `movsx ecx,di`,
+  0x1039a `cmp ecx,0x3840`, 0x103a2 `mov ecx,0x4b00`, 0x103ac `shl ecx,4`, 0x103b1 `div ecx`),
+  so a 14400 link is clocked as 19200. `com_open(short port, short irq, short baud, short comnum)`:
+  WCC delivers the 3rd integral argument in EBX and the 4th in ECX, so the caller's 0x1dc2e
+  `movsx ecx,word [0x7ec50]` is `comnum` (INT 14h DX, stored at 0x7edec as `comnum - 1`) and 0x1dc35
+  `movsx ebx,word [0x7ebd4]` is `baud` (compared above); the callee's prologue 0x102f9-0x10303 and
+  `mov ebx,edx` for int386's 3rd argument (0x10385) confirm it. Reading ECX/EBX in C order gives the
+  swapped signature `(port, irq, comnum, baud)`, which changes no call-site byte but opens the wrong
+  port and divides by the wrong rate - `objmatch.py`'s `WRONG link_open_@0x1dc31` line is the check.
+
 ## Traps
 
 - Watcom's placement of the shared `done:` epilogue is not a function-local

@@ -73,12 +73,21 @@ void disable_ints(void);
 void enable_ints(void);
 void lib_40ff0(int, int);
 
-/* differs: the stack slots of port, irq, comnum are permuted (QUESTIONS.md 2) */
+/* differs (13 rows, 1 = the masked `[ecx*2 +/- @]` fixup): register homes only - the rate/divisor
+ * and the quotient (ours EAX then EBX, game ECX: `cmp ecx,0x3840` 0x1039a vs our 16-bit `cmp di`,
+ * `mov ecx,eax` 0x103ba vs our `mov ebx,eax`, `movzx eax,cl` 0x103d4 vs bl), the MCR extend
+ * (`cwde` 0x1045d vs our `movzx eax,al`), _dos_getvect's arg order (`movsx eax,[comvec]` 0x104ae
+ * before `mov ecx,cs` 0x104b5, ours reversed) and the IMR mask `1 << comirq` in EBX instead of EAX
+ * (no `mov ecx,eax` copy 0x104ca), plus one trailing nop. Tried: `rate == 14400` (18),
+ * `baud == 14400L` and `signed char mcr` (no change), an `int imask` local for `~(1 << comirq)`
+ * (23), and parameters (port, irq, comnum, baud): 4 slot rows disappear but INT 14h DX and the
+ * divisor swap (link_open's fixups flag it - findings/serial.md). */
 void com_open(short port, short irq, short baud, short comnum)
 {
     int rate;
     unsigned char divisor;
-    unsigned char iir;
+    short iir;
+    char mcr;
 
     mk_crctbl(0x1021);
     txcount = 0;
@@ -91,11 +100,10 @@ void com_open(short port, short irq, short baud, short comnum)
     comirq = irq;
     comregs.w.ax = 0xf3;
     comregs.w.dx = comnum - 1;
+    rate = baud;
     int386(0x14, &comregs, &comregs);
     if (baud == 14400)
         rate = 19200;
-    else
-        rate = baud;
     divisor = 1843200UL / (rate * 16);
     outp(comport + 3, 0x80);
     outp(comport + 1, 0);
@@ -112,12 +120,13 @@ void com_open(short port, short irq, short baud, short comnum)
         outp(comport + 2, 0);
     }
     outp(comport + 1, 0);
-    outp(comport + 4, (inp(comport + 4) & 0xe4) | 0x0b);
+    mcr = inp(comport + 4) & 0xe4;
+    outp(comport + 4, mcr | 0x0b);
     inp(comport);
     inp(comport + 2);
     comvec = comirq + 8;
     oldcomvec = _dos_getvect(comvec);
-    _dos_setvect(comvec, hasfifo ? com_isr_fifo : com_isr);
+    _dos_setvect(comvec, !hasfifo ? com_isr : com_isr_fifo);
     outp(0x21, inp(0x21) & ~(1 << comirq));
     disable_ints();
     outp(comport + 1, 7);
@@ -7131,7 +7140,7 @@ void fn_1dac0(void)
  * baud v7ebd4, waits 0x88 ticks (wait_or_key, inlined), drains the receiver and sets comopen. */
 struct comport { int port; int irq; int f08; };   /* 12 bytes, 0x77240 (0x1db4b-0x1db61) */
 extern struct comport comports[];
-extern int v7ec50;                    /* the COM port number: index of comports, com_open's 4th arg */
+extern int v7ec50;                    /* the COM port number: index of comports, com_open's ECX arg (0x1dc2e: WCC's 4th parameter) */
 
 void link_open(void)
 {
@@ -7167,7 +7176,7 @@ void link_open(void)
         fn_1c0ac();
         lib_40ff0(comtask, 1000);     /* 0x1dc1f */
     }
-    com_open(port, irq, v7ebd4, v7ec50);   /* 0x1dc3c */
+    com_open(port, irq, v7ebd4, v7ec50);   /* 0x1dc3c: WCC passes arg3 in EBX (baud = v7ebd4) and arg4 in ECX (0x1dc2e/0x1dc35) */
     wait_or_key(0x88);                /* 0x1dc41-0x1dc7d, inlined */
     while (com_getc_x() != -1)        /* 0x1dc7f */
         ;

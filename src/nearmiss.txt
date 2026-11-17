@@ -60,7 +60,7 @@
 26   0x01d704 fn_1d704             SKIP: cause 2 alone is a dead-end row (f375cd `mov dx` vs our movzx), so no MATCH; cause 1 = a frame slot the game has for `which` (store 0x1d7b5, reads 0x1d843/0x1d875-0x1d88f): 11 spellings in two probe compiles (short/int/volatile local copy, cast, declared first/last, assigned before/after wait_release, after the strcats, strcats too) all allocate the slot but put the incoming param in it at 0x1d70f and reload EBX after the call - 17-22 rows, control 17
 29   0x02d94c netkeys_in             SKIP: the c-in-DL one-local register home (documented dead end, GOTCHAS "which of two locals gets EAX") - same cause as netkeys_out 0x2d9e4 (21 spellings) and netkeys_pack 0x2da28 (10), and 9.5/9.5a/9.5b all pick AL; our body is 2 bytes shorter (no push/pop edx) - 0 variants
 31   0x0283a4 track_around             MATCH
-33   0x0102f4 com_open
+13   0x0102f4 com_open             SKIP: register homes only (rate/divisor+quotient ECX vs EAX/EBX, the 16-bit `cmp di`, IMR mask EAX+copy vs EBX, _dos_getvect arg order, cwde vs movzx) + 1 fake fixup + 1 nop; 17 variants. Kept: `short iir` (the game's `xor ah,ah; cmp ax,0xc0` 0x10401 and `mov byte[hasfifo],ah` 0x10430), `rate = baud;` before the int386 call (the movsx hoists to 0x10392, no if/else jmp), `!hasfifo ? com_isr : com_isr_fifo` (je -> jne), and a `char mcr` temp for the MCR read-modify-write (`and al,0xe4`/`or al,0xb`/`cwde` AND the three parameter slots fall into place): 33 -> 13
 33   0x011f98 voices_load
 33   0x02a618 time_str
 34   0x0167d8 engines_menu
