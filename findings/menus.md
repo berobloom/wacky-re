@@ -125,8 +125,10 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   record's names when `vals[vals[3]] <= 1` and the literals "BUTTON3"/"BUTTON4" (0x60d20/0x60d28)
   when it is 2, and nothing at all for any other value in the single-player path; rows 7 and 8
   exist only in the `twoplayer || splitscreen` path, and the giggle-keys line says
-  "1  - 6  ARE YOUR GIGGLE KEYS!" only when the player index is not 0 and `netgame` is set
-  (0x1c607-0x1c648), "F1 - F6 ARE YOUR GIGGLE KEYS!" otherwise. LIKELY: 2 is the gamepad (the
+  "1  - 6  ARE YOUR GIGGLE KEYS!" only when the player index is not 0 and `netgame` is 0, i.e. the
+  second player of a local game (CONFIRMED, corrected iter 38: 0x1c60f `je 0x1c61b` -> 0x60d30
+  "F1 - F6" when the index is 0, 0x1c619 `je 0x1c635` -> 0x60d50 "1  - 6" when netgame is 0; the
+  earlier note had the netgame test inverted), "F1 - F6 ARE YOUR GIGGLE KEYS!" otherwise. LIKELY: 2 is the gamepad (the
   value's meaning comes from the `v7ee4a` finding above), i.e. a gamepad side is told its last two
   rows are its third and fourth buttons.
 - CONFIRMED (0x1c7ae-0x1c7d6): a screenshot is taken while `key88ccd` is set, then the screen spins

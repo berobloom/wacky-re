@@ -6581,10 +6581,10 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
         }
         strcpy(rows[7], "");                            /* 0x1c5f6-0x1c606 */
         n = 8;                                          /* 0x1c5fb */
-        if (vals[3] != 0 && netgame != 0)               /* 0x1c607-0x1c619 */
-            strcpy(rows[8], "1  - 6  ARE YOUR GIGGLE KEYS!");   /* 0x1c635 */
-        else
+        if (vals[3] == 0 || netgame != 0)               /* 0x1c607-0x1c619 */
             strcpy(rows[8], "F1 - F6 ARE YOUR GIGGLE KEYS!");   /* 0x1c61b */
+        else                                            /* player 2 of a local game */
+            strcpy(rows[8], "1  - 6  ARE YOUR GIGGLE KEYS!");   /* 0x1c635 */
     } else {
         switch (vals[vals[3]]) {                        /* 0x1c64f-0x1c667 */
         case 0:
