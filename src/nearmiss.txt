@@ -77,7 +77,7 @@
 40   0x0224ec kart_state             SKIP: frame 8 vs 4 + the cross-jumped charge tails (both documented). New: sharing one int local for both spills (`t = curkart->f1a * 8`, `(char *)tb7b448 + t + pl * 4`) gets the game's 4-byte frame and `[esp]` spill but 42 rows; a named local for the hoisted `lea edx,[edx*4]` 0x225ab is 55, dropping `t` 101
 42   0x021554 line_points             SKIP: homes only, the frames agree (game err EAX / dy ESI / dx [esp+0xc] / n [esp+0x10]; ours n and err in registers, dy spilled) - coin flip; new tries: `volatile int n` 93 (the game's in-place `inc dword [esp+0x10]` is a plain spilled local), a dummy extra int local 42
 44   0x02a4ac minimap                MATCH
-57   0x02d548 shot_fire
+57   0x02d548 shot_fire              MATCH (iter 37: walk the cached global v7d874 itself, no local p; v7d5d0 = curpos after the y store - permute.py)
 58   0x016d68 fn_16d68
 64   0x01e760 volume_menu
 67   0x01c0f4 fn_1c0f4

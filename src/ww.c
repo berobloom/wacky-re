@@ -14935,46 +14935,41 @@ void shots_clear(void)
  * first free slot (f04 0) gets speed 0x10 for kinds 1 and 6 (else 0xa), range 0x3e8, the
  * direction v7eb9c and position (v88b68, v88b6a); shot_step(0) moves it off the kart, then
  * the animation (v7eb04, v88bc0 frames of 0xea). v7d874 ends on the shot (or past the table).
- * differs: the game walks the slots with v7d874 promoted into EDX (stored before shot_step,
- * reloaded after, stored again at both exits), so its stores are scheduled differently; kind
- * and player in ECX/ESI vs ours EBX/ECX (GOTCHAS "promotes a global"). */
+ * MATCH (iter 37): the loop walks the global v7d874 itself (the game caches it in EDX, stores it
+ * before shot_step, reloads it after - GOTCHAS cached-global lever), and v7d5d0 = curpos sits
+ * after the y store (found by tools/wc/permute.py, round 1). */
 void shot_fire(short kind, short player)
 {
     short i;
-    struct shot *p;
 
-    p = shots;
-    for (i = 0; i <= 0x3c; i++, p++) {
-        if (p->f04 == 0) {
+    v7d874 = shots;
+    for (i = 0; i <= 0x3c; i++, v7d874++) {
+        if (v7d874->f04 == 0) {
             if (kind == 1)
-                p->speed = 0x10;
+                v7d874->speed = 0x10;
             else
-                p->speed = 0xa;
+                v7d874->speed = 0xa;
             if (kind == 6)
-                p->speed = 0x10;
-            p->f08 = 1;
-            p->f06 = 0;
-            p->f04 = 1;
-            p->range = 0x3e8;
-            p->kind = kind;
-            p->owner = player;
-            v7d874 = p;
-            p->dir = v7eb9c;
-            p->x = v88b68;
+                v7d874->speed = 0x10;
+            v7d874->f08 = 1;
+            v7d874->f06 = 0;
+            v7d874->f04 = 1;
+            v7d874->range = 0x3e8;
+            v7d874->kind = kind;
+            v7d874->owner = player;
+            v7d874->dir = v7eb9c;
+            v7d874->x = v88b68;
+            v7d874->y = v88b6a;
             v7d5d0 = curpos;
-            p->y = v88b6a;
             shot_step(0);
-            p = v7d874;
-            p->dist = 0;
-            p->frame = 0;
-            p->fsize = 0xea;
-            p->spr = v7eb04;
-            p->nframes = v88bc0;
-            v7d874 = p;
+            v7d874->dist = 0;
+            v7d874->frame = 0;
+            v7d874->fsize = 0xea;
+            v7d874->spr = v7eb04;
+            v7d874->nframes = v88bc0;
             return;
         }
     }
-    v7d874 = p;
 }
 
 /* ---- 0x2d628 / 0x2d67c, 81 bytes each: the GIG sound of a car's banner (gigs[n - 1] at sfxvol, n-- kept apart,
