@@ -3910,8 +3910,8 @@ void fn_16ca0(void)
     if (twoplayer != 0 || netvoices != 0)
         v88c7c = 0x24;
     v88c54 = 0x78;
-    v88c7a = v88c7c >> 1;
     i = v7ea58s;
+    v88c7a = v88c7c >> 1;
     if (i == 2) {
         for (i = 0; i <= 199; i++)
             w7e730[i] = w7e584[i];

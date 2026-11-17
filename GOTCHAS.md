@@ -180,6 +180,15 @@ it can be copied back into DREA.
   five instructions (0 instruction diffs, `.work/tp2/TP.C` tp_d; the same body with `c` declared last
   is 7 diffs, tp_c). Local declaration order does pick the register here even though it does not pick
   the stack slots (two entries above). [generic]
+- **Write the next statement's load before the assignment whose halves the game splits**: `-oe`
+  hoists a global load above the shift/store of the statement written before it and sinks that
+  statement's store (fn_16ca0 0x16cf9, iter 22). The game runs `movsx eax,[v88c7c]`,
+  `mov [v88c54],0x78`, `sar eax,1`, `mov dx,[v7ea58s]`, `mov [v88c7a],ax`, `cmp dx,2`
+  (0x16cf9-0x16d18); the source order `v88c54 = 0x78; v88c7a = v88c7c >> 1; i = v7ea58s;` came out
+  `movsx, sar, store7a, load i in AX, store78` (the store slid down by itself) and `i` sat in AX.
+  Writing `v88c54 = 0x78; i = v7ea58s; v88c7a = v88c7c >> 1;` reproduced all six instructions and
+  put `i` in DX: 10 rows -> MATCH. Reading a listing where a load sits between the two halves of an
+  expression, move that load up in the source before scheduling by hand. [generic]
 - **A `mov [esp],eax` immediately followed by `mov edx,[esp]` is an allocator spill, not source**
   (view_at_curpos 0x2f408, iter 20): the game loads the first operand of `v7d7a4 = v7d610 + v88b0a`
   straight into EDX, ours routes it through the slot it uses later for the second sum's first

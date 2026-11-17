@@ -30,7 +30,7 @@
 8    0x02dd30 net_key             MATCH
 9    0x02df70 com_wait_byte             SKIP: the three register homes only (esc EBX/EDX, t0 EDX/EBX, the d temp EAX/ECX - one allocator decision; the `lea eax,[eax]`/`nop` tail row is that choice's 1-byte size gap). 16 probe spellings + `unsigned d` whole-file; the standalone probe's control scores 24 vs 9 whole-file, so probes do not rank this function (iter 21)
 9    0x02e008 com_expect             SKIP: the documented register coin flip (GOTCHAS "Which pseudo gets EAX is a coin flip"): want/t0 keep EBX/ESI in the game, ESI/EBX here, and the A1 vs 8B 0D load size at 0x2e08e plus the tail filler follow from it. net_sync 0x2e0fc byte-identical (so want=EAX, timeout=EDX confirmed); the `movzx ax,[eax+-@]` row 0x2e03b is a fndiff fixup-masking artifact (GOTCHAS); the pair mov ebx,eax + mov esi,[abs] appears once in the whole image (0x2e016) so no matched function shows the game's spelling. Tried: 10 spellings in one probe compile (.work/probe_comexpect/CE.C, control scores 9): elapsed local d in 3 declaration positions, unsigned d, elapsed into r, want copied to a local, t0 = ticks first, short want.
-10   0x016ca0 fn_16ca0
+10   0x016ca0 fn_16ca0               MATCH
 10   0x026a3c self_project
 10   0x02d9e4 netkeys_out
 11   0x025e6c shot_step
