@@ -21,8 +21,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `engines_menu` 0x0167d8, `pic_at` 0x0343a0,
-   `fn_16f24` 0x016f24, `shot_hit` 0x0218a4.
+   overnight/prompt.md step 2). Next open: `shot_hit` 0x0218a4 (39), `kart_state` 0x0224ec (40),
+   `line_points` 0x021554 (41), `credits_screen` 0x01efb0 (44).
+   `fn_16f24` 0x016f24 is 2 real rows from a MATCH (one emission-order swap) - re-try it only with a
+   new idea; the same for `fn_16eac` (5 real rows).
 2. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
    `shot_step` 0x25e6c, `fn_182d0` 0x182d0 are 2-3 rows - only take them with an idea the
    `differs:` note does not list. `time_str` 0x2a618 (31) and `voices_load` 0x11f98 (33) are now

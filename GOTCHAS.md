@@ -196,9 +196,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   players_project, wait_or_key 0x14c7c). Do not add a local copy. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
-  com_wait_byte, com_expect, self_project, drawsprite_clip. Check the width rule and the levers above
-  first. 9.5b has NO explicit register variables (`@ edx` is E1009 in a function, E1059 at file
-  scope), and declaration order of globals or comma-`for` initializers is not a lever. [generic]
+  com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared
+  tail: game EDX, ours [esp+8]; `short` wins EDX but every op turns 16-bit). Check the width rule and
+  the levers above first. 9.5b has NO explicit register variables (`@ edx` is E1009 in a function,
+  E1059 at file scope), and declaration order of globals or comma-`for` initializers is not a lever.
+  A loop-invariant literal argument is the one exception that moved a home (fn_16f24, 39 -> 26). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group
