@@ -86,7 +86,12 @@ it can be copied back into DREA.
   for fn_1832c (pcx/card slots swapped => near miss). [generic]
 - **`#pragma aux f(value [edx])` is E1121 (invalid return register) in 9.5b, but `value [dx]` is
   accepted and emits the full 32-bit EDX reads/ops** (`add $0x3e80,%edx`) - use it for asm routines
-  that return in EDX (e.g. this game's f375cd at 0x375cd). [generic]
+  that return in EDX (e.g. this game's f375cd at 0x375cd). Its cost: at a `parm [eax] [edx]` call site
+  9.5b **always** builds the whole 32-bit argument, while the game loads only the word it needs
+  (`mov dx,[pal_a]` 0x1e472, also 0x1597f/0x1ce57/0x1d73e/0x1e816). Unreachable in C: `(int)`,
+  `(short)`, a `short`/`unsigned short` prototype on a second aux-pragma'd name for the same asm,
+  a `short` temp, and `parm [eax] [dx]` - the last turns the argument into a `push` (demo_mode
+  0x1e472, volume_menu 0x1e816; .work/probe_f375, iter 27): write that row off instead of probing it. [generic]
 - **Call-site argument count must not contradict the definition**: Watcom 9.5b rejects 2-arg calls to a
   1-param function (E1151) even K&R-style. When the game passes extra args that the callee ignores
   (voice_play at 0x18da1 loads EDX *before* the call because the following showlines() call wants it

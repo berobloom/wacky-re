@@ -7346,7 +7346,11 @@ void fn_1e2cc(void)
  *    source positions of the pair, in both orders, give the same code (.work/p14/gdemo.py).
  * 2. a `mov edx,ebx` before the second f375cd (0x1e648) that the game leaves out (EDX is 0 from
  *    0x1e609); `f375cd(p6a978, 0)` and `pal_a = f375cd(p6a978, pal_a)` both keep it.
- * 3. `mov dx,[pal_a]` at 0x1e472: the f375cd EDX parameter trap (GOTCHAS). */
+ * 3. the f375cd EDX parameter: the game loads it 16-bit (`mov dx,[pal_a]` 0x1e472, and likewise at
+ *    0x1597f/0x1ce57/0x1d73e/0x1e816) while 9.5b always extends it (`movzx edx,word [pal_a]` here).
+ *    Not reachable from C: `(int)`, `(short)`, `short`/`unsigned short` prototypes on an aux-pragma'd
+ *    alias of f375cd, a `short` temp, and `parm [eax] [dx]` (which turns the argument into a push) -
+ *    all extend or push (.work/probe_f375, iter 27). A Watcom artefact of the `value [dx]` aux. */
 /* ---- 0x1e2e4, 1013 bytes: the demo races. mode 3 when the menus sit idle (v7ed0c >= 500, callers
  * 0x1faaf/0x1fb04), mode 1 from a menu entry (0x20f48). The mode picks the picture set ("OR"/"INT",
  * rec7c208[1..n] = "<set><i>.PCX" for n = 11/8/1) and the starting group/class (v7ec5c, v7ec58).
@@ -7510,7 +7514,7 @@ void fn_1e6dc(void)
  *    `ticks - v7ea70` loop (0x1a9f7) matches, but there no call sits in the loop. Tried: volatile
  *    v7e724 (6 blocks), `for (;;)` + break, `0xe > ...`, `ticks < v7e724 + 0xe` and a leading
  *    `while` (all worse or equal).
- * 2. `mov dx,[pal_a]` at 0x1e816: the f375cd EDX parameter trap.
+ * 2. `mov dx,[pal_a]` at 0x1e816: the f375cd EDX parameter trap, shown unreachable (demo_mode's note).
  * The levers that did matter: `k = kind[i]` read first and compared as a register, `spr_h = vol * 4`
  * before the other three sprite stores, `ys[i]` before `spr_x = 10`, `vol < 0` (not < 1) and
  * `spr_x + (spr_h - 2)`. */
