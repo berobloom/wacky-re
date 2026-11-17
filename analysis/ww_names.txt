@@ -350,7 +350,7 @@
 0x07d86c p7d86c       # SPECULATIVE
 0x027060 pcx_load     # CONFIRMED (rebuild src/ww.c): (name, n) DAT PCX picture data (no header, no palette) into p6a978[n]
 0x01bf94 f1bf94       # SPECULATIVE: called from frame_draw
-0x0375cd f375cd       # SPECULATIVE: called from frame_draw
+0x0375cd f375cd       # CONFIRMED: pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
 0x037e94 f37e94       # SPECULATIVE: called from frame_draw
 0x0287ec players_frames # CONFIRMED (rebuild src/ww.c): per player f38[v88b7e] = arr706a0[dir class][f1a], f30[v88b7e] visibility flag; loops v88b72 0..nplayers inclusive
 0x028998 sprites_build # CONFIRMED (rebuild src/ww.c): resets the list at arr79a28, players_frames, the five *_project, sprites_draw when v88b78

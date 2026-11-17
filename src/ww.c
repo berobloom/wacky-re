@@ -1962,8 +1962,7 @@ void getpalette(void);
 void setpalette(void);
 void pcx_load(char *name, int n);
 void f1bf94(char *p);
-short f375cd();                     /* asm; the game passes (EAX, EDX) and reads the result in EDX */
-#pragma aux f375cd value [dx] parm [eax] [edx] modify []   /* 9.5b rejects value[edx]; [dx] gives the same bytes */
+void f375cd(void);                  /* asm 0x375cd: pushal..popal, no arguments, reads p7d714; every register survives */
 void view_box(void);
 void f37e94(void);
 void players_frames(void);
@@ -4609,8 +4608,13 @@ retry:
         strcat(fname, ".PCX");
         pcx_load(fname, 2);
         v88b4a = 0;
-        p7d714 = p6a980;
-        pal_a = f375cd(p6a980, pal_a);
+        {
+            short fs;
+            p7d714 = p6a980;
+            fs = pal_a;
+            f375cd();
+            pal_a = fs;
+        }
         pal_a = pal_a + 16000;
     }
     pal_a = (v88bb6 - 1) * 16000;
@@ -4988,9 +4992,8 @@ joyretry:
    its code, and an unused array we declare is dropped from the frame); (c) i lands in
    EDI and idx in a stack slot for us (SI/DI in the game), so the flash-toggle slot
    encodings at 0x19a19 differ; (d) the telldat/datsize/seekdat/readdat expression at
-   0x194bc accumulates in EAX in the game and in EDX for us; (e) the f375cd call loads
-   pal_a with a 16-bit partial load (mov 0x88b24,%dx) where our #pragma aux parm[edx]
-   forces mov+movzwl. Blocks that do reproduce the game's bytes: the three message
+   0x194bc accumulates in EAX in the game and in EDX for us; (e) gone since iter 36 (`void f375cd(void)`,
+   the DX save of pal_a). Blocks that do reproduce the game's bytes: the three message
    copies, the palette copy loops, the fn_182d0 flash loops, the input blocks for
    netgame 0/1/2, the net_key/v7ecc4 block, the two error/escape blocks and the two
    nav blocks. */
@@ -5032,8 +5035,13 @@ void fn_193a8(void)
     pal_6bit(pal7d848);
     pcx_load(name, 2);
     v88b4a = 0;
-    p7d714 = p6a980;
-    pal_a = f375cd(p6a980, pal_a);
+    {
+        short fs;
+        p7d714 = p6a980;
+        fs = pal_a;
+        f375cd();
+        pal_a = fs;
+    }
     f37de0();
     if (key88ccd) {
         screenshot();
@@ -6805,8 +6813,8 @@ struct score {                        /* 0x2e = 46 bytes, 24 per row of 0x450 */
  *    bound is recomputed with movsx+inc (0x1d01e-0x1d024); ours falls into the body and compares
  *    against a live register. The do/while form costs 157 diffs and the `for (;;)` + break form 113,
  *    this plain `for (k = 3; k > j; k--)` 97.
- * 5. `movzx edx, word [pal_a]` at 0x1ce57 where the game has `mov dx`: the f375cd EDX parameter
- *    trap (GOTCHAS). Declaring pal_a `short` fixes this site but costs one of the 87 matches. */
+ * 5. (fixed iter 36: the 0x1ce57 `mov dx` is a short save of pal_a around `void f375cd(void)`; the
+ *    switch cases at 0x1cea6-0x1cf2d re-colour with it, 98 -> 118 rows.) */
 
 void scores_screen(void)
 {
@@ -6830,8 +6838,13 @@ void scores_screen(void)
     getpalette();                     /* 0x1ce35 */
     f1bf94(pal7d850);                 /* 0x1ce3a-0x1ce44 */
     v88b4a = 0;                       /* 0x1ce49 */
-    p7d714 = p6a980;                  /* 0x1ce52-0x1ce5e */
-    pal_a = f375cd(p6a980, pal_a);    /* 0x1ce57-0x1ce6c */
+    {
+        short fs;
+        p7d714 = p6a980;              /* 0x1ce52-0x1ce5e */
+        fs = pal_a;                   /* 0x1ce57 mov dx */
+        f375cd();
+        pal_a = fs;                   /* 0x1ce6c */
+    }
     enter_name(name, "", 0xb);        /* 0x1ce68-0x1ce78: the empty heading is 0x600ac */
     which = v88bb2;                   /* 0x1ce7d-0x1ce83 */
     switch (which) {                  /* 0x1ce87-0x1ce9e: the compare chain 2 / <2 / 3; the other
@@ -7035,7 +7048,8 @@ void trial_records_menu(void)
  *    (`cmp word [esp+0x94],N`, 0x1d875-0x1d88f); ours keeps it in BX (frame 0x98, `cmp bx,N`). The
  *    23 bytes are those encodings. A K&R definition (short or int), a short local copy, an int
  *    copy, casts and moving the declarations do not spill it.
- * 2. `mov dx,[pal_a]` vs ours `movzx edx` (0x1d73e): the f375cd EDX parameter trap (GOTCHAS).
+ * 2. (fixed iter 36: 0x1d73e is a short save of pal_a around `void f375cd(void)`; now 29 rows, the
+ *    rest is cause 1 and the registers of the stamp row at 0x1d7f7.)
  * Cause 1 was probed again (iter 32, 11 spellings in two probe compiles, control 17 rows): a separate
  * local copy of `which` assigned at that statement and used for the msgbox row and the switch - short,
  * int, `volatile short`, cast, declared first vs last, assigned before/after wait_release, after the
@@ -7054,8 +7068,13 @@ void fn_1d704(short which, int row)
 
     pcx_load("LEAD.PCX", 2);    /* 0x1d71f-0x1d72b */
     v88b4a = 0;
-    p7d714 = p6a980;
-    pal_a = f375cd(p6a980, pal_a);            /* 0x1d739-0x1d758 */
+    {
+        short fs;
+        p7d714 = p6a980;
+        fs = pal_a;
+        f375cd();            /* 0x1d739-0x1d758 */
+        pal_a = fs;
+    }
     pal_c = 0x7d00;
     pal_b = pal_a;
     setpalette();                             /* 0x1d766 */
@@ -7402,13 +7421,9 @@ void fn_1e2cc(void)
  * 1. the loop top (0x1e4d2): the game loads v7ec60 and stores netvoices/v7ec90/net88c22/myplayer/
  *    w88bce before `nlaps = 10; v88b84 = 0x59`; ours emits those two constant stores first. All 28
  *    source positions of the pair, in both orders, give the same code (.work/p14/gdemo.py).
- * 2. a `mov edx,ebx` before the second f375cd (0x1e648) that the game leaves out (EDX is 0 from
- *    0x1e609); `f375cd(p6a978, 0)` and `pal_a = f375cd(p6a978, pal_a)` both keep it.
- * 3. the f375cd EDX parameter: the game loads it 16-bit (`mov dx,[pal_a]` 0x1e472, and likewise at
- *    0x1597f/0x1ce57/0x1d73e/0x1e816) while 9.5b always extends it (`movzx edx,word [pal_a]` here).
- *    Not reachable from C: `(int)`, `(short)`, `short`/`unsigned short` prototypes on an aux-pragma'd
- *    alias of f375cd, a `short` temp, and `parm [eax] [dx]` (which turns the argument into a push) -
- *    all extend or push (.work/probe_f375, iter 27). A Watcom artefact of the `value [dx]` aux. */
+ * 2./3. (fixed iter 36: f375cd is pushal..popal with no arguments; `void f375cd(void)` and a
+ *    short save of pal_a give the game's `mov dx,[pal_a]` 0x1e472 and drop the `mov edx,ebx`.)
+ *    14 rows left, all cause 1. */
 /* ---- 0x1e2e4, 1013 bytes: the demo races. mode 3 when the menus sit idle (v7ed0c >= 500, callers
  * 0x1faaf/0x1fb04), mode 1 from a menu entry (0x20f48). The mode picks the picture set ("OR"/"INT",
  * rec7c208[1..n] = "<set><i>.PCX" for n = 11/8/1) and the starting group/class (v7ec5c, v7ec58).
@@ -7462,8 +7477,13 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
     s5a = v7ee5a;
     v7ee58 = 2;
     v7ee5a = 1;
-    p7d714 = p6a978;
-    pal_a = f375cd(p6a978, pal_a);    /* 0x1e49d */
+    {
+        short fs;
+        p7d714 = p6a978;
+        fs = pal_a;
+        f375cd();    /* 0x1e49d */
+        pal_a = fs;
+    }
     v7ecb4 = 0;
     v88c20 = v7ee58;
     v7ea58 = v7ee5a;
@@ -7518,7 +7538,7 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
         v88b4a = 0;
         pal_a = 0;
         p7d714 = p6a978;
-        f375cd(p6a978, 0);            /* 0x1e64d, result unused; EDX is still 0 from 0x1e609 */
+        f375cd();                     /* 0x1e64d */
         pal_c = 0x3e80;
         pal_a = 0;
         pal_b = 0;
@@ -7572,7 +7592,8 @@ void fn_1e6dc(void)
  *    `ticks - v7ea70` loop (0x1a9f7) matches, but there no call sits in the loop. Tried: volatile
  *    v7e724 (6 blocks), `for (;;)` + break, `0xe > ...`, `ticks < v7e724 + 0xe` and a leading
  *    `while` (all worse or equal).
- * 2. `mov dx,[pal_a]` at 0x1e816: the f375cd EDX parameter trap, shown unreachable (demo_mode's note).
+ * 2. (fixed iter 36: 0x1e816 is a short save of pal_a around `void f375cd(void)`; the slot
+ *    permutation re-shuffled with it, 53 -> 64 rows; `int fs` at function level 57 but `movzx`.)
  * The levers that did matter: `k = kind[i]` read first and compared as a register, `spr_h = vol * 4`
  * before the other three sprite stores, `ys[i]` before `spr_x = 10`, `vol < 0` (not < 1) and
  * `spr_x + (spr_h - 2)`. */
@@ -7614,8 +7635,13 @@ void volume_menu(void)
     v88bda = 0;
     v88b9e = 0;
     v88b4a = 0;
-    p7d714 = p6a978;
-    pal_a = f375cd(p6a978, pal_a);    /* 0x1e824 */
+    {
+        short fs;
+        p7d714 = p6a978;
+        fs = pal_a;
+        f375cd();    /* 0x1e824 */
+        pal_a = fs;
+    }
     n = 0;
     if (musicready) {
         n = 1;
@@ -7818,12 +7844,14 @@ void credits_page(int n, int first)
     }
 }
 
-/* differs: near miss, 1173 of the game's 1164 bytes, 235 vs 233 instructions, three causes:
+/* differs: near miss, 1164 bytes like the game since iter 36, 32 rows, two causes:
  * 1. slots: the game has dir at esp+0x08 and y at esp+0x10, ours the other way round (QUESTIONS 9/10
  *    class); 48 declaration orders tried, `dir, page, first, y` is the closest (52 -> 47 scored).
- * 2. `mov edx, 1` before the first credits_page (0x1f01f): the game reuses EDX = first from the
- *    f375cd call. A void alias of f375cd (no return register) does not remove it.
- * 3. scheduling of the palette restore and the face pointer around setpalette (0x1f0d0-0x1f10e).
+ *    (The `mov edx,1` at 0x1f01f and the reload at 0x1f414 went with `void f375cd(void)`, iter 36.)
+ * 2. scheduling around setpalette: the game computes `imul edi,esi,0x98` (face) into the dead save
+ *    register before the call and stores pal_b last (0x1f0d0-0x1f10e). Tried iter 36: all 6 orders of
+ *    the pal_a/pal_c/pal_b stores (no change), `char **img = faces[face].img` before the call (44),
+ *    `struct face *fp` (44), save reused as `face * 0x98` (75).
  * Levers that did matter: `int save` (movzx), `if (dir != 0)` arms in both places, and `++face`
  * repeated in each direction arm. */
 /* ---- 0x1efb0, 1164 bytes: the credits (caller 0x21099 in fn_1f858). Up to five pages of 12 lines
@@ -7844,7 +7872,7 @@ void credits_screen(void)
     v88b4a = 0;
     pal_a = 0x7d00;
     p7d714 = p6a980;
-    f375cd(p6a980, first);
+    f375cd();
     pal_a = 0xbb80;
     pal_b = 0x7d00;
     pal_c = 0xbb80;
@@ -7980,7 +8008,7 @@ void credits_screen(void)
         save = pal_a;
         pal_a = 0x7d00;
         p7d714 = p6a980;
-        f375cd(p6a980, first);
+        f375cd();
         pal_a = 0xbb80;
         pal_b = 0x7d00;
         pal_c = 0xbb80;

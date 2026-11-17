@@ -21,10 +21,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `credits_screen` 0x01efb0 (44), `minimap` 0x02a4ac (44),
-   `players_ahead` 0x034208 (44), `draw_status` 0x012f80 (48).
-   `shot_hit` 0x0218a4 is now 2 real rows from a MATCH (the AI flag's home, one hoisted `movsx`),
-   like `fn_16f24` 0x016f24 (2 rows) and `fn_16eac` (5) - re-try those only with a new idea.
+   overnight/prompt.md step 2). Next open: `minimap` 0x02a4ac (44), `players_ahead` 0x034208 (44),
+   `draw_status` 0x012f80 (48), `duck_screen` 0x02b5e8 (48, was 67: re-read after the f375cd fix).
+   `f375cd` is now `void f375cd(void)` (findings/video.md): re-check SKIPped notes that blame
+   "the f375cd EDX parameter" or a pal_a save in BX (intro 0x348f4, main_menu QUESTIONS 13).
 2. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
    `shot_step` 0x25e6c, `fn_182d0` 0x182d0 are 2-3 rows - only take them with an idea the
    `differs:` note does not list. `time_str` 0x2a618 (31) and `voices_load` 0x11f98 (33) are now
@@ -43,4 +43,4 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - The dead-end classes in GOTCHAS ("Dead ends: SKIP at once"): stack-slot permutation, a global
   promoted across a loop, the EAX/pushed-register coin flip, straight-line scheduling, folded
-  address constants, f375cd's 16-bit argument. QUESTIONS.md 1, 2, 3, 9, 10.
+  address constants. QUESTIONS.md 1, 2, 3, 9, 10.

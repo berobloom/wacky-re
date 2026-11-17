@@ -175,6 +175,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   an early `return` duplicates; repeated `store; ret` tails are one shared `store; return;`
   (shot_hit 0x218a4); a compare `movsx r,[m]; cmp r,N` is `k = m; if (k >= N)`, a direct `cmp word
   [m],N` is the field compared in place (ents_flags 0x213f0). [generic]
+- **An asm routine's prototype comes from its own prologue, not from what callers load:** f375cd
+  0x375cd is `pushal ... popal; ret` (0x376d5) and reads p7d714, so it is `void f375cd(void)` (all
+  registers survive). The "EAX/EDX arguments, result in DX" were the caller's `p7d714 = p` value and a
+  `short` save of pal_a held in DX across the call: `p7d714 = p; fs = pal_a; f375cd(); pal_a = fs;`
+  (0x1ce57/0x1ce6c). Retired the old "16-bit EDX argument" dead end; credits_screen 44 -> 32. [generic]
 - **Strings:** a byte-loop strcpy is `strcpy(buf, &"LIT"[0])` (keeps the literal in CONST; songs_pick
   0x32e60); `strcpy(p, "")` is a 1-byte copy of the pooled "" at 0x600ac (the NUL of "WACK").
   Watch check.sh's `segment CONST` line after every new string: one base = literals in place.
@@ -219,15 +224,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   the store, no reload; a `(volatile short *)` cast on the read does not force one (9.5b forwards
   anyway). The game's `mov word [ebx+0xa],dx; mov cx,[ebx+0xa]` (kart_catchup 0x28bf8) is not
   reachable; a partial store breaks the form. SKIP. [generic]
-- **The asm routine f375cd's 16-bit EDX argument:** `value [dx]` aux works for the return, but a
-  `parm [eax] [edx]` call always builds 32 bits where the game loads `mov dx,[pal_a]` (demo_mode
-  0x1e472, volume_menu 0x1e816, 0x1597f/0x1ce57/0x1d73e); `parm [eax] [dx]` makes it a push.
-  [generic]
 - **Extra bytes from a larger frame for one more local** cost spills and re-colour unrelated temps
   far away (kart_draw 17 -> 28; track_load's v88b88 load): score the whole function. [generic]
 
 ### General rebuild facts
 
+- **`src/check.sh` after a compile error scores the PREVIOUS object** unless it deletes it first
+  (fixed iter 36: `rm -f .work/src/WW.OBJ`); grep its output for `Error!` before reading a count.
+  [generic]
 - Structs are pack(1) (`imul 0x6a` where the game has `0x68` = natural packing). [generic]
 - Literals land at the game's CONST addresses only when functions are added in address order.
 - A switch's jump table sits in the gap BEFORE the function (0x1a360 in cars_menu), table order is

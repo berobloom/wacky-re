@@ -72,6 +72,20 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   dword 0x114a8 in either (scan of `.work/le/ww.obj1.bin` and `.work/le/ww.obj2.bin`), so it is
   dead code, or reached through a computed address — QUESTIONS 15.
 
+## `f375cd` 0x375cd takes no arguments and preserves every register — CONFIRMED
+
+- Bytes: `pushal` at 0x375cd, `popal; ret` at 0x376d5. It reads its source from `p7d714` (0x375f5
+  `mov esi,[0x7d714]`) and the page offset from `pal_a` (0x375ee `add di,[0x88b24]`), writes planar
+  VGA at 0xa0000 through sequencer port 0x3c4 (0x375d9-0x375e1), 200 rows (`cmp word [0x88b58],0xc8`
+  0x37659) with `v88b4a` added per row (0x3764b). Data bytes with the top two bits set are runs
+  (0x3760a, count in the low six bits, 0x3766b): a PCX-style RLE decode straight to the screen.
+  LIKELY: it is the PCX picture blit; `p6a978`/`p6a980` hold the encoded pictures.
+- So the C prototype is `void f375cd(void)`. The callers' `mov eax,[p6a9xx]` before the call is the
+  `p7d714 = p6a9xx` store, and `mov dx,[pal_a]` ... `mov [pal_a],dx` is a `short` save of pal_a that
+  DX keeps across the call (0x1ce57/0x1ce6c, 0x1d73e/0x1d758, 0x1e816/0x1e829). CONFIRMED by
+  rebuild: switching `src/ww.c` to this prototype removed those rows in credits_screen, demo_mode,
+  main_menu and 6 other functions (iter 36).
+
 ## Traps
 
 - A ternary is not the game's flip: `pal_a = pal_a ? 0 : 0x3e80;` selects the value in EAX and

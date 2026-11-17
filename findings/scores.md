@@ -82,9 +82,8 @@ car-select chain and the name entry.
   and walks records with `add v7d8a8, 0x2e` (0x1da3c): the table screen. LIKELY: `fn_3542c` reads
   or writes the saved table; nothing else in it has been read.
 - CONFIRMED (0x1ce7d and 0x1d120 load `v88bb2` with `movsx`): `v88bb2` is a signed `short`;
-  declaring it unsigned turns the 0x1d120 argument load into a `movzx`. `pal_a` behaves the same
-  through `f375cd`'s EDX parameter (0x1ce57 vs 0x19508), but declaring `pal_a` `short` costs one
-  of the 87 matches, so it stays unsigned in `src/ww.c`.
+  declaring it unsigned turns the 0x1d120 argument load into a `movzx`. The `mov dx,[pal_a]` at 0x1ce57 is
+  not a parameter: it is a `short` save of pal_a around `f375cd` (findings/video.md).
 - CONFIRMED (only four code references to 0x77758 in the whole image,
   0x1caf8/0x1cb12/0x1cb31/0x1d870, and 0x77758 is zeros in the file; `scores_screen`'
   own reads go through the bases plus 4, 0x7775c/0x778cc/0x77a3c at 0x1cebf/0x1ceee/
