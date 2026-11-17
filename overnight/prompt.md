@@ -53,12 +53,15 @@ Do exactly this, in order:
    - A byte-loop strcpy from a literal: `strcpy(buf, &"LIT"[0])`; `strcpy(p, "")` is one byte.
    - A function that returns `short` (`test ax, ax` in the caller) needs a `short` prototype,
      also through an alias if the definition returns int.
-   Known dead ends (SKIP at once, cost 0 variants): a global the game keeps in a register across a
-   loop ("promoted", QUESTIONS 2), and stack-slot order of locals (QUESTIONS 9, 10) unless the
-   note says something new was found.
+   Before probing, read GOTCHAS.md "Reading a near-miss diff" (subtract the fake rows) and
+   "Dead ends: SKIP at once": a function whose real rows all fall in a dead-end class is SKIPped
+   with 0 variants unless you bring an idea its note does not list.
 
-   If you learn a NEW lever, add it to GOTCHAS.md "This project's traps" (and, if not
-   Wacky-specific, to ../DREA as in step 3) in the same commit as the MATCH.
+   GOTCHAS.md: only a NEW rule that produced a MATCH, or a new dead-end class, and only after
+   grepping the section: extend an existing entry instead of adding one. An entry is the rule plus
+   one address, at most 5 lines, in the right subsection (Reading a diff / Probes / Levers / Dead
+   ends / General). What you tried for one function goes into its `differs:` note, not GOTCHAS.
+   Generic rules also go to ../DREA as in step 3.
    Live-harness work is not needed tonight; do not start the emulator.
 
 3. Mark every claim CONFIRMED / STRONGLY SUPPORTED / LIKELY / SPECULATIVE with its evidence
@@ -71,11 +74,11 @@ Do exactly this, in order:
    `git -C ../DREA add harness/TRAPS.md && git -C ../DREA commit -m "Traps: <what> (wacky)"`.
    Only edit ../DREA's `harness/TRAPS.md`, `reference/DOS.md`, `METHOD.md` and `GOTCHAS.md`.
 
-4. Update `STATUS.md`: keep its shape, <= 80 lines, `## Next` as a numbered list of at least 3
-   small items doable in one iteration, items that failed moved to BLOCKED with the reason. Do not
-   keep a session diary. Rewrite the file whole with the write tool (read it, then write the new
-   version) instead of patching lines: partial edits of STATUS.md fail on whitespace and cost
-   extra commits. Check `wc -l STATUS.md` before committing.
+4. Update `STATUS.md` ONCE, at the end of the iteration, inside your last commit (not a commit of
+   its own). Change only the match count line and the `## Next` items (at least 3, small, doable in
+   one iteration). Levers, tried spellings and SKIP lists do NOT go into STATUS.md: they live in
+   GOTCHAS.md, the `differs:` notes and `src/nearmiss.txt`. Keep it under 60 lines (`wc -l
+   STATUS.md`); if it is longer, delete your own additions rather than trimming in extra commits.
 
 5. Run `overnight/check.sh` after committing. If it fails, fix the cause and commit again until it
    prints OK. Never edit `overnight/` or `original/` to make it pass.
