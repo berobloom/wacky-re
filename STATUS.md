@@ -5,8 +5,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## State
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
-  used); one C module, an asm block, libraries incl. the Apogee Sound System (findings/executables.md).
-  Options are pinned by probes, not by what the .exe claims - do not re-test them.
+  used); one C module, an asm block, libraries (findings/executables.md). Options are pinned by
+  probes, not by what the .exe claims - do not re-test them.
 - **188 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
   entries in `src/nearmiss.txt` (7 MATCH, 8 SKIP, 2 LAYOUT, 83 open). The C rebuild covers
   0x10260-0x36a4d except the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is
@@ -22,9 +22,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
   whole register is the operator assignment** (`v = *p; v <<= 2; *p++ = v;` - `*p++ = v << 2` shifts
   only the byte *and* swaps the two locals' registers, pal_shift). Not reachable so far: a
   loop-carried local's home (net_recv), a dead incoming-register copy (fn_182d0), one moved load
-  (track_setup, music_jingle), the v88bb2/v7edb0 store pair (classes_menu), the int shift into
-  `err`'s register (line_draw), which of two pushed-register locals gets ESI and which EDI
-  (pcx_load), and one register copy one slot late (demo_play).
+  (track_setup, music_jingle), the v88bb2/v7edb0 pair (classes_menu), the int shift into `err`
+  (line_draw), ESI vs EDI for two pushed-register locals (pcx_load), one copy one slot late
+  (demo_play).
 - Probe caution (GOTCHAS iter 19): a probe's line layout and its other functions decide whether a
   shared `done:` epilogue is duplicated (328 vs 338 bytes, same source). Decide in `src/ww.c`.
 - Serial link (findings/serial.md): `com_isr` 0x106c8 / `com_isr_fifo` 0x10810 byte-identical - one
