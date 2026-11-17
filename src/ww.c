@@ -10566,7 +10566,16 @@ int isqrt(int n)
  * differs (near-miss, 57 vs 57 insns, 15 instrdiffs): scheduling only - the game computes dx in EAX
  * and moves it to ESI, and loads the two table slopes after `shl edx,16`/`test esi,esi`; our build
  * loads v7d674/v7d670 right after the first movsx and subtracts in ESI. Tried: dx/dy order, a/b
- * order, `dy <<= 16` apart, four declaration orders (all 15-16). QUESTIONS 2 family. */
+ * order, `dy <<= 16` apart, four declaration orders (all 15-16). QUESTIONS 2 family. Iter 25 added 10
+ * spellings in one compile (.work/probe_is): a/b assigned after the if/else (27) or after a
+ * `q = dx ? dy / dx : dy;` (36) - writing them below a branch sinks them past the whole division and
+ * merge, it does not slide them into the branch's shadow; `if (dx != 0)` and `q = dy; if (dx) q = dy
+ * / dx;` (18, 144 bytes); the two indices in their own locals (code identical to the control, the 14
+ * is the padding row going away); reading tbl6e858[] inline in the conditions with no a/b locals (no
+ * CSE across the conditions: 216 bytes, 51 rows). The head stays rotated: the game hoists
+ * `test esi,esi` 0x24a31 above all four table loads, keeps each index/load pair adjacent (0x24a33 ->
+ * 0x24a3f, 0x24a39 -> 0x24a46) and computes dx in EAX then copies it to its home ESI (`mov esi,eax`
+ * 0x24a23), where 9.5b interleaves the two index chains and computes dx straight into ESI. */
 extern short v88b20, v88b22;
 extern int v7d670, v7d674, tbl6e858[];
 

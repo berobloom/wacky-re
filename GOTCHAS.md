@@ -56,6 +56,18 @@ it can be copied back into DREA.
 ## This project's traps
 
 (add entries here; tag generic ones `[generic]`)
+- **You cannot aim a Watcom load at a branch's shadow, and 9.5b interleaves independent load-use
+  chains** (in_sector 0x24a08, iter 25): the game has `test esi,esi` 0x24a31 then the four
+  `tbl6e858[v7d674/v7d670]` loads, each index load adjacent to its indexed load. Writing those two
+  assignments *below* the `if (dx) q = dy / dx; else q = dy;` sinks them past the whole division and
+  its merge (15 -> 27 rows), and below a `?:` even further (36): a statement written after a branch
+  never lands between the branch's `test` and its `jcc`. Where both sides do hold the loads above the
+  test, 9.5b still rotates the two dependency chains into each other (`mov ebx,[idx1]; mov ecx,[idx2];
+  ...; mov ebx,[ebx*4+t]; ...; mov ecx,[ecx*4+t]`) where the game keeps each pair adjacent, and it may
+  compute a value into a scratch and copy it to the home (`sub eax,esi; mov esi,eax`) or straight into
+  the home - both with 57 instructions and the same length. Related: Watcom does **not** CSE a global
+  array read across separate condition expressions, so "the game had no locals, it read the table
+  inline" is testable and testably wrong (inline reads: 148 -> 216 bytes). [generic]
 - Watcom defaults to natural struct packing; the game's structs are pack(1) (see findings/executables.md).
   A port struct that is 2 bytes too big shows up as `imul $0x6a,%e..` where the game has `imul $0x68`.
   Fix with `#pragma pack(1)` around the struct. [generic]
