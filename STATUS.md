@@ -21,14 +21,15 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `kart_bump` 0x022bf4 (86), `main_menu` 0x01f858 (95),
-   `players_project` 0x0255d4 (117). iter 39: the row counts are now the better of difflib autojunk
-   on/off with the masked `- @` fixup rows folded (fndiff.align/norm), and the list was re-ranked:
-   many old counts were inflated. iter 39 results: com_open 13 -> 11, fn_17928 35 -> 9 (pointer local
-   fixes the array slots), car_laps 29 -> 2, overlay_draw 62 -> 46 (frame size from `buf[0xc]`);
-   main and kart_fire SKIP. Lead list, frame size differs from the game's (`sub esp`): chat, menu,
-   fn_1832c, fn_193a8, cars_menu, fn_1d704 (ours 4 short), kart_state (4 over), players_project,
-   ents_project, shots_project, race_results (0x74 short), trial_book, race_run, players_ahead,
+   overnight/prompt.md step 2). Next open: `trial_book` 0x02e4b8 (121), `lights_project`
+   0x0266a8 (123), `race_run` 0x02fd8c (130); `scores_screen` (50) carries a partial-gain note.
+   iter 40: kart_bump 71 -> 49 at the game's size (voice_play 0x15/0x16 polarity, the f20 switch
+   arms ordered 4,5,3, `m = v88b7e;` moved below the f28/f2c tests so the players address is
+   recomputed from the global) and main_menu 92 -> 79 (drop `& 0xff` where the prototype already
+   says `unsigned char`); players_project SKIP, 0 variants (the v7d800 cache dead end). Lead list,
+   frame size differs from the game's (`sub esp`): chat, menu, fn_1832c, fn_193a8, cars_menu, fn_1d704
+   (ours 4 short), kart_state (4 over), ents_project, shots_project,
+   race_results (0x74 short), trial_book, race_run, players_ahead,
    pic_at: size the arrays from the game's slots first (GOTCHAS, overlay_draw). Run
    `tools/wc/nmrefs.py ww .work/src/WW.OBJ` after a near-miss change.
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
