@@ -340,6 +340,9 @@ it can be copied back into DREA.
   (`a0`/`a2`), EDX needs the 6-byte `8a 15`/`88 15` - so a near miss that is one load+N stores
   shorter, with AL where the game has DL, is this merge and not a wrong expression. Flipping the
   condition to `if (v7ecb4 != 0)` un-merges but turns the game's `jne` into `je`: two changes, not one.
+  Moving one arm's copy to the *head* of that arm un-merges without touching the branch (504 -> 512
+  bytes, 13 -> 12 rows) but leaves the store at the head; the register itself is out of reach - 11
+  spellings never got EDX (`char c = *"";` folds to `mov byte [abs],0`, `"\0"` copies 2 bytes). [generic]
 - **`-oe` sinks a zero argument constant into the following test but leaves a non-zero one alone**
   (iter 15, [generic]): the four inlined `music_start(song, 0)` copies in WW.EXE (found by scanning
   the code object for `66 c7 05 cc8b08 0000`, the `mov word [0x88bcc],0` of the body) all keep

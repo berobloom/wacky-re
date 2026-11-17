@@ -6818,18 +6818,20 @@ void scores_screen(void)
  * Each row shows that class's record table: fn_1d704(class, v7ecb4 + choice), so v7ecb4 (0 regular,
  * 3 bonus pack, zones_menu) selects the group of tbl77758. v7ecb4 != 0 prefixes the item names with
  * " BONUS" (the names are built by strcat on top of that prefix). */
-/* differs: near miss, 504 of the game's 516 bytes; one diff block. The game 0x1d178-0x1d196 is
- * `mov dl,[0x600ac]` + four `mov byte [mnames slot],dl` + the join jmp; ours 0x1d178-0x1d18c is
- * `mov al,[0x600ac]` + three `mov byte [slot],al` + that jmp, and the game has 2 bytes of 4-byte
- * alignment padding (0x1d33e) that ours does not. Ours keeps the pooled "" byte in EAX (the AL-only
- * short forms `a0`/`a2`, 5 bytes) and the game in EDX (`8a 15`/`88 15`, 6 bytes each); with EAX, -oe
- * tail-merges this arm's fourth strcpy with the identical one that ends the else arm (the store at
- * the join serves both arms), with EDX the game keeps a copy in each arm. Writing it as `if (v7ecb4 != 0) {BONUS
- * ...} else {"" x4}` does keep four stores in one arm (514 bytes, after which the only aligned diffs
- * are AL-vs-DL) but puts the BONUS arm in the fall-through position, so the branch is `je` where the
- * game has `jne 0x1d198` (0x1d176) - two changes, not one. The sibling 0x1d340 has our merged shape
- * in the game itself: its if arm stores three (0x1d386-0x1d390) and the fourth sits at the join,
- * 0x1d3c6, loaded into AL. */
+/* differs: near miss, 512 of the game's 516 bytes; two Watcom choices, each one register wide.
+ * (1) The game keeps the pooled "" byte of the fall-through arm in EDX (0x1d178 `mov dl,[0x600ac]`
+ * then four `88 15` stores at 0x1d17e-0x1d190) and the BONUS arm's fourth strcpy in AL (load 0x1d1be
+ * `a0`, store 0x1d1c7 `a2`). We get AL in both arms, 9.5b then CSEs the two loads into one value and
+ * tail-merges the two fourth strcpy's, so one store at the join serves both arms (504 bytes). Writing
+ * the else arm's `strcpy(&mnames[0xb4], "")` first in that arm un-merges them (512 bytes, 13 -> 12
+ * rows) but puts that store at the head of the arm, 0x1d193/0x1d1a2, where the game has it at
+ * 0x1d1be/0x1d1c7. Swapping the arms (`if (v7ecb4 != 0) {BONUS} else {"" x4}`) keeps four stores in
+ * one arm only at the cost of moving the whole BONUS block: 504 bytes, 20 rows. (2) AL-vs-DL, 5 rows:
+ * 11 probe spellings (.work/probe_rrm/R.C, control scores 6 there but 13 whole-file, so probes do not
+ * rank this function) - `char c; c = *"";` plus four byte stores (folds to `mov byte [abs],0`), int c,
+ * `"\0"` (copies 2 bytes), an `if (v7ecb4) {}` in the arm, both store orders in each arm - none gets
+ * EDX. The sibling 0x1d340 has our merged shape in the game itself: its if arm stores three
+ * (0x1d386-0x1d390) and the fourth sits at the join, 0x1d3c6, loaded into AL. */
 void race_records_menu(int mode)              /* arg1 = eax (0x1d145: mov ebp,eax) */
 {
     int saved = v88c80;                       /* 0x1d147-0x1d153, the esp slot restored at 0x1d32b */
@@ -6845,10 +6847,11 @@ void race_records_menu(int mode)              /* arg1 = eax (0x1d145: mov ebp,ea
             strcpy(&mnames[0x78], "");
             strcpy(&mnames[0xb4], "");
         } else {
+            strcpy(&mnames[0xb4], "");            /* first in this arm: the game keeps a copy of this
+                                                     store in each arm (0x1d1c7), 9.5b merges them */
             strcpy(&mnames[0], " BONUS");
             strcpy(&mnames[0x3c], " BONUS");
             strcpy(&mnames[0x78], " BONUS");
-            strcpy(&mnames[0xb4], "");
         }
         strcat(&mnames[0], " BRONZE RACE     ");       /* 0x1d1cc-0x1d1fb */
         strcat(&mnames[0x3c], " SILVER RACE     ");    /* 0x1d1fc-0x1d22b */
