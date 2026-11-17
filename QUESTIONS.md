@@ -255,3 +255,12 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `lim = (short)(a3*3)`, a `long n = a3` read by `if (n == a3)`, a `long t = a3` as both loop
     bounds, an `int` counter, two limit locals). Test that would settle it: any build option or
     front-end (WPP386 vs WCC386, `-ox`?) that makes one of these copies appear.
+
+15. **OPEN** (src/ww.c `pal_shift`, findings/video.md): who calls `pal_shift` 0x114a8, and what is
+    in the 768 bytes it scales? CONFIRMED: the function is byte-identical to `v = *p; v <<= 2;
+    *p++ = v;` over `for (i = 1; i <= 768; i++)` (0x114a8-0x114c5, `cmp bx,0x300` + `jle`); no
+    `call rel32` names it and no dword 0x114a8 appears in either code object (scan of
+    `.work/le/ww.obj1.bin`, `.work/le/ww.obj2.bin`). SPECULATIVE: it is dead code kept by the link.
+    Test that would settle it: scan the LE fixups/relocation records (not the applied bytes) for
+    0x114a8, and search for a far-pointer table whose offset field is 0x114a8 with a nonzero
+    selector.

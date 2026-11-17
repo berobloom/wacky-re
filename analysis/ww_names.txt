@@ -137,7 +137,7 @@
 0x088c22 net88c22
 0x011404 drawsprite_clip # SPECULATIVE: clips spr_w rows at line 199 into clipy, then drawsprite2
 0x011480 frame_wait   # SPECULATIVE: waitretrace, then pausemenu while 'paused'
-0x0114a8 pal_shift    # LIKELY: 768 palette bytes << 2
+0x0114a8 pal_shift    # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): 768 palette bytes << 2 in place; no caller found (QUESTIONS 15)
 0x0114c8 screenshot   # LIKELY: writes WACKnnn.PCX (first free number); frame_wait calls it while 0x88CCD is set
 0x03707e drawsprite2  # SPECULATIVE: asm sprite routine used with clipy
 0x037de0 waitretrace  # LIKELY: asm; polls port 0x3DA bit 3

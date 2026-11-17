@@ -755,7 +755,6 @@ void frame_wait(void)
     }
 }
 
-/* differs: i and v swap registers, and the game shifts the whole register (shl edx, not shl bl) */
 void pal_shift(unsigned char *p)
 {
     short i;
@@ -764,7 +763,8 @@ void pal_shift(unsigned char *p)
     for (i = 1; i <= 768; i++)
         {
         v = *p;
-        *p++ = v << 2;
+        v <<= 2;
+        *p++ = v;
     }
 }
 

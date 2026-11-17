@@ -488,6 +488,15 @@ it can be copied back into DREA.
   EAX/EDX pair off as the coin flip above; and where two switch arms touch the same kind of value,
   one name is the fact the bytes show. com_isr_fifo 0x10810 (its `short out` plus the implicit
   receive temp -> one `short b`) MATCHed the same way minutes later, so the lever is not a fluke.
+- **A shift kept in the local's own register comes from a compound assignment, and it picks the
+  registers too** (iter 19, [generic]): pal_shift 0x114b0-0x114b9 is `movzx dx, byte [eax]` +
+  `shl edx,2` (a 32-bit shift of a 16-bit-loaded value) + `mov byte [eax-1], dl`, with the loop
+  counter in EBX. Written as the obvious `*p++ = v << 2` 9.5b keeps the value in EBX, shifts only
+  the byte (`shl bl,2`) and puts the counter in EDX — 6 rows, and it reads like the coin flip of
+  the two entry registers. It is not one: `v = *p; v <<= 2; *p++ = v;` (score 0 in a 14-variant
+  probe) gives the game's registers *and* the whole-register shift, because the shifted value stays
+  live in the local's home instead of being consumed by the store. Before logging a counter/temp
+  register swap, try the two-statement form with the operator assignment.
 - **Watcom's cold-tail duplication depends on source line layout, not only on the syntax**
   (iter 19, [generic]): in a two-function probe, com_isr's merged-local form written with braced
   `if (rxhead >= 0x4000)` / newline / `rxhead = 0;` came out 338 bytes with the `done:` epilogue

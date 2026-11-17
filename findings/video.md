@@ -55,6 +55,23 @@ not as a ternary assignment: the same scan finds 55 `mov word [mem],0x3e80` site
 `mov eax,0x3e80` (`\xb8\x80\x3e\x00\x00`), and Watcom 9.5b turns
 `x = c ? 0 : 0x3e80` into exactly that register form (GOTCHAS).
 
+## `pal_shift` 0x114a8 scales 768 palette bytes x4 in place — CONFIRMED
+
+Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
+
+- The loop is `i = 1; i <= 768; i++` (0x114aa `mov ebx,1`, 0x114bc `cmp bx,0x300`, 0x114c1
+  `jle 0x114b0`), i.e. 768 = 256 RGB triples; every byte is shifted left by 2 in place and
+  truncated to a byte (0x114b0 `movzx dx, byte [eax]`, 0x114b5 `shl edx,2`, 0x114b9 `mov byte
+  [eax-1], dl`). Whether the input is 0-63 (6-bit) or 0-255 is NOT pinned: the x4 overflow of a
+  byte is not what a 6-bit-to-8-bit scale would do, so the caller matters (QUESTIONS 15).
+- The C that compiles to it is `v = *p; v <<= 2; *p++ = v;`. The obvious single expression
+  `*p++ = v << 2` shifts only the byte (`shl bl,2`) and swaps the two registers (`i` in EDX, `v`
+  in EBX) — 6 diff rows. The register choice followed the expression shape, it was not the
+  coin-flip tie-break (GOTCHAS iter 19).
+- Nothing reaches it: no `call rel32` with target 0x114a8 anywhere in the two code objects and no
+  dword 0x114a8 in either (scan of `.work/le/ww.obj1.bin` and `.work/le/ww.obj2.bin`), so it is
+  dead code, or reached through a computed address — QUESTIONS 15.
+
 ## Traps
 
 - A ternary is not the game's flip: `pal_a = pal_a ? 0 : 0x3e80;` selects the value in EAX and
