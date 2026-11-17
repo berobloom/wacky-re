@@ -51,9 +51,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
-1. Near misses: first empty-status line of `src/nearmiss.txt` (procedure in
-   overnight/prompt.md step 2). Next open: `com_isr` 0x106c8, `pal_shift` 0x114a8,
+1. Near misses (QUEUE.md overrides these): first empty-status line of `src/nearmiss.txt` (procedure
+   in overnight/prompt.md step 2). Next open: `com_isr` 0x106c8, `pal_shift` 0x114a8,
    `track_pics_load` 0x277b8, `view_at_curpos` 0x2f408 (6 each), then `wtext` 0x146d4 and
    `release_check` 0x34458 (7 each). Read the `differs:` note first, then `tools/wc/fndiff.py` (the
    LEFT column is OURS, the right is the game's; a row differing only in `[eax + @]` vs `[eax - @]`
