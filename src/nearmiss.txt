@@ -27,7 +27,7 @@
 7    0x0146d4 wtext                  SKIP: stack-slot permutation only (6 rows: [esp]/[esp+8]/[esp+0xc] for x, hw, hh; the 7th row is the fixup mask on [esi*4+disp]); known dead end, QUESTIONS 9/10 - 0 variants spent (iter 20)
 7    0x034458 release_check             SKIP: stack-slot permutation of the two shorts only (all 7 rows are esp+0x190/0x194 displacements); documented dead end, GOTCHAS "Watcom does not allocate scalar stack slots in declaration order" (43 declaration orders probed for enter_name); note says declaration order, placement and int/short mixes tried - 0 variants spent (iter 21)
 8    0x010810 com_isr_fifo         MATCH
-8    0x02dd30 net_key
+8    0x02dd30 net_key             MATCH
 9    0x02df70 com_wait_byte
 9    0x02e008 com_expect
 10   0x016ca0 fn_16ca0

@@ -15074,11 +15074,12 @@ void net_send(int type, unsigned char a, unsigned char b)
  * draws (view_box, sprites_build, 0x2f794) while waiting. A half-done exchange is parked in
  * v7ed94 / v7edac / v7edb8 / v88cf1 / v88cf4 and resumed by the next call. Returns 1 once more
  * than v7ed34 errors (v7ed60) pile up, else 0. The inner switch has case 'Z' first (layout).
- * differs: 3 blocks: the game loads v88cae as `mov ax,[v7ed8c]; xor ah,ah` (= v7ed8c & 0xff,
- * which in our build moves x from the stack into EBP and costs 11 more blocks), and one store
- * of the parked bytes is scheduled one load later. */
+ * v88cae is the low byte of v7ed8c: `mov ax,[v7ed8c]; xor ah,ah; mov [v88cae],ax` at
+ * 0x2dd42-0x2dd4e, so the load goes through a word-typed alias of v7ed8c (w7ed8c). */
 extern int v7ed6c, v7ed74, v7edac, v7edb8, v7ed94;
 extern short v88cae;
+extern short w7ed8c;
+#pragma aux w7ed8c "_v7ed8c"
 extern unsigned char v88cf1, v88cf4;
 extern unsigned char b88cf2;
 #pragma aux b88cf2 "_v88cf2"
@@ -15092,7 +15093,7 @@ short net_key(unsigned char key, unsigned char flag, int x)
 {
     int state, send, wait, resend, r, seq, t;
 
-    v88cae = v7ed8c;
+    v88cae = w7ed8c & 0xff;
     wait = 0;
     resend = 0;
     if (v7ed94) {
@@ -15100,8 +15101,8 @@ short net_key(unsigned char key, unsigned char flag, int x)
         b88cf2 = v88cf4;
         v88cf6 = v88cef;
         v88cf5 = b88cf2;
-        send = 'Z';
         net_send('D', key, flag);
+        send = 'Z';
         state = send;
         wait = v7edac;
         resend = v7edb8;

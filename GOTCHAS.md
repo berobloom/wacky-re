@@ -525,3 +525,18 @@ it can be copied back into DREA.
   braced form is the one that gives 328. So a probe's byte size is a property of the probe file, not
   of the function: rank shapes in a probe, decide in `src/ww.c` (GOTCHAS "the probe's scores are not
   the whole-file ones").
+- **One data object can carry two typed C names for one link name** (iter 21, [generic]):
+  `extern short w7ed8c;` + `#pragma aux w7ed8c "_v7ed8c";` next to the `extern int v7ed8c` the rest
+  of the file uses (the same trick the project already uses for `b88cf2` - `#pragma aux` renames
+  data, not only functions). Use it where the game truncates through a *word* load:
+  `v88cae = w7ed8c & 0xff;` gives `mov ax,[0x7ed8c]; xor ah,ah; mov [0x88cae],ax`
+  (net_key 0x2dd42-0x2dd4e). The same `& 0xff` written on the `int` name compiles 32-bit
+  (`mov eax,[g]; and eax,0xff`) and re-shuffles the whole function (11 more blocks). Retyping the
+  shared extern itself is not an option: every other reader changes too.
+- **An assignment written before a call is scheduled early; sinking it below the call moves the
+  load to the last slot before it** (iter 21, [generic]): the game loads `'Z'` into ESI at the last
+  slot before `call net_send` (net_key 0x2dd8a), ours 0x1e bytes earlier; `net_send('D', key, flag);
+  send = 'Z'; state = send;` - legal because the call does not read `send` - moved the `mov esi,0x5a`
+  to the game's slot and net_key 0x2dd30 went 8 diffs -> MATCH (baseline 190). The load cannot sink
+  past the call itself: the value is an argument register (`mov ecx,esi` at 0x2dd99), so "just
+  before the call" is the only later home.
