@@ -12,21 +12,17 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Levers that worked (each in GOTCHAS "This project's traps" with its evidence): **`volatile` on a
   local to force the game's `sub esp,4` + `[esp]` spill/reload of a temp** (shot_step); **a compare's
   operand width pins the C type, and the type pins the register pairing** (fn_16eac, 17 -> 11); **a
-  tail-tested loop whose end is computed from the loop variable** (`p = arr; end = p + N; do {...}
-  while (p != end);` - track_load's .SIN loop, 18 -> 7 rows, iter 28); **moving one arm's copy of a
-  both-arms statement to that arm's head un-merges the tail-merge** (race_records_menu);
-  **independent bit tests in the game's load order** (net_input, 15 -> 9).
+  tail-tested loop whose end is computed from the loop variable** (`p = arr; end = p + N;
+  do {...} while (p != end);` - track_load's .SIN loop, 18 -> 7 rows, iter 28); **un-merge a
+  tail-merge by moving one arm's copy of a both-arms statement to that arm's head**
+  (race_records_menu); **independent bit tests in the game's load order** (net_input, 15 -> 9).
 - Diagnostics that save variants (GOTCHAS iter 28): **equal instruction counts + a byte compare that
   starts on a branch displacement = a register home, not a missing instruction** (an absolute store
   from EAX is 5 bytes, `a3`, from any other register 6: shots_move 460 against 462); **line the two
   listings' loads up before probing** - order differs = 9.5b's scheduler (fn_19db8), order equal =
   permuted homes (shots_move, net_recv).
-- Not reachable so far (each has a `differs:` note and a SKIP line listing the spellings spent): one
-  or two locals' homes and a dead incoming-register copy (fn_182d0, shots_move, fn_19db8), one moved
-  load (track_setup, music_jingle, demo_play), the v88bb2/v7edb0 pair (classes_menu), the int shift
-  into `err` (line_draw), two load orders (shot_step), a straight-line head's schedule (in_sector,
-  net_input), one slot reload's pairing (drawsprite_clip), a constant folded into a store the game
-  does from a register (fn_16eac), the 16-bit word load in f375cd's EDX argument (demo_mode).
+- Not reachable so far: one or two locals' homes, one moved load, a straight-line head's schedule and
+  a two-load order - see the BLOCKED classes below, each `differs:` note lists the spellings spent.
 - `fndiff.py`'s fake rows (GOTCHAS iter 16-28): a `[reg +/- @]` pair whose displacement is a fixup is
   the 0x90 mask filler (7 of `self_project`'s 10, 4 of `shots_move`'s 17, 3 of `track_load`'s 7);
   tail rows of a function shorter than the game's are alignment; the game's `mov eax,eax` filler
@@ -34,7 +30,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Findings, evidence at the links: serial (findings/serial.md) rings 0x84b00/0x80afa, wrap 0x4000;
   classes (findings/classes.md) `v88bb2` is 1 AMATEUR..5 KID MODE **signed**; car select
   (findings/car_select.md) `ents[8]` 0x73998 is the selection box; scores (findings/scores.md)
-  `tbl77758` rows of 0x450 = 24 records of 0x2e; `pal_shift` has no caller (QUESTIONS 15).
+  `tbl77758` = 24 records of 0x2e; `pal_shift` has no caller (QUESTIONS 15).
 
 ## Next
 
@@ -47,10 +43,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
    home before spending variants.
 3. `kart_move` 0x237e4 (20 rows): the same `[esp]` slot as shot_step - apply the `volatile int t`
    lever there (shot_step stopped at 2 rows, see BLOCKED).
-4. Re-write loops that compare against `array + N` in the track_load shape (`do/while` +
-   `end = p + N`): grep the near-miss bodies for `!= x + 0x` in `src/ww.c` first.
-5. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
-   index), "BSBCS.PCX", `tbl77758`'s writer.
+4. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
+   index), "BSBCS.PCX", `tbl77758`'s writer; and re-write loops that compare against `array + N` in
+   the track_load shape (`do/while` + `end = p + N`), grep the near-miss bodies for `!= x + 0x`.
 
 ## BLOCKED (dead-end classes, do not re-probe)
 
