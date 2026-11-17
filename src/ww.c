@@ -3090,12 +3090,16 @@ short net_key(unsigned char key, unsigned char flag, int x);
 
 /* differs: stack slots only (QUESTIONS 2): the save slots permute (sx 0x1b8, sw 0x1bc, s34 0x1c4 ... vs our
    0x1b8 s34 ...) and the five 80-byte buffers too: game mine@0, blank@0x50, theirs@0xa0, buf@0xf0,
-   ch@0x140; ours ch@0, buf@0x50, mine@0xa0, theirs@0xf0, blank@0x140 for declaration order
-   mine,theirs,blank,buf,ch (not plain reverse). Statement order around strlen/center_x also scheduled
-   differently (spr_y=10 store after strlen in the game). */
+   ch@0x140; ours still has them in another order for declaration order
+   blank,mine,theirs,buf,ch (not plain reverse). Statement order around strlen/center_x also scheduled
+   differently (spr_y=10 store after strlen in the game); ours is also 16 bytes longer. Eight
+   declaration orders probed in one compile (.work/probe_sp/SP6.C): the best is 2 rows below its control
+   (182 vs 184) and none lands the game's buffer layout - 9.5b places arrays by decl + first use
+   (fn_1832c's comment), and no order here gets it. Kept: declaration order blank,mine,theirs,buf,ch,
+   196 -> 194. */
 void chat(void)
 {
-    char mine[80], theirs[80], blank[80], buf[80], ch[80];
+    char blank[80], mine[80], theirs[80], buf[80], ch[80];
     union REGS r;
     struct SREGS s;
     int sx, sw, sy, s34, x1, c8, s20, key, n2, sh, y1, s1c, x2, c9, y2, other, y2m, y1m;
