@@ -126,7 +126,11 @@ it can be copied back into DREA.
   index copied into a fresh local, a pointer temp at the definition and at the use, struct-pointer
   and index temps, a two-statement count, the `sub` moved to the use, `SEEK_SET` written 0, and the
   *global externs declared in the other order* - leave the five rows untouched (.work/probe_pcxload,
-  iter 18). Global declaration order is not a lever either; stop after one probe compile. [generic]
+  iter 18). Global declaration order is not a lever either; stop after one probe compile. Neither is
+  the **order of the initializers in a comma `for`**: `for (i = 0, k = 0; ...)` and
+  `for (k = 0, i = 0; ...)` home i in EBX and k in EDX either way and only swap the emission order of
+  the two `xor`s (fade_in 0x32cf8 init loop, .work/probe_fi, iter 25: 13 rows vs 14). Two homes among
+  *pushed* registers (neither is EAX) are as unpinnable as the EAX choice. [generic]
 - **The coin flip also decides whether a lone local's register is saved, and 9.5b cannot be told
   otherwise** (netkeys_out 0x2d9e4, iter 23): with exactly one byte accumulator and no other pseudo,
   9.5b homes it in EAX and emits no prologue (`xor al,al`), the game homes it in EDX and saves it

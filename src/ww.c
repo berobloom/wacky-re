@@ -17430,8 +17430,14 @@ void pic_show(char *p, short n, short a)
  * and every step moves each entry by v88c46 towards target, clamped, then f37cf1 uploads it
  * (palptr = working copy, w88b10 = 0x100 entries from w88b1e = 0); stops after a step with no
  * change. The k counter (0..2, the RGB component) is computed but unused.
- * differs: the init loop's i/k registers swap (game i EDX, k EBX); ~15 variants tried (declaration
- * order, k int, k++ placement, loop index). */
+ * differs: the init loop's i/k registers swap (game i EDX - `movsx eax,dx` 0x32d20, k EBX - `inc ebx`
+ * 0x32d23, `cmp bx,2` 0x32d28), ours i EBX and k EDX; the schedule and every other instruction are
+ * identical, so all 13 rows are those two homes (the main loop's i is ESI in both). ~15 variants tried
+ * (declaration order, k int, k++ placement, loop index); 6 more in .work/probe_fi: comma-operand order
+ * `for (k = 0, i = 0; ...)` swaps only the emission order of the two `xor`s, never the homes (14);
+ * `k = 0;` as its own statement before the loop (14); `k++` and `if (k > 2)` as two statements (14);
+ * `int k` moves k to EAX with `cmp eax,2` - 12 rows but no match; `short i, k` declaration order (17);
+ * `hi` assigned before `lo` (16). Coin flip (GOTCHAS "Which pseudo gets EAX is a coin flip"). */
 extern char v88c46;
 
 void fade_in(unsigned char *target)
