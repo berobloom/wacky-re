@@ -1748,10 +1748,15 @@ extern int laptimes[];
 void FX_StopSound(int handle);
 void car_finished(int i);
 
-/* differs: laptimes index in eax rather than edi (+203) and EDI/EDX swapped in the later lap blocks;
-   the backward-lap score2 operands load in the other order. The game inlines since2(cars[i].f82)
-   (argument in EAX, ticks2 - t in EDX) where our -oe keeps the call: written out with a temp,
-   `(t = cars[i].f82, ticks2 - t)`, that site matches (12 -> 9 diff blocks). */
+/* differs (65 rows, 63 of them the masked `[reg +/- @]` fixups; 2 real): iter 39 29 -> 2 real rows.
+   The laptimes index is a block-local `int k` (the game's temp in EAX, value in EDX 0x12c0f, size
+   back to the game's 1084), the backward score2 is `(lap - 1) * ncells` (the shared imul tail
+   0x12e1e takes lap-1 in EDI), and the lap cap is written `nlaps + 1 > players[i].lap` (the game
+   loads nlaps first 0x12ed0). Left: that compare's operand order (`cmp edi,eax; jge` 0x12ee0, ours
+   `cmp eax,edi; jle`); `lap < nlaps + 1` gives the compare but loads lap first (12 rows), and
+   `!(...)`, `1 + nlaps`, a temp, casts on either side: no better; permute.py 20 rounds: no gain.
+   The game inlines since2(cars[i].f82) (argument in EAX, ticks2 - t in EDX) where our -oe keeps
+   the call: written out with a temp, `(t = cars[i].f82, ticks2 - t)`, that site matches. */
 void car_laps(void)
 {
     int n;
@@ -1771,8 +1776,11 @@ void car_laps(void)
             } else {
                 cars[i].lap++;
                 if (!twoplayer && !splitscreen && !v7d998 && v88bb2 == 4 && cars[i].lap > 1 && cars[i].lap <= 7) {
-                    c = cars[i].lap - 2;
-                    laptimes[c] = c == 0 ? racetime : racetime - lastlap;
+                    {
+                        int k = cars[i].lap - 2;
+
+                        laptimes[k] = k == 0 ? racetime : racetime - lastlap;
+                    }
                     lastlap = racetime;
                 }
                 if (cars[i].lap <= nlaps) {
@@ -1823,7 +1831,7 @@ void car_laps(void)
             cars[i].score2 = curcell + cars[i].lap * ncells;
         } else {
             cars[i].score = ((cars[i].lap - 1) << 10) + curcell;
-            cars[i].score2 = curcell + ncells * (cars[i].lap - 1);
+            cars[i].score2 = curcell + (cars[i].lap - 1) * ncells;
         }
         if (cars[i].lap == nlaps + 1 && players[i].place == 0) {
             players[i].place = ++finished;
@@ -1838,7 +1846,7 @@ void car_laps(void)
             continue;
         c = map_at(players[i].x, players[i].y);
         if (c == 1 && players[i].cell == ncells) {
-            if (players[i].lap < nlaps + 1)
+            if (nlaps + 1 > players[i].lap)
                 players[i].lap++;
             if (players[i].lap == nlaps + 1 && players[i].place == 0) {
                 players[i].place = ++finished;

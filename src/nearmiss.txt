@@ -85,10 +85,10 @@
 44   0x02a4ac minimap                MATCH
 51   0x01ce14 scores_screen          (iter 38: src and p replaced by the global v7d8a8 itself, the game re-reads it per strcpy: 118 -> 54)
 57   0x02d548 shot_fire              MATCH (iter 37: walk the cached global v7d874 itself, no local p; v7d5d0 = curpos after the y store - permute.py)
+65   0x012b44 car_laps             SKIP: 2 real rows (63 masked fixups): one compare operand order (`cmp edi,eax; jge` 0x12ee0); iter 39 29 -> 2 (block-local int k for laptimes, (lap - 1) * ncells, nlaps + 1 > lap); permute.py no gain
 71   0x035ca4 main             SKIP: register / stack-slot choices only (the REGS temporaries of the inlined setvmode calls sit in other slots; `ah = 0` before `al` in setvmode orders the stores like the game but the slots still differ: 71 either way)
 75   0x021310 ent_sprites_load       SKIP: 53 rows are padding after our shorter body, 22 real = the i*40 strength reduction (QUESTIONS 2); direct attrs[i] gets the imul back but datfind's f10 address stays reduced (81); 9 spellings, none below 75
 79   0x024364 kart_fire            SKIP: the game caches v7eb9c in ECX (entry load, store before calls, a dead reload before every ret) - not emitted by our 9.5b; `static int v7eb9c` no change (iter 39)
-85   0x012b44 car_laps
 111  0x02a92c overlay_draw
 114  0x022bf4 kart_bump
 115  0x01f858 main_menu
