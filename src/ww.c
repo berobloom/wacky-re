@@ -14950,7 +14950,16 @@ void netkeys_out(void)
 
 /* ---- 0x2da28, 104 bytes: packs all local controls (keys cd5/cdd, buttons b40..b46, v88cec)
  * into the byte v88cf0 to send (callers 0x19811, 0x1ac3f); v88cf3 cleared.
- * differs: like netkeys_out, c in DL in the game, AL in ours. */
+ * differs: like netkeys_out, c in DL in the game, AL in ours. That one register choice is all 13 rows
+ * and the whole size gap (game 104 bytes 0x2da28-0x2da90, ours 94 of code + 2 of padding): the game's
+ * `push edx` 0x2da28 + `pop edx` 0x2da8e, six `add dl,imm8` at 3 bytes where AL has the 2-byte short
+ * form, and two `mov [disp32],dl` at 6 bytes where AL has the 5-byte A2 form (0x2da2b, 0x2da88) - no
+ * statement is missing. 10 more spellings score 13 or worse in .work/probe_nkp (declaration
+ * initializer, reversed branch order, braces, signed char, short - stays in EAX and widens every op to
+ * 116 bytes - `register`, a mask local reassigned before each `|=`, plain `|=`, the v88cf3 store last).
+ * Watcom 9.5b WCC386 has no explicit register variables in any scope: function scope is E1009 and file
+ * scope E1059 ("Invalid storage class for non-local variable"), so a local's register cannot be pinned
+ * at all. */
 void netkeys_pack(void)
 {
     unsigned char c;

@@ -138,7 +138,15 @@ it can be copied back into DREA.
   WC95A and WC95B compile the control shape to the same 60 bytes (masked function bytes equal in all
   three OBJs). And 9.5b has **no explicit register variables**:
   `register unsigned char c @ edx;` is E1009 ("Expecting ';' but found '@'"), so a local's register
-  cannot be pinned by the declaration at all. Treat the whole `c in DL` net family as this flip. [generic]
+  cannot be pinned by the declaration at all, and **file scope is no better**: `register unsigned char
+  grc @edx;` at file scope is E1059 ("Invalid storage class for non-local variable") and dropping the
+  `register` keyword is E1009 + E1011, so WCC386 9.5b has no explicit register variables anywhere
+  (.work/probe_nkp, iter 25). A DL home also explains the **size** gap in those functions: AL owns the
+  short encodings, so the game's `add dl,imm8` is 3 bytes where ours is 2 (netkeys_pack 0x2da45,
+  0x2da52, 0x2da5f, 0x2da6c, 0x2da79, 0x2da85 - six rows of the 13) and `mov [disp32],dl` is 6 bytes
+  where AL's A2 form is 5 (0x2da2b, 0x2da88): 104 game bytes = our 94 + push/pop + 6 + 2. Count the
+  encoding sizes before looking for a missing statement. Treat the whole `c in DL` net family as this
+  flip. [generic]
 - **Literals land at the game's CONST addresses as long as functions are added in address order**: our
   "AMATEUR. "/"PRO. "/"CHAMPION. " got offsets 0x948/0x954/0x95c = 0x6094c/0x60958/0x60960 with the
   base check.sh prints (`segment CONST base 0x060004`). If that line splits into two bases, a literal
