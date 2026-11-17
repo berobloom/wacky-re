@@ -242,6 +242,16 @@ it can be copied back into DREA.
   EAX and the base EBX (3 rows, the coin flip). Reach for it when the game's prologue has `sub esp,N`
   and a value round-trips through [esp] - the frame-vs-register question of the entry above, from the
   other side. [generic]
+- **Do the arithmetic on a spilled `volatile` local in its own statement** (drawsprite_clip 0x11404,
+  iter 26, [generic]): with `volatile int last` the sum `spr_y + last - 1` compiles to a *second*
+  reload as a memory operand (`add eax, dword [esp]`) plus `dec eax`, while the game reloads once into
+  a register and decrements that register (`mov ebx,[esp]` 0x11416, `dec ebx` 0x11420). Writing
+  `k = last - 1;` and testing `spr_y + k > 199` gives the game's reload/dec pair and its length
+  (16 rows -> 3). Two more shapes from the same function: a `short` temp feeding a dword store to a
+  global reproduces `movsx ebx,ax; mov dword [g],ebx` (0x11444/0x11447) and leaves the untruncated
+  value in EAX for the next expression, where the direct `g = (short)expr;` gives `cwde` + an EAX
+  store and then re-reads the global. The 3 rows left are the reload/operand register pairing - the
+  tie-break class above (16 spellings, three declaration orders, `k = last; k = k - 1;`).
 - **An EAX/EDX swap in an address computation yields to an EAX-homed local** (songs_load 0x3360c,
   iter 14): `makepath_x(path, names[i])` built the offset in EDX, the game in EAX; seven index
   spellings and a fresh temp did not change it, `n = i * 12; makepath_x(path, (char *)names + n);`

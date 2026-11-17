@@ -7,7 +7,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
 - **191 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
-  `src/nearmiss.txt` entries (10 MATCH, 23 SKIP, 2 LAYOUT, 65 open); C covers 0x10260-0x36a4d bar the
+  `src/nearmiss.txt` entries (10 MATCH, 24 SKIP, 2 LAYOUT, 64 open); C covers 0x10260-0x36a4d bar the
   gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the hand-written asm.
 - Compiler levers that worked (GOTCHAS "This project's traps" lists them with their evidence): an
   `int` local assigned inside one arm, a second local re-armed at the loop body's end, the pointer
@@ -24,7 +24,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
   home of one or two locals, a dead incoming-register copy (fn_182d0), one moved load (track_setup,
   music_jingle, demo_play), the v88bb2/v7edb0 pair (classes_menu), the int shift into `err`
   (line_draw), two load orders (shot_step, 2 left), the scheduling of a straight-line head (in_sector),
-  and batching volatile loads above their masks (net_input, 9 rows left; 22 spellings spent).
+  batching volatile loads above their masks (net_input, 9 left; 22 spellings), and the register pairing
+  of a slot reload and its neighbour operand (drawsprite_clip, 3 left after the frame lever).
 - Probe caution (GOTCHAS iter 19, 21, 22, 24, 25) and `fndiff.py`'s fake rows: a `[reg +/- @]` pair
   whose displacement is a fixup is the 0x90 mask filler (7 of `self_project`'s 10 rows); a variant can
   score *fewer* rows by matching less (the dropped `push ebx` + `mov ebx,0x7f2b0`; a 2-byte-shorter
@@ -40,14 +41,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. `netkeys_in` 0x2d94c (29 rows): the BLOCKED saved-EDX `c` home - write `SKIP:` with 0 variants.
-2. `drawsprite_clip` 0x11404 (16 rows, now the first open line): its sibling `drawsprite` is a MATCH,
-   so expect a compare, a loop bound or a slot count rather than a register home.
+2. `fn_16eac` 0x16eac (17 rows, first open line): read the rows before guessing a class.
 3. `kart_move` 0x237e4 (20 rows): the same `[esp]` slot as shot_step - apply the `volatile int t`
    lever there (shot_step stopped at 2 rows, see BLOCKED).
 4. `race_records_menu` 0x1d13c (12 rows): 5 are the BLOCKED EDX-vs-AL home of the pooled "" byte, 4
    the un-merge spelling now in `src/ww.c` - decide keep or revert before spending more variants.
-5. `pal_shift` 0x114a8: scan the LE **fixup records** (not the applied bytes) and any far-pointer
-   table for 0x114a8 - dead code vs computed call - and say what the 768 bytes are (QUESTIONS 15).
+5. `pal_shift` 0x114a8: scan the LE **fixup records** and any far-pointer table for 0x114a8 (QUESTIONS 15).
 6. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
    index), "BSBCS.PCX", `tbl77758`'s writer; the original under the harness (LE deltas, a save state).
 
@@ -58,7 +57,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Two locals' register pairing - a tie-break, not a translation error (`pcx_load` ESI/EDI,
   `com_wait_byte` EBX/EDX + EAX/ECX, `com_expect` EBX/ESI + the A1 vs 8B 0D size it forces,
   `self_project` EAX/EDX in the clip sum, `shots_clear` EBX/EDX for pointer and counter, `fade_in`'s
-  init-loop EDX/EBX): 24, 16, 10, 17 and 21 spellings move nothing. Two pushed-register homes are as
+  init-loop EDX/EBX, `drawsprite_clip` EAX/EBX for the slot reload and the spr_y operand): 24, 16, 10,
+  17, 21 and 16 spellings move nothing. Two pushed-register homes are as
   unpinnable as the EAX one, and the order of the initializers in a comma `for` only moves the order
   of the two zeroing `xor`s (iter 25).
 - One local's home and constant hoisting - the same tie-break at one variable (`netkeys_out`,
@@ -77,4 +77,4 @@ Short: where the project stands, and what is next. History is in git; no diary.
   (QUESTIONS 2). SKIPped: music_jingle, track_setup, classes_menu, fn_182d0, line_draw, net_recv,
   pcx_load, demo_play, view_at_curpos, wtext, release_check, com_wait_byte, com_expect, self_project,
   netkeys_out, netkeys_pack, fn_1be3c, shot_step (2 rows: one load-order swap), shots_clear, fade_in,
-  in_sector, net_input (9 rows: mask batching).
+  in_sector, net_input (9 rows: mask batching), drawsprite_clip (3 rows: reload/operand pairing).

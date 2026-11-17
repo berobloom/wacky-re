@@ -726,18 +726,26 @@ void drawsprite2(void);
 void waitretrace(void);
 void screenshot(void);
 
-/* differs: the game keeps the widened height in a stack slot ([esp]) and computes the bottom from it */
+/* differs: 3 rows - the slot reload lands in EAX and the spr_y load in EBX, the game the other way
+ * round (0x11416/0x11419); declaration orders of h/k/last/c, `k = last; k = k - 1;` and `k + spr_y`
+ * tried (GOTCHAS "two locals' register pairing"). The frame is the game's: a `volatile int last`
+ * written once gives `sub esp,4` + `mov [esp],eax` + `mov ebx,[esp]`, and `k = last - 1` as its own
+ * statement puts the `dec` in the reloaded register (16 rows -> 3). */
 void drawsprite_clip(void)
 {
     short h;
-    int last;
+    volatile int last;
+    int k;
+    short c;
 
     h = spr_w;
     last = h;
+    k = last - 1;
     clipy = 0;
-    if (spr_y + last - 1 > 199) {
-        clipy = (short)(h - 1 + spr_y - 199);
-        spr_w = h - clipy;
+    if (spr_y + k > 199) {
+        c = (short)(h - 1 + spr_y - 199);
+        clipy = c;
+        spr_w = h - c;
     }
     if (spr_w > 0)
         drawsprite2();
