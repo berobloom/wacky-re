@@ -11163,16 +11163,19 @@ void ents_project(void)
  * 1 left, 2 right by 0x1e of 0x780); a kind > 1 that does not move stays put; else the step
  * v7d6a0[v7eb9c] * speed through f37bb1 gives lx1/ly1. With move, shot_line tests the segment and the
  * shot stops at lx0/ly0 unless it is a kind 1 that hit (v88bae == 3).
- * differs (near-miss, 106 vs 103 insns, 3 blocks): the game keeps t = v7eb9c * 8 in a 4-byte stack
- * slot (`sub esp,4`, `mov [esp],eax; mov ebx,[esp]`); ours keeps it in a register. Same cause as
- * kart_move's single temp slot. Tried: int/long/array t, declaration orders, no t. Fixed: lx1 = lx0
- * as its own statement lets the ly1 store be shared like the game's. */
+ * differs (2 rows, probes .work/probe_ss/F,G,H): `volatile int t` gives the game's frame (`sub esp,4`)
+ * and its spill of t (`mov [esp],eax; mov ebx,[esp]`) - 11 rows -> 2. What is left is the order of the
+ * two loads: the game reloads t into EBX (0x25f46) and only then loads v7d6a0 into EAX (0x25f49),
+ * ours the other way round. `p = t; v7d690 = (int *)(p + v7d6a0);` flips the order but swaps the
+ * registers (the EAX/EBX coin flip, 3 rows); `char *b` for the base, `v7d690++` as its own statement,
+ * `*(v7d690 + 1)` and the inline product without t (7 rows, no slot) do not close it. Same slot in
+ * kart_move 0x237e4. Fixed earlier: lx1 = lx0 as its own statement lets the ly1 store be shared. */
 extern int v7d5d0;
 
 void shot_step(short move)
 {
     short stay;
-    int t;
+    volatile int t;
 
     stay = 0;
     if (v7d874->kind >= 1 && v7d874->kind != 5) {
@@ -11202,7 +11205,7 @@ void shot_step(short move)
         ly1 = ly0;
     } else {
         t = v7eb9c * 8;
-        v7d690 = (int *)(v7d6a0 + t);
+        v7d690 = (int *)(t + v7d6a0);
         v7d5f8 = *v7d690++;
         v7d5f4 = *v7d690;
         lx0 = v7d874->x;

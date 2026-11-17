@@ -208,6 +208,16 @@ it can be copied back into DREA.
   sum, temps for the operands, an `int y = v88b0e` local - never drop it, and the frame rules out
   the local route: any local adds a SECOND slot (`sub esp,8`) where the game has one. Check the
   prologue first: if our frame already equals the game's, the function has no locals to add. [generic]
+- **A `volatile` local is how you make 9.5b emit the frame slot and the spill/reload pair the game
+  has** (shot_step 0x25e6c, iter 23): the game computes `t = v7eb9c * 8` through a 4-byte slot (`sub
+  esp,4`, `mov [esp],eax; mov ebx,[esp]`, 0x25f43-0x25f46). A plain `int t` - and long, an array, the
+  other declaration orders, or no temp at all - keeps it in a register and never grows the frame: 11
+  rows. `volatile int t` emits the slot, the store and the reload: 11 rows -> 2, and the 2 left are
+  the *order* of the two loads (the game reloads t into EBX at 0x25f46 before loading the base into
+  EAX at 0x25f49, ours the other way); `p = t; ... (int *)(p + v7d6a0);` gets that order but p takes
+  EAX and the base EBX (3 rows, the coin flip). Reach for it when the game's prologue has `sub esp,N`
+  and a value round-trips through [esp] - the frame-vs-register question of the entry above, from the
+  other side. [generic]
 - **An EAX/EDX swap in an address computation yields to an EAX-homed local** (songs_load 0x3360c,
   iter 14): `makepath_x(path, names[i])` built the offset in EDX, the game in EAX; seven index
   spellings and a fresh temp did not change it, `n = i * 12; makepath_x(path, (char *)names + n);`
