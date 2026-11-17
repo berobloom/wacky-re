@@ -25,16 +25,14 @@ Short: where the project stands, and what is next. History is in git; no diary.
   store from EAX is 5 bytes, `a3`, from any other register 6: shots_move 460 against 462); **line the
   two listings' loads up before probing** - order differs = 9.5b's scheduler (fn_19db8), order equal
   = permuted homes (shots_move, net_recv); **count the rows that are only a stack-slot or fixup
-  displacement before spending anything** - same mnemonic both sides = the dead class, SKIP at once
-  (showlines 0x2a268: 10 of 18 rows, 0 variants spent).
+  displacement before spending anything** - same mnemonic both sides = the dead class (showlines
+  0x2a268: 10 of 18 rows, 0 variants spent).
 - `fndiff.py`'s fake rows: a `[reg +/- @]` pair whose displacement is a fixup is the 0x90 mask filler
   (7 of `self_project`'s 10, 4 of `shots_move`'s 17); tail rows of a function shorter than the game's
-  are alignment (`ctl_label`'s 11 nops of 19); the game's `mov eax,eax`/`lea eax,[eax]` filler after
-  the last matched byte costs a row; a variant can score *fewer* rows by matching less.
+  are alignment (`ctl_label`'s 11 nops of 19); a variant can score *fewer* rows by matching less.
 - Findings, evidence at the links: serial (findings/serial.md) rings 0x84b00/0x80afa, wrap 0x4000;
   classes (findings/classes.md) `v88bb2` is 1 AMATEUR..5 KID MODE **signed**; car select
-  (findings/car_select.md) `ents[8]` 0x73998 is the selection box; scores (findings/scores.md)
-  `tbl77758` = 24 records of 0x2e; `pal_shift` has no caller (QUESTIONS 15).
+  (findings/car_select.md) `ents[8]` 0x73998 is the box; scores (findings/scores.md) `tbl77758`.
 
 ## Next
 
