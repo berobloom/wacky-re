@@ -73,19 +73,21 @@ void disable_ints(void);
 void enable_ints(void);
 void lib_40ff0(int, int);
 
-/* differs (13 rows, 1 = the masked `[ecx*2 +/- @]` fixup): register homes only - the rate/divisor
- * and the quotient (ours EAX then EBX, game ECX: `cmp ecx,0x3840` 0x1039a vs our 16-bit `cmp di`,
- * `mov ecx,eax` 0x103ba vs our `mov ebx,eax`, `movzx eax,cl` 0x103d4 vs bl), the MCR extend
- * (`cwde` 0x1045d vs our `movzx eax,al`), _dos_getvect's arg order (`movsx eax,[comvec]` 0x104ae
- * before `mov ecx,cs` 0x104b5, ours reversed) and the IMR mask `1 << comirq` in EBX instead of EAX
- * (no `mov ecx,eax` copy 0x104ca), plus one trailing nop. Tried: `rate == 14400` (18),
- * `baud == 14400L` and `signed char mcr` (no change), an `int imask` local for `~(1 << comirq)`
- * (23), and parameters (port, irq, comnum, baud): 4 slot rows disappear but INT 14h DX and the
- * divisor swap (link_open's fixups flag it - findings/serial.md). */
+/* differs (11 rows, 1 = the masked `[ecx*2 +/- @]` fixup): iter 39 made `rate` one unsigned variable
+ * for the rate and the divisor (the game compares ECX = rate, not baud, with 0x3840 at 0x1039a and puts
+ * the quotient back in ECX 0x103ba) and passes it to outp uncast: 13 -> 11. Left: the divisor byte
+ * (`movzx eax,cl` 0x103d4 vs our `mov al,cl`), the MCR extend (`cwde` 0x1045d vs our `movzx eax,al`),
+ * _dos_setvect's arg order (`movsx eax,[comvec]` 0x104ae after the isr choice, ours before) and the
+ * IMR mask `1 << comirq` in EBX instead of EAX (no `mov ecx,eax` copy 0x104ca), plus one trailing nop.
+ * Tried iter 39 (all worse or equal): `(unsigned char)rate`, `rate & 0xff`, `int`/`unsigned long`/
+ * `unsigned short rate`, `short mcr`, `mcr |= 0x0b`, `iir` reused for the MCR (24), an isr pointer
+ * local, `~(1 << comirq) & inp(0x21)`, the mask in `rate`; permute.py 20 rounds x 30: no gain.
+ * Before: `rate == 14400` alone (18), `baud == 14400L` and `signed char mcr` (no change), an
+ * `int imask` local (23), and parameters (port, irq, comnum, baud): 4 slot rows disappear but INT 14h
+ * DX and the divisor swap (link_open's fixups flag it - findings/serial.md). */
 void com_open(short port, short irq, short baud, short comnum)
 {
-    int rate;
-    unsigned char divisor;
+    unsigned rate;
     short iir;
     char mcr;
 
@@ -102,12 +104,12 @@ void com_open(short port, short irq, short baud, short comnum)
     comregs.w.dx = comnum - 1;
     rate = baud;
     int386(0x14, &comregs, &comregs);
-    if (baud == 14400)
+    if (rate == 14400)
         rate = 19200;
-    divisor = 1843200UL / (rate * 16);
+    rate = 1843200UL / (rate * 16);
     outp(comport + 3, 0x80);
     outp(comport + 1, 0);
-    outp(comport, divisor);
+    outp(comport, rate);
     outp(comport + 3, 3);
     outp(comport + 2, 0x41);
     iir = inp(comport + 2) & 0xf8;
