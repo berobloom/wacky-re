@@ -14994,7 +14994,9 @@ void kart_buttons(void)
 /* ---- 0x2d94c, 92 bytes: the received key byte v88cef as the second set of controls (caller
  * 0x31fb9): bits 1/2 keys cd5/cdd, 4..0x20 buttons b40..b46, 0x40 v88cec.
  * differs: registers only: the game holds c in DL and masks in AL (ours c in AL, masks in AH);
- * char / short / int / unsigned c tried. Same in netkeys_out. */
+ * char / short / int / unsigned c tried. Same in netkeys_out. Same cause as netkeys_pack (0x2da28,
+ * 10 spellings) and netkeys_out (0x2d9e4, 21 spellings, plus 9.5/9.5a give the same AL): the one-local
+ * register home plus the game's `push edx`. SKIP at once, 0 variants (iter 32). */
 void netkeys_in(void)
 {
     unsigned char c;

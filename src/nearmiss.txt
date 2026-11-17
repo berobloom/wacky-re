@@ -58,7 +58,7 @@
 22   0x01cb44 enter_name             SKIP: all 22 fndiff rows are stack-slot displacements (esp+0x58/0x5c/0x60/0x64/0x6c/0x70 permutation of the same stores); documented dead end (QUESTIONS 9; GOTCHAS slot-permutation class, 27+43 declaration orders) - 0 variants spent (iter 31)
 22   0x028b20 kart_catchup             SKIP: 1 real row (game reloads `mov cx,[ebx+0xa]` 0x28bf8 after the word store; 9.5b forwards store->load into `mov ecx,edx` even through a `(volatile short *)` cast read, iter 31); 3 rows are masked-fixup [reg+/-@] fakes, ~15 are epilogue/padding nops (ours 396 vs game 380). Tried earlier too: 6 decl orders + register for a local c, short d, chained assign, volatile read, struct-pointer local, other lvalues
 26   0x01d704 fn_1d704             SKIP: cause 2 alone is a dead-end row (f375cd `mov dx` vs our movzx), so no MATCH; cause 1 = a frame slot the game has for `which` (store 0x1d7b5, reads 0x1d843/0x1d875-0x1d88f): 11 spellings in two probe compiles (short/int/volatile local copy, cast, declared first/last, assigned before/after wait_release, after the strcats, strcats too) all allocate the slot but put the incoming param in it at 0x1d70f and reload EBX after the call - 17-22 rows, control 17
-29   0x02d94c netkeys_in
+29   0x02d94c netkeys_in             SKIP: the c-in-DL one-local register home (documented dead end, GOTCHAS "which of two locals gets EAX") - same cause as netkeys_out 0x2d9e4 (21 spellings) and netkeys_pack 0x2da28 (10), and 9.5/9.5a/9.5b all pick AL; our body is 2 bytes shorter (no push/pop edx) - 0 variants
 31   0x0283a4 track_around
 33   0x0102f4 com_open
 33   0x011f98 voices_load
