@@ -384,6 +384,13 @@ it can be copied back into DREA.
   compile 114 bytes scored 2 for byte-identical instructions. Compare variants with each other at
   equal byte size, never a variant score against a `fndiff.py` count, or a spelling that changed
   nothing reads like a win by one.
+- **A smaller row count can be a worse function: read the rows before believing the number**
+  (iter 24): `shots_clear` 0x2d4fc is 13 rows because the two locals hold the game's
+  registers the wrong way round (game shot pointer EBX / counter EDX, ours EDX / EBX+EAX). Assigning
+  the pointer only after the first loop pulls the counter into EDX and scores 11-12 - because the
+  function lost the game's `push ebx`+`mov ebx,0x7f2b0` pair and the address load moved to the head of
+  the second loop, so the window shrank to 68 bytes and the misalignment stopped pairing those rows up.
+  Keep the shape the game has, then count. [generic]
 - **A `variants.py` probe ranking does transfer when the probe *defines* the game function the body
   inlines** (iter 22, refines the iter-21 trap): the `com_expect` probe (`CE.C` with `com_getc`
   defined above it and the same externs) came out 160 bytes with its control scoring 9, exactly

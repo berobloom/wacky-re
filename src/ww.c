@@ -14723,8 +14723,16 @@ void bump_turn(void)
 
 /* ---- 0x2d4fc, 73 bytes: clears cars[0..1].f02/f04 and every shot's live flag f04 (caller
  * 0x300fb); v7d874 is left past the table.
- * differs: registers only (game i in EDX, p in EBX): the game keeps the global v7d874 itself in
- * EBX as the pointer and stores it once at the end (GOTCHAS "promotes a global"). */
+ * differs: 13 rows, 2 of them the masked-displacement artifact (`[eax - @]` where the game has
+ * `[eax + @]`, GOTCHAS iter 16); the other 11 are the homes of the two locals. The game keeps the shot
+ * pointer in EBX (`mov ebx,0x7f2b0` 0x2d4fe, `add ebx,0x22`, `mov [v7d874],ebx` 0x2d53c) and the loop
+ * counter in EDX in both loops; ours is the mirror image - p in EDX, the counter EBX in the cars loop
+ * and EAX in the shot loop. 17 spellings (.work/probe_sc/S.C, S2.C, S3.C): both declaration orders,
+ * `p = shots` in the declaration, `i = 0;` before it, `short i = 0`, two counters i/j,
+ * `for (p = shots, i = 0; ...)`, and p assigned only after the cars loop - that last family (e01/e02/
+ * e03, 68 bytes) does put the counter in EDX in both loops, but then p lands in EAX, the address load
+ * sinks to the head of the second loop and the `push ebx`/`pop ebx` pair goes away: 12 rows for one
+ * row saved, and a shape further from the game's. */
 void shots_clear(void)
 {
     short i;
