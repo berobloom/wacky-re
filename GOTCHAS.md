@@ -350,6 +350,18 @@ it can be copied back into DREA.
   compile 114 bytes scored 2 for byte-identical instructions. Compare variants with each other at
   equal byte size, never a variant score against a `fndiff.py` count, or a spelling that changed
   nothing reads like a win by one.
+- **A `fndiff.py` row that differs only in the sign of `[reg +/- @]` is not a diff** (iter 22,
+  [generic]): the 0x90 filler written over a fixup makes our disp32 read as a negative
+  displacement, so a byte-identical function still prints e.g. `ours movzx ax,[eax - @] | game
+  [eax + @]` - `com_getc_wait` 0x2da90 is a `check.sh` MATCH and `fndiff.py` still counts that row
+  (1 diff). Subtract those rows from a `src/nearmiss.txt` count before spending variants on a
+  function whose rows are all register homes plus such a row: the byte compare in `check.sh` is the
+  verdict. A `variants.py` probe of such a function carries the same fake row in every variant.
+- **A `variants.py` probe ranking does transfer when the probe *defines* the game function the body
+  inlines** (iter 22, refines the iter-21 trap): the `com_expect` probe (`CE.C` with `com_getc`
+  defined above it and the same externs) came out 160 bytes with its control scoring 9, exactly
+  `fndiff.py`'s count for the whole-file function, so its 10 spellings ranked truthfully. A probe
+  that only *prototypes* the inlined function is a different, smaller function (iter 21).
 - **A `tools/wc/variants.py` probe file must `#include <string.h>` (and the same prototypes) or it
   compiles a different function** (iter 13, [generic]): my probe of `race_records_menu` (six spellings,
   no includes) gave 332-byte variants against the 514 bytes the same body produces inside `src/ww.c`,

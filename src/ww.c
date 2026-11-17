@@ -15225,7 +15225,16 @@ int com_wait_byte(int esc)
 /* ---- 0x2e008, 158 bytes: com_getc until the byte want arrives (1); key 0xcd0 aborts
  * (net88c14 = 2, 0); a non-zero timeout gives up after that many ticks (0). v7ea68 = start.
  * differs: registers only: want in EBX and t0 in ESI in the game, the reverse here (as in
- * com_wait_byte); all 30 orders of t0, c, r (and an elapsed temp) tried. */
+ * com_wait_byte); all 30 orders of t0, c, r (and an elapsed temp) tried. Iter 22 closed the rest:
+ * net_sync 0x2e0fc is byte-identical, so want really does arrive in EAX and timeout in EDX (the
+ * parameter order is not the cause); 10 more spellings in one probe compile
+ * (.work/probe_comexpect/CE.C, control 9 = the fndiff count, so the ranking applies) - an elapsed
+ * local d in three declaration positions, an unsigned d, the elapsed written into r, a copy of
+ * want in a local, t0 = ticks first, short want - leave the two homes alone; the row at 0x2e03b
+ * (`[eax - @]` vs `[eax + @]`) is a fndiff masking artifact, not a row to fix (GOTCHAS); and the
+ * pair `mov ebx,eax` + `mov esi,[abs]` occurs exactly once in the whole image (0x2e016), so no
+ * matched function anywhere shows the game's spelling. GOTCHAS "Which pseudo gets EAX is a coin
+ * flip": this is that case. */
 int com_expect(int want, int timeout)
 {
     int t0, c, r;
