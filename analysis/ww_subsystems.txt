@@ -1,0 +1,66 @@
+# Subsystems of the game's C (src/ww.c), for tools/progress.py and PROGRESS.md.
+# "## <name>" starts a subsystem; the function names under it are whitespace separated.
+# The first sorting (iter 38) went by name; move a function by moving its name. A function
+# that src/ww.c or the game has and no list names shows up in PROGRESS.md as "unsorted".
+
+## Serial link and network
+crchware mk_crctbl crcupdate com_open com_dtr_off com_dtr_on com_close com_getc com_putc com_isr
+com_isr_fifo com_kick sendstr com_waitfor com_shutdown modem net_end chat baud_menu fn_1dac0
+link_open wait_connect dial answer_call fn_1e2cc link_menu netkeys_in netkeys_in1 netkeys_out
+netkeys_pack com_getc_wait net_recv net_send net_key com_wait_byte com_expect com_flush net_sync
+net_input
+
+## Sound and music
+tick_task engine_stop sfx_play2 sfx_busy sfx_play engine_clear engine_start music_start
+music_play music_jingle voices_reset voice_check voice_play sound_init voices_load sounds_load
+fn_1e6dc volume_menu gig_sound2 song_size songs_pick songs_load
+
+## Video and palette
+drawsprite_clip frame_wait pal_shift screenshot fn_182d0 setvmode setvmode_keep pal_6bit dat_pal
+file_pal ytab_init bigdigits render_scales pic_show fade_in pic_at vga_check f1bf80 f1bf94
+fn_1c068 fn_1c0ac
+
+## Input
+input_clear1 input_clear2 save_ctl flushkeys since2 since ctl_setup wait_ticks3 delay
+wait_or_key joy_reset joy_clear_y ctl_label wait_release wait_input kart_buttons kbd_on kbd_off
+kbd_restore waitkey release_check
+
+## Data files and memory
+xalloc xfree makepath save_config logerr sprites_load datopen datfind datclose seekdat telldat
+datsize readdat ent_sprites_load ents_load swap16 path_join flength read_line pcx_load
+pcxfile_load gam_load effects_load track_pics_load track_load kartsets_load data_load
+digger_load mem_alloc tiles_setup duckfame_load records_load
+
+## Menus and text
+get_7ee5a set_7ee5a wtext stext print_at center_x center_y menu detail_menu detail2_menu
+zones_menu engines_menu screen_menu find12 pnames_init pname_desc fn_16ca0 fn_1832c fn_193a8
+fn_19db8 fn_1c0f4 fn_1c88c fn_1c968 credits_page credits_screen main_menu_names main_menu
+showlines msgbox rows_pad cursor_at
+
+## Car select and classes
+draw_faces fn_17888 fn_173c4 fn_16f90 fn_16d68 fn_16eac fn_16f24 fn_17928 classes_menu laps_menu
+fn_1a2f8 cars_menu fn_1be3c fn_1bf00 faces_reset
+
+## Scores and records
+fn_1c994 fn_1cad0 enter_name scores_screen race_records_menu trial_records_menu fn_1d704
+leaderboard duck_screen trial_book trial_write scores_write duckfame_write
+
+## Race: karts, weapons, computer drivers
+in_zone show_place calc_places car_laps ents_init ents_flags line_points kart_hit shot_hit
+kart_line line_plot line_draw crack_draw shot_line kart_anim2 kart_anim2r kart_anim79 kart_anim0
+kart_state kart_bump pair_reset kart_move kart_class10 kart_boost kart_fire f24834 isqrt
+in_sector kart_draw shot_step shots_move shots_project kart_dirframe hit_timer kart_catchup
+cpu_drive kart_frame bump_turn shots_clear shot_fire car_finished players_ahead
+
+## Race: track view and sprites
+track_setup map_at map_cell view2_in view2_save view2_out frame_draw ani_giggles ani_tick
+ani_dope ani_draw ents_draw ents_show rec_marker marker_draw sprites_draw players_project
+ents_project anim_tick lights_project self_project track_around track_here view_box cycles_step
+players_frames sprites_build view_at_curpos view_sprites race_frame2
+
+## Race: HUD, flow and results
+draw_status hud_draw minimap time_str time_draw lap_banner overlay_draw overall_winner
+race_results result_msg race_run
+
+## Startup, intro, demo, ending
+demo_mode demo_start demo_load demo_rec demo_play intro end_screen main
