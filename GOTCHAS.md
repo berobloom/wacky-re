@@ -623,3 +623,11 @@ it can be copied back into DREA.
   EAX form is the 5-byte `A1 disp32` - the 1-byte gap shifts the tail and the padding absorbs the
   difference. Same for `cmp`/`mov` with an absolute operand: an EAX-only choice shows up as TWO fndiff
   rows (the instruction, plus the tail). Do not spend variants on the padding row.
+- **Write independent bit tests in the game's load order** (net_input 0x2f4a8, iter 26, [generic]):
+  four `vv88cef & mask` reads written ascending (4, 8, 0x10, 0x20) emit loads AH, DL, BL, DH; written
+  in the game's order (0x20, 0x10, 8, 4 - loads at 0x2f60b-0x2f61d) they keep the same register homes
+  and come out in the game's order: 15 rows -> 9, baseline unchanged at 191. What is *not* reachable:
+  the game groups the four loads above the four masks. `b = vv88cef; b &= mask;` regroups worse (36),
+  four separate raw-read temps, separate or comma (27), and a comma-form mask chain leaves 9; temps
+  for the two in-branch reads (`t = vv88cef & 1; key88cc4 = b2; key88cc3 = t;`) never move the read
+  to the game's slot (14-36).

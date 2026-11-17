@@ -7,8 +7,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
 - **191 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
-  `src/nearmiss.txt` entries (10 MATCH, 22 SKIP, 2 LAYOUT, 66 open); C covers 0x10260-0x36a4d bar
-  the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the hand-written asm.
+  `src/nearmiss.txt` entries (10 MATCH, 23 SKIP, 2 LAYOUT, 65 open); C covers 0x10260-0x36a4d bar the
+  gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the hand-written asm.
 - Compiler levers that worked (GOTCHAS "This project's traps" lists them with their evidence): an
   `int` local assigned inside one arm, a second local re-armed at the loop body's end, the pointer
   step of a `for` tail written in the body, `volatile` to pin a store 9.5b defers, **`volatile` on a
@@ -18,17 +18,17 @@ Short: where the project stands, and what is next. History is in git; no diary.
   `lea`; a word-typed second C name for a global the game truncates through a *word* load; an
   assignment the call does not read belongs **below** that call (net_key); the load of the *next*
   statement **above** the assignment it splits (fn_16ca0); **moving one arm's copy of a statement that
-  ends both arms to the head of its arm un-merges the tail-merge** (race_records_menu, iter 24).
+  ends both arms to the head of its arm un-merges the tail-merge** (race_records_menu, iter 24), and
+  **independent bit tests written in the game's load order** (net_input, 15 -> 9, iter 26).
 - Not reachable so far (each has its `differs:` note and a SKIP line with the spellings spent): the
-  home of one or two locals (net_recv, fn_1be3c, pcx_load, com_wait_byte, com_expect, self_project,
-  shots_clear, view_at_curpos, fade_in's init-loop i/k), a dead incoming-register copy (fn_182d0), one
-  moved load (track_setup, music_jingle, demo_play), the v88bb2/v7edb0 pair (classes_menu), the int
-  shift into `err` (line_draw), two load orders (shot_step, 2 rows left), and the scheduling of a
-  straight-line head (in_sector).
+  home of one or two locals, a dead incoming-register copy (fn_182d0), one moved load (track_setup,
+  music_jingle, demo_play), the v88bb2/v7edb0 pair (classes_menu), the int shift into `err`
+  (line_draw), two load orders (shot_step, 2 left), the scheduling of a straight-line head (in_sector),
+  and batching volatile loads above their masks (net_input, 9 rows left; 22 spellings spent).
 - Probe caution (GOTCHAS iter 19, 21, 22, 24, 25) and `fndiff.py`'s fake rows: a `[reg +/- @]` pair
   whose displacement is a fixup is the 0x90 mask filler (7 of `self_project`'s 10 rows); a variant can
-  score *fewer* rows by matching less (a dropped `push ebx` + `mov ebx,0x7f2b0`; a 2-byte-shorter body
-  drops the padding row, in_sector's `is_idxloc` 15 -> 14). Read the rows; `src/check.sh` is the verdict.
+  score *fewer* rows by matching less (the dropped `push ebx` + `mov ebx,0x7f2b0`; a 2-byte-shorter
+  body drops a padding row, in_sector's `is_idxloc` 15 -> 14). Read the rows; `check.sh` is the verdict.
 - Findings, with evidence at the links: serial (findings/serial.md) `com_isr`/`com_isr_fifo`
   byte-identical, rings 0x84b00 / 0x80afa, wrap 0x4000; classes (findings/classes.md) `v88bb2` 1
   AMATEUR..5 KID MODE **signed**; car select (findings/car_select.md) `ents[8]` 0x73998 is the
@@ -39,10 +39,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `netkeys_in` 0x2d94c (29 rows): the same `c` in a saved EDX as netkeys_out/netkeys_pack - write
-   `SKIP:` with 0 variants (BLOCKED below), then take the first open line.
-2. `net_input` 0x2f4a8 (15 rows, no note): `tools/wc/fndiff.py ww .work/src/WW.OBJ net_input 0x2f4a8`
-   - its sibling net_recv 0x2db00 is a BLOCKED crc-home case, so probe only if the rows say otherwise.
+1. `netkeys_in` 0x2d94c (29 rows): the BLOCKED saved-EDX `c` home - write `SKIP:` with 0 variants.
+2. `drawsprite_clip` 0x11404 (16 rows, now the first open line): its sibling `drawsprite` is a MATCH,
+   so expect a compare, a loop bound or a slot count rather than a register home.
 3. `kart_move` 0x237e4 (20 rows): the same `[esp]` slot as shot_step - apply the `volatile int t`
    lever there (shot_step stopped at 2 rows, see BLOCKED).
 4. `race_records_menu` 0x1d13c (12 rows): 5 are the BLOCKED EDX-vs-AL home of the pooled "" byte, 4
@@ -72,9 +71,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
   independent index/load chains where the game keeps the pairs adjacent, and a statement written
   **below** a branch sinks past the whole branch - it never lands between the branch's `test` and its
   `jcc`, so a load sitting in a game branch shadow is not a source position (iter 25, 10 spellings).
-  Watcom also does not CSE a global array read across separate conditions.
+  Watcom also does not CSE a global array read across separate conditions, and with volatile reads it
+  pairs each load with its mask where the game batches them (`net_input`, 22 spellings).
 - SKIP at once (0 variants): the classes above and a global the game keeps in a register across a loop
   (QUESTIONS 2). SKIPped: music_jingle, track_setup, classes_menu, fn_182d0, line_draw, net_recv,
   pcx_load, demo_play, view_at_curpos, wtext, release_check, com_wait_byte, com_expect, self_project,
   netkeys_out, netkeys_pack, fn_1be3c, shot_step (2 rows: one load-order swap), shots_clear, fade_in,
-  in_sector.
+  in_sector, net_input (9 rows: mask batching).
