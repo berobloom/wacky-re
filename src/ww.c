@@ -11562,6 +11562,11 @@ void lights_project(void)
  * pixel every other frame while racing. The game keeps the global spr_y in CX throughout (so do we).
  * differs (near-miss, 233 vs 233 insns, 1 real block + fixup noise): the bottom-clip test - the game
  * puts spr_w - 1 in EDX and spr_y in EAX, ours the other way round; six forms of the sum tried.
+ * Iter 22 adds one more: `spr_y + spr_w - 1` (the spelling the four other project functions use at
+ * src/ww.c 11036, 11136, 11417, 11532) puts the sum in EAX from spr_w as before and costs a row,
+ * 10 -> 11, so it is not the game's form here. Game 0x26df2-0x26dfc is `movsx edx,[spr_w]`,
+ * `movsx eax,cx`, `dec edx`, `add eax,edx`: the sum starts from spr_y. GOTCHAS "Which pseudo gets
+ * EAX is a coin flip" - the only 3 real rows of this 1160-byte function are that swap.
  * Found: `k = v88c42; switch (k)` (else the n/v88c42 registers swap), `(m = v7e72c, ticks2 - m)` for
  * the inlined since2(), `sprptr = gnspr[f56]; f56++;`, and f56 > 3 (not <= 3) for the kind-2 step. */
 extern int tb7b328[], tb7b2d8[], v7e72c;
