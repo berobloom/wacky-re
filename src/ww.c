@@ -8939,11 +8939,14 @@ void swap16(short *a, short *b)
     *b = t;
 }
 
-/* differs: near miss, 346 of 330 bytes. Same statements; the register choice differs: the game keeps
- * dx in ESI and err in EAX and leaves n on the stack (esp+0x10), ours keeps n in EAX and spills dx.
+/* differs: near miss, 348 vs 330 bytes, 42 rows, and the frames agree: only the homes are permuted.
+ * The game keeps err in EAX and dy in ESI and spills dx ([esp+0xc]) and n ([esp+0x10] - `mov dword
+ * [esp+0x10],0` at 0x21570, `inc dword [esp+0x10]` at 0x21643); ours keeps n and err in registers and
+ * spills dy there. Same statements.
  * Levers that mattered: dx computed before dy (89 -> 39 scored), `sy, sx` declared in that order, the
- * `n = 0` initializer (38). No effect: 72 declaration orders, `short t`, `register dx`, the n++ place.
- * QUESTIONS 2. */
+ * `n = 0` initializer (38). No effect: 72 declaration orders, `short t`, `register dx`, the n++ place,
+ * `volatile int n` (93 - the game's in-place `inc dword [esp+0x10]` is a plain spilled local, not a
+ * volatile one) and a dummy extra int local (42). The coin flip, QUESTIONS 2. */
 /* ---- 0x21554, 330 bytes: Bresenham line from (lx0, ly0) to (lx1, ly1) (caller 0x28011 in 0x279e8).
  * Appends the (x, y) short pairs, both ends included, at linep and returns their count; lx0/ly0 end
  * at the far point. A steep line swaps dx/dy and sx/sy and runs the second loop. */
@@ -9547,6 +9550,10 @@ void kart_anim0(void)
  * 1. the game has one 4-byte stack slot, shared by the f32 value of the tick test (0x22582) and the
  *    row spill of &tb7b448[f1a][pl] (0x2266b); a named `t` gets its own slot (frame 8). Without `t`
  *    the registers change: v88b7e lands in EBX, not EDX (6 declaration orders tried, all worse).
+ *    New: one named local CAN carry both spills - `t = curkart->f1a * 8;` then
+ *    `(char *)tb7b448 + t + pl * 4` at 0x22660 gives the game's 4-byte frame and its `[esp]` spill at
+ *    0x2266b - but 42 rows: the `pl * 4` (`lea edx,[edx*4]` 0x225ab) stays late and a named local for
+ *    it is worse (55). Dropping `t` from the tick test is 101.
  * 2. the two charge-start tails (f3a == 0) are cross-jumped in the game (0x22aeb -> 0x22bd5), with
  *    `v88b92 = 0` scheduled late; ours keeps both and schedules that store early (5 spellings tried).
  * New this iter (0 kept, 5 probed): reusing `t` for both spills (`t = curkart->f1a * 8;` then
