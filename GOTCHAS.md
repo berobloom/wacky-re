@@ -354,7 +354,10 @@ it can be copied back into DREA.
   because Watcom then emits real `strcat`/`strlen` calls instead of its inlines - so the probe's
   scores and register choices were not the whole-file ones. Copy the includes/extern block over
   verbatim, and confirm the probe's size is within a few bytes of the real one before believing a
-  ranking. For whole-file answers, edit `src/ww.c` and diff with `tools/wc/fncompare.py` (aligned
+  ranking. Same trap when the function inlines a *game* function that `src/ww.c` defines earlier:
+  a `com_wait_byte` probe with only a `com_getc` prototype came out 80 bytes against the file's 152
+  and its control variant scored 24 diffs where `fndiff.py` reports 9 (iter 21). For whole-file
+  answers, edit `src/ww.c` and diff with `tools/wc/fncompare.py` (aligned
   pairs, instruction counts per side, and pairs whose text agrees but whose length differs).
 - **`mov r, N*stride` + `add r, sym` in a loop names the array's real base** (iter 14, [generic]):
   trial_records_menu 0x1d579/0x1d584 is `mov ebp,0x3c; add ebp,0x7bc00`, which is i*0x3c + base with
@@ -540,3 +543,9 @@ it can be copied back into DREA.
   to the game's slot and net_key 0x2dd30 went 8 diffs -> MATCH (baseline 190). The load cannot sink
   past the call itself: the value is an argument register (`mov ecx,esi` at 0x2dd99), so "just
   before the call" is the only later home.
+- **A tail-padding row is often the same register choice as the row above it** (iter 21, [generic]):
+  `com_wait_byte` 0x2df70 ends with our `lea eax,[eax]` where the game has `nop`. Not a padding bug:
+  the game's elapsed temp is ECX, so its `mov ecx,[0x...]` is the 6-byte `8B 0D disp32` while our
+  EAX form is the 5-byte `A1 disp32` - the 1-byte gap shifts the tail and the padding absorbs the
+  difference. Same for `cmp`/`mov` with an absolute operand: an EAX-only choice shows up as TWO fndiff
+  rows (the instruction, plus the tail). Do not spend variants on the padding row.

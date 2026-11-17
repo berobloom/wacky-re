@@ -28,7 +28,7 @@
 7    0x034458 release_check             SKIP: stack-slot permutation of the two shorts only (all 7 rows are esp+0x190/0x194 displacements); documented dead end, GOTCHAS "Watcom does not allocate scalar stack slots in declaration order" (43 declaration orders probed for enter_name); note says declaration order, placement and int/short mixes tried - 0 variants spent (iter 21)
 8    0x010810 com_isr_fifo         MATCH
 8    0x02dd30 net_key             MATCH
-9    0x02df70 com_wait_byte
+9    0x02df70 com_wait_byte             SKIP: the three register homes only (esc EBX/EDX, t0 EDX/EBX, the d temp EAX/ECX - one allocator decision; the `lea eax,[eax]`/`nop` tail row is that choice's 1-byte size gap). 16 probe spellings + `unsigned d` whole-file; the standalone probe's control scores 24 vs 9 whole-file, so probes do not rank this function (iter 21)
 9    0x02e008 com_expect
 10   0x016ca0 fn_16ca0
 10   0x026a3c self_project

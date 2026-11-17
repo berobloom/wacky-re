@@ -15188,7 +15188,12 @@ short net_key(unsigned char key, unsigned char flag, int x)
  * after 0x110 ticks (net88c14 = 1), with esc when key 0xcd0 is 1 (net88c14 = 2); 0 then. The
  * start time is left in v7ea68.
  * differs: registers only (game esc in EDX, t0 in EBX; ours the reverse); local order, the d
- * temp, do/goto form and short / char esc tried. */
+ * temp, do/goto form and short / char esc tried. All 9 rows are those three homes: esc EBX/EDX,
+ * t0 EDX/EBX and the `d` temp EAX/ECX (the tail `lea eax,[eax]` vs `nop` row is the 1-byte size
+ * gap of the EAX-only `mov eax,[abs]` (A1, 5 bytes) vs `mov ecx,[abs]` (8B 0D, 6), not a fourth
+ * thing). 16 probe spellings (types, orders, register, an esc copy, while, no d, swapped arms)
+ * and `unsigned d` whole-file change nothing; a standalone probe of this function scores 24 for
+ * the control where src/ww.c scores 9, so probe ranks do not transfer here. */
 extern int v7ea68;
 
 int com_wait_byte(int esc)
