@@ -3275,16 +3275,21 @@ void f377ae(void);
 void fn_1c068(void);
 void fn_1c0ac(void);
 
-/* differs: stack slots all permuted (QUESTIONS 2; the game's menu(n,d,mode,c) has mode@0xc4, c@0xc8, n@0xcc,
-   d@0xd8, and 23 scalar slots: ours folds two into registers, frame 0xd8 vs 0xe0); the game also has a dead
-   inline strlen(mnames) at +0x1d3 (second one, result unused). Block structure, calls and the switch jump
-   table all agree. */
+/* differs (233 rows, was 267: `isnet` is an int - the game loads it `movzx eax,al; mov [esp+0x84],eax`
+   0x1563d, ours had a 16-bit `movzx ax,al`): stack slots all permuted (QUESTIONS 2; the game's
+   menu(n,d,mode,c) has mode@0xc4, c@0xc8, n@0xcc, d@0xd8 and 23 scalar slots, frame 0xe0; ours 20, frame
+   0xd4); the game homes `four` in EBP (`mov ebp,4` 0x15640) where ours spills it; the game has ONE epilogue
+   (`mov word [v88c28],0; mov eax,[esp+0xbc]; add esp,0xe0; ret` 0x163df) where our five returns get five;
+   and a third inline strlen(mnames) whose result is dead (0x158d3). Block structure, calls and the switch
+   jump table agree; nmrefs' one game-only 0x7bc00(mrows) reference is that 48-byte length gap (pre-existing).
+   Tried: one epilogue via `goto mret` (`cursor = 1` at the two error sites) 233 -> 261; `int state` (the
+   switch subject, game `cmp edx,4`) 233 -> 292; `int four` 233 -> 249. */
 short menu(short n, short d, short mode, short c)
 {
     char cbuf[0x48], pbuf[0x3c];        /* game slots 0x00 and 0x48; sizes make the frame 0xe0 */
     unsigned short savepal;
-    short bounce, tk, cursor, mow, show13, quit, isnet, sel, anim, cnt, state, four, i;
-    int w11, x0, yb, bx1, sy, ybase, d4;
+    short bounce, tk, cursor, mow, show13, quit, sel, anim, cnt, state, four, i;
+    int w11, x0, yb, bx1, sy, ybase, d4, isnet;
 
     if (mode == 2)
         net7ed78 = 0;
