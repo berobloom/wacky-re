@@ -10498,9 +10498,12 @@ void kart_boost(void)
  * f6a--. players[].f12 blocks firing until the shot is gone.
  * differs (near-miss, 254 vs 229 insns, 22 diff blocks): the game's build keeps the global v7eb9c in ECX for the
  * whole function (load at entry, a store before every call and every exit, a reload after each
- * call: GOTCHAS "promotes a global ... into a register"), ~25 instructions our 9.5b build does not
- * emit; with ECX taken, the voice number v is in SI (ours CX) and ticks2 - f8e goes through EBX.
- * Everything else lines up block for block. */
+ * call), ~25 instructions our 9.5b build does not emit; with ECX taken, the voice number v is in SI
+ * (ours CX) and ticks2 - f8e goes through EBX. Everything else lines up block for block.
+ * iter 39: the load sits at entry (0x24368) and again after the first return test (0x24388) though
+ * nothing loops back there, and every exit reloads ECX from v7eb9c just before `pop ecx` (0x247fe,
+ * 0x24827): dead loads. `static int v7eb9c` (no address taken, so pointer stores cannot alias it):
+ * no change. Not the minimap lever (the source already computes in the global). */
 extern int v7eb9c;
 extern char *v7eb04;
 extern short v88bc0;
