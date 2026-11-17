@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **195 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+- **197 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
   0x10260-0x36a4d bar the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
@@ -21,10 +21,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `minimap` 0x02a4ac (44), `players_ahead` 0x034208 (44),
-   `draw_status` 0x012f80 (48), `duck_screen` 0x02b5e8 (48, was 67: re-read after the f375cd fix).
-   `f375cd` is now `void f375cd(void)` (findings/video.md): re-check SKIPped notes that blame
-   "the f375cd EDX parameter" or a pal_a save in BX (intro 0x348f4, main_menu QUESTIONS 13).
+   overnight/prompt.md step 2). Next open: `draw_status` 0x012f80 (48), `duck_screen` 0x02b5e8 (48),
+   `ents_show` 0x014380 (49). Before probing, check the game for `mov [G],r; call; mov r,[G]`: a
+   global it caches means our C should compute in that global, not in a local copy (GOTCHAS).
+   `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` is a random-mode permuter (30 copies a
+   compile); it found nothing on track_setup/shot_step/net_recv in 15 rounds.
 2. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
    `shot_step` 0x25e6c, `fn_182d0` 0x182d0 are 2-3 rows - only take them with an idea the
    `differs:` note does not list. `time_str` 0x2a618 (31) and `voices_load` 0x11f98 (33) are now
