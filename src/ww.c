@@ -16370,8 +16370,15 @@ void race_frame2(void)
  * to qualify (place > 3) loses a life (f6c) and gets the TRY AGAIN menu. Demo record (v7d998 1)
  * and playback (2, 3; v88c8e picks the shown record) are inlined (demo_rec, demo_play). Esc
  * gives the in-race menu (BACK TO RACE / LEAVE RACE / SAVE AND QUIT / RESTART RACE).
- * differs: 2029 vs 2028 insns, 64 blocks: the path vector (game `imul edx, [curpos], 8` hoisted),
- * camera stores scheduled differently, surfs / tb7b518 index registers. */
+ * differs (120 rows, ours 10808 bytes vs the game's 10834): the EAX/EDX roles of the temporaries
+ * are the mirror image of the game's in the repeated blocks - the path-vector walk (`imul eax,eax,8`
+ * + `add edx,eax` 0x3066d-0x30682, ours `lea edx,[eax*8]` + `add eax,edx`) and the camera sums
+ * (`movsx edx,[v88ca2]` / `movsx eax,[v7d610]` / `add edx,eax` 0x306af-0x306bd) - plus a few store
+ * orders and load placements. What fixed 128 -> 120: `short placed[10]` sized from the frame (the
+ * game's array base is [esp+0x28] at 0x30192 and its two scalar slots are [esp+0x3c]/[esp+0x40], so
+ * 0x44 - 0x28 - 8 = 20 bytes; the largest index used is v88b72 <= 7). Tried at all 4 walk sites
+ * (probe .work/probe_rr/, control 136): product operand order swapped, `curpos << 3`, a `k` local
+ * for the product, the pointer walk spelled as four statements - all equal the control. */
 #pragma pack(1)
 struct rsave {
     int myplayer, other, laps, cls, metal, track;
@@ -16406,7 +16413,7 @@ void netkeys_in_x(void);
 void race_run(void)
 {
     char buf[0x28];
-    short placed[8];
+    short placed[10];           /* [esp+0x28]; frame 0x44 with two slots from 0x3c (0x2fe4d) */
     int oldclock, first, go, crash, saverace;
     short i, sel;
     struct surf *sp;
