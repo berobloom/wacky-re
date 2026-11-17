@@ -197,8 +197,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   frame gap means the game used those slots. The reverse too: an over-sized buffer inflates the frame
   and every slot displacement (`char buf[8]` gave time_str 0x2a61d a 0x14 frame where the game has
   0x10; `buf[4]` fixed it, 33 -> 31 rows). [generic]
-- **A global kept in a register across a loop** (load at entry, store at exit; QUESTIONS 2:
-  players_project, wait_or_key 0x14c7c). Do not add a local copy. [generic]
+- **A global kept in a register across a loop** (load at entry, store before each call and at exit)
+  is NOT a dead end: the game's source used the global itself as the working variable. Drop the
+  local copy and compute in the global (`spr_x = p->x - 0x400; if (spr_x < 0) spr_x = 0; ...`):
+  minimap 0x2a4ac 44 -> MATCH. Re-try players_project, wait_or_key 0x14c7c with this. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
   com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared

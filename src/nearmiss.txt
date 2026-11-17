@@ -70,7 +70,7 @@
 35   0x0343a0 pic_at                 SKIP: three homes + one statement. Game: lift ECX, x ESI, d spilled to its own slot (`mov [esp],eax` 0x343a9, frame 4) and reloaded for tb6bd00[d] 0x343cf; ours d ECX / lift ESI / x EDI (3 pushes, no slot) - home coin flip. The row is a local in the game (EBX 0x343d2, one spr_y store 0x34439, dead `mov bx,[spr_y]` 0x3444b): an `int y` local reproduces that but moves k DX->AX (33 rows); `short y` = 16-bit arithmetic (35); a copy of d takes the slot but makes the divide `idiv dword [esp]` (31, worse shape). 13 spellings, two probe compiles, control 32; nothing kept
 40   0x0224ec kart_state             SKIP: frame 8 vs 4 + the cross-jumped charge tails (both documented). New: sharing one int local for both spills (`t = curkart->f1a * 8`, `(char *)tb7b448 + t + pl * 4`) gets the game's 4-byte frame and `[esp]` spill but 42 rows; a named local for the hoisted `lea edx,[edx*4]` 0x225ab is 55, dropping `t` 101
 42   0x021554 line_points             SKIP: homes only, the frames agree (game err EAX / dy ESI / dx [esp+0xc] / n [esp+0x10]; ours n and err in registers, dy spilled) - coin flip; new tries: `volatile int n` 93 (the game's in-place `inc dword [esp+0x10]` is a plain spilled local), a dummy extra int local 42
-44   0x02a4ac minimap
+44   0x02a4ac minimap                MATCH
 44   0x034208 players_ahead
 48   0x012f80 draw_status
 48   0x028038 kartsets_load
