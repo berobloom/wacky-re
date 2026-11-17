@@ -6856,7 +6856,8 @@ void scores_screen(void)
     int k;                            /* as short k it takes a stack slot and the frame grows to
                                      * 0x5c; as int it stays in ECX like the game's 0x1cf8c */
     int better;                       /* 0x1cf2f/0x1cf44/0x1cf4d: the game's temp is ECX, not CX */
-    struct score *dst, *src, *p;
+    struct score *dst;                /* the source and the new entry are v7d8a8 itself: the game
+                                     * re-reads it for each strcpy (0x1cff3, 0x1d08c; nmrefs) */
 
     pcx_load("LEAD.PCX", 2);     /* 0x1ce1c-0x1ce26, the string 0x60dc4 */
     palptr = pal7d850;                /* 0x1ce2b-0x1ce30 */
@@ -6901,20 +6902,18 @@ void scores_screen(void)
                     fn_1cad0(which, k);       /* 0x1cf9b-0x1cf9f */
                     dst = (struct score *)v7d8a8;             /* 0x1cfa9 */
                     fn_1cad0(which, k - 1);   /* 0x1cfa4-0x1cfaf */
-                    src = (struct score *)v7d8a8;             /* 0x1cfb4 */
-                    dst->score = src->score;  /* 0x1cfb9-0x1cfbd */
-                    dst->row = src->row;      /* 0x1cfc1-0x1cfc4 */
-                    dst->player = src->player;                /* 0x1cfca-0x1cfd1 */
-                    strcpy(dst->name, src->name);             /* 0x1cfd5-0x1cff2, +0x1a first */
-                    strcpy(dst->stamp, src->stamp);           /* 0x1cff3-0x1d01d, +6 second */
+                    dst->score = ((struct score *)v7d8a8)->score;  /* 0x1cfb9-0x1cfbd */
+                    dst->row = ((struct score *)v7d8a8)->row;      /* 0x1cfc1-0x1cfc4 */
+                    dst->player = ((struct score *)v7d8a8)->player;                /* 0x1cfca-0x1cfd1 */
+                    strcpy(dst->name, ((struct score *)v7d8a8)->name);             /* 0x1cfd5-0x1cff2, +0x1a first */
+                    strcpy(dst->stamp, ((struct score *)v7d8a8)->stamp);           /* 0x1cff3-0x1d01d, +6 second */
                 }
             fn_1cad0(which, j);       /* 0x1d02c-0x1d036 */
-            p = (struct score *)v7d8a8;                       /* 0x1d03b */
-            p->score = v7ed5c;        /* 0x1d040-0x1d047 */
-            p->row = v88bb6 + v7ecb4; /* 0x1d04b-0x1d05d */
-            p->player = myplayer;     /* 0x1d060-0x1d06a */
-            strcpy(p->stamp, stamp);  /* 0x1d06e-0x1d08b */
-            strcpy(p->name, name);    /* 0x1d08c-0x1d0b6 */
+            ((struct score *)v7d8a8)->score = v7ed5c;        /* 0x1d040-0x1d047 */
+            ((struct score *)v7d8a8)->row = v88bb6 + v7ecb4; /* 0x1d04b-0x1d05d */
+            ((struct score *)v7d8a8)->player = myplayer;     /* 0x1d060-0x1d06a */
+            strcpy(((struct score *)v7d8a8)->stamp, stamp);  /* 0x1d06e-0x1d08b */
+            strcpy(((struct score *)v7d8a8)->name, name);    /* 0x1d08c-0x1d0b6 */
             break;                    /* 0x1d0b7 */
         }
     }

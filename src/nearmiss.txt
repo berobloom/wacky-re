@@ -86,7 +86,7 @@
 80   0x035ca4 main
 108  0x024364 kart_fire
 109  0x012b44 car_laps
-118   0x01ce14 scores_screen
+54   0x01ce14 scores_screen          (iter 38: src and p replaced by the global v7d8a8 itself, the game re-reads it per strcpy: 118 -> 54)
 120  0x0266a8 lights_project
 125  0x022bf4 kart_bump
 138  0x0255d4 players_project
