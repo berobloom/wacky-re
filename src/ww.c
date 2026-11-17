@@ -2730,7 +2730,9 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
 
 extern short v88c2e, v88c10;
 
-/* differs: stack slots only: x, hw, hh are permuted (QUESTIONS 2) */
+/* differs: stack slots only: x, hw, hh are permuted (QUESTIONS 2) - re-read with fndiff.py in
+ * iter 20: all 7 rows are the three slots ([esp], [esp+8], [esp+0xc]) plus the masked-fixup
+ * artefact (GOTCHAS "fake [reg - 0x6f6f6f70]"); a slot permutation, QUESTIONS 9/10 dead end. */
 void wtext(int x, int y, char *s, int scaled)
 {
     int i, ok, c;
