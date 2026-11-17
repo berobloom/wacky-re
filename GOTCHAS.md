@@ -140,6 +140,21 @@ it can be copied back into DREA.
   store that sits between the setup movs and the `rep movsd` is a source-position fact to check,
   not a mystery: generate one probe file with the statement at every position around the copy and
   compare (`tools/wc/variants.py`, one compile for 40 variants, ~4 s). [generic]
+- **A chained assignment computes through a scratch; the two statements load in the local's home**
+  (demo_play 0x2e348, iter 18): `k = v88cca = run[i].k` loads the byte into AL, stores it to v88cca
+  and copies AL to k's home BL, and the store takes AL's short `a2 disp32` form; `k = run[i].k;
+  v88cca = k;` loads `mov bl,byte [eax+0x7d9a2]` and stores `mov byte [0x88cca],bl` (6 bytes) - the
+  game's shape, and it made the function the game's 172 bytes (the byte count is part of the match).
+  Pair it with the next entry. [generic]
+- **9.5b defers a store to a global; `volatile` pins it in place** (demo_play 0x2e35f, iter 18):
+  with `k = ...; v88cca = k;` the store slid ~80 bytes down to just before the last store of the
+  function, wherever the statement was written (all nine positions between the masks give the same
+  place); declaring the global `volatile` keeps it where the statement is. Declare the volatile type
+  under a second name when the plain name is still wanted elsewhere - `extern volatile unsigned char
+  v88ccav; #pragma aux v88ccav "_v88cca"` fixes up to the same symbol. It does **not** move an
+  adjacent register copy: 9.5b still emits store,copy,and where the game has copy,store,and, and 46
+  spellings (a second local carrying the first mask, comma forms putting the store inside the AND, a
+  pointer store) left that one slot. [generic]
 - **But not every store placement is reachable**: with `v88bb2 = 1; v7edb0 = 1;` 9.5b hoists the
   first of the pair into the eighth help line's unit (0x1a054, like the game) and sinks the second
   to just before the following call (0x1a080), where the game has it at 0x1a05d; swapping the two

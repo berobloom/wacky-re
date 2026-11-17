@@ -15312,6 +15312,9 @@ extern struct demorun demo7d9a0[];
 extern int v7d994, v7e564;
 extern FILE *v7eb68;
 extern unsigned char v88cca;
+extern volatile unsigned char v88ccav;    /* the same byte, declared volatile: demo_play's store
+                                             must not be deferred (0x2e361); the alias keeps _v88cca */
+#pragma aux v88ccav "_v88cca"
 
 /* 0x2e238, 145 bytes (caller 0x30f77): record: opens <level>.MAC for writing; play: first run. */
 void demo_start(void)
@@ -15349,13 +15352,22 @@ void demo_rec(void)
 }
 
 /* 0x2e348, 169 bytes (no caller found): sets this frame's controls from the current run.
- * differs: one block: the game loads the byte into BL and copies it to AL, ours the reverse
- * (char / int / unsigned k, a run pointer, volatile v88cca tried). */
+ * differs (4 rows): the game's byte is loaded into BL, k's home, and its store to v88cca sits at
+ * 0x2e361, between the copy `mov al,bl` (0x2e35f) and `and al,1` (0x2e367). Writing the load and the
+ * store as two statements makes 9.5b load into BL and store from BL (172 bytes, the game's length);
+ * v88ccav (v88cca declared volatile, aliased to _v88cca) keeps that store there, and the one row
+ * left is the copy one slot late: 9.5b emits store,copy,and, the game copy,store,and. Tried: the
+ * chained forms both ways, char/short/int/unsigned k, register, a second byte local carrying the
+ * first mask (7 spellings: it copies too early or late), mask1 through a temp, mask1 with the store
+ * inside the AND's left or right operand (comma forms), a local pointer to v88cca, the store at
+ * every one of the nine source positions, and a read of v88cca after the loop (46 spellings, six
+ * probe compiles, .work/probe_dplay). */
 void demo_play(void)
 {
     unsigned char k;
 
-    k = v88cca = demo7d9a0[v7d994].k;
+    k = demo7d9a0[v7d994].k;
+    v88ccav = k;
     key88cd5 = k & 1;
     key88cdd = k & 2;
     joy88b40 = k & 4;
