@@ -15,6 +15,14 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
 
 ## Findings
 
+- CONFIRMED (code 0x18f16-0x18f2e, 0x18f8a, 0x190ea-0x1912b): fn_1832c's input wait has two
+  exits. ESC (`key88cd0 == 1`) waits for release, refreshes the palette and returns to the main
+  loop (0x18843); the timeout (`ticks > eight`, `jl 0x18f8a`) runs the joystick navigation: the
+  blink counter s358, the cursor keys and cfg bytes v7b6d9/v7b6db, and with joy88b40 the
+  0x12 voice, then for v88bb2 == 4 `trial_book(v88bb6 + v7ecb4, v88b88, 0)` (0x1911f), back to the
+  menu when v88cec is set. Until iter 38 the C sent the timeout to the main loop too, so all of that
+  was unreachable and the compiler dropped it (found by tools/wc/nmrefs.py: the game calls
+  trial_book, our object did not).
 - CONFIRMED (code 0x1941c-0x19466 and 0x18404-0x1844e):
   both menus copy the same two 26-byte strings (" PLEASE SEE MAIN MENU TO ",
   " FIND OUT HOW TO ORDER   ") into 0x7c854/0x7c890 and differ only in the

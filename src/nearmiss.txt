@@ -102,7 +102,7 @@
 341  0x01f858 main_menu
 381  0x0193a8 fn_193a8
 445  0x0155c0 menu
-611  0x01832c fn_1832c
+926  0x01832c fn_1832c               (iter 38: the wait's timeout exit restored, joystick nav + trial_book were unreachable and dropped; 611 -> 926 only because the body is now its full size, 4320 vs the game's 4220 bytes)
 678  0x01a380 cars_menu
 697  0x02fd8c race_run
 746  0x0290a0 kart_frame

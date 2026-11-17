@@ -4895,7 +4895,9 @@ joyloop:
     joy_clear_y();
     if (v88cce)
         joy88b40 = 1;
-    while (eight > ticks) {
+    for (;;) {                        /* 0x18f16: the timeout leads to the joystick navigation */
+        if (ticks > eight)
+            goto joynav;              /* 0x18f1c jl 0x18f8a */
         if (key88cd0 == 1)
             break;
     }
@@ -4909,7 +4911,8 @@ joyloop:
     f37cf1();
     goto mainloop;
 
-/* the game jumps back to 0x19021 (joynav) from 0x1910f; C reaches it by fallthrough */
+joynav:                               /* 0x18f8a, reached only from the wait above (it was
+                                         unreachable here until iter 38: tools/wc/nmrefs.py) */
     s358++;
     if (s358 > 12) {
         w88b1e = v88b88 + 4;
