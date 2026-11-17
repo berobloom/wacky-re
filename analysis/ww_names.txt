@@ -22,7 +22,7 @@
 0x01053c com_close    # LIKELY: UART interrupts off, IRQ masked, old vector back
 0x0105b0 com_getc     # LIKELY: byte from the receive ring buffer, -1 when empty
 0x0106c8 com_isr      # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): the vector com_open sets without a FIFO
-0x010810 com_isr_fifo # LIKELY: the vector com_open sets with a 16550 FIFO
+0x010810 com_isr_fifo # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): the vector com_open sets with a 16550 FIFO
 0x0409eb disable_ints # LIKELY: asm 'cli; ret'
 0x0409ed enable_ints  # LIKELY: asm 'sti; ret'
 0x0409ef int386       # CONFIRMED: clib module (libmatch)

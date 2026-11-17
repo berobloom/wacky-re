@@ -1,7 +1,7 @@
 # Serial link (the UART interrupt handlers)
 
-Status: OPEN (`com_isr_fifo` 0x10810 and the `com_getc`/`com_putc`/`com_kick`
-side are near misses; nothing here has been run against the emulator)
+Status: OPEN (`com_getc`/`com_putc`/`com_kick` and the link packet code are
+near misses; nothing here has been run against the emulator)
 
 ## Summary
 
@@ -35,6 +35,18 @@ The rings are 16 KB: `rxbuf` 0x84b00 with `rxhead`/`rxtail`/`rxcount`
   of the global plus a memory `inc`/`dec`; the load's register is the
   tie-break that showed the byte local's home (GOTCHAS "one local, both
   arms").
+- CONFIRMED (rebuild `src/ww.c` byte-identical at 0x10810-0x10987, `src/check.sh`
+  MATCH): `com_isr_fifo` is the 16550 variant of the same switch, and it uses
+  the same single `short` byte local in both arms - the receive store
+  `mov edx,eax` (0x1087b) + `mov byte [eax + 0x84b00], dl` (0x1088b) and the
+  transmit load `movzx dx, byte [eax + 0x80afa]` (0x108ec) + `movsx eax,dx`
+  (0x10913) all home that one local in EDX. Its case 4 is a `do { ... } while
+  (inp(comport + 5) & 1)` - drain while LSR bit 0 (data ready) is set; its case
+  2 sends at most 16 bytes per interrupt: `n` lives in BX (`dec bx` 0x1091e,
+  `je <loop exit>` 0x10920 = `if (--n == 0) break;`) and the back edge is
+  `cmp di, word [0x80af8]` + `jne 0x108de` (0x10926, DI = 0, so
+  `while (txcount != 0)`); 16 is the 16550 FIFO depth (external spec - the
+  counter itself is code, the constant is not read at these addresses).
 - LIKELY (code shape matches the 8250 IIR/LSR register layout, not run): the
   switch subject is the IIR and the three arms are "received data available"
   (read `comport`, store, wrap at 0x4000), "transmitter holding empty" (send

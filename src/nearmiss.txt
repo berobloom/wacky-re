@@ -26,7 +26,7 @@
 6    0x02f408 view_at_curpos
 7    0x0146d4 wtext
 7    0x034458 release_check
-8    0x010810 com_isr_fifo
+8    0x010810 com_isr_fifo         MATCH
 8    0x02dd30 net_key
 9    0x02df70 com_wait_byte
 9    0x02e008 com_expect

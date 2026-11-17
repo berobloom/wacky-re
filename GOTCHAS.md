@@ -486,7 +486,8 @@ it can be copied back into DREA.
   same DL store the inline form gives) homes it once, the receive arm's copy pulls the home to EDX
   (EAX is the index there), and com_isr MATCHes. Look for a shared local before writing an
   EAX/EDX pair off as the coin flip above; and where two switch arms touch the same kind of value,
-  one name is the fact the bytes show.
+  one name is the fact the bytes show. com_isr_fifo 0x10810 (its `short out` plus the implicit
+  receive temp -> one `short b`) MATCHed the same way minutes later, so the lever is not a fluke.
 - **Watcom's cold-tail duplication depends on source line layout, not only on the syntax**
   (iter 19, [generic]): in a two-function probe, com_isr's merged-local form written with braced
   `if (rxhead >= 0x4000)` / newline / `rxhead = 0;` came out 338 bytes with the `done:` epilogue

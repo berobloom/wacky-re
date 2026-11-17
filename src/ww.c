@@ -228,10 +228,9 @@ done:
     outp(0x20, 0x20);
 }
 
-/* differs: the receive store evaluates the index before inp(); the game reads the port first */
 void __interrupt __far com_isr_fifo(void)
 {
-    short out;
+    short b;
     short n;
 
     for (;;) {
@@ -239,7 +238,8 @@ void __interrupt __far com_isr_fifo(void)
         case 4:
             rxints++;
             do {
-                rxbuf[rxhead++] = inp(comport);
+                b = inp(comport);
+                rxbuf[rxhead++] = b;
                 rxcount++;
                 if (rxhead >= 0x4000)
                     rxhead = 0;
@@ -250,11 +250,11 @@ void __interrupt __far com_isr_fifo(void)
             if (txcount != 0) {
                 n = 16;
                 do {
-                    out = txbuf[txtail++];
+                    b = txbuf[txtail++];
                     txcount--;
                     if (txtail >= 0x4000)
                         txtail = 0;
-                    outp(comport, out);
+                    outp(comport, b);
                     if (--n == 0)
                         break;
                 } while (txcount != 0);
