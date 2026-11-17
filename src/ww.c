@@ -18231,13 +18231,18 @@ void waitkey(void)
  * (img[4]) at the scale of its distance |v88b0e - y|; a player more than 1000 away gets f00 = 2.
  * A cut-down players_project; LIKELY the start-line view of the karts in front.
  * differs: the game keeps v7d800 in ECX (stored back each iteration, reloaded after the idiv and
- * the call), the same promotion players_project misses (QUESTIONS 2); 18 blocks follow from it. */
+ * the call), the same promotion players_project misses (QUESTIONS 2); 18 blocks follow from it.
+ * Iter 36 (33 rows, 416 vs 408 bytes): `v7d800 = v7d800 + 1` in the for step (44 -> 33); not a
+ * cause of the missing promotion (all diagnostic, none promotes): v88b72 replaced by a local
+ * counter, the `f00 = 2` store removed, the f37487 call removed, a fresh `_v7d800` alias used
+ * only here, init order `v88b72 = 0, v7d800 = players`, `< 8`, `&players[0]`. Unlike minimap
+ * (MATCH by computing in the global), the global here is already the working variable. */
 void players_ahead(void)
 {
     short c, k, h;
     int d;
 
-    for (v7d800 = players, v88b72 = 0; v88b72 <= 7; v7d800++, v88b72++) {
+    for (v7d800 = players, v88b72 = 0; v88b72 <= 7; v7d800 = v7d800 + 1, v88b72++) {
         if (v7d800->f00 != 1)
             continue;
         d = abs(v88b0e - v7d800->y);
