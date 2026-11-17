@@ -4200,12 +4200,18 @@ void fn_16f24(void)
         fn_16d68(i, c, r);
 }
 
-/* differs: race-start setup (0x17928). Two compiler-side diffs (C shape tried extensively):
- *  1. +819 (0x17C5B): the game binds itoa's eax (movsx v88b88) before the strcpy edi/esi setup,
- *     we bind it after; all three compiler patch levels (95/95A/95B) and every source shape tried
- *     (statement order, nesting, probe isolation) give our order.
- *  2. stack slot placement of the string buffers (the game addresses them at esp+N, ours at esp).
- *     (The old readdat cause is gone: readdat is called through readdat_x, QUESTIONS 6.)
+/* differs (9 rows, 2 fake: the masked jump-table fixup 0x17a82 and the padding after 0x182cd): race-start
+ * setup (0x17928). iter 39, 35 -> 9 (counted with fndiff.align; the old 171 was difflib autojunk):
+ *  - `char *nb = numbuf` initialised at entry and used by itoa puts numbuf at [esp] and msg at
+ *    [esp+0x50] as in the game (fixes 12 `lea edi,[esp+0x50]` rows); costs `mov ecx,esp` 0x17933 and
+ *    `mov edx,ecx`. Swapping the declarations, `(void)numbuf`, `if (0) numbuf[0] = 0`, a block-local
+ *    numbuf, or `nb` assigned inside the itoa block: no change; nb used in all five places: ebp frame.
+ *  - the song index is the `short r` (the game's `mov ax,[v88c90]` / `mov ax,[v88b88]; dec eax; cwde`
+ *    0x18265), the song size the `int edx` local (the game loads it before `cursong`).
+ * Left: itoa's eax (movsx v88b88) bound before the strcpy edi/esi setup in the game, after in ours
+ * (0x17c5b; all three compiler patch levels and every statement order give ours), and fread's
+ * `mov eax,[v7eb00]` before `mov ecx,[datfile]` 0x182b2 (casts on both arguments: no change).
+ * (The old readdat cause is gone: readdat is called through readdat_x, QUESTIONS 6.)
  * See findings/executables.md "Open" and GOTCHAS.md. */
 
 extern short v88bd0, v88b88, v7eb82, v88bd6, v88b4a, v88c90;
@@ -4229,6 +4235,7 @@ void fn_17928(void)
     int n, edx;
     int eax;
     short mp;
+    char *nb = numbuf;
 
     v7ecc4 = 0;
     v7ed20 = 0x440;
@@ -4317,7 +4324,7 @@ setdone:;
                     strcpy((char *)0x6aa68, "FINAL");
                 }
             } else {
-                itoa(v88b88, numbuf, 10);
+                itoa(v88b88, nb, 10);
                 strcpy((char *)0x6aa68, "RACE ");
                 strcat((char *)0x6aa68, numbuf);
                 strcat(msg, " RACE ");
@@ -4472,17 +4479,17 @@ demo:
 music:
     if (musicon && v7d998 != 2) {
         if (twoplayer || netvoices)
-            n = v88c90;
+            r = v88c90;
         else {
-            n = v88b88 - 1;
+            r = v88b88 - 1;
         }
-        datfind((char *)(0x7c530 + n * 0xe));
-        n = WI(0x6508e + datidx * 0x16);
+        datfind((char *)(0x7c530 + r * 0xe));
+        edx = WI(0x6508e + datidx * 0x16);
         if (cursong == v7eb00) {
             if (MUSIC_SongPlaying())
                 MUSIC_StopSong();
         }
-        fread((void *)(size_t)v7eb00, n, 1, datfile);
+        fread((void *)(size_t)v7eb00, edx, 1, datfile);
     }
 }
 

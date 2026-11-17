@@ -221,6 +221,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **A row loop over `char rows[N][K]` from 1: an explicit `char *r` declared last and stepped in the
   for header** (`for (i = 1, r = rows[1]; i <= n; i++, r += K)`) took volume_menu 0x1e9cc 64 -> 48
   and fixed the scalar slots after it; declared first or set in the body, no gain. [generic]
+- **Two local arrays in each other's slots: a pointer to the one the game puts at [esp], initialised
+  at entry.** fn_17928's `char *nb = numbuf;` (declared last, used only in the itoa call) moved
+  numbuf to [esp] and msg to [esp+0x50] like the game: 12 `lea edi,[esp+0x50]` rows gone for one
+  `mov ecx,esp`. Declaration order, `(void)numbuf`, a block-local array or a late `nb = numbuf` did
+  nothing; using nb everywhere cost an EBP frame. [generic]
 - **Stores near an inline strcpy slide into its setup unit**; which ones is a source-position fact,
   probe every position (classes_menu 0x19f01-0x19f27). [generic]
 
