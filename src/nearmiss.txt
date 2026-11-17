@@ -111,4 +111,4 @@
 233  0x0155c0 menu             SKIP: slots permuted (dead end) + frame 0xd4 vs 0xe0 + our 5 epilogues vs the game's 1 + one dead inline strlen(mnames); kept isnet as int (267 -> 233); tried one-epilogue goto, int state, int four
 476  0x01a380 cars_menu             SKIP: slot permutation (dead end) + frame 4 bytes short; kept cd15c/slide_up/slide_dn as shorts (499 -> 476); tried short slide pair alone (521), short stage (483)
 577  0x01832c fn_1832c               (iter 38: the wait's timeout exit restored, joystick nav + trial_book were unreachable and dropped; 611 -> 926 only because the body is now its full size, 4320 vs the game's 4220 bytes)
-677  0x0290a0 kart_frame
+535  0x0290a0 kart_frame             SKIP: the game caches the global curkart in EDX (19 more refs than any C form); the local-pointer lever (k at entry, 139 sites, sync pairs) gains 2 rows (535 -> 533); return-vs-break tried earlier

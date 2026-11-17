@@ -13054,10 +13054,15 @@ void cpu_drive(void)
  * 1/2/14 the hit frames, 3/4 the hop, 5 lean f1a toward f1c, 6/7 tb7b418 frames with a 3-tick hold
  * into 8/9 (the stamp is the dword at +2), 10 the win voice and tb7b378, 13 the tb7b238 loop.
  * Animation resets go to f18 0, f1a 2, f1c 2, f00 0 with tb7b518.
- * differs (near-miss): the game keeps the global curkart in EDX through the whole function
+ * differs (near-miss, 535 rows): the game keeps the global curkart in EDX through the whole function
  * (store before each call and exit, reload after), GOTCHAS "promotes a global"; ours reads it from
  * memory at every use (744 vs 651 insns, 36 blocks, aligned block for block after the v88c42 != 0
- * branch was put first). Cases ending in return instead of break: no change. */
+ * branch was put first). Cases ending in return instead of break: no change. Iter 44: the shots_project
+ * local-pointer shape - `struct kart *k = curkart;` at entry, `k->` at all 139 sites (the ANIM_RESET macro
+ * included), `curkart = k;` before the twelve calls and five returns and `k = curkart;` after them, each
+ * group braced so no brace-less if body changes binding - gains 2 rows (535 -> 533) either order, and
+ * nmrefs still differs on counts: the game makes 19 more 0x7d5b0(curkart) references than even that, so
+ * 9.5b is caching the global itself in EDX and no C spelling of a local pointer reproduces it. Reverted. */
 extern short v7e85c, v88b92, v88b90, v88c9c, v88c5c, v88c3a, v88c5a, v88c36;
 extern int kd7b4d8[][2], kd7b378[], kd7b238[][2];
 #pragma aux kd7b4d8 "_tb7b4d8"
