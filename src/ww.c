@@ -8242,7 +8242,10 @@ void ent_sprites_load(void)
  * (c) `dec esi; cmp esi,8` switch vs our `lea eax,[esi-1]`; (d) the CHECK.PCX block of the race
  * loop is laid out before the `v88b88++` block in the game, after it in ours (a goto/if-else shape
  * makes 9.5b merge it into the first CHECK.PCX block instead). Case 7 before case 6 in the source
- * gives the game's layout (360 vs 596 instrdiffs). */
+ * gives the game's layout (360 vs 596 instrdiffs). Iter 40: `net_key(v7eca0, 0, 0)` without the
+ * `& 0xff` (the unsigned char parameter truncates; the game's one `movzx eax, byte [v7eca0]` 0x20c3c)
+ * 92 -> 79 rows, tools/wc/fndiff.py; the case 3/4 `v7eca8 = v7ee5a; v7ee5a = 2;` pair through an int
+ * temp (t) is worse: 79 -> 99 (9.5b sinks the load+stores past the five constant stores either way). */
 struct cfgp {                       /* 0x774e4, 0x74 bytes, [0] one-player and [1] split-screen saved game */
     int on;
     int myplayer, f08, laps, f10, f14, f18;
@@ -8748,7 +8751,7 @@ void main_menu(void)
                 }
                 PALSAVE();
                 msgbox("CHECKING VERSION INFO", 0);
-                net88c14 = net_key(v7eca0 & 0xff, 0, 0);
+                net88c14 = net_key(v7eca0, 0, 0);
                 t = ticks;
                 do
                     ;

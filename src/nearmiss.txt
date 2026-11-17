@@ -92,7 +92,7 @@
 74   0x024364 kart_fire            SKIP: the game caches v7eb9c in ECX (entry load, store before calls, a dead reload before every ret) - not emitted by our 9.5b; `static int v7eb9c` no change (iter 39)
 75   0x021310 ent_sprites_load       SKIP: 53 rows are padding after our shorter body, 22 real = the i*40 strength reduction (QUESTIONS 2); direct attrs[i] gets the imul back but datfind's f10 address stays reduced (81); 9 spellings, none below 75
 49   0x022bf4 kart_bump             SKIP: 20 slot rows + two coin flips (EDI/EBX of the faces[] index 0x2312f, EAX/EDX of the tb7b418 f0c store 0x230d0); iter 40 kept the voice_play(0x15/0x16) polarity, switch arms ordered 4,5,3 and `m = v88b7e;` moved below the f28/f2c tests (the game recomputes the players address from the global at 0x23139): 71 -> 49, size now the game's 3000; ox written first 62 -> 68, `oy = f02 - 1; oy += f06;` 62 -> 83
-95   0x01f858 main_menu
+79   0x01f858 main_menu             SKIP: the four documented classes (the item count 9 not kept in a short local, case 9's shared epilogue, the switch's `dec esi`, the CHECK.PCX block order); iter 40 kept `net_key(v7eca0, 0, 0)` without `& 0xff` (the game's one movzx 0x20c3c): 92 -> 79; the v7ee5a save pair through an int temp 79 -> 99
 117  0x0255d4 players_project
 121  0x02e4b8 trial_book
 123  0x0266a8 lights_project
