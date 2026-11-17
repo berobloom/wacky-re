@@ -11,7 +11,7 @@ DOSBox-X runs on its own Xvfb display, so nothing pops up; screenshots come
 from QMP.
 
 usage: dosrun.py start                 launch (no-op if running)
-       dosrun.py stop
+       dosrun.py stop                  end DOSBox-X and the Xvfb start launched
        dosrun.py type 'GAME /DEBUG'    type a line at the DOS prompt (+Enter)
        dosrun.py key ret [secs]        tap (or hold) a QEMU qcode
        dosrun.py shot out.png          VGA screenshot
@@ -56,6 +56,7 @@ BINARY = Path(os.environ.get(
 DOS = ROOT / '.work' / 'dos'
 CONF = Path(os.environ.get('DREA_CONF', DOS / 'game.conf'))
 STATES = DOS / 'states'
+XVFB_PID = DOS / 'xvfb.pid'
 XDISPLAY = os.environ.get('DREA_XDISPLAY', ':57')
 EXE_DIR = Path(os.environ.get('DREA_EXE_DIR', ROOT / 'original'))
 
@@ -108,9 +109,10 @@ def start(wait=10.0):
     env = dict(os.environ)
     if shutil.which('Xvfb') and not os.environ.get('DREA_SHOW'):
         if not Path('/tmp/.X11-unix/X' + XDISPLAY[1:]).exists():
-            subprocess.Popen(['Xvfb', XDISPLAY, '-screen', '0', '1024x768x24'],
-                             stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL, start_new_session=True)
+            x = subprocess.Popen(['Xvfb', XDISPLAY, '-screen', '0', '1024x768x24'],
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, start_new_session=True)
+            XVFB_PID.write_text('%d\n' % x.pid)     # stop() ends it again
             time.sleep(1)
         env['DISPLAY'] = XDISPLAY
         env.pop('WAYLAND_DISPLAY', None)
@@ -140,6 +142,22 @@ def stop(wait=5.0):
     t = time.time() + wait
     while time.time() < t and (running() or _port_open(GDB_PORT)):
         time.sleep(0.2)
+    stop_xvfb()
+
+
+def stop_xvfb():
+    # The Xvfb that start() launched outlived DOSBox-X and made the overnight preflight refuse
+    # to run ("harness processes already running"). End only that process, and only while its
+    # command line is still our Xvfb on our display (the PID may have been reused).
+    try:
+        pid = int(XVFB_PID.read_text())
+        cmd = Path('/proc/%d/cmdline' % pid).read_bytes().split(b'\0')
+    except (OSError, ValueError):
+        XVFB_PID.unlink(missing_ok=True)
+        return
+    if cmd[:2] == [b'Xvfb', XDISPLAY.encode()]:
+        os.kill(pid, 15)
+    XVFB_PID.unlink(missing_ok=True)
 
 
 class Dos:
