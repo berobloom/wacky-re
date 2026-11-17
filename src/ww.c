@@ -11290,7 +11290,11 @@ void shot_step(short move)
  * EDX and the base in EBX, reads both words before storing; ours swaps EBX/EDX and stores each in turn.
  * Tried: five forms of the load, three of the base+index, statement order. Found on the way: the kind
  * test is `kind != 1` first (kind-1 block in the else), `(int *)v7d6a0 + dir * 2` gives the game's
- * `imul edx,[ecx+0x1e],8`, `x = x + v7d610` its load/add/store. */
+ * `imul edx,[ecx+0x1e],8`, `x = x + v7d610` its load/add/store.
+ * Iter 28: 20 more whole-file spellings (see nearmiss.txt) - the a6a0 int alias index-first/index-last
+ * that makes track_here match, `int *p`/`*q`/`*b` locals, `t = dir`, `*p` + `[1]` instead of `*p++`,
+ * `short sp`, every store order - leave this block byte-identical except for that home, so it is a
+ * Watcom colouring coin-flip like net_recv's crc accumulator, not a spelling. */
 void shots_move(void)
 {
     short i;

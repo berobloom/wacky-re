@@ -563,6 +563,16 @@ it can be copied back into DREA.
   against the `[ADDR,END)` slice of the game (only the game side was cut), so its scores were
   dominated by the unaligned tail; both sides are cut now (iter 16) - re-run old probes before
   trusting a saved ranking.
+- **An absolute store from EAX is the short form, so a wrong register home reads as a jump
+  displacement far away** (iter 28, [generic]): `mov dword ptr [abs], eax` is `a3 disp32` (5 bytes)
+  and from any other register `89 15 disp32` (6), the same gap as the `a1`/`8b 0d` loads. Our
+  shots_move 0x2602c is 460 bytes against the game's 462 because one of its two stores to v7d690
+  comes from EAX (mapped 0x2613b, `a3`, 5 bytes) where the game stores EDX (`89 15`, 6): objmatch's
+  first differing byte is then the loop's `je rel32` at +24, not the store. So when `fncompare.py`
+  prints EQUAL instruction counts but the byte compare starts on a displacement, sum instruction
+  sizes per side (they diverge at the offending store - byte 271 in shots_move) and look for a
+  register home, not a missing instruction. Do not spend variants on a 1-2 byte length gap that
+  comes with equal instruction counts; shots_move's whole 13-row real diff is that one home.
 - **A variant that scores well may be a different program: read which value the instruction reads**
   (iter 16, [generic]): line_draw 0x21f04 wants `movsx edx,cx` before its `mov eax,ebx; mov ebx,ecx;
   mov ecx,eax` dx/dy rotation. Writing the rotation first and `err = dy >> 1` after it reproduces the
