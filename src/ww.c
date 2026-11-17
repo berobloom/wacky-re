@@ -4103,43 +4103,49 @@ void fn_16f90(void)
     }
 }
 
+struct trkline { short *pts; short n, f06; };
+extern struct trkline trklines[];
+#pragma aux trklines "_arr72350"
+extern struct trkline *v7d7f8;
+
+/* differs (26 rows, 324 bytes = the game's length; 22 rows are the masked-fixup artefact
+ * [reg - @]/[reg + @]): the a <= 1 arm loads pts first, the game f06 and n first and pts last
+ * (0x16d8b-0x16d9a); all 6 orders of the three stores, f1c stored first, f1c re-read as the index,
+ * *(int *)v7d7f8 and permute.py (20 rounds) leave it. Iter 37 rewrite (58 -> 26): named fields
+ * instead of WS/WI absolute addresses (the game addresses players[] through fixups), v7d7f8 itself
+ * as the trkline pointer (the game caches it in ESI and stores it once at the exit), and the inner
+ * refresh works on players[a] (0x16e0b `mov edx,eax`) - the old C used players[a - 1] there. */
 void fn_16d68(int a, int b, int face)   /* arg regs: EAX, EDX, EBX */
 {
-    short *p8;
-    char *tbl = (char *)0x72350;
     int i;
-    int idx;
-    short f = (short)face;
 
     if (a <= 1) {
-        p8 = (short *)(tbl + f * 8);
-        WS(0x6ab14) = f;
-        WS(0x6ab12) = p8[3];
-        WS(0x6ab08) = p8[2];
-        WI(0x6ab56) = *(int *)((size_t)(size_t)p8);
+        v7d7f8 = &trklines[(short)face];
+        players[1].f1c = face;
+        players[1].f1a = v7d7f8->f06;
+        players[1].f10 = v7d7f8->n;
+        players[1].f5e = (int)v7d7f8->pts;
     } else {
-        idx = (a - 1) * 0x68;
-        p8 = (short *)(tbl + WS(0x6aaac + idx) * 8);
-        WS(0x6aaaa + a * 0x68) = p8[3];
-        WI(0x6aaee + a * 0x68) = WI(0x6aaee + idx);
-        WS(0x6aaa0 + a * 0x68) = WS(0x6aaa0 + idx);
-        WS(0x6aaac + a * 0x68) = WS(0x6aaac + idx);
+        v7d7f8 = &trklines[players[a - 1].f1c];
+        players[a].f1a = v7d7f8->f06;
+        players[a].f5e = players[a - 1].f5e;
+        players[a].f10 = players[a - 1].f10;
+        players[a].f1c = players[a - 1].f1c;
         for (i = 1; i <= b; i++) {
-            WS(0x6aaa6 + a * 0x68) = *(short *)WI(0x6aaee + a * 0x68);
-            WI(0x6aaee + a * 0x68) += 2;
-            WS(0x6aaa8 + a * 0x68) = *(short *)WI(0x6aaee + a * 0x68);
-            WI(0x6aaee + a * 0x68) += 2;
-            if (--WU(0x6aaa0 + a * 0x68) == 0) {
-                if (++WU(0x6aaac + a * 0x68) > WU(0x88b7a))
-                    WS(0x6aaac + a * 0x68) = 0;
-                p8 = (short *)(tbl + WS(0x6aaac + idx) * 8);
-                WS(0x6aaaa + idx) = p8[3];
-                WI(0x6aaee + idx) = *(int *)((size_t)(size_t)p8);
-                WS(0x6aaa0 + idx) = p8[2];
+            players[a].x = *(short *)players[a].f5e;
+            players[a].f5e += 2;
+            players[a].y = *(short *)players[a].f5e;
+            players[a].f5e += 2;
+            if (--players[a].f10 == 0) {
+                if (++players[a].f1c > v88b7a)
+                    players[a].f1c = 0;
+                v7d7f8 = &trklines[players[a].f1c];
+                players[a].f1a = v7d7f8->f06;
+                players[a].f5e = (int)v7d7f8->pts;
+                players[a].f10 = v7d7f8->n;
             }
         }
     }
-    WI(0x7d7f8) = (int)(size_t)p8;
 }
 
 void fn_16f90(void);
@@ -12238,10 +12244,7 @@ int wait_input(short mode)
  * seek written on its own local (`m = v88b88 - 1; m *= 0xf3c; seekdat_in(t + m);`) so that the
  * sign-extend lands in ECX and the decrement is `dec ecx` (0x27a49/0x27a50) instead of 9.5b's
  * `movsx eax` + `lea ecx,[eax - 1]` for the one-expression form. */
-struct trkline { short *pts; short n, f06; };
 struct rdrec { short x0, y0, x1, y1, f08, f0a, f0c; };
-extern struct trkline trklines[];
-#pragma aux trklines "_arr72350"
 extern struct rdrec rd7ee0c;
 #pragma aux rd7ee0c "_arr7ee0c"
 extern char str7eb6c[], str6a4b8[], sin7ad88[0x6c][8];

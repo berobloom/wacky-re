@@ -31,7 +31,7 @@ work = os.path.join(ROOT, '.work', 'perm', name[:8].upper())
 os.makedirs(work, exist_ok=True)
 
 src = open(os.path.join(ROOT, 'src', 'ww.c')).read()
-m = re.search(r'^[A-Za-z_][\w \*]*\b%s\s*\([^;{]*\)\s*\n\{' % re.escape(name), src, re.M)
+m = re.search(r'^[A-Za-z_][\w \*]*\b%s\s*\([^;{]*\)[ \t]*(?:/\*.*?\*/)?\s*\n\{' % re.escape(name), src, re.M)
 if not m:
     sys.exit('definition of %s not found' % name)
 fstart = m.start()
@@ -84,7 +84,7 @@ def sites(pat, body):
 
 
 def m_swap_cmp(t):
-    s = sites(r'(?<![\w\]\)])(%s|\d+|0x[0-9a-fA-F]+) (==|!=) (%s|\d+|0x[0-9a-fA-F]+)(?![\w\[\(])' % (SIMPLE, SIMPLE), t)
+    s = sites(r'(?<![\w\]\)\-\+\.>])(%s|\d+|0x[0-9a-fA-F]+) (==|!=) (%s|\d+|0x[0-9a-fA-F]+)(?![\w\[\(])' % (SIMPLE, SIMPLE), t)
     if not s:
         return None
     x = rng.choice(s)
