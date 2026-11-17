@@ -185,16 +185,16 @@ void com_putc(char c)
     }
 }
 
-/* differs: the transmit byte is in ax, the game's in dx (types of `out` tried: short, unsigned short, int, char) */
 void __interrupt __far com_isr(void)
 {
-    short out;
+    short b;
 
     for (;;) {
         switch (inp(comport + 2) & 7) {
         case 4:
             rxints++;
-            rxbuf[rxhead++] = inp(comport);
+            b = inp(comport);
+            rxbuf[rxhead++] = b;
             rxcount++;
             if (rxhead >= 0x4000)
                 rxhead = 0;
@@ -202,11 +202,11 @@ void __interrupt __far com_isr(void)
         case 2:
             txints++;
             if (txcount != 0) {
-                out = txbuf[txtail++];
+                b = txbuf[txtail++];
                 txcount--;
                 if (txtail >= 0x4000)
                     txtail = 0;
-                outp(comport, out);
+                outp(comport, b);
             }
             break;
         case 6:

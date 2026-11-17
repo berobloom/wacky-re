@@ -475,3 +475,23 @@ it can be copied back into DREA.
   form. Probe lesson: reordering the *unchanged* statements of the probe body (the four spr_x/w/h
   stores) re-scheduled everything and moved the control score 3 -> 9, so copy the committed body
   verbatim into the probe and vary only the block under test.
+- **One local used in two switch arms has ONE home register; two locals get two** (iter 19,
+  [generic]): com_isr 0x106c8 keeps the receive byte in EDX (`mov edx,eax` 0x10716, store from DL
+  0x10726) and the transmit byte in EDX too (`movzx dx, byte [eax+0x80afa]` 0x10771, `movsx eax,dx`
+  0x1079a before the port goes back into EDX at 0x1079d), so the dead `txcount` load takes AX
+  (0x10779). Ours spelled the two arms with separate locals (`rxbuf[rxhead++] = inp(comport);` and
+  `out = txbuf[txtail++];`) and the second one got EAX (`movzx ax` + `cwde`), swapping AX/DX - 6
+  rows, and every type of `out` (short/unsigned short/int/char) left it there. One `short b;` read
+  by the transmit arm and written by the receive arm (`b = inp(comport); rxbuf[rxhead++] = b;`, the
+  same DL store the inline form gives) homes it once, the receive arm's copy pulls the home to EDX
+  (EAX is the index there), and com_isr MATCHes. Look for a shared local before writing an
+  EAX/EDX pair off as the coin flip above; and where two switch arms touch the same kind of value,
+  one name is the fact the bytes show.
+- **Watcom's cold-tail duplication depends on source line layout, not only on the syntax**
+  (iter 19, [generic]): in a two-function probe, com_isr's merged-local form written with braced
+  `if (rxhead >= 0x4000)` / newline / `rxhead = 0;` came out 338 bytes with the `done:` epilogue
+  emitted twice (once fallen into from each `default`), and the same statements on one line came out
+  328 with the game's single epilogue - textually identical programs. In the full 19k-line module the
+  braced form is the one that gives 328. So a probe's byte size is a property of the probe file, not
+  of the function: rank shapes in a probe, decide in `src/ww.c` (GOTCHAS "the probe's scores are not
+  the whole-file ones").
