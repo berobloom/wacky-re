@@ -14071,10 +14071,16 @@ void bigdigits(int x, int y, int n)
  * 0x6e768 if it reaches a place (jingle v7c64c, enter_name, the lower places move down) and
  * is shown big; before it the two-line instructions. Then the two drivers' faces (v7ec70
  * facing right, v7ec6c left), THE WACKY DUCK TOP SHOOTERS with the table, after the shoot
- * the race song v7c658 again, PRESS FIRE, and wait_input.
- * differs: 13 blocks: the inlined music_start loads edx before its stores (as in music_jingle),
- * i = 0 is scheduled before getpalette, and three centred x values go through a dword stack
- * slot reloaded with movsx (int x in memory?); int x / a second short / inline forms tried. */
+ * the race song v7c658 again, PRESS FIRE, fade_in and wait_input. Without after the function
+ * returns right after the table (0x2bad6 `je` to the epilogue 0x2bbc9): no PRESS FIRE, no fade,
+ * no wait - CONFIRMED by the bytes (the caller does the rest).
+ * differs (10 rows, 1520 bytes = the game's length): 8 rows are the masked-fixup artefact
+ * ([reg - @] vs [reg + @]); the 2 real ones are the inlined music_start(v7c64c, 0) zero
+ * constant that -oe sinks below the stores (game `mov word [0x88bcc],0` 0x2b699 after
+ * `xor edx,edx`; GOTCHAS scheduling class, as music_jingle). Fixed this iter (48 -> 10): the
+ * three centred x values outside the table loop are an int w (the game's dword slot 0xc8 +
+ * movsx reload), the table loop keeps short x; arrays declared buf, name, num (buf at esp+0,
+ * num at esp+0x50); `if (!after) return;`; num[1] = num[0] before num[2] = 0. */
 struct hiscore { char name[0x14]; int score; };
 extern struct hiscore duckfame[4];
 #pragma aux duckfame "_arr6e768"
@@ -14085,10 +14091,11 @@ extern int i7ec70;
 void duck_screen(int after)
 {
     char buf[0x50];
-    char num[0x50];
     char name[0x28];
-    short x;
+    char num[0x50];
     int i, j, found, y;
+    short x;
+    int w;
 
     pcx_load("ORDER.PCX", 2);
     palptr = pal7d850;
@@ -14140,11 +14147,11 @@ void duck_screen(int after)
         bigdigits(0x8a, 0x3c, v7edb4);
     else {
         strcpy(buf, "YOU HAVE TWO MINUTES TO");
-        x = (0x140 - (int)strlen(buf) * 8) / 2;
-        print_at(x, 0x1e, buf, 0);
+        w = (0x140 - (int)strlen(buf) * 8) / 2;
+        print_at(w, 0x1e, buf, 0);
         strcpy(buf, "BLAST AS MANY DUCKS AS YOU CAN!");
-        x = (0x140 - (int)strlen(buf) * 8) / 2;
-        print_at(x, 0x28, buf, 0);
+        w = (0x140 - (int)strlen(buf) * 8) / 2;
+        print_at(w, 0x28, buf, 0);
     }
     spr_y = 0x3c;
     spr_h = 0x26;
@@ -14163,8 +14170,8 @@ void duck_screen(int after)
         strcat(buf, " ");
         itoa(duckfame[i].score, num, 10);
         if (num[1] == 0) {
-            num[2] = 0;
             num[1] = num[0];
+            num[2] = 0;
             num[0] = '0';
         }
         strcat(buf, num);
@@ -14172,13 +14179,13 @@ void duck_screen(int after)
         print_at(x, (short)y, buf, 0);
         y += 0xa;
     }
-    if (after) {
-        if (cursong != v7c658)
-            music_start(v7c658, 1);
-    }
+    if (!after)
+        return;                         /* 0x2bad6: the intro call ends here - no PRESS FIRE, no fade */
+    if (cursong != v7c658)
+        music_start(v7c658, 1);
     strcpy(buf, "PRESS FIRE");
-    x = (0x140 - (int)strlen(buf) * 8) / 2;
-    print_at(x, 0xb4, buf, 0);
+    w = (0x140 - (int)strlen(buf) * 8) / 2;
+    print_at(w, 0xb4, buf, 0);
     f37de0();
     if (key88ccd) {
         screenshot();

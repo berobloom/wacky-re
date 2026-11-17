@@ -144,6 +144,12 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   `palptr = pal7d850`, `pal_a = 0`, `getpalette`, `f1bf94(pal7d850)`, `v88bda = 1`). SPECULATIVE:
   the linker kept them because the module was linked whole.
 
+- CONFIRMED (0x2bace-0x2bad6, `cmp [after],0; je 0x2bbc9` = the epilogue): the Duck Shoot screen
+  `duck_screen` 0x2b5e8 called without `after` (the instructions before the shoot) returns right
+  after the hall-of-fame table - no race song, no PRESS FIRE, no fade_in, no wait_input; only the
+  after-the-shoot call shows PRESS FIRE and waits. The rebuild had the tail unconditional until
+  iter 37; `if (!after) return;` gives the game's 1520 bytes (10 rows left, all codegen).
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands
