@@ -56,7 +56,7 @@
 22   0x012124 sounds_load            MATCH
 11   0x01bf00 fn_1bf00             SKIP: the rest is the pushed-register mirror (game nplayers=ESI 0x1bf04, face value=ECX in-arm; ours ECX/ESI - 9 real rows, 2 are masked [eax-disp] fakes). Kept: per-arm for(;;)+continue/break shape now gives the game's exact CFG incl per-arm movsx/imul and both cmp/jcc tails, 22->11. 24 probe shapes (SHAPES m5, .work/n1bf/{I,J,K,K2}.C): val split, int/unsigned val, arm swap, scratch local, load placement, ++i tests, volatile alias - per-arm always mirrors, merged always loses the CFG
 22   0x01cb44 enter_name             SKIP: all 22 fndiff rows are stack-slot displacements (esp+0x58/0x5c/0x60/0x64/0x6c/0x70 permutation of the same stores); documented dead end (QUESTIONS 9; GOTCHAS slot-permutation class, 27+43 declaration orders) - 0 variants spent (iter 31)
-22   0x028b20 kart_catchup
+22   0x028b20 kart_catchup             SKIP: 1 real row (game reloads `mov cx,[ebx+0xa]` 0x28bf8 after the word store; 9.5b forwards store->load into `mov ecx,edx` even through a `(volatile short *)` cast read, iter 31); 3 rows are masked-fixup [reg+/-@] fakes, ~15 are epilogue/padding nops (ours 396 vs game 380). Tried earlier too: 6 decl orders + register for a local c, short d, chained assign, volatile read, struct-pointer local, other lvalues
 26   0x01d704 fn_1d704
 29   0x02d94c netkeys_in
 31   0x0283a4 track_around

@@ -12671,7 +12671,10 @@ void hit_timer(void)
  * the same); d is an int (movsx load).
  * differs (near-miss, 1 real block): after `f0a = d` the game reloads `mov cx,[ebx+0xa]` for
  * v88c24, ours copies EDX. Tried: a local c (6 declaration orders, register), short d, chained
- * assignment, volatile read, a local struct pointer, a different lvalue for the read. */
+ * assignment, volatile read, a local struct pointer, a different lvalue for the read; iter 31
+ * `(volatile short *)&v7d800->f0a` on the read - 9.5b still forwards the word store into
+ * `mov ecx,edx` (GOTCHAS). The other 20 fndiff rows are 3 masked-fixup `[ebx-@]/[ebx+@]` fakes
+ * and 17 alignment-epilogue rows (ours 396 bytes vs the game 380, LAYOUT-class). */
 extern short v88c24;
 
 void kart_catchup(int n)

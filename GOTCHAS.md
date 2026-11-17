@@ -204,6 +204,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   add esi,0x7c818` (showlines 0x2a359). But `mov r,N*stride; add r,sym` in a loop names an array
   base one row earlier - declare it (`mrows` 0x7bc00, trial_records_menu) before writing it off.
   [generic]
+- **Store->load value forwarding:** `v->f0a = d; x = v->f0a;` compiles to a register copy before
+  the store, no reload; a `(volatile short *)` cast on the read does not force one (9.5b forwards
+  anyway). The game's `mov word [ebx+0xa],dx; mov cx,[ebx+0xa]` (kart_catchup 0x28bf8) is not
+  reachable; a partial store breaks the form. SKIP. [generic]
 - **The asm routine f375cd's 16-bit EDX argument:** `value [dx]` aux works for the return, but a
   `parm [eax] [edx]` call always builds 32 bits where the game loads `mov dx,[pal_a]` (demo_mode
   0x1e472, volume_menu 0x1e816, 0x1597f/0x1ce57/0x1d73e); `parm [eax] [dx]` makes it a push.
