@@ -24,21 +24,18 @@ Short: where the project stands, and what is next. History is in git; no diary.
   shots_clear, view_at_curpos, fade_in's init-loop i/k), a dead incoming-register copy (fn_182d0), one
   moved load (track_setup, music_jingle, demo_play), the v88bb2/v7edb0 pair (classes_menu), the int
   shift into `err` (line_draw), two load orders (shot_step, 2 rows left), and the scheduling of a
-  straight-line head (in_sector, iter 25: the game puts its `test` above four table loads and keeps
-  each index/load pair adjacent).
+  straight-line head (in_sector).
 - Probe caution (GOTCHAS iter 19, 21, 22, 24, 25) and `fndiff.py`'s fake rows: a `[reg +/- @]` pair
   whose displacement is a fixup is the 0x90 mask filler (7 of `self_project`'s 10 rows); a variant can
-  score *fewer* rows by matching less (a dropped `push ebx` + `mov ebx,0x7f2b0` stops the rows pairing
-  up; a 2-byte-shorter body drops the padding row, in_sector's `is_idxloc` 15 -> 14). Read the rows;
-  `src/check.sh` (the byte compare) is the verdict.
+  score *fewer* rows by matching less (a dropped `push ebx` + `mov ebx,0x7f2b0`; a 2-byte-shorter body
+  drops the padding row, in_sector's `is_idxloc` 15 -> 14). Read the rows; `src/check.sh` is the verdict.
 - Findings, with evidence at the links: serial (findings/serial.md) `com_isr`/`com_isr_fifo`
-  byte-identical, one `short` byte local in both arms, rings 0x84b00 / 0x80afa, wrap 0x4000; classes
-  (findings/classes.md) `v88bb2` 1 AMATEUR..5 KID MODE **signed**; car select (findings/car_select.md)
-  `ents[8]` 0x73998 is the selection box; scores (findings/scores.md) `tbl77758` rows of 0x450 = 24
-  records of 0x2e; menus (findings/menus.md) `fn_182d0`'s 4th argument is a **word** (0x182e9); video
-  (findings/video.md) `setpalette` is an asm `rep movsb` of 0x3e80 bytes, page flips are `if`/`else`
-  pairs of stores, `pal_shift` 0x114a8 (identical) has no caller (QUESTIONS 15); sound:
-  findings/sound.md unwritten, `music_start` is inlined by the game.
+  byte-identical, rings 0x84b00 / 0x80afa, wrap 0x4000; classes (findings/classes.md) `v88bb2` 1
+  AMATEUR..5 KID MODE **signed**; car select (findings/car_select.md) `ents[8]` 0x73998 is the
+  selection box; scores (findings/scores.md) `tbl77758` rows of 0x450 = 24 records of 0x2e; menus
+  (findings/menus.md) `fn_182d0`'s 4th argument is a **word** (0x182e9); video (findings/video.md)
+  `setpalette` is an asm `rep movsb` of 0x3e80 bytes, page flips are `if`/`else` pairs of stores,
+  `pal_shift` 0x114a8 (identical) has no caller (QUESTIONS 15); findings/sound.md unwritten.
 
 ## Next
 
@@ -47,11 +44,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 2. `net_input` 0x2f4a8 (15 rows, no note): `tools/wc/fndiff.py ww .work/src/WW.OBJ net_input 0x2f4a8`;
    its sibling net_recv 0x2db00 is a BLOCKED crc-home case, so read the rows first and only probe if
    the cause is not a register home.
-3. `kart_move` 0x237e4 (20 rows): its note says the same `[esp]` slot as shot_step - apply the
-   `volatile int t` lever there; shot_step itself stopped at 2 rows (see BLOCKED).
-4. `race_records_menu` 0x1d13c is at 12 rows: 5 are the EDX-vs-AL home of the pooled "" byte (see
-   BLOCKED), 4 the un-merge spelling now in `src/ww.c`; decide whether to keep that spelling or go
-   back to the merged one before spending more variants.
+3. `kart_move` 0x237e4 (20 rows): the same `[esp]` slot as shot_step - apply the `volatile int t`
+   lever there (shot_step stopped at 2 rows, see BLOCKED).
+4. `race_records_menu` 0x1d13c (12 rows): 5 are the BLOCKED EDX-vs-AL home of the pooled "" byte, 4
+   the un-merge spelling now in `src/ww.c` - decide keep or revert before spending more variants.
 5. `pal_shift` 0x114a8: scan the LE **fixup records** (not the applied bytes) and any far-pointer
    table for 0x114a8 - dead code vs computed call - and say what the 768 bytes are (QUESTIONS 15).
 6. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
