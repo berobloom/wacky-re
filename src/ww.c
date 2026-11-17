@@ -2571,7 +2571,7 @@ void fn_173c4(void)
     *(int *)(sp7b4d8b + 0x18 + v88b7e * 4) = faces[mp].img[4];
     *(int *)(sp7b4d8b + 0x20 + v88b7e * 4) = faces[mp].img[14];
     *(int *)(sp7b4d8b + 0x28 + v88b7e * 4) = faces[mp].img[15];
-    *(int *)(sp7b518b + 0x30 + v88b7e * 4) = faces[mp].img[5];
+    *(int *)(sp7b4d8b + 0x30 + v88b7e * 4) = faces[mp].img[5];   /* 0x1770e: 0x7b508, the 7th of sp7b4d8b */
     v88c52 += 5;
     eax = 4;
     edx = 0;

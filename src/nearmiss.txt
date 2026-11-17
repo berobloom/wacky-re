@@ -96,7 +96,7 @@
 173  0x02e4b8 trial_book
 190  0x025a78 ents_project
 196  0x016f90 fn_16f90
-224  0x0173c4 fn_173c4
+220  0x0173c4 fn_173c4               (iter 38: img[5] goes to sp7b4d8b+0x30 (0x7b508), not sp7b518b+0x30 - found by tools/wc/nmrefs.py; 224 -> 220)
 230  0x02bff0 race_results
 255  0x014d00 chat
 341  0x01f858 main_menu
