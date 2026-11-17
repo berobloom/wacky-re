@@ -54,7 +54,7 @@
 20   0x0237e4 kart_move              SKIP: one [esp] spill slot vs our two (compiler spills, frame 4 vs 8); volatile t variants worse (39-88 rows)
 21   0x0348f4 intro                  SKIP: several scheduling rows + pal_a save in BX vs DX (f375cd call form = 32-bit dead end; save locals worse), 6 spellings
 22   0x012124 sounds_load            MATCH
-22   0x01bf00 fn_1bf00
+11   0x01bf00 fn_1bf00             SKIP: the rest is the pushed-register mirror (game nplayers=ESI 0x1bf04, face value=ECX in-arm; ours ECX/ESI - 9 real rows, 2 are masked [eax-disp] fakes). Kept: per-arm for(;;)+continue/break shape now gives the game's exact CFG incl per-arm movsx/imul and both cmp/jcc tails, 22->11. 24 probe shapes (SHAPES m5, .work/n1bf/{I,J,K,K2}.C): val split, int/unsigned val, arm swap, scratch local, load placement, ++i tests, volatile alias - per-arm always mirrors, merged always loses the CFG
 22   0x01cb44 enter_name
 22   0x028b20 kart_catchup
 26   0x01d704 fn_1d704

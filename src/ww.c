@@ -6297,13 +6297,17 @@ extern short v7ec6c, v7ec70;            /* 0x7ec6c / 0x7ec70: read as words here
 /* ---- per-player setup (0x1bf00-0x1bf7d), called from fn_16f90 at 0x17098. The stores are
  * CONFIRMED (players[i].f64 = 1 and players[i].face = v7ec6c for the first v7eca4 + 1 rows, max
  * 0x15, and v7ec70 for the rest, i = 1..nplayers); what the two values mean is SPECULATIVE. */
-/* differs: near miss, 99 of the game's 125 bytes, and only two things are wrong. (1) The game
- * loads nplayers into esi (0x1bf04) before v7eca4 into ebx (0x1bf0b); our build loads v7eca4
- * first in every shape tried (initializer, statement, declaration order). (2) The game keeps the
- * whole store-and-continue block inside each arm of the test (`movw $1,f64; inc edx; mov face` +
- * `cmp si,dx; jg exit; jmp head` at 0x1bf36-0x1bf4c and again at 0x1bf5b-0x1bf6f); our build
- * merges the two arms into one tail. 27 shapes scored (m1-m4 kept in analysis/shapes/SHAPES.C);
- * the best is 14 instruction diffs and none of them avoids the merge. */
+/* differs: near miss, 11 rows (was 22). The game keeps the whole store-and-continue block
+ * inside each arm of the test (0x1bf36-0x1bf4c and 0x1bf5b-0x1bf6f); the per-arm shape below
+ * (for(;;), exit test written per arm) now reproduces that CFG exactly, per-arm movsx+imul
+ * and both cmp/jcc tails included, and puts `mov bx,[v7eca4]` on the game's byte (0x1bf0b).
+ * What is left is the pushed-register mirror (GOTCHAS "coin flip"): the game keeps nplayers
+ * in ESI (loaded first, 0x1bf04) and the face value in ECX (loaded inside each arm); ours
+ * gives them ECX and ESI the other way round everywhere the CFG is right. 24 more shapes
+ * scored (.work/n1bf/{I,J,K,K2}.C): split val into two locals, int/unsigned val, arm order
+ * swap, a scratch local, the load after the clamp, ++i/do-while tests, volatile-alias reads
+ * - every per-arm shape keeps the mirror; every merged shape (m1-m4, SHAPES.C) gets the
+ * homes right but loses the CFG. m5 = the shape below, kept in SHAPES.C. */
 void fn_1bf00(void)
 {
     short n, cnt, i, val;
@@ -6313,17 +6317,25 @@ void fn_1bf00(void)
     if (cnt > 0x15)
         cnt = 0x15;
     i = 1;                              /* 0x1bf1e */
-    do {
+    for (;;) {
         if (cnt > 0) {                  /* 0x1bf23 */
+            cnt--;                      /* 0x1bf35 */
             val = v7ec6c;               /* 0x1bf2e */
-            cnt--;
-        } else {
-            val = v7ec70;               /* 0x1bf54 */
+            players[i].f64 = 1;         /* 0x1bf36 */
+            players[i].face = val;      /* 0x1bf40 */
+            i++;
+            if (i > n)                  /* 0x1bf47 */
+                break;
+            continue;                   /* 0x1bf4c */
         }
-        players[i].f64 = 1;             /* 0x1bf36 / 0x1bf5b */
-        players[i].face = val;          /* 0x1bf40 / 0x1bf65 */
+        val = v7ec70;                   /* 0x1bf54 */
+        players[i].f64 = 1;             /* 0x1bf5b */
+        players[i].face = val;          /* 0x1bf65 */
         i++;
-    } while (i <= n);
+        if (i <= n)                     /* 0x1bf6c */
+            continue;
+        break;
+    }
     nplayers = n;                       /* 0x1bf71 */
 }
 
