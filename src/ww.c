@@ -12127,10 +12127,16 @@ int wait_input(short mode)
  * (+0x400) whose points line_points appends at linep (trklines[i]: points, count, f0a).
  * Most DAT reads here are the inlined seekdat/readdat/telldat (the _in copies), the palette ones
  * real calls, pal_6bit a call (alias).
- * differs (near-miss, 471 vs 471 insns): the 0x80ace offset - the game keeps ftell's result in EDX,
- * ours in ECX (five placements/forms tried); the .SIN loop - the game holds its end pointer in EDI
- * and the constant 1 in EBP for the fread arguments, ours compares with a constant and loads 1 each
- * time (end-pointer variable tried, no change). */
+ * differs (near-miss, 7 fndiff rows; 3 are the masked-fixup artifact and one the game's `mov eax,eax`
+ * filler, so 2 are real): the .SIN loop matches byte for byte now - a do/while whose end pointer comes
+ * from the loop variable (`end = sp + 0x6c` -> `lea edi,[esi+0x360]` 0x27d80; the `for` with the folded
+ * constant compares against an immediate, a `while` adds a second pre-test), which also hoists the
+ * fread count (`mov ebp,1` 0x27d86, `mov ebx,ebp` 0x27d9a/0x27dae). Left: the v88b88 home in the
+ * 0x80ace block - the game has `movsx ecx,[0x88b88]` + `dec ecx` (0x27a49), ours `movsx eax` +
+ * `lea ecx,[eax-1]`, one byte longer, which shifts the `je` at +37 and the `call` at 0x28011. That
+ * home flips as soon as ANY local is added or lengthened (a new local, `pal`, `t`, a block-scoped one,
+ * declared first or last); `0xf3c * (v88b88 - 1)`, the outer operand order and a `short` cast keep EAX,
+ * and `t + v88b88 * 0xf3c - 0xf3c` gets ECX back but breaks the multiply chain (30 rows). */
 struct trkline { short *pts; short n, f06; };
 struct rdrec { short x0, y0, x1, y1, f08, f0a, f0c; };
 extern struct trkline trklines[];
@@ -12169,7 +12175,7 @@ void track_load(void)
     int skip;
     unsigned char c;
     char *pal;
-    char (*sp)[8];
+    char (*sp)[8], (*end)[8];
     int row, j;
     long t;
     short i;
@@ -12211,10 +12217,13 @@ void track_load(void)
     v88bd6 = datfind(str7d7b8);
     if (v88bd6 == 0 && v88bea != 0)
         logerr(str7d7b8);
-    for (sp = sin7ad88; sp != sin7ad88 + 0x6c; sp++) {
+    sp = sin7ad88;
+    end = sp + 0x6c;              /* the game's `lea edi,[esi+0x360]`, 0x27d80 */
+    do {
         readdat_in(&skip, 4);
         readdat_in(sp, 8);
-    }
+        sp++;
+    } while (sp != end);
     v7d870 = (char *)sin7ad88;
     if (v7d998 == 0 || v7d998 == 3)
         pcx_load(gam6a4e0, 1);

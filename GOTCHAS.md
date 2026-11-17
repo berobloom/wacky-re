@@ -584,6 +584,14 @@ it can be copied back into DREA.
   only a statement reordering moves it (net_input 0x2f4a8 was fixed that way) - a switch's
   controlling expression is not a statement, so that one is cheap to try and then SKIP; order equal =
   home flip, worth a few temps/aliases at most.
+- **A tail-tested loop with its end pointer computed from the loop variable** (iter 28): track_load
+  0x279e8's .SIN loop went 18 rows -> 7 and now matches byte for byte as
+  `sp = sin7ad88; end = sp + 0x6c; do { ... } while (sp != end);`. The game's end is
+  `lea edi,[esi+0x360]` (0x27d80) - computed from the VARIABLE; `sp != sin7ad88 + 0x6c` folds to an
+  immediate compare, and a `while`/`for` keeps a pre-test the game does not have. With the shape right
+  9.5b also hoists the loop-invariant fread count (`mov ebp,1` 0x27d86, `mov ebx,ebp` 0x27d9a/0x27dae).
+  The counter-trap: one new local re-coloured an unrelated temp 800 bytes earlier (the v88b88 load
+  moved ECX -> EAX and `dec ecx` became `lea ecx,[eax-1]`), so score the whole function.
 - **A variant that scores well may be a different program: read which value the instruction reads**
   (iter 16, [generic]): line_draw 0x21f04 wants `movsx edx,cx` before its `mov eax,ebx; mov ebx,ecx;
   mov ecx,eax` dx/dy rotation. Writing the rotation first and `err = dy >> 1` after it reproduces the
