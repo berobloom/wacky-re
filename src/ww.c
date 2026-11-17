@@ -11172,7 +11172,11 @@ void ents_project(void)
  * two loads: the game reloads t into EBX (0x25f46) and only then loads v7d6a0 into EAX (0x25f49),
  * ours the other way round. `p = t; v7d690 = (int *)(p + v7d6a0);` flips the order but swaps the
  * registers (the EAX/EBX coin flip, 3 rows); `char *b` for the base, `v7d690++` as its own statement,
- * `*(v7d690 + 1)` and the inline product without t (7 rows, no slot) do not close it. Same slot in
+ * `*(v7d690 + 1)` and the inline product without t (7 rows, no slot) do not close it. Probe I (20 more
+ * spellings, .work/probe_ss/I.C) splits the two axes: every single-expression form (both operand orders,
+ * `(char *)`/int-typed global, `&v7d6a0[t]`, a `char *b` or `int *base` local, a comma assignment) keeps
+ * our order - global into EAX, then `mov ebx,[esp]`; every form with `p = t;` in its own statement gets
+ * the game's order but pairs EAX with the slot and EBX with the global (3 rows). Same slot in
  * kart_move 0x237e4. Fixed earlier: lx1 = lx0 as its own statement lets the ly1 store be shared. */
 extern int v7d5d0;
 
