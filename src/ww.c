@@ -10055,7 +10055,9 @@ void pair_reset(void)
  * a second slot [esp+4] for the second probe's x and the post-drift x, and keeps the first probe's
  * y in a register. The [esp+4] spill at 0x23eca is the compiler's own (no named temp there). Tried:
  * one t, t+u, a name per use, no temps, short/int/register hit, five declaration orders (best 19
- * instrdiffs). Same family as QUESTIONS 9/10/12. */
+ * instrdiffs). Same family as QUESTIONS 9/10/12. Also tried (iter 30) the shot_step lever:
+ * `volatile int t` with u folded into t (39 rows), with u kept (88), t and u volatile (56); the
+ * frame stays 8, so the game's [esp] slot is a compiler spill, not a named local. */
 extern int v7d614, v7d5e4, v7d608, v7d5f8, v7d5f4, v7d678, v7d61c, v7d5ec, v7d618, v7d5e8;
 extern int v7d768, v7d76c, v7d798, v7d79c;
 extern int *v7d690;
