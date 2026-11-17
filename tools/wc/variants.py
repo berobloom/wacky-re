@@ -30,7 +30,7 @@ md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 
 
 def norm(s):
-    return re.sub(r'0x[0-9a-f]{4,}', '@', s)
+    return re.sub(r'0x[0-9a-f]{4,}', '@', s).replace('- @', '+ @')  # masked fixup, see fndiff.norm
 
 
 def dis(buf, vma, upto):

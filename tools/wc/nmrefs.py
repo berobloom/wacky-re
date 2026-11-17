@@ -39,7 +39,7 @@ LIB = 0x40000                        # the linked library code starts about here
 
 
 def norm(s):
-    return re.sub(r'0x[0-9a-f]{4,}', '@', s)            # the LE image's objects (code 0x10000, data 0x60000)
+    return re.sub(r'0x[0-9a-f]{4,}', '@', s).replace('- @', '+ @')  # masked fixup, see fndiff.norm            # the LE image's objects (code 0x10000, data 0x60000)
 
 
 def fields(ins):

@@ -72,7 +72,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   right) and `fncompare.py` print displacements as `@`, so swapped stack slots show 0 rows while
   check.sh says "differs" (net_send 0x2dc38). A MATCH masks fixup bytes, so read the `WRONG sym@addr`
   lines after it too (fn_1c88c loaded save_c for save_a). [generic]
-- **Fake rows to subtract first:** a `[reg - 0x6f6f6f70]`/`[reg +/- @]` pair is a masked fixup
+- **Fake rows to subtract first** (iter 39: fndiff, variants, permute and nmrefs now fold the `- @`/`+ @`
+  pair themselves, so their counts no longer include it): a `[reg - 0x6f6f6f70]`/`[reg +/- @]` pair is a masked fixup
   (0x90 filler) - 7 of self_project's 10 rows; rows past the end of a shorter function are its own
   epilogue or alignment (race_records_menu, ctl_label's nops); a padding row (`lea eax,[eax]` vs
   `nop`) is the size gap of a register choice above it (com_wait_byte 0x2df70). [generic]

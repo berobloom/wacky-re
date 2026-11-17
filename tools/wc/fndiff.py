@@ -28,7 +28,10 @@ md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 
 
 def norm(s):
-    return re.sub(r'0x[0-9a-f]{4,}', '@', s)
+    # A masked fixup (0x90 filler) reads as `[reg - 0x6f6f6f70]` where the game has `[reg + addr]`: the
+    # same instruction, not a row (iter 39: 63 of car_laps' 65 rows). Real displacements are short
+    # and never become @, so folding `- @` into `+ @` cannot hide a real difference.
+    return re.sub(r'0x[0-9a-f]{4,}', '@', s).replace('- @', '+ @')
 
 
 def dis(buf, vma, upto):
