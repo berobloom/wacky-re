@@ -11675,11 +11675,16 @@ void shots_project(void)
  * since v7eba8 and to 2 after 0x22, which also starts the race (v88c44 = 2) with voice 10; then the
  * lights at (v88c4a, v88c4c) are projected like a shot (tab6e470 sizes, gn7eb40[v88c5e]) and
  * v88c38 stays set only while they are on screen. LIKELY: "lights" from the 3 frames and the timing.
- * differs (near-miss, 217 vs 220 insns, 18 blocks): the countdown test is `cmp ax,1; jb; ja` in the
- * game (a switch range check; ours `jne`), and the rotation keeps sy/dy in two stack slots and a in
- * EDI (ours: sy in a register). No loop here, so this is not the promotion problem of the other
- * projections. Tried: four declaration orders. ticks2 - v7eba8 is the inlined since2():
- * `(m = v7eba8, ticks2 - m)` gives its load order. */
+ * differs (85 rows, ours 920 bytes vs the game's 916): the countdown test is `cmp ax,1; jb; ja` in
+ * the game (a switch range check; ours `jne`) and the rest is the projection's register homes and
+ * product scheduling (game ECX/EDX/EBX/EDI, ours ECX/EBX/ESI/EDI; iter 41 probe .work/probe_lp/:
+ * four product operand orders 82/82/82 vs control 82, `case 0: break;` 99, `if (sy > dy)` 104,
+ * `short side` 93). ticks2 - v7eba8 is the inlined since2(): `(m = v7eba8, ticks2 - m)` gives its
+ * load order. What fixed 112 -> 85: `short sy` (the game's `cmp ax,word [esp+4]` 0x267db is a
+ * 16-bit compare of two slot values) and `short a` (the game's `test di,di` 0x267e9 +
+ * `movsx ebx,di` + `idiv ebx` 0x26803; `idiv dword [esp]` was ours), plus `spr_h = *p7d764++`
+ * instead of an `h` local + store (gives the game's second load through the updated pointer,
+ * `mov ax,word [eax]` 0x268c6). Same three spellings are open in the sibling projections players_project and shots_project. */
 extern short v88c5e, v88c4a, v88c4c;
 extern int v7eba8;
 extern char *lights[];
@@ -11687,8 +11692,8 @@ extern char *lights[];
 
 void lights_project(void)
 {
-    short n, dy, sx, k, c, h;
-    int sy, d, side, a, m, t;
+    short n, dy, sx, k, c, h, sy, a;
+    int d, side, m, t;
 
     if (v88c44)
         v88c38 = 0;
@@ -11740,9 +11745,8 @@ void lights_project(void)
     spr_y = tb6bd00[d];
     p7d838 = tab6e470[k];
     p7d764 = p7d838;
-    h = *p7d764++;
+    spr_h = *p7d764++;
     p7d838 += 2;
-    spr_h = h;
     spr_y -= *p7d764;
     spr_w = *p7d764;
     if (spr_y > 0xc7)
