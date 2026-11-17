@@ -26,6 +26,7 @@
 6    0x0114a8 pal_shift             MATCH
 6    0x0277b8 track_pics_load             MATCH
 6    0x02f408 view_at_curpos             SKIP: allocation only - ours spills v7d610 into the slot the game uses for v88b0e (2 insns); 30 spellings (operand orders both sums, statement order, casts, temps for sum and operands, an int local for v88b0e) never drop it; every local adds a second frame slot (game has none); isolated block with the second sum removed loads EDX direct
+6    0x0114c8 screenshot             SKIP: pal/lineptr slot pair only (dead end); int n + (short)n, hp init at the top, q walks the palette (pal_shift form), fputc(line[x++]): 51 -> 6
 7    0x0146d4 wtext                  SKIP: stack-slot permutation only (6 rows: [esp]/[esp+8]/[esp+0xc] for x, hw, hh; the 7th row is the fixup mask on [esi*4+disp]); known dead end, QUESTIONS 9/10 - 0 variants spent (iter 20)
 7    0x034458 release_check             SKIP: stack-slot permutation of the two shorts only (all 7 rows are esp+0x190/0x194 displacements); documented dead end, GOTCHAS "Watcom does not allocate scalar stack slots in declaration order" (43 declaration orders probed for enter_name); note says declaration order, placement and int/short mixes tried - 0 variants spent (iter 21)
 7    0x0279e8 track_load             MATCH (iter 29: the .SIN loop as a do/while with `end = sp + 0x6c`, and the v88b88 block as `m = v88b88 - 1; m *= 0xf3c; seekdat_in(t + m);` - GOTCHAS "compound assignment pins the home")
@@ -76,7 +77,6 @@
 42   0x021554 line_points             SKIP: homes only, the frames agree (game err EAX / dy ESI / dx [esp+0xc] / n [esp+0x10]; ours n and err in registers, dy spilled) - coin flip; new tries: `volatile int n` 93 (the game's in-place `inc dword [esp+0x10]` is a plain spilled local), a dummy extra int local 42
 44   0x02a4ac minimap                MATCH
 49   0x014380 ents_show
-51   0x0114c8 screenshot
 57   0x02d548 shot_fire
 58   0x016d68 fn_16d68
 64   0x01e760 volume_menu

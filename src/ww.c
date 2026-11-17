@@ -806,8 +806,12 @@ extern unsigned char *palptr;
 void getpalette(void);
 void getline(void);
 
-/* differs: the game keeps &hdr in ebp and the palette pointer in [esp+0x50C]; ours swaps the pointer locals
-   (declaration order has no effect) */
+/* differs (6 rows, all the pal/lineptr stack-slot pair: game pal [esp+0x50c], lineptr [esp+0x508];
+   ours the reverse - the slot-permutation dead end; declaration order (3), assignment order (3) and
+   dropping either local (worse: 25-30) tried). Fixed in iter 37 (51 -> 6): int n read back as
+   (short)n for itoa (the game's dword slot + movsx word reload), hp = &hdr with the other pointer
+   inits (ebp from the prologue), the palette shift through its own pointer q in the pal_shift form
+   (pal itself never moves, so `pal = palptr` went), and fputc(line[x++], f) (inc before the call). */
 void screenshot(void)
 {
     unsigned char palbuf[800];
@@ -817,7 +821,8 @@ void screenshot(void)
     char digits[16];
     unsigned char *lineptr;
     unsigned char *pal;
-    short n;
+    unsigned char *q;
+    int n;
     short len, j;
     short i;
     short v;
@@ -828,11 +833,12 @@ void screenshot(void)
 
     pal = palbuf;
     lineptr = line;
+    hp = (char *)&hdr;
     n = 1;
     sound(40);
     for (;;) {
         strcpy(name, "WACK");
-        itoa(n, line, 10);
+        itoa((short)n, line, 10);
         strcpy(digits, "");
         strcpy(digits, "000");
         j = 2;
@@ -848,12 +854,12 @@ void screenshot(void)
     }
     palptr = pal;
     getpalette();
+    q = pal;
     for (i = 1; i <= 768; i++) {
-        v = *pal;
-        *pal++ = v << 2;
+        v = *q;
+        v <<= 2;
+        *q++ = v;
     }
-    pal = palptr;
-    hp = (char *)&hdr;
     for (i = 1; i <= sizeof(hdr); i++)
         *hp++ = 0;
     hdr.manufacturer = 10;
@@ -890,8 +896,7 @@ void screenshot(void)
             } else {
                 if ((line[x] & 0xc0) == 0xc0)
                     fputc(0xc1, f);
-                fputc(line[x], f);
-                x++;
+                fputc(line[x++], f);
             }
         } while (x < 320);
     }
