@@ -2680,8 +2680,13 @@ extern int v7d338[];
 extern short v88c68;
 void f37487(void);
 
-/* differs: the game enters the loop with a jmp to the test at the bottom, we test at the top and duplicate
-   the epilogue (+10 bytes); n and the w temporary swap stack slots */
+/* differs (36 rows, 29 of them the masked-fixup artefact [reg - @]/[reg + @]): a three-way stack-slot
+   permutation of n, animate and the w*h temporary (game n [esp+4], animate [esp+8], temp [esp]; ours
+   n [esp+8], animate [esp], temp [esp+4]) - the slot dead end, plus the 4-byte size gap it causes
+   ([esp] has no displacement byte). The braced `if (..) { two = 1; } else { two = 0; }` (iter 37)
+   gave the game's `mov ebx,1`/`xor ebx,ebx` AND its loop shape (jmp to the bottom test, one
+   epilogue): 49 -> 36. An explicit int wh for the temp (3 declaration positions x 2 forms) moves
+   nothing. */
 void ents_show(short sel, int n, int animate, int custom, int skip)
 {
     short i;
@@ -2747,7 +2752,11 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
             }
             drawsprite();
         }
-        two = (twoplayer || splitscreen) ? 1 : 0;
+        if (twoplayer || splitscreen) {
+            two = 1;
+        } else {
+            two = 0;
+        }
         if (sel == -1 && v7d338[i]) {
             spr_h = 0x36;
             spr_w = 9;
