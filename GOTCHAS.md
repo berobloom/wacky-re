@@ -78,7 +78,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   epilogue or alignment (race_records_menu, ctl_label's nops); a padding row (`lea eax,[eax]` vs
   `nop`) is the size gap of a register choice above it (com_wait_byte 0x2df70). [generic]
 - **Rows that are only stack displacements = the slot-permutation dead end** (below): count them
-  first (showlines 0x2a268: 10 of 18). [generic]
+  first (showlines 0x2a268: 10 of 18). Count them, and every other class, with one pass over the two
+  full listings: normalise each instruction (addresses as `@`) and subtract the COUNTERS per side -
+  what remains is the register/width/epilogue gap, not the slot permutation. [generic]
 - **Equal instruction counts but a byte compare that starts on a branch displacement = a register
   home, not a missing instruction.** AL/EAX own the short absolute forms (`a0`-`a3`, 5 bytes; any
   other register 6, `add dl,imm8` 3 vs 2), so one home shifts every later jump (shots_move 460 vs
@@ -89,8 +91,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   the levers below, then SKIP. A whole function whose temporaries mirror the game's EAX<->EDX is
   that class: four C spellings of race_run's `x * 8` pointer walk (0x3066d, four sites) all scored
   equal to the control. [generic]
-- **Read the width of a compare:** `cmp r16,r16` = both shorts in C, `cmp r32,r32` = at least one
-  int. Fix the C types before logging a register pairing (fn_16eac: `int cnt` 17 -> 11 rows). A
+- **Read the width of a compare AND of a load:** `cmp r16,r16` = both shorts in C, `cmp r32,r32` =
+  at least one int; `movzx ax,al` vs the game's `movzx eax,al`, or `cmp dword [slot],N` vs its
+  `cmp word`, is the same signal. Pair the game-only and ours-only rows that agree on opcode and
+  immediate but differ in width: menu 0x155c0 `isnet` int 267 -> 233, cars_menu 0x1a380 `cd15c`/
+  `slide_up`/`slide_dn` short 499 -> 476. Fix the C types before logging a register pairing
+  (fn_16eac: `int cnt` 17 -> 11 rows). A
   `short` that the game keeps in a register may take a stack slot in ours and the reverse
   (fn_1c0f4 vs scores_screen): try the type before restructuring. `xor ah,ah` before `cmp ax,N` says
   `short`, not `unsigned char` (com_open's `iir` 0x10401: 33 -> 19 rows). [generic]
@@ -263,7 +269,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   reloads the global after its calls (`mov r,[G]` 0x26403/0x26491/0x2667e), the source used a local
   pointer plus `G = p;` in the body - shots_project 0x2632c 155 -> 117 that way (open in
   players_project/ents_project). A global that is already
-  the working variable and still is not cached (players_ahead's v7d800) is unexplained. [generic]
+  the working variable and still is not cached (players_ahead's v7d800) is unexplained. The lever
+  also fails when the cached global is a struct pointer used hundreds of times: kart_frame 0x290a0
+  with `k = curkart` at entry, `k->` at all 139 sites and `curkart = k; k = curkart;` around every
+  call and return scored 535 -> 533, and the game still had 19 more 0x7d5b0 references. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
   com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared
@@ -291,6 +300,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   reachable; a partial store breaks the form. SKIP. [generic]
 - **Extra bytes from a larger frame for one more local** cost spills and re-colour unrelated temps
   far away (kart_draw 17 -> 28; track_load's v88b88 load): score the whole function. [generic]
+- **The game's single `ret` is not a target to reach:** merging our returns into one tail (`goto`, one
+  `return`) so the epilogue count matches costs rows - menu 0x155c0 has one epilogue at 0x163df and our
+  five duplicates align with its per-site `jmp` tail better merged (233 -> 261). The game's C may well
+  have had one exit; the row count does not care. [generic]
 - **There is no per-function optimisation control in WCC386:** `#pragma loopopt` is a WPP pragma
   and the pipeline (wcc386 on .C, no preprocessor) silently ignores it - `#pragma loopopt OFF`
   on fn_16f90 changed nothing (0x16f90, the loop-strength-reduction dead-end class). [generic]

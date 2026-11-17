@@ -20,11 +20,13 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `menu` 0x0155c0 (270), `cars_menu` 0x01a380 (512),
-   `kart_frame` 0x0290a0 (677). Frame-size leads (`sub esp` differs): menu, fn_1832c, cars_menu,
-   fn_1d704, kart_state, players_ahead, pic_at (ents_project 0x10 vs 0x14, race_results solved
-   with grp[10]+pods[8]) - size arrays off the game's slots; nmrefs after every change.
+1. Near misses: `src/nearmiss.txt` has no open status left (iter 44 took the last three). Re-rank it
+   first - `tools/wc/nearmiss.sh` (its first column is stale on several lines) - then take the
+   partial-gain lines whose `differs:` note lists an untried lever. Frame-size leads (`sub esp`
+   differs): menu, fn_1832c, cars_menu, fn_1d704, kart_state, players_ahead, pic_at (ents_project
+   0x10 vs 0x14, race_results solved with grp[10]+pods[8]) - size arrays off the game's slots; the
+   width scan (GOTCHAS "Read the width of a compare AND of a load") on a fresh per-side instruction
+   counter is what found menu/cars_menu this iter; nmrefs after every change.
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
@@ -35,18 +37,18 @@ Short: where the project stands, and what is next. History is in git; no diary.
    `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` (random-mode permuter, 30 copies a
    compile) found shot_fire's last swap in one round; it is worth a 20-round run once a function is
    down to scheduling rows.
-2. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
+3. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
    `shot_step` 0x25e6c, `fn_182d0` 0x182d0 are 2-3 rows - only take them with an idea the
    `differs:` note does not list. `time_str` 0x2a618 (31) and `voices_load` 0x11f98 (33) are now
    SKIPped; their frame and fixup-row traps are in the notes.
-2. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
+4. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
    the `(int *)charbase + i * 2` spelling of every `(int *)(v7d6a0 + curpos * 8)` site
    (`view_at_curpos` 0x2f408, `view_box`, `in_sector`, `cpu_drive`), split arithmetic
    `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`, `net_recv`, `shots_move`;
    `intro` 0x348f4 and `sounds_load` 0x12124 for a `= .*== 0` assignment.
-3. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+5. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-4. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
+6. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
    index), "BSBCS.PCX", `tbl77758`'s writer.
 
 ## BLOCKED
