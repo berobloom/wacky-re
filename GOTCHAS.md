@@ -647,6 +647,17 @@ it can be copied back into DREA.
   probe) gives the game's registers *and* the whole-register shift, because the shifted value stays
   live in the local's home instead of being consumed by the store. Before logging a counter/temp
   register swap, try the two-statement form with the operator assignment.
+- **The compound-assignment lever also wins a global's sign-extend home** (iter 29, [generic]):
+  `seekdat_in(t + (v88b88 - 1) * 0xf3c)` (track_load 0x27a49) gives 9.5b's `movsx eax,[0x88b88]` +
+  `lea ecx,[eax-1]`; the game has `movsx ecx` + `dec ecx` there and 9.5b will not sign-extend into
+  the register it decrements. Splitting the arithmetic onto a local - `int m;` as the function's
+  first declaration, then `m = v88b88 - 1; m *= 0xf3c; seekdat_in(t + m);` - homes m in ECX, keeps
+  the value live there through the whole strength-reduced `*0xf3c` chain (`mov eax,ecx; shl eax,4;
+  sub eax,ecx; lea eax,[eax*4]; mov ecx,eax; shl eax,6; add eax,ecx`) and MATCHes: 7 rows -> 0.
+  Eleven other spellings kept EAX: short/int/long `n` assigned from the global or from `v88b88 - 1`,
+  `0xf3c *` first, a `(long)` cast on either operand, the product in its own local, and
+  `t + v88b88 * 0xf3c - 0xf3c`, which does get ECX but re-shapes the chain (28 rows). Try
+  `x = <expr>; x *= <factor>;` before logging a load home as the coin flip.
 - **Watcom's cold-tail duplication depends on source line layout, not only on the syntax**
   (iter 19, [generic]): in a two-function probe, com_isr's merged-local form written with braced
   `if (rxhead >= 0x4000)` / newline / `rxhead = 0;` came out 338 bytes with the `done:` epilogue

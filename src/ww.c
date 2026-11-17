@@ -12127,16 +12127,13 @@ int wait_input(short mode)
  * (+0x400) whose points line_points appends at linep (trklines[i]: points, count, f0a).
  * Most DAT reads here are the inlined seekdat/readdat/telldat (the _in copies), the palette ones
  * real calls, pal_6bit a call (alias).
- * differs (near-miss, 7 fndiff rows; 3 are the masked-fixup artifact and one the game's `mov eax,eax`
- * filler, so 2 are real): the .SIN loop matches byte for byte now - a do/while whose end pointer comes
- * from the loop variable (`end = sp + 0x6c` -> `lea edi,[esi+0x360]` 0x27d80; the `for` with the folded
- * constant compares against an immediate, a `while` adds a second pre-test), which also hoists the
- * fread count (`mov ebp,1` 0x27d86, `mov ebx,ebp` 0x27d9a/0x27dae). Left: the v88b88 home in the
- * 0x80ace block - the game has `movsx ecx,[0x88b88]` + `dec ecx` (0x27a49), ours `movsx eax` +
- * `lea ecx,[eax-1]`, one byte longer, which shifts the `je` at +37 and the `call` at 0x28011. That
- * home flips as soon as ANY local is added or lengthened (a new local, `pal`, `t`, a block-scoped one,
- * declared first or last); `0xf3c * (v88b88 - 1)`, the outer operand order and a `short` cast keep EAX,
- * and `t + v88b88 * 0xf3c - 0xf3c` gets ECX back but breaks the multiply chain (30 rows). */
+ * Two shapes this function needed for its bytes (iter 29): the .SIN loop as a do/while whose end
+ * pointer comes from the loop variable (`end = sp + 0x6c` -> `lea edi,[esi+0x360]` 0x27d80; the `for`
+ * with the folded constant compares against an immediate, a `while` adds a second pre-test), which
+ * also hoists the fread count (`mov ebp,1` 0x27d86, `mov ebx,ebp` 0x27d9a/0x27dae); and the 0x80ace
+ * seek written on its own local (`m = v88b88 - 1; m *= 0xf3c; seekdat_in(t + m);`) so that the
+ * sign-extend lands in ECX and the decrement is `dec ecx` (0x27a49/0x27a50) instead of 9.5b's
+ * `movsx eax` + `lea ecx,[eax - 1]` for the one-expression form. */
 struct trkline { short *pts; short n, f06; };
 struct rdrec { short x0, y0, x1, y1, f08, f0a, f0c; };
 extern struct trkline trklines[];
@@ -12171,6 +12168,7 @@ void pal_6bit_x(unsigned char *p);
 
 void track_load(void)
 {
+    int m;
     char name[20];
     int skip;
     unsigned char c;
@@ -12186,7 +12184,9 @@ void track_load(void)
         t = telldat_in();
         if (v7ec80)
             v88b88 = 2;
-        seekdat_in(t + (v88b88 - 1) * 0xf3c);
+        m = v88b88 - 1;
+        m *= 0xf3c;
+        seekdat_in(t + m);
         readdat_in(img7eb5c, 0xf3c);
         if (v7ec80)
             v88b88 = 5;
