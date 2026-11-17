@@ -7009,7 +7009,13 @@ void trial_records_menu(void)
  *    23 bytes are those encodings. A K&R definition (short or int), a short local copy, an int
  *    copy, casts and moving the declarations do not spill it.
  * 2. `mov dx,[pal_a]` vs ours `movzx edx` (0x1d73e): the f375cd EDX parameter trap (GOTCHAS).
- * The prototype above is unprototyped (`void fn_1d704();`): a `short which` prototype makes both
+ * Cause 1 was probed again (iter 32, 11 spellings in two probe compiles, control 17 rows): a separate
+ * local copy of `which` assigned at that statement and used for the msgbox row and the switch - short,
+ * int, `volatile short`, cast, declared first vs last, assigned before/after wait_release, after the
+ * strcats, used also by the strcats. Every one allocates the slot but puts the INCOMING parameter in it
+ * at 0x1d70f (`mov [esp+0x94],eax`, no `mov ebx,eax`) and reloads EBX after the call - the mirror image
+ * of the game's late store; 17-22 rows. Cause 2 is a documented dead end, so no spelling of cause 1
+ * reaches MATCH. The prototype above is unprototyped (`void fn_1d704();`): a `short which` prototype makes both
  * callers sign-extend (race_records_menu 504 -> 472 bytes), so the game's callers saw none. */
 void fn_1d704(short which, int row)
 {
