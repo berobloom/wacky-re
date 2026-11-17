@@ -291,6 +291,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   reachable; a partial store breaks the form. SKIP. [generic]
 - **Extra bytes from a larger frame for one more local** cost spills and re-colour unrelated temps
   far away (kart_draw 17 -> 28; track_load's v88b88 load): score the whole function. [generic]
+- **There is no per-function optimisation control in WCC386:** `#pragma loopopt` is a WPP pragma
+  and the pipeline (wcc386 on .C, no preprocessor) silently ignores it - `#pragma loopopt OFF`
+  on fn_16f90 changed nothing (0x16f90, the loop-strength-reduction dead-end class). [generic]
 
 ### General rebuild facts
 

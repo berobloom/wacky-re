@@ -3999,6 +3999,12 @@ extern short v70720[];              /* 0x70720 (indexed table) */
 
 void fn_1bf00(void);
 
+/* ---- 0x16f90, 1075 bytes: pre-race player reset (net branch first).
+ * differs (185 rows, the three documented classes of QUESTIONS.md): the game CSEs zero into CX
+ * and stores it 9x while -oneatx emits movw $0 per store (no C form found keeps a zero register);
+ * its zeroing do-while keeps a byte counter, unreduced; the order_a/order_b loads interleave
+ * between stores. New this iter: `#pragma loopopt OFF` before the definition is INERT under
+ * WCC386 - a WPP pragma, and the pipeline has no preprocessor. */
 void fn_16f90(void)
 {
     int k;

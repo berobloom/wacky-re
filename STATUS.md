@@ -21,10 +21,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `race_results` 0x02bff0 (176), `ents_project` 0x025a78
-   (189), `fn_16f90` 0x016f90 (241), `menu` 0x0155c0 (270). Frame-size leads (`sub esp` differs):
-   menu, fn_1832c, cars_menu, fn_1d704, kart_state, ents_project, race_results, players_ahead,
-   pic_at - size arrays off the game's slots; nmrefs after every change.
+   overnight/prompt.md step 2). Next open: `menu` 0x0155c0 (270), `cars_menu` 0x01a380 (512),
+   `kart_frame` 0x0290a0 (677). Frame-size leads (`sub esp` differs): menu, fn_1832c, cars_menu,
+   fn_1d704, kart_state, players_ahead, pic_at (ents_project 0x10 vs 0x14, race_results solved
+   with grp[10]+pods[8]) - size arrays off the game's slots; nmrefs after every change.
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
