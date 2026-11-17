@@ -18220,7 +18220,8 @@ void pic_at(int d, int lift, short x)
  * column at 0x344f5 is `mov dword [esp+0x190],2` and at 0x345f0 `mov dword [esp+0x194],0x54`; ours
  * the reverse); declaration order, placement and int/short mixes do not move them. Documented dead end: Watcom's
  * scalar slot permutation (GOTCHAS "Watcom does not allocate scalar stack slots in declaration
- * order", 43 declaration orders probed for enter_name). */
+ * order", 43 declaration orders probed for enter_name). Iter 30: y first assigned at the top or
+ * before the v7e574 test (8 rows), int n, y (34 rows). */
 extern int v7ecbc;
 
 void release_check(void)
