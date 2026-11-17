@@ -41,9 +41,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 1. `netkeys_in` 0x2d94c (29 rows): the same `c` in a saved EDX as netkeys_out/netkeys_pack - write
    `SKIP:` with 0 variants (BLOCKED below), then take the first open line.
-2. `net_input` 0x2f4a8 (15 rows, no note): `tools/wc/fndiff.py ww .work/src/WW.OBJ net_input 0x2f4a8`;
-   its sibling net_recv 0x2db00 is a BLOCKED crc-home case, so read the rows first and only probe if
-   the cause is not a register home.
+2. `net_input` 0x2f4a8 (15 rows, no note): `tools/wc/fndiff.py ww .work/src/WW.OBJ net_input 0x2f4a8`
+   - its sibling net_recv 0x2db00 is a BLOCKED crc-home case, so probe only if the rows say otherwise.
 3. `kart_move` 0x237e4 (20 rows): the same `[esp]` slot as shot_step - apply the `volatile int t`
    lever there (shot_step stopped at 2 rows, see BLOCKED).
 4. `race_records_menu` 0x1d13c (12 rows): 5 are the BLOCKED EDX-vs-AL home of the pooled "" byte, 4
