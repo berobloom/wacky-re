@@ -20,8 +20,20 @@ Do exactly this, in order:
       note lists what was already tried: do not repeat those.
    b. `src/check.sh 2>&1 | grep -c " MATCH"` and write the number down (the baseline count).
    c. See the difference: `src/check.sh >/dev/null 2>&1; .work/venv/bin/python tools/wc/fndiff.py
-      ww .work/src/WW.OBJ NAME 0xADDR | tail -40` (game left, ours right; `@` = an address, ignore).
+      ww .work/src/WW.OBJ NAME 0xADDR | tail -40` (OURS LEFT, game right; `@` = an address). The
+      count already leaves out the masked-fixup `[reg - @]`/`[reg + @]` pairs: do not subtract them
+      again. The last line also gives our size: compare it with the game's (the next named address
+      minus this one). Check the frame first: if our `sub esp, N` differs from the game's, size the
+      local arrays from the game's slots before anything else (GOTCHAS "Frame size first"; overlay_draw
+      62 -> 46).
    d. Change ONE thing in the C, rerun step c, keep the change only if the diff count went down.
+      Between two variants with close counts, prefer the one whose size equals the game's (car_laps:
+      76 rows at the game's size led to 2, 74 rows at the wrong size led nowhere).
+      After every kept change run `.work/venv/bin/python tools/wc/nmrefs.py ww .work/src/WW.OBJ
+      NAME=0xADDR`: it must say `same`, or a DIFFER the function's note already explains (inlined
+      pal_6bit, a jump table, a folded pointer init). fndiff hides addresses, so a lower count can
+      point at the wrong global or call (it caught four behaviour bugs); any other DIFFER is a bug
+      to fix, not a gain.
       For many spellings at once use `tools/wc/variants.py` (one compile scores them all; the
       probe file must `#include <string.h>` and the same prototypes as src/ww.c).
    e. When the function MATCHes: run `src/check.sh 2>&1 | grep -c " MATCH"` again. It must be the
@@ -30,9 +42,12 @@ Do exactly this, in order:
       the function's `differs:` note, write `MATCH` in its status column in `src/nearmiss.txt`,
       commit.
    f. Budget: about 20 minutes or 20 variants per function, whichever comes first. Then STOP
-      probing: `git checkout -- src/ww.c` (back to the committed version), write
-      `SKIP: <cause seen>; tried <what>` in its status column, add the new tries to its
-      `differs:` note (one line), commit both, and take the next open line.
+      probing. KEEP a partial gain: if your best version has fewer rows than the committed one, the
+      MATCH count is unchanged and nmrefs says `same`, put that version in src/ww.c and write the
+      new count in the first column of src/nearmiss.txt. Otherwise `git checkout -- src/ww.c` (back
+      to the committed version). Either way write `SKIP: <cause seen>; tried <what>` in its status
+      column, update its `differs:` note (what changed it, what is left, what was tried), commit,
+      and take the next open line.
    ALWAYS end a function with a commit (MATCH or SKIP). A pass without a commit counts as stuck.
    Never commit a src/ww.c that lowers the MATCH count; overnight/check.sh rejects it.
 
@@ -44,7 +59,18 @@ Do exactly this, in order:
    - The register a local gets follows where it is first DEFINED (GOTCHAS "first definition"):
      move the first assignment, or split one local into two (main's two palette pointers needed
      two locals to get ESI and ECX right).
-   - `short` vs `int` for a local or a loop counter; `char` vs `unsigned char`.
+   - `short` vs `int` for a local or a loop counter; `char` vs `unsigned char`. A value the game
+     computes 16-bit (`mov ax,[g]; dec eax; cwde`) is a `short` local (fn_17928's song index).
+   - Two local arrays in each other's slots: a pointer to the one the game has at [esp],
+     initialised at entry (`char *nb = numbuf;`, fn_17928 35 -> 9).
+   - Operand order of a compare or a product follows the game's load order: `nlaps + 1 > lap`,
+     `(lap - 1) * ncells` (car_laps 29 -> 2).
+   - An unsigned `cmp eax,1; jbe` + `cmp eax,2; je` chain is a `switch` with `case 0: case 1:`; a
+     block the game jumps back into is a duplicated source block the compiler cross-jumped
+     (fn_1c0f4 67 -> 14).
+   - A global the game keeps in a register across calls: compute in the global itself, drop the
+     local copy (minimap, fn_16eac MATCH).
+   The full list with addresses is GOTCHAS.md "Levers that produced MATCHes".
    - EAX and EDX roles swapped in an address computation: put the temp into a local that already
      lives in EAX (songs_load: `n = i * 12; f(path, (char *)names + n);` matched).
    - A loop bound written `<= 199` gives `jle`, `< 200` gives `jl`: match the game's compare.

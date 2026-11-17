@@ -120,6 +120,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### Levers that produced MATCHes (try these before SKIP)
 
+- **Frame size first: our `sub esp, N` differs from the game's = a local array has the wrong size.**
+  Read the array sizes off the game's slots: overlay_draw's frame 0x34 with buf at [esp+0x14] and
+  dword slots from 0x20 meant `char buf[0xc]`, not 0x14 (62 -> 46, every scalar slot moved back).
+  Also scores_screen `long sc[10]`, time_str `buf[4]`. iter 39 lead list: STATUS.md. [generic]
 - **The game CALLS a function our -oe inlines:** call an alias at those sites,
   `void f_x(int); #pragma aux f_x "f_"` (com_getc_x, waitkey_x, makepath_x, setvmode_x, ...); for
   a function called everywhere `#define readdat readdat_x` after its definition. Where the game
