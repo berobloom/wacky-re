@@ -4163,25 +4163,30 @@ void fn_16eac(void)
 void srand(unsigned);
 int rand(void);
 
+/* differs: 2 rows of 38 instructions, one emission-order swap - the game materialises 0x104 in EDI
+ * at 0x16f2f (inside the nplayers load/store pair) and loads v88b7a at 0x16f3f, ours the other way
+ * round; size and every other byte agree. Tried (13 spellings, .work/probe_f24, three compiles):
+ * `c = 0x104` in five source positions (all give the same swap; assigning it after the rand loop
+ * loses the hoist and costs the EDI push), a volatile alias of v88b7a in the max compare and in
+ * both reads (6), the max block written first (7), a temp for racetime (18), a `lim` local for the
+ * bound (14), `while` and do/while and if/break forms of the i loop (14 - the game's jmp-to-test is
+ * what the plain `for` gives), `short i` (23) and the 0x104 literal with the wrapper gone (16).
+ * What matched the rest: 0x104 in a local (EDI, 5 pushes) and no `for(;;)`/`break` wrapper. */
 void fn_16f24(void)
 {
-    int r;
-    int m;
-    int i;
+    int r, m, i, c;
 
     nplayers = v7ecb0;
+    c = 0x104;                  /* EDI across the rand loop: `mov edx,edi` 0x16f72 */
     m = racetime;
     if (m < v88b7a)
         m = v88b7a;
     srand(m);
-    for (;;) {
-        do {
-            r = rand();
-        } while (r < 0 || r > v88b7a);
-        for (i = 1; i <= nplayers; i++)
-            fn_16d68(i, 0x104, r);
-        break;
-    }
+    do {
+        r = rand();
+    } while (r < 0 || r > v88b7a);
+    for (i = 1; i <= nplayers; i++)
+        fn_16d68(i, c, r);
 }
 
 /* differs: race-start setup (0x17928). Two compiler-side diffs (C shape tried extensively):
