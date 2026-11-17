@@ -68,6 +68,12 @@ block inside both arms of the test, our build merges them — see the `differs:`
 - The result goes to `v88bae`: 1 map, 2 entity, 3 player, 4 pickup (CONFIRMED). The player loops
   run `i <= nplayers` (0x2189e, 0x21dd3: `jle`), one more than the count (LIKELY a game bug or a
   count stored as n-1).
+- In `shot_hit`'s AI-hit path the taunt block (`voice_play(0xff)`, the `face == v7ec6c` test,
+  `f66 = 1`, `f64--`) runs when `v7ec74` (netvoices) is **not** zero, i.e. in a network race
+  (CONFIRMED: `cmp [v7ec74],0; je 0x21aee` at 0x21ab2-0x21ab9 skips it; the sibling test 0x21af7
+  -0x21afe in the same function is `cmp; jne 0x21b0a` in both the game and our build, so the
+  inverted sense at 0x21ab9 is source-level, not a compiler choice). There the follow-up
+  `voice_play(0x11)` is gated on `v7ec74 == 0` (0x21af7).
 
 ## Traps
 

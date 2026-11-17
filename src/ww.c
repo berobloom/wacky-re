@@ -9077,13 +9077,18 @@ void kart_hit(void)
     }
 }
 
-/* differs: near miss, 324 instructions each, 13 diff blocks (the byte size check.sh prints includes
- * alignment padding to the next function), two causes:
- * 1. the AI path's flag lives in EDX in the game (the dead `kind` register), EBX in ours, so
- *    `f66 = 1` stores BX instead of an immediate (0x21aad-0x21aee); 24 declaration orders and using
- *    `kind` itself as the flag (much worse) do not fix it.
- * 2. `f5a = f38[v88b7e]`: the game loads the index first as `lea edx,[eax*2]` + `[edx+eax+0x38]`,
- *    ours `[eax+edx*2+0x38]`; six spellings (byte arithmetic, `i[a]`, a struct element) do not move it.
+/* differs: near miss, 28 fndiff rows (13 of them masked-fixup pairs, so 2 rows are real). Cause 2
+ * is FIXED here: the index as its own statement `n = v88b7e * 2;` plus `(char *)v7d800 + 0x38 + n`
+ * writes it in byte arithmetic and gives the game's `lea edx,[eax*2]` then `[edx+eax+0x38]`
+ * (0x21b0a-0x21b1d); the f38 read sits above `f58 = 1` as the game's does (load 0x21b1d, store
+ * 0x21b22). Remaining, both dead-end classes:
+ * 1. the AI path's flag lives in EDX in the game (the dying `kind` register), EBX in ours, so
+ *    `f66 = 1` stores BX instead of an immediate (0x21aad-0x21aee) and the function is 2 bytes
+ *    short; 24 declaration orders, `kind` itself as the flag (much worse), a second flag local
+ *    (much worse), a `(char *)+0x66` store (no change) and `flag = 1` above `kind = v7d874->kind`
+ *    (25 rows, but the store lands at 0x21a7b, not the game's 0x21aad) all fail: the coin flip.
+ * 2. the game hoists the karts[i] index conversion `movsx edx,cx` to 0x21be1, above the `f02 = 2`
+ *    store; ours emits it inside the `soundon` arm.
  * Levers that mattered: `kind != 5` / `kind != 4` arms first, and every branch falling into one
  * `v88bae = 3; return;` (the compiler duplicates the tail; per-branch stores get scheduled early). */
 /* ---- 0x218a4, 1338 bytes: what the shot at (lx0, ly0) hits (callers in 0x22230); v7d874 is the shot
@@ -9114,6 +9119,7 @@ extern short v88b02;
 void shot_hit(void)
 {
     short i, flag, kind, ai, hit;
+    int n;                      /* 0x21b11 lea edx,[eax*2]: f38's byte offset (shot_hit) */
 
     v7d7a4 = lx0;
     v7d7a8 = ly0;
@@ -9169,7 +9175,7 @@ void shot_hit(void)
                 if (ai) {
                     if (kind != 5) {
                         flag = 1;
-                        if (netvoices == 0) {
+                        if (netvoices != 0) {   /* 0x21ab9 je: the block runs when v7ec74 != 0 */
                             voice_play(0xff);
                             if (v7d800->face == *(int *)&v7ec6c) {
                                 v7d800->f66 = 1;
@@ -9182,8 +9188,9 @@ void shot_hit(void)
                         if (flag) {
                             if (netvoices == 0)
                                 voice_play(0x11);
+                            n = v88b7e * 2;
+                            v7d800->f5a = *(short *)((char *)v7d800 + 0x38 + n);   /* read at 0x21b1d, above the f58 store */
                             v7d800->f58 = 1;
-                            v7d800->f5a = v7d800->f38[v88b7e];
                             v7d800->f4c = ticks2;
                         }
                     } else {
