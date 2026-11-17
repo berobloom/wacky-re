@@ -81,7 +81,7 @@
 57   0x02d548 shot_fire              MATCH (iter 37: walk the cached global v7d874 itself, no local p; v7d5d0 = curpos after the y store - permute.py)
 64   0x01e760 volume_menu
 67   0x01c0f4 fn_1c0f4
-73   0x02b270 leaderboard
+73   0x02b270 leaderboard            SKIP: x/y parameter homes (game x spilled, y in EBP; ours the reverse) drive the pointer-store order; int col for spr_x 75 -> 73; permute.py's probe winner loses whole-file
 75   0x021310 ent_sprites_load
 80   0x035ca4 main
 108  0x024364 kart_fire

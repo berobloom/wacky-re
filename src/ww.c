@@ -13982,9 +13982,12 @@ void overlay_draw(void)
  * two columns of four, 0x26 apart: the name padded to 8, the two-digit score and the face. The
  * own player's (myplayer) and, in split screen, the second player's (v88c6a) place is returned
  * through the pointers (x, y, player, place) instead of drawing the face, for the caller.
- * differs: 12 blocks: the game spills x and keeps y in EBP (ours the reverse, so the pointer
+ * differs (73 rows): the game spills x and keeps y in EBP (ours the reverse, so the pointer
  * stores are ordered differently), loads the score with mov ax / cwde, and adds pnames after
- * the imul; tried: ternary / temp for spr_x, int p, (short) casts. */
+ * the imul; tried: ternary / temp for spr_x, int p, (short) casts. Iter 37: spr_x through an
+ * `int col` set in each arm (the game's `mov eax,2` / `mov eax,0xaa` + one store) 75 -> 73;
+ * col declared first or braced arms change nothing, `short col` 90; permute.py (15 rounds) ranked
+ * `*y` before `*x` best in its probe (42 -> 38) but whole-file it is 75 - not taken. */
 struct standing { short score, player; int f04; };
 extern struct standing standings[];
 #pragma aux standings "_arr799d8"
@@ -13997,6 +14000,7 @@ void leaderboard(short *x, short *y, short *who, short *place, short *x2, short 
     char buf[0x28];
     short i;
     short p;
+    int col;
     int row;
     short draw;
 
@@ -14017,11 +14021,12 @@ void leaderboard(short *x, short *y, short *who, short *place, short *x2, short 
             buf[0] = '0';
         }
         if (i <= 4)
-            spr_x = 2;
+            col = 2;
         else
-            spr_x = 0xaa;
+            col = 0xaa;
         if (i == 5)
             row = 0x32;
+        spr_x = col;
         spr_y = row;
         strcpy(name, " ");
         strcat(name, pnames[p]);
