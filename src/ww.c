@@ -3750,14 +3750,21 @@ void zones_menu(int which, int bonus)
     }
 }
 
+/* differs: 32 rows, all one register home: the game keeps the value that reaches the shared tail
+ * (v7ecb8/records_load/v7ee5a/v7ea58) in EDX across the three paths (`test edx,edx` 0x1685b,
+ * `movsx edx,[0x7ee5a]` 0x1685f, frame 8), 9.5b puts it in [esp+8] (frame 0xc). 25 spellings in
+ * three probe compiles (.work/probe_em, control 27): gotos vs if/else-if/else, declaration order
+ * and `register`, `unsigned`/`long`/`enum`, the zero chained into u, the menu result through t, and
+ * the zero hoisted above the early returns. `short edxv` DOES get EDX but then the ops are 16-bit
+ * (`test dx,dx`) and t/u swap slots - 22 rows of a different shape, not taken. Kept: the arms
+ * reassign the parameter (the game's `mov ebp,eax` is in the prologue 0x167e1, and `xor ebp,eax`
+ * 0x16820 zeroes it with the still-live incoming value): 34 -> 32 rows. */
 void engines_menu(int a)
 {
-    register int edxv;
-    int t, u, p;
+    int edxv, t, u;
 
     v88bb0 = 0xd;
     v88b9e = 0;
-    p = a;
     if (twoplayer != 0)
         return;
     if (netvoices != 0)
@@ -3766,13 +3773,13 @@ void engines_menu(int a)
     u = 0;
     if (a == 3) {
         edxv = 1;
-        p = 0;
+        a = 0;
     }
-    if (p == 2) {
+    if (a == 2) {
         u = 1;
-        p = 0;
+        a = 0;
     }
-    if (p)
+    if (a)
         t = v7ee5a;
     if (v7edb0 != 0) {
         v7ee5a = 2;
@@ -3803,7 +3810,7 @@ domenu:
 setr:
     v7ecb8 = edxv;
     records_load(edxv);
-    if (p)
+    if (a)
         edxv = t;
     v7ee5a = edxv;
     v7ea58 = (short)edxv;
