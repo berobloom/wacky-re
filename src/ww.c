@@ -15700,10 +15700,16 @@ void rows_pad(int a, int n)
  * and goes into the book, trial70730[(a - 1) * 5 + b - 1]. Records are marked with a blinking
  * pointer (gn7eae4) until fire / Esc / a joystick button. The menu calls (0x1911f, 0x1d6ca)
  * only show the book.
- * differs: 21 blocks, same length: the record-row loop keeps its row pointer in EBP where the
- * game keeps j there; the blink offsets (ox, oy) swap EBX/EDX; the f1bf94 call after
- * enter_name is scheduled before the idx load; the rest are fixup-only. Arrays declared as
- * title, name, buf, num give the game's stack layout. */
+ * differs: 121 rows, 92 of them the scalar slot permutation (dead end; frame 0x15c and the array
+ * order title, name, buf, num already match the game's). The real rows: the record-row loop's two
+ * homes are the mirror image of the game's (game counts in EBP and keeps the row pointer in slot
+ * [esp+0x110], stepped there by 0x14 and reloaded into ESI each pass, 0x2ec8e/0x2edb4; ours keeps
+ * the pointer in EBP and counts in a slot), ox/oy swap EBX/EDX (0x2f0f8), and at 0x2ed73 the game
+ * tests its register counter where we reload the slot. Tried (iter 41, probe .work/probe_tb/TB.C,
+ * control 155): the sounds_load pointer lever in four spellings - `char *nm` assigned before the
+ * loop and stepped in the header, at the body end, in the for init, declared after the ints -
+ * 256/256/279/302: the extra local re-numbers every slot (the probe control scores 155 there, so
+ * probe scores rank this function badly - decide with fndiff on the whole file). */
 struct trialrec {
     char lapname[4][20];
     int lap[4];
