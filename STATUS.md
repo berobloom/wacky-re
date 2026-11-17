@@ -28,9 +28,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    addresses each function uses (globals, calls, strings, jump-target blocks), which fndiff masks.
    iter 38 it found four behaviour bugs (fn_1c0f4, credits_screen, fn_1832c, fn_173c4); the six
    DIFFER lines left are explained (inlined pal_6bit, jump tables, folded pointer inits).
-2. Later (the human's plan, not started): an isledecomp/isle-style README with per-file progress:
-   split src/ww.c by subsystem, percentage = byte-identical functions per file, cover from
-   original/FRNTCOVR.PCX and screens from the original in DOSBox-X, laid out like redcat-rrr-re. Before probing, run the GOTCHAS scans on the game's code: a
+2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
+   PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
+   rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
+   `trackpick` in .work/dos/states; accelerate is Alt). Before probing, run the GOTCHAS scans on the game's code: a
    cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
    the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
    the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).
