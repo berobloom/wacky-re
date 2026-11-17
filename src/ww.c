@@ -11575,21 +11575,32 @@ void anim_tick(void)
 
 /* ---- 0x2632c, 891 bytes: the same projection for the active shots (callers frame_draw 0x134ff,
  * 0x13608; 0x289d7): size tab6e600[step], sprite spr + frame * fsize, record f1c = 0, f24 = f18 = -1.
- * differs (near-miss, 220 vs 210 insns, 29 blocks): the game keeps v7d874 in ECX for the loop; ours
- * reads it from memory, as in players_project/ents_project (QUESTIONS 2) - although our shots_move
- * gets the same promotion of the same global. Not probed further. */
+ * differs (near-miss, 117 rows, ours 844 bytes vs the game's 891): what took 155 -> 117 (iter 42) is
+ * a local `struct shot *p` declared LAST as the loop pointer with `v7d874 = p;` just after the f04
+ * guard (the game's `mov ecx,shots` 0x26335, `mov [v7d874],ecx` 0x26351; declaring p first 134),
+ * `short sy` (its compare is 16-bit, `cmp dx,word [esp]` 0x26415) and `spr_h = *p7d764++` with no h
+ * local (no slot spill). Left: the homes of the sx/sy/dy products (game sx EAX cwt, v7d614 ESI,
+ * v7d5e4 EBX, d EBX->EDI, side ESI; ours permuted), the slot order (game sy [esp], dy [esp+4],
+ * i [esp+8]; ours i in EBP), p in EBX not ECX, and the game's six extra v7d874 resyncs (0x26403,
+ * 0x2643e, 0x26491, 0x26675, 0x2667e, 0x26697). Worse: `short a` 135 (the `(short)` casts are right),
+ * `short i` 146, a volatile alias pinning the store 136, `v7d874 = p;` after the loop 120 and a
+ * nmrefs DIFFER - the game leaves the global past the table (0x26697), ours the last live shot; no
+ * reader uses it unset (shot_step, shot_hit, shot_fire and shots_clear all set it). Byte-identical:
+ * both product orders in the f0c load, `if (!p->f04)`, dropping the unused h. */
 extern short *tab6e600[];
 
 void shots_project(void)
 {
-    short n, dy, sx, k, c, h;
-    int i, sy, d, side, a, m, t;
+    short n, dy, sx, k, c, sy;
+    int i, d, side, a, m, t;
+    struct shot *p;
 
-    for (v7d874 = shots, i = 0; i <= 0x3c; v7d874++, i++) {
-        if (v7d874->f04 == 0)
+    for (p = shots, i = 0; i <= 0x3c; p++, i++) {
+        if (p->f04 == 0)
             continue;
-        v88b20 = v7d874->x;
-        v88b22 = v7d874->y;
+        v7d874 = p;
+        v88b20 = p->x;
+        v88b22 = p->y;
         if (v88b20 < v88c16 || v88b20 > v88c2a || v88b22 < v88c18 || v88b22 > v88c2c)
             continue;
         if (in_sector() == 0)
@@ -11625,10 +11636,9 @@ void shots_project(void)
         spr_y = tb6bd00[d];
         p7d838 = tab6e600[k];
         p7d764 = p7d838;
-        h = *p7d764++;
+        spr_h = *p7d764++;
         p7d838 += 2;
         spr_w = *p7d764;
-        spr_h = h;
         spr_y -= spr_w;
         if (spr_y > 0xc7)
             continue;
@@ -11666,7 +11676,7 @@ void shots_project(void)
         CR->f08 = p7d838;
         CR->f14 = v7d878;
         v88b78++;
-        CR->f0c = (int)(v7d874->spr + v7d874->frame * v7d874->fsize);
+        CR->f0c = (int)(p->spr + p->frame * p->fsize);
     }
 }
 
