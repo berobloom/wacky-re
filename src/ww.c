@@ -8245,7 +8245,10 @@ void ent_sprites_load(void)
  * gives the game's layout (360 vs 596 instrdiffs). Iter 40: `net_key(v7eca0, 0, 0)` without the
  * `& 0xff` (the unsigned char parameter truncates; the game's one `movzx eax, byte [v7eca0]` 0x20c3c)
  * 92 -> 79 rows, tools/wc/fndiff.py; the case 3/4 `v7eca8 = v7ee5a; v7ee5a = 2;` pair through an int
- * temp (t) is worse: 79 -> 99 (9.5b sinks the load+stores past the five constant stores either way). */
+ * temp (t) is worse: 79 -> 99 (9.5b sinks the load+stores past the five constant stores either way).
+ * nmrefs iter 40: ours carries 765 of the game's 773 references; the game has one more each to
+ * f1bf80, p7d718, pal_a and v88bda, all inside blocks one side only (4 of them) - a block-order lead
+ * for (d), not a missing statement. */
 struct cfgp {                       /* 0x774e4, 0x74 bytes, [0] one-player and [1] split-screen saved game */
     int on;
     int myplayer, f08, laps, f10, f14, f18;

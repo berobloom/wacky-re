@@ -7,6 +7,10 @@
 # Status: (empty) = open; MATCH = now byte-identical (baseline raised in the same commit);
 # SKIP: <causes, what was tried> = budget spent, take the next; LAYOUT: = not fixable in C.
 # Take the FIRST line with an empty status. Write the status in the same commit as the code.
+# Iter 40 tie-break: a status holding only a `(...)` partial-gain note counts as taken (that is what
+# STATUS.md's next-open list has been doing) - scores_screen, fn_173c4 and fn_1832c are skipped that
+# way; `tools/wc/fndiff.py ww .work/src/WW.OBJ NAME 0xADDR | tail -1` gives the current row count
+# (the first column below is often stale: kart_bump read 86 here and 71 on the committed code).
 
 0    0x02e318 demo_rec               LAYOUT: call displacement only, our function sits elsewhere; not fixable in C
 1    0x032c98 pic_show               LAYOUT: code identical, only the padding after it differs (0x32cc1 is another function's tail)
