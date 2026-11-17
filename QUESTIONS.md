@@ -104,6 +104,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    anim_tick 0x261fc (v7d7f4, v7d800 and even twoplayer) do get it. Common to the three that fail (LIKELY
    the cause, untested): they are the
    ones that call in_sector and isqrt with the pointer live across the calls.
+   Ruled out as levers (iter 25, .work/probe_nkp, .work/probe_fi, .work/probe_is): explicit register
+   variables - WCC386 9.5b has none in any scope (function scope E1009, file scope E1059 "Invalid
+   storage class for non-local variable", and without `register` E1009 + E1011); the order of the
+   initializers in a comma `for` (only the two zeroing `xor`s change order, fade_in 0x32cf8 keeps
+   i=EBX/k=EDX both ways); and source position relative to a branch (a statement written below a
+   branch sinks past the whole branch, so the four tbl6e858 loads sitting in in_sector's branch shadow
+   at 0x24a33-0x24a46 are not reachable that way). What would settle it is unchanged: the allocator's
+   own order, not the C.
 3. classes_menu 0x19EAC, the last remaining byte difference (one instruction of 149): the game emits
    `mov dword [0x7edb0],1` at 0x1a05d - between the eighth KID MODE help line's `mov esi` (0x1a04f)
    and its `rep movsd` (0x1a067) - while 9.5b puts it at 0x1a080, right before the `call showlines`;
