@@ -136,7 +136,23 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **One local shared by two switch arms has one home, two locals get two:** one `short b` for the
   receive and transmit byte fixed com_isr 0x106c8 and com_isr_fifo. [generic]
 - **A 0/1 value in its own home: braced `if (c) { x = 1; } else { x = 0; }`**, not `x = (c)` (which
-  computes in a scratch + `mov`): ctl_label 0x19d0e `sete al; movzx eax,al`. [generic]
+  computes in a scratch + `mov`): ctl_label 0x19d0e `sete al; movzx eax,al`. The `? 1 : 0` ternary
+  form also changed ents_show's whole loop shape: braced, 9.5b emits the game's `jmp` to a bottom
+  test with one epilogue (0x14393) instead of a top test + duplicated epilogue (49 -> 36). [generic]
+- **An int stored as a dword slot and read back `movsx r, word [slot]` = an `int` local passed to a
+  `short` parameter** (or `(short)n`): duck_screen's three centred x values are an `int w` (game slot
+  0xc8), its loop keeps `short x` (cwde); screenshot's file counter is `int n` with `itoa((short)n)`
+  (51 -> 6). Scan: `mov dword [esp+N],r` followed within 4 instructions by `movsx r2, word [esp+N]`.
+  [generic]
+- **`(int)` casts on both arms of a short ternary index** give per-arm `movsx` with no `cwde` after
+  the join (draw_status `pnames[v7eb80 ? (int)myplayer : (int)v88c6a]`, 48 -> 30). [generic]
+- **A `je` straight to the epilogue is an early `return`, not the end of an `if`:** duck_screen
+  0x2bad6 `if (!after) return;` - the rebuild had run the PRESS FIRE/fade tail for both callers. Check
+  every conditional jump whose target is the epilogue against the C before probing codegen.
+  [generic]
+- **Raw-address macros (`WS(0x6ab14)`) cost rows:** 9.5b loads the constant into a register and
+  stores through it, the game addresses the symbol (`mov word [players+0x84],bx`). Rewrite with the
+  struct fields of the right global (fn_16d68). [generic]
 - **A constant stored to a global through a register = an `int` local assigned inside that arm**
   (`int row; ... if (...) { row = 0x5c; spr_y = row; }`; a short local or a ternary folds to an
   immediate store): msgbox 0x2a45c. [generic]
@@ -204,8 +220,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   is NOT a dead end: the game's source used the global itself as the working variable. Drop the
   local copy and compute in the global (`spr_x = p->x - 0x400; if (spr_x < 0) spr_x = 0; ...`):
   minimap 0x2a4ac 44 -> MATCH, fn_16eac (`n = nplayers` copy removed) 11 -> MATCH. Signature to
-  scan for: `mov [G],r; call; mov r,[G]` in the game. A global that is already the working
-  variable and still is not cached (players_ahead's v7d800) is unexplained. [generic]
+  scan for: `mov [G],r ... call; mov r,[G]` in the game - the store can sit up to a dozen
+  instructions before the call (shot_fire 0x2d5ad: v7d874 walks the shot table, 57 -> MATCH;
+  fn_16d68: `v7d7f8 = &trklines[k]`, stored once at the exit, 58 -> 26). A global that is already
+  the working variable and still is not cached (players_ahead's v7d800) is unexplained. [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
   flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
   com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared

@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **197 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+- **198 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
   0x10260-0x36a4d bar the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
@@ -21,11 +21,14 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `draw_status` 0x012f80 (48), `duck_screen` 0x02b5e8 (48),
-   `ents_show` 0x014380 (49). Before probing, check the game for `mov [G],r; call; mov r,[G]`: a
-   global it caches means our C should compute in that global, not in a local copy (GOTCHAS).
-   `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` is a random-mode permuter (30 copies a
-   compile); it found nothing on track_setup/shot_step/net_recv in 15 rounds.
+   overnight/prompt.md step 2). Next open: `volume_menu` 0x01e760 (64), `fn_1c0f4` 0x01c0f4 (67),
+   `leaderboard` 0x02b270 (73). Before probing, run the GOTCHAS scans on the game's code: a
+   cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
+   the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
+   the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).
+   `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` (random-mode permuter, 30 copies a
+   compile) found shot_fire's last swap in one round; it is worth a 20-round run once a function is
+   down to scheduling rows.
 2. Near misses just below the top: `com_open` 0x102f4 is 13 rows (all register homes) and
    `shot_step` 0x25e6c, `fn_182d0` 0x182d0 are 2-3 rows - only take them with an idea the
    `differs:` note does not list. `time_str` 0x2a618 (31) and `voices_load` 0x11f98 (33) are now
