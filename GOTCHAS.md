@@ -573,6 +573,17 @@ it can be copied back into DREA.
   sizes per side (they diverge at the offending store - byte 271 in shots_move) and look for a
   register home, not a missing instruction. Do not spend variants on a 1-2 byte length gap that
   comes with equal instruction counts; shots_move's whole 13-row real diff is that one home.
+- **Two kinds of register-home near miss - read which load is emitted first before probing**
+  (iter 28, [generic]): fn_19db8 0x19db8 differs from the game only by an EDX/EAX swap, yet both
+  sides give the FIRST load EDX and the second EAX: ours emits the switch's controlling expression
+  before the local's initializer (`mov dx,[v88bb2]`, `dec edx`, OBJ 0x9a3f, keep loaded after it at
+  0x9a47), the game loads keep first (0x19dbb) - so the flip is 9.5b's scheduler and no spelling of
+  the two loads fixes it (17 spellings over two sessions). shots_move 0x2602c is the other kind: the
+  emission order is identical and only the homes are permuted (the colourer's coin flip, like
+  net_recv's crc accumulator). Line the two listings' loads up first: order differs = scheduler, and
+  only a statement reordering moves it (net_input 0x2f4a8 was fixed that way) - a switch's
+  controlling expression is not a statement, so that one is cheap to try and then SKIP; order equal =
+  home flip, worth a few temps/aliases at most.
 - **A variant that scores well may be a different program: read which value the instruction reads**
   (iter 16, [generic]): line_draw 0x21f04 wants `movsx edx,cx` before its `mov eax,ebx; mov ebx,ecx;
   mov ecx,eax` dx/dy rotation. Writing the rotation first and `err = dy >> 1` after it reproduces the

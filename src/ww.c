@@ -5253,7 +5253,13 @@ extern char cls_name[];
  * `keep`, `register`, a comma expression inside the switch, an extra unused local, an explicit empty
  * default, per-case stores to v88b84 instead of the local (then 9.5b emits `movw $imm,disp` and no
  * entry load), both statement orders in the cases, ternary vs if/else, and every -o<letter> on top of
- * -oneatx. Same family as ctl_label's EBX-vs-EAX gap and question 1 (QUESTIONS.md 1, 2). */
+ * -oneatx. Same family as ctl_label's EBX-vs-EAX gap and question 1 (QUESTIONS.md 1, 2).
+ * Iter 28: the homes are not arbitrary - BOTH sides put the first load in EDX and the second in EAX.
+ * The game loads keep first (`mov dx,[0x88b84]` 0x19dbb) then the switch value (`mov ax,[0x88bb2]`
+ * 0x19dc2); ours emits the switch's controlling expression first (`mov dx,[v88bb2]` + `dec edx`, OBJ
+ * 0x9a3f) and the keep load after it (0x9a47), so the flip is the scheduler's, not the colourer's.
+ * Init as its own statement, a `short`/`int` `sw` local holding v88bb2 (alone and with the init
+ * statement), and `switch (v88bb2 - 1)` with renumbered cases all keep our order. */
 void fn_19db8(void)
 {
     short keep = v88b84;
