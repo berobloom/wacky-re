@@ -21,8 +21,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `voices_reset` 0x11adc, `kart_move` 0x237e4 (shares
-   shot_step's `[esp]` slot: the `volatile int t` lever applies).
+   overnight/prompt.md step 2). Next open: `fn_1d704` 0x01d704, `netkeys_in` 0x02d94c,
+   `track_around` 0x0283a4, `time_str` 0x02a618.
 2. Re-try the newest levers on SKIPped lines whose cause is a register home (not the dead-end
    classes): split arithmetic `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`,
    `net_recv`, `shots_move`; `intro` 0x348f4 and `sounds_load` 0x12124 for a `= .*== 0` assignment.
