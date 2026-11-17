@@ -6476,14 +6476,16 @@ void fn_1cad0(int which, int rec)       /* arg1 = eax, arg2 = edx */
  * (0x1c183-0x1c1ea), and `vals[vals[3]]` picks which of the two applies to this side (0x1c57a,
  * 0x1c64f). findings/menus.md has the levels and the screen's layout.
  *
- * differs: 67 instructions of 1944 (same size, tools/wc/fndiff.py). All five are block shape:
- * the third centred line swaps `mov eax,0x140` with `lea edx,[ecx*8]` and sets ecx before the
- * spr_y load (0x1c35c, 0x1c37a); the twoplayer/splitscreen record is recomputed into ESI with the
- * +0x46 name in EDX and its shared name block placed *before* the netgame test, which jumps back
- * to it at 0x1c542 (ours tests first, 0x1c53f); the single-player chain tests 1 then 2 and jumps
- * forward to both blocks (0x1c65d-0x1c667); the print loop's first row pointer is
- * `mov edi,esp; add edi,0x50` (0x1c715); and the 60-tick wait keeps the snapshot in EAX and the
- * fresh ticks in EDX (0x1c821-0x1c831). */
+ * differs: 14 instructions (1948 bytes vs 1944). iter 38: both control-name chains are `switch`es
+ * with `case 0: case 1:` (the game's unsigned `cmp eax,1; jbe` + `cmp eax,2; je` + `jmp`), and the
+ * two-player one sits in the else of `if (netgame == 0)` with the name pair written twice: the
+ * compiler cross-jumps the copy, which is the game's shared block before the netgame test with the
+ * `jbe` back into it (0x1c542, 0x1c58b): 67 -> 18 -> 14. Left: the third centred line swaps
+ * `mov eax,0x140` with `lea edx,[ecx*8]` and sets ecx before the spr_y load (0x1c35c, 0x1c37a);
+ * the print loop's first row pointer is `mov edi,esp; add edi,0x50` (0x1c715; &rows[i][0],
+ * *(rows + i), rows[0] + i * 80 and an explicit pointer all keep ours or get worse); the 60-tick
+ * wait keeps the snapshot in EAX and the fresh ticks in EDX (0x1c821-0x1c831; i/n/t as the
+ * snapshot, declaration order, unsigned, <= 59, for/break: no change). */
 extern char ctl_names77432[];           /* 0x77432, inside cfg77128 (0x77128 + 0x30a) */
 extern short cfg77128w, cfg7712a;       /* 0x77128, 0x7712a: shorts inside cfg77128 */
 int wait_input(short mode);                     /* 0x27920: called with 0 wherever f278c4 is */
@@ -6494,7 +6496,7 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
     char rows[12][80];
     char *p, *q;
     short x;
-    int i, n, t, v;
+    int i, n, t;
 
     if (netgame != 0)                                   /* 0x1c102 */
         vals[3] = 0;                                      /* 0x1c10c */
@@ -6563,12 +6565,19 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
                                                            puts this +0x46 name in EDX, then makes
                                                            ESI the +0x38 name (q) */
         q = ctl_names77432 + vals[3] * 0x54 + 0x38;
-        if (netgame == 0 || (v = vals[vals[3]]) <= 1) { /* 0x1c538-0x1c58b */
+        if (netgame == 0) {
             strcat(rows[5], q);                         /* 0x1c549 */
             strcat(rows[6], p);                         /* 0x1c5d0 */
-        } else if (v == 2) {                            /* 0x1c58d */
+        } else switch (vals[vals[3]]) {
+        case 0:
+        case 1:
+            strcat(rows[5], q);
+            strcat(rows[6], p);
+            break;
+        case 2:
             strcat(rows[5], "BUTTON3");                 /* 0x1c59e */
             strcat(rows[6], "BUTTON4");                 /* 0x1c5d0 */
+            break;
         }
         strcpy(rows[7], "");                            /* 0x1c5f6-0x1c606 */
         n = 8;                                          /* 0x1c5fb */
@@ -6577,13 +6586,16 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
         else
             strcpy(rows[8], "F1 - F6 ARE YOUR GIGGLE KEYS!");   /* 0x1c61b */
     } else {
-        v = vals[vals[3]];                              /* 0x1c64f-0x1c656 */
-        if (v <= 1) {                                   /* 0x1c65d */
+        switch (vals[vals[3]]) {                        /* 0x1c64f-0x1c667 */
+        case 0:
+        case 1:
             strcat(rows[5], p + 0x38);                  /* 0x1c676 */
             strcat(rows[6], p + 0x46);                  /* 0x1c6e6 */
-        } else if (v == 2) {                            /* 0x1c662 */
+            break;
+        case 2:
             strcat(rows[5], "BUTTON3");                 /* 0x1c6b4 */
             strcat(rows[6], "BUTTON4");                 /* 0x1c6e6 */
+            break;
         }
     }
     for (i = 1; i <= n; i++) {                          /* 0x1c70c-0x1c746 */
