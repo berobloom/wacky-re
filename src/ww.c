@@ -18231,9 +18231,18 @@ void players_ahead(void)
 /* ---- 0x343a0, 184 bytes (caller 0x348f4 at 0x34c08): draws the p6a980 picture at the scale of
  * distance d (row tb6bd00[d], frame size tab6e470[(d - 0x7c) / 0x46, 0..9]), lifted by `lift` and
  * centred on x.
- * differs (8 blocks): the game spills d to the stack and keeps the row in EBX until one final
- * spr_y store (reloading spr_y into BX after the call); ours stores spr_y early. Tried: a local
- * row, spr_y -= twice, h temp, statement orders. */
+ * differs (32 rows, .work/probe_pa 13 spellings, two compiles, control 32): three homes and one
+ * statement. The game homes lift in ECX, x in ESI and spills d to its own slot (`mov [esp],eax`
+ * 0x343a9, frame 4, two pushes) and reloads it for tb6bd00[d] (0x343cf); ours keeps d in ECX,
+ * lift in ESI, x in EDI (three pushes, no slot) - the documented home coin flip. The row IS a
+ * local in the game: `mov ax,[eax*2+0x6bd00]; mov ebx,eax` (0x343d2) then 32-bit `sub ebx,eax`,
+ * `sub ebx,ecx` and one spr_y store (0x34439), plus a dead `mov bx,[spr_y]` after the call; an
+ * `int y` local reproduces all of that but moves k from DX to AX (`cmp ax,9` vs the game's
+ * `cmp dx,9`) and drops the dead reload - 33 rows; `short y` gives 16-bit arithmetic (`sub dx,
+ * word [spr_w]`) 35 rows; a local copy of d takes the slot but turns the division into
+ * `idiv dword [esp]` 31 rows of a worse shape. Also tried: int/short h, a w temp, a row pointer,
+ * y declared first, `y -= spr_w; y -= lift;`, the two pointer statements in the other order (32,
+ * but 180 bytes vs the game's 184). Nothing kept. */
 void pic_at(int d, int lift, short x)
 {
     short k, h;
