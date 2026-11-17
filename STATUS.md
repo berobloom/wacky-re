@@ -9,16 +9,22 @@ Short: where the project stands, and what is next. History is in git; no diary.
   Compiling with `-3` instead of `-3r` gives a byte-identical object, so the CPU-reorder letter is
   not what moves instructions - do not re-test it.
 - **185 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`); 100
-  entries in `src/nearmiss.txt` (4 MATCH, 6 SKIP, 2 LAYOUT, 88 open). The C rebuild covers
+  entries in `src/nearmiss.txt` (4 MATCH, 8 SKIP, 2 LAYOUT, 86 open). The C rebuild covers
   0x10260-0x36a4d except the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is
   the hand-written assembly module.
 - Compiler levers that worked (GOTCHAS "This project's traps"): a constant stored through a register
   = an **`int` local assigned inside that arm** (msgbox 0x2a414); a pointer the game re-materialises
   three times = a **second local re-armed at the loop body's end** (fn_1c994); a `for` tail with two
-  increments is rescheduled, so put the pointer step in the body (anim_tick). Not reachable so far: a
-  loop-carried local's home register (net_recv, 21 spellings), a dead incoming-register copy
-  (fn_182d0), one moved load (track_setup, music_jingle), the v88bb2/v7edb0 store pair (classes_menu),
-  the int shift into `err`'s register (line_draw).
+  increments is rescheduled, so put the pointer step in the body (anim_tick); an assignment chain
+  computes in a scratch, so **write the two statements** when the game's load lands in the local's
+  home register (demo_play - which also fixed its byte length, because a byte store from BL is 6
+  bytes and AL's `a2 disp32` form 5); **`volatile` on a global pins a store 9.5b defers** (demo_play
+  0x2e35f; declare the volatile type under an aliased name to keep the plain name elsewhere).
+  Not reachable so far: a loop-carried local's home register (net_recv, 21 spellings), a dead
+  incoming-register copy (fn_182d0), one moved load (track_setup, music_jingle), the v88bb2/v7edb0
+  store pair (classes_menu), the int shift into `err`'s register (line_draw), which of two
+  pushed-register locals gets ESI and which EDI (pcx_load, 24 spellings, global extern order
+  included), and one register copy one slot late (demo_play, 46 spellings).
 - Classes/modes (findings/classes.md): `v88bb2` = 1 AMATEUR ... 5 KID MODE (a **signed** short),
   `classes_menu` 0x19eac is that screen; `laps_menu` 0x1a148 (identical) sets `nlaps` 6/8/10.
 - Car select (findings/car_select.md): `cars_menu` 0x1a380-0x1be3b, one 6861-byte C function, `ents[0..7]`
@@ -41,6 +47,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
   and `music_play` 0x11834 are byte-identical; the game inlines `music_start` (scan
   `66 c7 05 cc8b08 0000`: 20 hits) and in the four `music_start(song, 0)` copies keeps `xor edx,edx`
   **before** the two stores (0x11885, 0x2b6a3, 0x2cad6, 0x2e729) while 9.5b sinks it.
+- Demos (findings/game-loop.md): `demo_rec` 0x2e318 / `demo_play` 0x2e348 have no caller in the exe
+  (the .MAC/.BMC runs of (count, control byte) at 0x7d9a0); `demo_play` writes the eight control
+  globals from the run's byte.
 - Video (findings/video.md): `setpalette` 0x36f14 is **not** a palette op - asm `rep movsb` of 0x3e80
   bytes A0000+`pal_b` to A0000+`pal_c`; its flippers stay `extern` (-oe loses `net_end`); page flips
   are `if`/`else` pairs of stores, never ternaries.
@@ -49,23 +58,23 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 Take the first open item when QUEUE.md has none open; mark items CLOSED or BLOCKED.
 1. Near misses: first empty-status line of `src/nearmiss.txt` (procedure in
-   overnight/prompt.md step 2). Next open: `pcx_load` 0x27060 and `demo_play` 0x2e348 (5 each),
-   then `com_isr` 0x106c8, `pal_shift` 0x114a8, `track_pics_load` 0x277b8, `view_at_curpos`
-   0x2f408 (6 each). Read the `differs:` note first, then `tools/wc/fndiff.py` (the LEFT column is
-   OURS, the right is the game's - the reverse of what overnight/prompt.md says).
-2. `pcx_load` 0x27060 (5 diffs): probe shapes the way iter 17 did - copy src/ww.c whole, add the
-   variants under new names, score with `tools/wc/variants.py OBJ ww 0xADDR 0xEND n1 n2 ...` where
-   END cuts before the shared epilogue, and keep the unchanged statements verbatim (reordering them
-   re-schedules the whole function and invalidates the ranking).
-3. Apply the iter 17 levers where their shape shows up: a constant stored through a register
-   (`int` local inside the arm) in `pal_shift` 0x114a8 / `com_isr` 0x106c8; a second pointer local
-   re-armed at the body end wherever the game has `push reg`/`pop reg` pairs around an inline
-   strcpy/strcat (`demo_play` 0x2e348, `track_pics_load` 0x277b8).
+   overnight/prompt.md step 2). Next open: `com_isr` 0x106c8, `pal_shift` 0x114a8,
+   `track_pics_load` 0x277b8, `view_at_curpos` 0x2f408 (6 each), then `wtext` 0x146d4 and
+   `release_check` 0x34458 (7 each). Read the `differs:` note first, then `tools/wc/fndiff.py` (the
+   LEFT column is OURS, the right is the game's - the reverse of what overnight/prompt.md says; a
+   row whose only difference is `[eax + @]` vs `[eax - @]` is the fixup mask, not a diff).
+2. `com_isr` 0x106c8 (6): try the iter-18 levers first - two statements instead of an assignment
+   chain where the game loads in the local's home, and `volatile` (through a `#pragma aux` alias)
+   where a store to a global moved. Probe with `tools/wc/variants.py OBJ ww 0xADDR 0xEND n1 n2 ...`,
+   END cut before the shared epilogue, unchanged statements kept verbatim.
+3. `demo_play` 0x2e348 is down to 4 rows, of which 2 are mask artefacts: one register copy sits one
+   slot late (9.5b store,copy,and / game copy,store,and at 0x2e35f). If a Watcom option or a front
+   end (WPP386?) that splits a copy from its AND is ever found, this is the test case - QUESTIONS 14's
+   dead-incoming-copy family is the same shape.
 4. Where a near miss is one moved instruction, stop early: `music_jingle` 0x11884, `track_setup`
-   0x124e8, `classes_menu` 0x19eac, `fn_182d0` 0x182d0, `line_draw` 0x21f04, `net_recv` 0x2db00 are
-   SKIP with the tried spellings in their notes; `demo_rec`/`pic_show` are LAYOUT. QUESTIONS 14 asks
-   what makes the game keep a dead incoming-register copy - the test is a build option or front-end
-   (WPP386?) that makes one appear.
+   0x124e8, `classes_menu` 0x19eac, `fn_182d0` 0x182d0, `line_draw` 0x21f04, `net_recv` 0x2db00,
+   `pcx_load` 0x27060 are SKIP with the tried spellings in their notes; `demo_rec`/`pic_show` are
+   LAYOUT. One probe compile is enough to call a tie-break (GOTCHAS "coin flip", iter 18).
 5. `race_records_menu` 0x1d13c, one block left (0x1d178-0x1d196): the game loads the pooled "" byte
    0x600ac into EDX, ours into EAX, so -oe tail-merges a store (GOTCHAS iter 13). Diff with
    `tools/wc/fncompare.py` (it prints instruction counts per side, unlike fndiff).
