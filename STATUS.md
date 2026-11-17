@@ -21,13 +21,16 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: the first line with an empty status in `src/nearmiss.txt` (procedure:
-   overnight/prompt.md step 2). Next open: `main` 0x035ca4 (80), `kart_fire` 0x024364 (108),
-   `car_laps` 0x012b44 (109). (iter 38: volume_menu 64 -> 48, fn_1c0f4 67 -> 14, ent_sprites_load
-   SKIP.) A game `cmp eax,1; jbe` + `cmp eax,2; je` + `jmp` is a `switch` with `case 0: case 1:`.
-   Run `tools/wc/nmrefs.py ww .work/src/WW.OBJ` after a near-miss change: it compares the
-   addresses each function uses (globals, calls, strings, jump-target blocks), which fndiff masks.
-   iter 38 it found four behaviour bugs (fn_1c0f4, credits_screen, fn_1832c, fn_173c4); the six
-   DIFFER lines left are explained (inlined pal_6bit, jump tables, folded pointer inits).
+   overnight/prompt.md step 2). Next open: `kart_bump` 0x022bf4 (86), `main_menu` 0x01f858 (95),
+   `players_project` 0x0255d4 (117). iter 39: the row counts are now the better of difflib autojunk
+   on/off with the masked `- @` fixup rows folded (fndiff.align/norm), and the list was re-ranked:
+   many old counts were inflated. iter 39 results: com_open 13 -> 11, fn_17928 35 -> 9 (pointer local
+   fixes the array slots), car_laps 29 -> 2, overlay_draw 62 -> 46 (frame size from `buf[0xc]`);
+   main and kart_fire SKIP. Lead list, frame size differs from the game's (`sub esp`): chat, menu,
+   fn_1832c, fn_193a8, cars_menu, fn_1d704 (ours 4 short), kart_state (4 over), players_project,
+   ents_project, shots_project, race_results (0x74 short), trial_book, race_run, players_ahead,
+   pic_at: size the arrays from the game's slots first (GOTCHAS, overlay_draw). Run
+   `tools/wc/nmrefs.py ww .work/src/WW.OBJ` after a near-miss change.
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
