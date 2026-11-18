@@ -20,12 +20,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: no open status in `src/nearmiss.txt`; iter 46 took fn_1c0f4 14 -> 8 rows and to the
-   game's size (its `differs:` note has the two spellings that did it; what is left there is
-   scheduling/coin flip). Next leads from `nmrefs.py ww .work/src/WW.OBJ` (`game more`/`ours more` =
-   a local copy or an extra read, not noise): chat 0x14d00 (**`ours only ?int386x_`**, plus one extra
-   spr_y read), kart_fire 0x24364 (12 more v7eb9c reads), players_ahead 0x34208. nmrefs after every
-   change; re-rank with `tools/wc/nearmiss.sh` (its first column is stale).
+1. Near misses: no open status in `src/nearmiss.txt` (QUEUE.md's only item is the unfilled
+   `Q1 <short title>` template - not actionable, iters 46-47). Next leads from `nmrefs.py
+   ww .work/src/WW.OBJ` (`game more`/`ours more` = a local copy or an extra read, not noise):
+   chat 0x14d00 (**`ours only ?int386x_`**, plus one extra spr_y read), kart_fire 0x24364
+   (12 more v7eb9c reads), players_ahead 0x34208. nmrefs after every change; re-rank with
+   `tools/wc/nearmiss.sh` (its first column is stale).
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
@@ -38,14 +38,15 @@ Short: where the project stands, and what is next. History is in git; no diary.
    down to scheduling rows.
 3. Near misses just below the top: `fn_1c0f4` (8 rows) and `draw_status` 0x12f80 (17) are the
    smallest with named non-home causes (draw_status: print_at's args hoisted into the inline strcpy's
-   setup at every site, and only the SECOND `netgame == 1` pnames pair merges); `showlines` 0x2a268
-   (18) has 2 `mov ax,word[spr_x]` vs the game's `movsx eax` (width rule; mixed `short`/`int` x/y
-   untried) under 10 slot rows. Take the rest only with an idea its `differs:` note does not list.
+   setup at every site, and only the SECOND `netgame == 1` pnames pair merges). car_laps 0x12b44 is 2
+   rows from MATCH but only the cmp-operand pair (`cmp edi,eax; jge` 0x12ee0) is left and 13
+   spellings do not emit it (its note). Take the rest only with an idea its `differs:` note does not
+   list.
 4. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
-   the `(int *)charbase + i * 2` spelling of every `(int *)(v7d6a0 + curpos * 8)` site
-   (`view_at_curpos` 0x2f408, `view_box`, `in_sector`, `cpu_drive`), split arithmetic
-   `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`, `net_recv`, `shots_move`;
-   `intro` 0x348f4 and `sounds_load` 0x12124 for a `= .*== 0` assignment.
+   split arithmetic `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`, `net_recv`, `shots_move`;
+   `intro` 0x348f4 for the `= .*== 0` assignment. (`(int *)charbase + i * 2`: view_at_curpos' head
+   and the view_box/cpu_drive sites already match - the idea is spent, in_sector's rows are the
+   leading-block rotation.)
 5. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
 6. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s

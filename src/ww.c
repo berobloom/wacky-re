@@ -1753,8 +1753,13 @@ void car_finished(int i);
    back to the game's 1084), the backward score2 is `(lap - 1) * ncells` (the shared imul tail
    0x12e1e takes lap-1 in EDI), and the lap cap is written `nlaps + 1 > players[i].lap` (the game
    loads nlaps first 0x12ed0). Left: that compare's operand order (`cmp edi,eax; jge` 0x12ee0, ours
-   `cmp eax,edi; jle`); `lap < nlaps + 1` gives the compare but loads lap first (12 rows), and
+   `cmp eax,edi; jle`); `lap < nlaps + 1` gives the compare but loads lap first, and
    `!(...)`, `1 + nlaps`, a temp, casts on either side: no better; permute.py 20 rounds: no gain.
+   Iter 47 in the real file: `lap < nlaps + 1` 4 rows (it swaps the two movsx homes AND the add
+   destination - lap EAX, nlaps EDI - only the cmp/jge pair lands), `lap <= nlaps` and
+   `nlaps >= lap` 21 each; 8 more spellings in one probe compile (.work/probe_cl: `!(lap > nlaps)`,
+   `1 + nlaps`, `{ int m = nlaps + 1; ... lap < m }`, braced/indent forms) none under 3. The game's
+   pairing (nlaps loaded first into EAX, `cmp edi,eax; jge`) is emitted by none of them.
    The game inlines since2(cars[i].f82) (argument in EAX, ticks2 - t in EDX) where our -oe keeps
    the call: written out with a temp, `(t = cars[i].f82, ticks2 - t)`, that site matches. */
 void car_laps(void)
@@ -13537,13 +13542,17 @@ void hud_draw(void)
  * waits for a key (v88b9e = wait_input(1)) or else until ticks passes t (callers 0x113f3,
  * 0x18de3 and more). Defined under its own name: the callers' prototype carries a pragma for
  * the ECX pass-through.
- * differs (near-miss, 103 vs 104 insns, 10 blocks): the game keeps t in EBP, the line pointer in
+ * differs (near-miss, 18 rows, 103 vs 104 insns, 10 blocks): the game keeps t in EBP, the line pointer in
  * ESI and i in EDI, with x/y and n/wait in stack slots (x at [esp], y [esp+4]); ours spills t and
  * orders the slots the other way. Tried: all 120 declaration orders, int x/y, an indexed loop.
  * 18 fndiff rows and 10 of them are only the slot displacements (same mnemonic), so the rest cannot
  * buy a MATCH: 2 rows are 9.5b folding `&netstats[1]` into one relocated immediate where the game
  * has `mov esi,0x3c` + `add esi,0x7c818` (0x2a359/0x2a35d), 2 are our `mov ax,word[spr_x]`/
- * `mov ax,word[spr_y]` (0x2a331/0x2a340) vs the game's `movsx eax`, 2 the tail filler. */
+ * `mov ax,word[spr_y]` (0x2a331/0x2a340) vs the game's `movsx eax`, 2 the tail filler.
+ * Iter 47 (.work/probe_cl, control 16 there): an `int tv` temp (`tv = spr_y + 4; y = tv;`) scored
+ * 15 in the probe but 18 -> 20 in src/ww.c (rejected, GOTCHAS "Rank in a probe, decide in
+ * src/ww.c"); `(int)` casts on the two sums, `p = netstats[1];` before the for, and
+ * `&netstats[1][0]` all keep the probe control's 16. */
 void showlines_def(int n, int wait, int t);
 #pragma aux showlines_def "showlines_"
 
