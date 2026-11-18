@@ -271,7 +271,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **Stack-slot permutation of scalar locals** (QUESTIONS 9, 10), unless one of the swapped slots
   is a compiler-made pointer (lever above) or the group is written as one `volatile` array (Levers,
   wtext 0x146d4): neither declaration nor first-use
-  order (arrays DO follow declaration order, ascending from esp+0). 43 orders in enter_name, also
+  order (arrays DO follow declaration order, ascending from esp+0). Exception, iter 56: in kart_bump (11 shorts,
+  8 spilled) a random declaration order from permute.py's `declorder` mutation took 49 -> 36 rows -
+  it moved register homes as much as slots. Hand-picked orders do not find this; let the permuter
+  shuffle the declarations. 43 orders in enter_name, also
   release_check, wtext, scores_screen, fn_1c0f4, showlines, cars_menu. In a function that already
   has 20+ scalar slots the pointer lever backfires - it renumbers every slot (trial_book 0x2e4b8,
   four spellings: probe 155 -> 256). Size a local array from the
