@@ -813,7 +813,11 @@ void getline(void);
    dropping either local (worse: 25-30) tried). Fixed in iter 37 (51 -> 6): int n read back as
    (short)n for itoa (the game's dword slot + movsx word reload), hp = &hdr with the other pointer
    inits (ebp from the prologue), the palette shift through its own pointer q in the pal_shift form
-   (pal itself never moves, so `pal = palptr` went), and fputc(line[x++], f) (inc before the call). */
+   (pal itself never moves, so `pal = palptr` went), and fputc(line[x++], f) (inc before the call).
+   Iter 54: `volatile unsigned char *pl[2]` (pl[0] = line, pl[1] = palbuf) - 11 rows: the two elements
+   are still coloured as separate pseudos and land on [esp+0x508]/[esp+0x510], with n pushed to
+   0x50c; adding `volatile int n` made it worse (23, size 840). The volatile-array lever (wtext) only
+   works when the permuted locals are the function's ONLY spilled ones. */
 void screenshot(void)
 {
     unsigned char palbuf[800];
@@ -11455,7 +11459,10 @@ void ents_project(void)
  * the game's order but pairs EAX with the slot and EBX with the global (3 rows). Same slot in
  * kart_move 0x237e4. Fixed earlier: lx1 = lx0 as its own statement lets the ly1 store be shared.
  * Iter 49: permute.py 5 rounds x 30 copies (seed 7) - best 3 = control (probe 3, fndiff 2), no
- * permutation puts the `[esp]` reload above the v7d6a0 load in their current homes. */
+ * permutation puts the `[esp]` reload above the v7d6a0 load in their current homes. Iter 54: an
+ * `extern char *volatile v7d6a0v` / `#pragma aux v7d6a0v "_v7d6a0"` alias on the other load (so both
+ * memory reads are volatile) keeps our order - Watcom schedules volatile reads freely, so it pins
+ * nothing here (2 rows, the two loads merely shift by 3 bytes). */
 extern int v7d5d0;
 
 void shot_step(short move)
@@ -18508,7 +18515,8 @@ void pic_at(int d, int lift, short x)
  * the reverse); declaration order, placement and int/short mixes do not move them. Documented dead end: Watcom's
  * scalar slot permutation (GOTCHAS "Watcom does not allocate scalar stack slots in declaration
  * order", 43 declaration orders probed for enter_name). Iter 30: y first assigned at the top or
- * before the v7e574 test (8 rows), int n, y (34 rows). */
+ * before the v7e574 test (8 rows), int n, y (34 rows). Iter 54: `volatile short n, y` - 18 rows, the
+ * two slots unchanged (0x190/0x194): volatile forces memory but not the slot order. */
 extern int v7ecbc;
 
 void release_check(void)

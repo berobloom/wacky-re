@@ -194,7 +194,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   drawsprite_clip 0x11416). A `volatile` alias of a global pins a deferred store
   (`extern volatile unsigned char v88ccav; #pragma aux v88ccav "_v88cca"`, demo_play 0x2e35f) and
   restores a re-test the game repeats after stores (race_results); alias per function, a volatile
-  global changes other functions. [generic]
+  global changes other functions. It pins stores, not loads: an `extern char *volatile` alias on the
+  other side of a swapped pair of loads left the order alone (shot_step 0x25f46). [generic]
 - **A second typed name for one global** (`extern short w7ed8c; #pragma aux w7ed8c "_v7ed8c"`): a
   word load + `xor ah,ah` truncation (net_key 0x2dd42); int aliases of char* globals stop the
   scheduler hoisting a pointer chain (data_load 0x28180). No alias needed for the same effect: write
@@ -249,12 +250,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   nothing; using nb everywhere cost an EBP frame. [generic]
 - **Stores near an inline strcpy slide into its setup unit**; which ones is a source-position fact,
   probe every position (classes_menu 0x19f01-0x19f27).
-- **A permuted group of scalar slots: hold those values in one `volatile` array.** A plain
-  `int sl[4]` or a struct local with constant indices is scalarized by 9.5b (each element becomes
-  its own pseudo, the frame grows, the slots scramble: wtext 0x146d4 6 -> 21); `volatile int sl[4]`
-  keeps a real array at esp+0, so the elements land in the game's slots in declaration order
-  (wtext 6 -> 2 -> MATCH; read one element into a plain local to get the game's load hoisted above
-  the following global store). [generic] [generic]
+- **A permuted group of scalar slots: one `volatile` array of those values** (wtext 0x146d4, 6 ->
+  MATCH; a plain `int sl[4]` or struct with constant indices is scalarized and its slots scramble,
+  6 -> 21). Only works when they are the function's ONLY spilled locals - with other scalar slots
+  around, the elements are still coloured individually (screenshot 0x114c8, release_check 0x034458:
+  no gain). [generic] [generic]
 
 ### Dead ends: SKIP at once (0 variants) unless you bring a new idea
 

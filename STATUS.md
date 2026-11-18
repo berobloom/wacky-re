@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **198 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+- **199 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
   0x10260-0x36a4d bar the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
@@ -22,10 +22,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: no open status in `src/nearmiss.txt` (QUEUE.md's only item is the unfilled
-   `Q1 <short title>` template - not actionable, iters 46-52); every remaining line's cause is a
-   class in GOTCHAS "Dead ends". Take one only with an idea its `differs:` note does not list.
-   nmrefs after every change; `src/check.sh` count +1 before `src/matched.baseline` goes up.
+1. Near misses: no open status in `src/nearmiss.txt` (iter 54 took `wtext` 0x146d4 to MATCH with one
+   `volatile int sl[4]`; `screenshot` 0x114c8, `release_check` 0x034458 and `shot_step` 0x25e6c were
+   probed and left as SKIP - their notes now say what was tried). Take one only with an idea its
+   `differs:` note does not list. nmrefs after every change; `src/check.sh` count +1 before
+   `src/matched.baseline` goes up.
 2. Live harness, next time it is up (QUESTIONS 19 second half): pick the BONUS PACK ZONES choice
    (`zones_menu` 0x16664 -> `v7ecb4` = 3), confirm the loaded track is 16..20, and check whether
    `in_zone` 0x125bc / the `map_at` users do anything at all in such a race.
@@ -45,6 +46,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## BLOCKED
 
-- The dead-end classes in GOTCHAS ("Dead ends: SKIP at once"): stack-slot permutation, a global
+- The dead-end classes in GOTCHAS ("Dead ends: SKIP at once"): stack-slot permutation (except where
+  the spilled locals are the whole frame - see the `volatile` array lever), a global
   promoted across a loop, the EAX/pushed-register coin flip, straight-line scheduling, folded
   address constants. QUESTIONS.md 1, 2, 3, 9, 10.
