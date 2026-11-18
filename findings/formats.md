@@ -351,8 +351,9 @@ md5 over every `<n>.<EXT>` payload of the 42 sets (`tools/le/datdump.py`):
   while assigning `v88b88 + {0, 5, 0xa, 0x15, 0x1a, 0x1f}`
   (`src/ww.c:4321-4350`). `v88b88` wraps 1..5 (`fn_1832c`, `src/ww.c:5006-5017`);
   `v7ecb4` is 0 or 3 (`zones_menu` 0x16664 stores 0 at 0x16669 and 3 at 0x167c8 -
-  the only other store, 0x1fdec in `main_menu` 0x1f858, copies `ctl775dc`
-  0x775dc); `v88bb6` 1..3 is LIKELY (`fn_1832c`). An out-of-range subject takes
+  the only other stores, in `main_menu` 0x1f858, restore the value `save_ctl`
+  0x119d8 saved: `ctl775dc` 0x775dc in split screen (0x1fdec), `ctl775da` 0x775da
+  otherwise, so they hold 0 or 3 as well); `v88bb6` 1..3 is LIKELY (`fn_1832c`). An out-of-range subject takes
   the `ja` and writes nothing. The same two switch inputs are also restored from
   the saved-game records `rsave774e8` 0x774e8 (`struct rsave` fields `metal`
   +0x10, `track` +0x14, read back as words at 0x1fdf1-0x1fe4a, written by

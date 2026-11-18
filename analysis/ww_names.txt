@@ -181,7 +181,7 @@
 0x088cc5 key88cc5
 0x088cc6 key88cc6
 0x088cc7 key88cc7
-0x0119d8 save_ctl     # SPECULATIVE: stores control settings per player mode, then save_config(0) (tail call by fall-through)
+0x0119d8 save_ctl     # CONFIRMED (rebuild src/ww.c, MATCH): saves the engine choice v7ee5a and track group v7ecb4 into the split-screen (ctl775d8/ctl775dc, ctl775cc = splitscreen, ctl77558 = 1) or the single-play pair (ctl775d6/ctl775da, ctl774e4 = 1), then save_config(0); race_run inlines it twice (0x31b42, 0x324f9)
 0x011a38 save_config  # LIKELY: writes cfgname ("wb"): 0x492 + 0x18 + 0x630 bytes; CD hint on failure
 0x011ac8 flushkeys    # LIKELY: while (kbhit()) getch()
 0x011adc voices_reset # LIKELY: FX_StopAllSounds; voice handles -1
@@ -208,10 +208,10 @@
 0x0774e4 ctl774e4
 0x077558 ctl77558
 0x0775cc ctl775cc
-0x0775d6 ctl775d6
-0x0775d8 ctl775d8
-0x0775da ctl775da
-0x0775dc ctl775dc    # CONFIRMED (xref iter 53): = cfg77128 + 0x4b4; stores 0x31b42/0x324f9 (in the unnamed 0x30aae); read at 0x1fde5 into v7ecb4
+0x0775d6 ctl775d6    # CONFIRMED (save_ctl MATCH): single-play saved engine choice v7ee5a
+0x0775d8 ctl775d8    # CONFIRMED (save_ctl MATCH): split-screen saved engine choice v7ee5a
+0x0775da ctl775da    # CONFIRMED (save_ctl MATCH): single-play saved track group v7ecb4 (0 or 3); main_menu restores it
+0x0775dc ctl775dc    # CONFIRMED (xref iter 53; save_ctl MATCH): = cfg77128 + 0x4b4; the split-screen saved track group = v7ecb4 (0 or 3) at the last save_ctl (0x119d8 and its two inlined copies 0x31b42/0x324f9 in race_run); main_menu restores it into v7ecb4 at 0x1fde5 when splitscreen
 0x077128 cfg77128     # SPECULATIVE: 0x630 bytes saved by save_config
 0x07a9c8 voices       # LIKELY: 0x18-byte records {data, ?, pitch, priority, handle, plays}: voice_play passes them to FX_PlayVOC
 0x07b6d8 cfg7b6d8     # SPECULATIVE: 0x18 bytes saved by save_config
