@@ -11203,7 +11203,14 @@ void sprites_draw(void)
  * which shifts the register allocation of the whole body. Bisecting the body down to the bounds test
  * and in_sector still gives no promotion, so it is not one statement (QUESTIONS 2, fn_193a8 point a; the
  * kart_fire family). Tried: loop forms (init order, increment order, explicit
- * increment), sx int, sy int (best), four declaration orders. in_sector returns short (`test ax,ax`). */
+ * increment), sx int, sy int (best), four declaration orders. in_sector returns short (`test ax,ax`).
+ * iter 55 (.work/probe_pp, 10 variants in one compile, every one = control at 110): the init hoisted
+ * out of the for header (`v7d800 = players;` then the for - the exact shape of the byte-identical
+ * players_frames 0x287ec, which DOES cache it: `mov ebx,0x6aa90` 0x28875, `mov [v7d800],ebx` 0x28891,
+ * reload 0x288c1), the comma init split both ways, `++v` increments, `volatile int sy, dy` in slots.
+ * The promotion is not a loop-shape fact; the game does not cache the global in kart_hit 0x216a0
+ * either (`mov dword [v7d800],0x6aa90` 0x21810, `add dword [v7d800],0x68` 0x2188f), so this is
+ * register pressure in the big body. */
 struct carv {                   /* the 0x104-byte car records seen from 0x68400 */
     char f00[0x1a];
     short f1a;
