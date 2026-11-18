@@ -97,9 +97,8 @@ then it requires `WACKY.CFG` to be exactly **0xada** bytes (`cmp edi, 0xada`
 0x492 + 0x18 + 0x630 = 0xada = 2778 = that file's size, and the writer does the
 same three transfers in the same order (`save_config` 0x11a38 **MATCH**, whose
 out-of-line write block is 0x11967-0x119d4, entered by `jne 0x11967` from
-0x11a54) - CONFIRMED. Version string
-"1.1" at +2 (bytes; that it is the version is LIKELY, `release_check` prints
-"WACKY WHEELS VERSION 1.1" separately).
+0x11a54) - CONFIRMED. The version string "1.1" at +2 is bytes; that it is the
+version is LIKELY, `release_check` prints "WACKY WHEELS VERSION 1.1" separately.
 
 ### the 0x492 block = a 0x42-byte header + 24 records of 0x2e (CONFIRMED: 0x42 + 24 * 0x2e = 0x492)
 
@@ -115,7 +114,7 @@ and (f00, f02) = group 1 slots 0-7, group 2 slots 4,5,6,7,0,1,2,3, group 3 slots
 7,0,1,2,3,4,5,6. LIKELY: `f00` is the class group and `f02` the slot inside it -
 three groups of eight is exactly how `fn_1cad0` splits a row (`{0, 0x170, 0x2e0}`
 = 8 and 16 records). Why each group starts at slot 0 / 4 / 7: OPEN
-(QUESTIONS.md Q11).
+(QUESTIONS.md 16).
 
 CONFIRMED (`tools/le/rangexref.py ww 0x7ee1c 0x7f2ae` - every decoded
 instruction with an operand inside the range; 17 distinct addresses, **none in
