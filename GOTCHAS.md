@@ -91,6 +91,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   the levers below, then SKIP. A whole function whose temporaries mirror the game's EAX<->EDX is
   that class: four C spellings of race_run's `x * 8` pointer walk (0x3066d, four sites) all scored
   equal to the control. [generic]
+- **A `cmp` row whose only difference is the operand order is a dead end, not a lever:** 9.5b gives a
+  comparison's source-LEFT operand both the cmp destination and the first register home, so flipping
+  the C operands swaps the two temps and leaves the emitted `cmp` alone (car_laps 0x12ee0, 21
+  spellings; intro 0x351ae, `j == k + 1` 12 -> 14). [generic]
 - **Read the width of a compare AND of a load:** `cmp r16,r16` = both shorts in C, `cmp r32,r32` =
   at least one int; `movzx ax,al` vs the game's `movzx eax,al`, or `cmp dword [slot],N` vs its
   `cmp word`, is the same signal. Pair the game-only and ours-only rows that agree on opcode and

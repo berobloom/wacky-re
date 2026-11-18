@@ -18638,7 +18638,11 @@ void tiles_setup(void)
  * `k + 1 == j` compare has its operands swapped (0x351ae `cmp esi,ecx`). The pal_a save went with
  * `void f375cd(void)` (21 -> 17) and `k + 1 == j` (was `j == k + 1`) fixed the homes (17 -> 15).
  * Tried iter 36: `t = v7ea70;` + `ticks - t` (37), `-v7ea70 + ticks` (15), `< 9` (38), `t = v7eb00`
- * for the fread buffer (31), `(int)` casts on k or j (15). */
+ * for the fread buffer (31), `(int)` casts on k or j (15). Iter 48 (12 rows now): `j == k + 1` again
+ * in a probe (14 - .work/probe_in) - 9.5b gives a comparison's source-LEFT operand both the cmp
+ * destination AND the first register home (ECX here, EAX in car_laps), so flipping the C operands
+ * swaps the two temps and leaves the emitted `cmp` alone; the other rows are the moved fread load,
+ * the zero sink, that hoist, and the padding/epilogue rows at 0x3526a and 0x352d4. */
 void f37e23(void);
 void f36e66(void);
 extern int v7aa98;
