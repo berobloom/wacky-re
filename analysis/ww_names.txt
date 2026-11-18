@@ -77,6 +77,7 @@
 0x07eb10 enginedata   # SPECULATIVE: the sample engine_start plays
 0x07ecf8 soundon      # LIKELY: sound calls are skipped when 0
 0x080adc pathext      # LIKELY: the suffix makepath appends
+0x088bd6 datfind_found  # CONFIRMED (tools/le/xref.py ww 0x88bd6: every write is `mov [0x88bd6], ax` right after a datfind call - 0x17e60, 0x2149d, 0x27c9b; callers test `== 0` at 0x12135): datfind's 1/0 result, not the index (that is datidx 0x88b00)
 0x088bdc splitscreen  # SPECULATIVE: with 0x88BE2, makes engine_start start a second engine
 0x088be2 twoplayer    # SPECULATIVE: see splitscreen
 0x010ba4 get_7ee5a    # SPECULATIVE: copies the short 0x7EE5A to the int 0x7ECA8

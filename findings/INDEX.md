@@ -6,7 +6,7 @@ check, do not re-derive; **OPEN** = work remains (say what).
 | Question | File | Status |
 |---|---|---|
 | Executables: format, size, sha256, entry, compiler, source file names, calling convention | `executables.md` | OPEN (compiler pinned to 9.5b; options open) |
-| File formats and archives on the disc | `formats.md` | OPEN |
+| File formats and archives on the disc | `formats.md` | OPEN (WACKY.DAT's container and the 577-entry census CONFIRMED; PCX blob layout, `.GAM` text, `WACKY.DTT` records pinned; the per-track payloads, `WACKY.ING` fields and the `WACKY1.HI`/`.TIM` names open) |
 | Memory map: segments / LE objects, globals, tables | `memory.md` | OPEN |
 | Startup chain, main loop, frame timing; the race-start helpers `fn_1be3c` (start grid `v70720[]`) and `fn_1bf00` (per-player rows); the hit tests `kart_hit`/`shot_hit` and `karts[]` 0x68410 = `cars[]` - 0x10 | `game-loop.md` | OPEN (the two helpers mapped and rebuilt as near misses; the loop itself not) |
 | Input: keyboard handler, key table, mouse | `input.md` | OPEN |
