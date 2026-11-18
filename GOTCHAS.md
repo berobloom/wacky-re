@@ -328,6 +328,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   with its resolved absolute target, so the operand scan catches it (`xref.py ww 0x357ac` ->
   `call 0x357ac` at 0x1691d). Writing an `0xE8` sweep script is redundant; `.work` holds four.
   [generic]
+- **A block's fields need a range census, not an xref of its base**: Watcom reads a struct/array
+  element through its own absolute address (`cfg7ee1c + 0x3e` is `word [0x7ee5a]` = `v7ee5a`), so
+  `xref.py ww 0x7ee1c` returns only the whole-block transfers; `tools/le/rangexref.py ww 0x7ee1c
+  0x7f2ae` -> 17 addresses, which is what proves the `WACKY.ING` record area is unread. [generic]
 - Structs are pack(1) (`imul 0x6a` where the game has `0x68` = natural packing). [generic]
 - Literals land at the game's CONST addresses only when functions are added in address order.
 - A switch's jump table sits in the gap BEFORE the function (0x1a360 in cars_menu), table order is

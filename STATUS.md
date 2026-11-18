@@ -23,17 +23,20 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: no open status in `src/nearmiss.txt` (QUEUE.md's only item is the unfilled
-   `Q1 <short title>` template - not actionable, iters 46-49); every remaining line's cause is a
+   `Q1 <short title>` template - not actionable, iters 46-51); every remaining line's cause is a
    class in GOTCHAS "Dead ends". Take one only with an idea its `differs:` note does not list.
    nmrefs after every change; `src/check.sh` count +1 before `src/matched.baseline` goes up.
-2. findings/formats.md follow-ups (offline, no harness): the `WACKY.ING` rows - a 0x44 stride with
-   the strings "MAR 1994" / "KNOCK ME OFF!" - against the users of `cfg7ee1c` 0x7ee1c
-   (`src/ww.c:3015`, the read at 0x35e15 in `main`); then the per-track payloads `.SIN` 1296,
-   `.M` 4096, `.POS` 8194, `.PAR` 25600 in `track_load` 0x279e8 and `data_load` 0x28180.
-3. `savedir` 0x7c158: what lands in it (`strcpy(savedir, "")` `src/ww.c:19266`,
-   `strcpy(savedir, cfgname)` 19277) and where `WACKY<n>.HI`/`.TIM` therefore go on a fresh
-   install - `records_load`'s create-from-DAT path (`src/ww.c:19077-19090`, `fopen(name,"wb")` +
-   `fwrite`) is the check. `duckfame_load` 0x35534 uses the same prefix for `WACKY.DTT`.
+2. The per-track payloads (offline, no harness): `tools/le/datdump.py 1.SIN 1.POS 1.PAR 1.M`
+   against the byte-identical `track_load` 0x279e8 and `data_load` 0x28180 - sizes 1296, 8194,
+   25600, 4096; lay the records out field by field in findings/formats.md.
+3. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
+   `WACKY.CFG` - it is the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
+   and 24 records, and the 12 key words of `cfg7b6d8` (QUESTIONS 16/17).
+4. `savedir` 0x7c158: `""` unless `APOGEECD` is set (`src/ww.c:19266`, `19277`), so the save files
+   are `<cwd>WACKY<n>.HI`/`.TIM` by default and the shipped `WACKY.CFG` picks slot 1
+   (`cfg7ee1c` +0x3e); what is left is what `records_load`'s create-from-DAT path writes on a
+   fresh install (`src/ww.c:19069-19110`, the rebuild MATCHes) and how `duckfame_load` 0x35534
+   finds `WACKY.DTT` there.
 4. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
 5. After a MATCH: rerun `tools/progress.py` (PROGRESS.md, per part and per subsystem of
