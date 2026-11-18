@@ -202,19 +202,35 @@ def mutate(t):
 
 
 def compile_round(cands):
-    body = [re.sub(r'\b%s\s*\(' % re.escape(name), 'pm%03d(' % k, c, count=1) for k, (c, _) in enumerate(cands)]
-    probe = src[:fend] + '\n' + '\n'.join(body) + src[fend:]
-    open(os.path.join(work, 'PERM.C'), 'w').write(probe)
-    obj = os.path.join(work, 'PERM.OBJ')
-    if os.path.exists(obj):
-        os.remove(obj)
-    subprocess.run([os.path.join(ROOT, 'tools', 'wc', 'wcc.sh'), os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B'),
-                    work, 'PERM.C', '-s', '-3r', '-oneatx'], capture_output=True, text=True)
-    if not os.path.exists(obj):
-        return None
-    sc = score_obj(obj, ['pm%03d' % k for k in range(len(cands))] + [name])
-    return sc
-
+    # Copies that do not compile are dropped by the error lines in WCC.OUT and the rest recompiled
+    # (iter 56: one bad mutant used to kill the round - kart_bump lost 23 of 30 rounds that way).
+    alive = list(range(len(cands)))
+    for _ in range(6):
+        body, spans, line = [], [], src[:fend].count('\n') + 2
+        for k in alive:
+            c = re.sub(r'\b%s\s*\(' % re.escape(name), 'pm%03d(' % k, cands[k][0], count=1)
+            spans.append((line, line + c.count('\n'), k))
+            line += c.count('\n') + 1
+            body.append(c)
+        probe = src[:fend] + '\n' + '\n'.join(body) + src[fend:]
+        open(os.path.join(work, 'PERM.C'), 'w').write(probe)
+        obj = os.path.join(work, 'PERM.OBJ')
+        if os.path.exists(obj):
+            os.remove(obj)
+        subprocess.run([os.path.join(ROOT, 'tools', 'wc', 'wcc.sh'), os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B'),
+                        work, 'PERM.C', '-s', '-3r', '-oneatx'], capture_output=True, text=True)
+        if os.path.exists(obj):
+            return score_obj(obj, ['pm%03d' % k for k in alive] + [name])
+        try:
+            out = open(os.path.join(work, 'WCC.OUT'), errors='replace').read()
+        except OSError:
+            return None
+        bad = {k for n in map(int, re.findall(r'PERM\.C\((\d+)\): Error', out))
+               for a, b, k in spans if a <= n <= b + 1}
+        if not bad or 0 in bad:
+            return None
+        alive = [k for k in alive if k not in bad]
+    return None
 
 parent, plabs = func, []
 sc = compile_round([(func, [])])
@@ -225,7 +241,9 @@ print('control %s: %d rows (original in the same object: %s)' % (name, best, sc.
 for r in range(rounds):
     cands = [(parent, plabs)]
     seen = {parent}
-    while len(cands) < copies:
+    tries = 0
+    while len(cands) < copies and tries < 50 * copies:     # a small function may have < COPIES mutants
+        tries += 1
         t, labs = mutate(parent)
         if t not in seen:
             seen.add(t)
