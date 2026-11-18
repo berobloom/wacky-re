@@ -9981,7 +9981,7 @@ extern short tb80ae8[];
 
 void kart_bump(void)
 {
-    short n, i, sy, sx, ox, oy, hi, lo, hit, k, pk;
+    short oy, k, pk, i, hi, hit, lo, ox, sx, n, sy;    /* order from permute.py (iter 56): 49 -> 36 rows; hit and m land in the game's slots, the other six stay permuted */
     int a, m;
 
     p7d86c = arr79a28 + 0x28;
