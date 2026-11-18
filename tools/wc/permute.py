@@ -173,12 +173,24 @@ def m_type(t):
 STMT = re.compile(r'^\s+[^{}\n;]*;\s*(/\*.*\*/)?\s*$')
 
 
+def independent(a, b):
+    # iter 56: only swap two statements that share no identifier and call nothing - the unchecked
+    # swap produced line_points (broke a dx/dy swap), netkeys_in (read c before its store), pic_at.
+    code = lambda x: re.sub(r'/\*.*?\*/|"[^"]*"', '', x)
+    a, b = code(a), code(b)
+    if re.search(r'\w\s*\(', a + ' ' + b):
+        return False
+    ids = lambda x: set(re.findall(r'[A-Za-z_]\w*', x))
+    return not (ids(a) & ids(b))
+
+
 def m_swapstmt(t):
     lines = t.split('\n')
     c = [i for i in range(len(lines) - 1)
          if STMT.match(lines[i]) and STMT.match(lines[i + 1])
          and not re.search(r'\b(return|break|continue|goto|int|short|char|long)\b', lines[i] + lines[i + 1])
-         and len(lines[i]) - len(lines[i].lstrip()) == len(lines[i + 1]) - len(lines[i + 1].lstrip())]
+         and len(lines[i]) - len(lines[i].lstrip()) == len(lines[i + 1]) - len(lines[i + 1].lstrip())
+         and independent(lines[i], lines[i + 1])]
     if not c:
         return None
     i = rng.choice(c)
