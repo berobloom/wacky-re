@@ -231,6 +231,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   0x32e60); `strcpy(p, "")` is a 1-byte copy of the pooled "" at 0x600ac (the NUL of "WACK").
   Watch check.sh's `segment CONST` line after every new string: one base = literals in place.
   [generic]
+- **Check a permute.py winner's diff before believing its score:** until iter 56 two mutations broke
+  the code silently - `comm` swapped `1 + X` in `- 1 + X` (a sign flip) and `bound` rewrote the
+  `> 1)` of `>> 1)` into `>>= 2)` (a store into the field). kart_bump's "49 -> 42" came only from
+  those two; the four safe mutations of that winner score 49. Both regexes are fixed; results logged
+  before iter 56 that list `comm` or `bound` were scored on wrong code. [generic]
 - **Score the control copy before trusting a variants.py probe:** copies of a function appended to
   the end of a probe file do not always compile like the original in place. race_records_menu
   0x1d13c: the unchanged copy scored 38 rows / 476 bytes appended, 12 / 512 in place (fn_1c0f4's

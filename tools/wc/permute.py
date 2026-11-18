@@ -92,7 +92,11 @@ def m_swap_cmp(t):
 
 
 def m_swap_comm(t):
-    s = sites(r'(?<![\w\]\)\-])(%s|\d+) ([+*&|]) (%s|\d+)(?![\w\[\(])' % (SIMPLE, SIMPLE), t)
+    # Only a whole operand pair: the previous non-blank is ( [ , or a plain `=`, the next one ) ] ; ,
+    # (iter 56: `- 1 + X` became `- X + 1`, and `a * b + c` could become `a * c + b`).
+    s = [x for x in sites(r'(?<![\w\]\)\-])(%s|\d+) ([+*&|]) (%s|\d+)(?![\w\[\(])' % (SIMPLE, SIMPLE), t)
+         if re.search(r'(?:[(\[,]|(?<![=!<>+\-*/&|^%])=)\s*$', t[:x.start()])
+         and re.match(r'\s*[)\];,]', t[x.end():])]
     if not s:
         return None
     x = rng.choice(s)
@@ -125,7 +129,7 @@ def m_incr(t):
 
 
 def m_bound(t):
-    s = sites(r'(<=|<|>=|>) (\d+)\)', t)
+    s = sites(r'(?<= )(<=|<|>=|>) (\d+)\)', t)       # not the `> 1)` of `>> 1)` (iter 56)
     if not s:
         return None
     x = rng.choice(s)
