@@ -57,7 +57,15 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   in `task_man.c` 0x40ff0, `sndscape.c`, `gus.c`, `blaster.c` x3), so the game has an earlier release of
   the same code (STRONGLY SUPPORTED: same function names - `MUSIC_FadeVolume` 0x42488, `TS_*`, `FX_*` - and
   the strings). The shipped LIB was built `/omaxnet /zp4 /5r` (`AUDIO.MAK`); the game's build options are
-  open. A start for matching the sound library from source.
+  open. **Closest known release: ASS 1.04** (github.com/gamesrc-ver-recreation/audiolib, which
+  reconstructs 1.04 / 1.09 / 1.1 / 1.12 from the ROTT, Shadow Warrior, Duke 3D and Blood EXEs and keeps
+  their original LIBs in `origlibs/`): per-function search of each original LIB in WW.EXE finds 200 of 471
+  functions for 1.04, 198 for 1.09, 181 for 1.1 and 1.12; ASS's own code (without the GUS SDK) 96 of 341
+  for 1.04 - whole `mpu401.c`, `dpmi.c`, `ll_man.c`, most of `pcfx.c`, `sndsrc.c`, `blaster.c` 16/46,
+  but `fx_man.c`, `guswave.c`, `multivoc.c` 2/33 and `music.c` 1/14 differ (CONFIRMED counts, iter 56c).
+  LIKELY: the game has an ASS release before 1.04 (Wacky Wheels is 1994, ROTT 1.3 later). That project
+  builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
+  the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module.
 
 ## Probe functions (the option evidence)
