@@ -170,6 +170,9 @@ inside a quarter is asm and unpinned (OPEN).
 
 ### .PAR - 25600 bytes of raw picture, blitted to A000:7d00 (transfer CONFIRMED)
 
+(The external pc-wackywheels-doc `docs/03-tracks.md` reads it as 640x40 by row smoothness alone;
+the copier and the live screenshot fit below make it 1280x20 - do not take that over.)
+
 Read raw (no PCX header) into `p6a980` (`src/ww.c:4415`); when `v7d998` is 0 or
 3 - not in the record/playback modes 1 and 2 (`v7d998` is set to 2 or 3 at
 0x1e450-0x1e485, to 1 by `demo_start`) - `v7eb54 = p6a980` and the asm
@@ -219,6 +222,17 @@ word in all 42 files (census, no exceptions) - 22..83 lines. `track_load` reads
 four coordinates, so the record is `short x0, y0, x1, y1, f08, f0a, f0c` with
 the coordinates in the 0x400-based world (`src/ww.c:12485-12502`,
 `struct rdrec` at `src/ww.c:12375`).
+
+The three tail fields, by census over all 2177 records of the 42 files (the hypotheses come from
+the external pc-wackywheels-doc `docs/03-tracks.md`; tested here, the code that reads them not yet
+read):
+- `f0c` = `round(hypot(x1-x0, y1-y0))` in all 2177: the segment length. STRONGLY SUPPORTED (census).
+- `f08` = the heading `atan2(y1-y0, x1-x0)` in units of 1/1920 turn, 0 = +x: within 1 unit in 2001,
+  at most 5.1 units off in all 2177 (a table-based atan, LIKELY; TRIG.DAT is 15360 bytes = 1920 x 8).
+  STRONGLY SUPPORTED (census).
+- `f0a` takes the values 0..7 (366/165/330/214/358/243/305/196), not "0 or 1" as the external doc
+  says, and is not the heading's octant (`f08 / 240` and `(f08 + 120) / 240` match 0 records).
+  Meaning OPEN.
 
 ### .SPW - the entity list (CONFIRMED)
 
