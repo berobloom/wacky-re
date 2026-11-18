@@ -3,12 +3,14 @@
 Status: OPEN (five helpers of this area are rebuilt - `fn_1cad0`, `fn_1c994`,
 `enter_name` 0x1cb44, the table's owner `scores_screen` 0x1ce14 (near miss, 97
 aligned instruction diffs) and the class record book `race_records_menu` 0x1d13c
-(near miss, one diff block); the code that first fills `tbl77758` is not)
+(near miss, one diff block); the loader `records_load` 0x357ac is byte-identical,
+so the gap "what first fills `tbl77758`" is closed)
 
 ## Summary
 
-Two 0x450-byte rows of records live at `0x77758` and `0x77ba8`; each row is 24
-records of 0x2e (46) bytes, read through the pointer `v7d8a8`. `fn_1cad0`
+Records live in `tbl77758`: six used rows of 0x450 bytes, 0x77ba8 .. 0x79587 (the row at
+0x77758 is slack, see below); each row is 24 records of 0x2e (46) bytes - three class groups of
+eight - read through the pointer `v7d8a8`. `fn_1cad0`
 (0x1cad0) selects a record into `v7d8a8`, `fn_1c994` (0x1c994) builds the
 fixed-width stamp string that goes in the record's `+6` field, `enter_name`
 0x1cb44 is the "PLEASE ENTER NAME.." screen, and `scores_screen` 0x1ce14 loads
@@ -84,14 +86,46 @@ car-select chain and the name entry.
 - CONFIRMED (0x1ce7d and 0x1d120 load `v88bb2` with `movsx`): `v88bb2` is a signed `short`;
   declaring it unsigned turns the 0x1d120 argument load into a `movzx`. The `mov dx,[pal_a]` at 0x1ce57 is
   not a parameter: it is a `short` save of pal_a around `f375cd` (findings/video.md).
-- CONFIRMED (only four code references to 0x77758 in the whole image,
-  0x1caf8/0x1cb12/0x1cb31/0x1d870, and 0x77758 is zeros in the file; `scores_screen`'
-  own reads go through the bases plus 4, 0x7775c/0x778cc/0x77a3c at 0x1cebf/0x1ceee/
-  0x1cf1d): nothing in
-  the game writes the table's address as a destination, so `tbl77758` is filled
-  through a computed pointer or a segment base that the listing does not show.
-  SPECULATIVE: that it comes from WACKY.DAT or from the demo runs. Test: boot the
-  original and see whether the rows are non-zero before any race (captures/).
+- CONFIRMED (`tools/le/xref.py ww 0x77758`: four references in the whole image,
+  0x1caf8/0x1cb12/0x1cb31/0x1d870, all of them `add eax, 0x77758` - the base of the row product,
+  never a destination; `xref.py ww 0x7d8a8`: the record pointer has exactly two writers, 0x1cb3d in
+  `fn_1cad0` and 0x1d8a8 in `fn_1d704`, both from that product; and 0x77758 is zeros in the file):
+  **the table's row 0 is never read or written, because the row index is never 0.** `v88bb6` is
+  clamped to 1..3 (0x192e8-0x19318: `inc [0x88bb6]` + `cmp word [0x88bb6],3` + `mov 1`, then
+  `dec` + `cmp ..,1` + `mov 3`) and
+  `v7ecb4` is 0 or 3 (0x16669, 0x167c8), so `v88bb6 + v7ecb4` spans 1..6 and `tbl77758 + 0..0x44f`
+  is slack. Reads through `0x7775c/0x778cc/0x77a3c` at 0x1cebf/0x1ceee/0x1cf1d are that slack plus
+  4 *plus the runtime row product* (`movsx edx,[ecx+edx+0x7775c]`, `ecx = (v88bb6+v7ecb4)*0x450`).
+- CONFIRMED (the rows are named by metal): row `v88bb6 + v7ecb4` 1..6 = BRONZE / SILVER / GOLD
+  (regular zones) then BONUS BRONZE / BONUS SILVER / BONUS GOLD. `fn_17928` switches on
+  `v88bb6 + v7ecb4 - 1` (0x17a6b-0x17a72 `movsx eax,[0x88bb6]` + `add eax,[0x7ecb4]`) and its six
+  arms copy BRONZEM.SP / SILVERM.SP / GOLDM.SP / BONUSB.SP / BONUSS.SP / BONUSG.SP
+  (`src/ww.c:4319`); `race_records_menu`'s rows are the same 1-3 with the " BONUS" prefix
+  (0x1d1cc-0x1d28b), and `fn_1d704`'s medal sprite is `sp7c800[(row - v7ecb4 - 1) * 2]`.
+- CONFIRMED (one call site in the image, `xref.py ww 0x357ac`): rows 1..6 are filled by
+  `records_load` 0x357ac, called only from 0x1691d inside `engines_menu` 0x167d8. Its argument is
+  the value the tail block at 0x16915-0x16933 stores to `v7ecb8` (0x16917) and to `v7ee5a`
+  (0x1692c, after `records_load`): the engine choice -
+  1 = " FAST 12 HP ENGINES " (0x60534), 2 = " SLOW 6 HP ENGINES  " (0x6054c), read from
+  `menu(2, 0, 0, 0x4e)` at 0x168d2. KID MODE (`v7edb0 != 0`, set by `classes_menu` 0x1a054) forces
+  2 at 0x16848 and skips the menu; `engines_menu(3)` (0x1fede, after the `cfgs[]` setup restore in
+  `main_menu`) takes 0x1685f's `movsx edx,[0x7ee5a]` and reloads the current slot with no menu. So
+  **the save slot is the engine setting**: each setting owns one `WACKY<n>.HI` score book and one
+  `WACKY<n>.TIM` trial book, and `fn_1d704`'s box title says " 12 HP" / " 6 HP" off `v7ecb8` for
+  exactly that reason.
+- CONFIRMED (`original/WACKY1.HI` is 6624 = 6 * 0x450 bytes, matching the `fread(tbl77758 + 0x450,
+  0x19e0, 1, f)` at 0x35b4d - the file *is* rows 1..6, no row 0 - and it is byte-identical to the
+  DAT entry `WAC1.HTT`, 6624 bytes at file offset 7750632, which `WAC2.HTT` (7757256) also equals;
+  `original/WACKY1.TIM` is 3600 = 0xe10 = `WAC1.OTT` at 7743432, the `trial70730` size): the
+  shipped save files are the DAT defaults, and `records_load` copies the DAT entry to
+  `<savedir>WACKY<n>.HI` when the file is missing. The score defaults are filler - every record is
+  name "KNOCK ME OFF!", stamp "01 SEP 1994", `+4` falling by 9 / 12 / 15 per record in class group
+  1 / 2 / 3, `+0` = 1..6 by row in group 1 but 2 and 3 in groups 2 and 3 - so the `fn_1c994`
+  date/time mix-up never reaches the screen until a real run writes a stamp. The `.TIM` defaults
+  are real names with dword times (BRIAN DHATT, CHRIST WHITE, CRAIG HAMILTON, ...).
+- CONFIRMED (one call site each): `scores_write` 0x3542c is called only from 0x1d0d0
+  (`scores_screen`, argument `v7ee5a`) and `trial_write` 0x35324 only from 0x2f01b (`trial_book`,
+  `trial_write(v7ee5a)`): the books are saved with the slot the engine menu chose.
 - CONFIRMED (walks at 0x1da3c `add v7d8a8, 0x2e`): the record pointer is stepped
   record by record elsewhere (0x1d8a8 writes `v7d8a8` the same way 0x1cad0 does,
   from 0x1d870).
@@ -215,6 +249,9 @@ car-select chain and the name entry.
   sequence - it cost 7 phantom instruction diffs in the first rebuild.
 - The row index of these tables is `v88bb6 + v7ecb4`, not either global alone
   (0x1cae5-0x1caf2); a port that uses one of them reads the wrong row.
+- `WACKY<n>.HI` holds **rows 1..6** and is loaded at `tbl77758 + 0x450` (0x35b4d). A port that
+  reads the file into its row 0 shows every class one race off, and the `+0` field the insert
+  writes (`v88bb6 + v7ecb4`) stops matching the row it lives in.
 - `fn_1cad0` returns without touching `v7d8a8` for `which` not in 1..3
   (0x1cadf) - the callers at 0x1cf9f/0x1cfaf call it twice and then read
   `v7d8a8` for both, so a stale pointer changes both records.

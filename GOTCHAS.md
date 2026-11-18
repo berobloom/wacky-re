@@ -324,6 +324,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **`src/check.sh` after a compile error scores the PREVIOUS object** unless it deletes it first
   (fixed iter 36: `rm -f .work/src/WW.OBJ`); grep its output for `Error!` before reading a count.
   [generic]
+- **`tools/le/xref.py` already prints the callers** of an address: capstone shows a `call rel32`
+  with its resolved absolute target, so the operand scan catches it (`xref.py ww 0x357ac` ->
+  `call 0x357ac` at 0x1691d). Writing an `0xE8` sweep script is redundant; `.work` holds four.
+  [generic]
 - Structs are pack(1) (`imul 0x6a` where the game has `0x68` = natural packing). [generic]
 - Literals land at the game's CONST addresses only when functions are added in address order.
 - A switch's jump table sits in the gap BEFORE the function (0x1a360 in cars_menu), table order is

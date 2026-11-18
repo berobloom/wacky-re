@@ -30,9 +30,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    the strings "MAR 1994" / "KNOCK ME OFF!" - against the users of `cfg7ee1c` 0x7ee1c
    (`src/ww.c:3015`, the read at 0x35e15 in `main`); then the per-track payloads `.SIN` 1296,
    `.M` 4096, `.POS` 8194, `.PAR` 25600 in `track_load` 0x279e8 and `data_load` 0x28180.
-3. `tbl77758` 0x77758 still has no writer (findings/scores.md): `tools/le/xref.py ww 0x77758` and
-   follow the stores; pin the `WACKY1.HI` / `WACKY1.TIM` name construction on the way (the
-   ".TIM" 0x61fa4 and "UPG.HI" 0x61fa9 literals, `scores_write` 0x3542c).
+3. `savedir` 0x7c158: what lands in it (`strcpy(savedir, "")` `src/ww.c:19266`,
+   `strcpy(savedir, cfgname)` 19277) and where `WACKY<n>.HI`/`.TIM` therefore go on a fresh
+   install - `records_load`'s create-from-DAT path (`src/ww.c:19077-19090`, `fopen(name,"wb")` +
+   `fwrite`) is the check. `duckfame_load` 0x35534 uses the same prefix for `WACKY.DTT`.
 4. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
 5. After a MATCH: rerun `tools/progress.py` (PROGRESS.md, per part and per subsystem of

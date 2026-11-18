@@ -106,8 +106,12 @@ prints "WACKY WHEELS VERSION 1.1" separately), and 0x44-byte records after a
 |---|---|---|
 | `WACKY.DTT` | 96 | Duck Shoot hall of fame: 4 records of 0x18 = `char name[12]` (space padded), a zero dword, a dword score. Bytes read: SHAUN 16, ANDY 12, NUGGET 8, RUEBEN 6 - exactly the defaults `duckfame_load` 0x35534 writes when the file is missing, and `duckfame_write` 0x35718 writes the same shape (CONFIRMED, both byte-identical rebuilds; literal `WACKY.DTT` at 0x61fb0, used at 0x355a6 and 0x3574a). |
 | `WACKY.CFG` | 2778 | The config the game writes (`WACKY.CFG` literal 0x6208a, the "WACKY.CFG will be written here." text 0x62065); this copy's date is 2018, so it is a runtime artifact of an earlier run, not shipped data (LIKELY, from the mtime alone). |
-| `WACKY1.HI` | 6624 | Score file. `scores_write` 0x3542c builds the name as `<0x7c158> + itoa(n) + "WACKY"` (`src/ww.c:6879`), and the `.TIM`/`UPG.HI` literals sit at 0x61fa4/0x61fa9 - the name construction is not pinned, so this file is OPEN (findings/scores.md). |
-| `WACKY1.TIM` | 3600 | Same, the `.TIM` side. OPEN. |
+| `WACKY1.HI` | 6624 | Score book of save slot n = `v7ee5a`: **six rows of 0x450**, loaded at `tbl77758 + 0x450` (0x35b4d) by `records_load` 0x357ac and rewritten by `scores_write` 0x3542c (0x35512) - both byte-identical rebuilds, so the name construction is pinned: `savedir` 0x7c158 (0x357bc) + `"WACKY"` 0x61f9c + `itoa(n,10)` + `".HI"` 0x61fac, which is the tail of the pooled literal `"UPG.HI"` 0x61fa9 (byte dump of the pool 0x61f90-0x61fcf: `"WACKY"`, `".TIM"` 0x61fa4, `"UPG.HI"`, `"WACKY.DTT"` 0x61fb0, `" YWAC"`, `".OTT"` 0x61fbf, `"T P.HTT"` 0x61fc4). The shipped copy is byte-identical to the DAT entry `WAC1.HTT` (6624 bytes at file offset 7750632; `WAC2.HTT` 7757256 equals it too), 144 filler records - name "KNOCK ME OFF!", stamp "01 SEP 1994" (findings/scores.md). |
+| `WACKY1.TIM` | 3600 | The same slot's time-trial book: `trial70730` = 30 * 0x78 (`struct trialrec`, 0xe10) via `records_load` (`.TIM` 0x61fa4, the DAT fallback `WAC<n>.OTT` at 7743432/7747032) and `trial_write` 0x35324; 0xe10 = 30 * 0x78 and the shipped bytes are `struct trialrec` field for
+field (`src/ww.c:15797`: four 20-byte lap names at +0/+0x14/+0x28/+0x3c, the four lap times as
++dwords at +0x50, the race name at +0x60, the race time at +0x74 - CONFIRMED from a byte dump). The
+shipped copy is byte-identical to `WAC1.OTT`; its records are real names with dword times (BRIAN
+DHATT, CHRIST WHITE, ...). |
 
 ## Traps
 
