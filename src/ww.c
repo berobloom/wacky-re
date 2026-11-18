@@ -6790,7 +6790,7 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
     char prompt[0x28];
     union REGS r;
     struct SREGS s;
-    short cx, y, lim, nx, x, cy, xc, i;     /* slots: the game's permutation, QUESTIONS.md 9 */
+    short xc, y, cx, cy, i, nx, x, lim;     /* slots: the game's permutation, QUESTIONS.md 9 */
     char ch;
 
     pal_c = 0x7d00;                                 /* 0x1cb55 */
@@ -6799,8 +6799,8 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
     xc = center_x(strlen(heading) * 11);            /* 0x1cb74-0x1cb8c (both inlined) */
     wtext(xc, 0xa, heading, 0);                     /* 0x1cba5 */
     strcpy(prompt, "PLEASE ENTER NAME..");          /* 0x1cbbf, the literal 0x60d8c */
-    x = 0xa;
     y = 0x60;
+    x = 0xa;
     print_at(x, y, prompt, 0);                      /* 0x1cbce */
     f37de0();                                       /* 0x1cbd3 */
     if (key88ccd) {                                 /* 0x1cbd8 */
@@ -7969,9 +7969,9 @@ void credits_page(int n, int first)
  * ESC (key88cd0) leaves at any point. */
 void credits_screen(void)
 {
+    int save;                         /* EDI: movzx loads (0x1efd2) */
     int dir, page, first, y;          /* esp+0x08, esp+0x00, esp+0x0c, esp+0x10: this order is the closest */
     int k, x, face, frame;            /* EDX, EBX, ESI, ECX */
-    int save;                         /* EDI: movzx loads (0x1efd2) */
 
     page = 1;
     first = 1;
@@ -8039,7 +8039,7 @@ void credits_screen(void)
                 x += 8;
                 if (x <= cboxes[k].x2)
                     continue;
-                k++;
+                k += 1;
                 if (k > 12)
                     break;
                 if (cboxes[k].x2 == 0)
@@ -9267,7 +9267,7 @@ extern short v88b02;
 
 void shot_hit(void)
 {
-    short i, flag, kind, ai, hit;
+    short hit, ai, flag, kind, i;
     int n;                      /* 0x21b11 lea edx,[eax*2]: f38's byte offset (shot_hit) */
 
     v7d7a4 = lx0;
@@ -10452,7 +10452,7 @@ void kart_move(void)
             f24834(1);
         } else {
             curkart->f54--;
-            if (curkart->f54 < 0)
+            if (curkart->f54 <= -1)
                 curkart->f54 = 0;
         }
         v7e570 = 0;
@@ -10840,11 +10840,11 @@ extern int v7d670, v7d674, tbl6e858[];
 
 short in_sector(void)
 {
-    int dx, dy, a, b, q, r;
+    int dy, a, b, q, r, dx;
 
+    a = tbl6e858[v7d674];
     dx = v88b0a - v88b20;
     dy = (v88b0e - v88b22) << 16;
-    a = tbl6e858[v7d674];
     b = tbl6e858[v7d670];
     if (dx)
         q = dy / dx;
@@ -11577,8 +11577,8 @@ void shots_move(void)
                 if (v7d874->dir >= 0x780)
                     v7d874->dir -= 0x780;
                 v7d690 = (int *)v7d6a0 + v7d874->dir * 2;
-                v7d608 = v7d874->speed;
                 v7d5f8 = *v7d690++;
+                v7d608 = v7d874->speed;
                 v7d5f4 = *v7d690;
                 f37bb1();
                 v7d874->x = v7d874->x + v7d610;
@@ -12548,9 +12548,9 @@ extern int a7d838x;                   /* p7d838 as an int: `add [p7d838],eax` (0
 void kartsets_load(int one)
 {
     int n, k;
-    short i, sz;
-    int w, h;
     short *p;
+    int w, h;
+    short i, sz;
 
     p7d838 = v7d844;
     if (one) {
@@ -12560,7 +12560,7 @@ void kartsets_load(int one)
     } else
         n = 6;
     for (k = 0; k < n; k++) {
-        if (one)
+        if (0 != one)
             datfind("251X6.INF");
         else
             datfind(kartsets[k].name);
@@ -12571,8 +12571,8 @@ void kartsets_load(int one)
             *p++ = w;
             fread(&h, 2, 1, datfile);
             *p = h;
-            sz = (h + 1) * w * 4;
             p7d838 += 2;
+            sz = (h + 1) * w * 4;
             fread(p7d838, sz, 1, datfile);
             a7d838x += sz;
         }
@@ -12922,7 +12922,7 @@ extern short v88c24;
 
 void kart_catchup(int n)
 {
-    int gap, d;
+    int d, gap;
 
     if (!splitscreen && !netvoices && !v7edb0) {
         gap = karts[0].f2e - karts[n].f2e;
@@ -12945,8 +12945,8 @@ void kart_catchup(int n)
                         break;
                     }
                     v7d800->f04 = 3;
-                    v7d800->f0e = 0x7d00;
                     v7d800->f0a = d;
+                    v7d800->f0e = 0x7d00;
                     v88c24 = v7d800->f0a;
                 }
             } else if (v7d800->f04 == 3)
@@ -12963,7 +12963,7 @@ void kart_catchup(int n)
                     break;
                 case 2:
                     if (n == 7)
-                        v88c24++;
+                        v88c24 = 1 + v88c24;
                     if (n == 6)
                         v88c24 += 2;
                     if (n == 5)
@@ -13710,7 +13710,7 @@ void minimap(void)
 void time_str(int t, char *out)
 {
     char buf[4];                   /* 0x8ca0/60 = 599 is the largest itoa writes here: 3 + NUL */
-    int tenths, min, sec;
+    int sec, tenths, min;
 
     if (t > 0x8ca0) {
         t = 0;
@@ -14199,8 +14199,8 @@ void leaderboard(short *x, short *y, short *who, short *place, short *x2, short 
         draw = 1;
         spr_x += 8;
         if (p == myplayer) {
-            *x = spr_x;
             *y = spr_y;
+            *x = spr_x;
             *who = p;
             *place = i;
             draw = 0;
@@ -16244,16 +16244,16 @@ void net_input(void)
     b3 = vv88cef & 8;
     b2 = vv88cef & 4;
     if (netgame == 1) {
-        key88cc4 = b2;
         key88cc3 = vv88cef & 1;
+        key88cc4 = b2;
         key88cc5 = b3;
         key88ccc = vv88cef & 2;
         key88cc6 = b4;
         key88cc7 = b5;
         v88cdf = v88cf2;
     } else {
-        key88cc3 = key88cd5;
         key88ccc = key88cdd;
+        key88cc3 = key88cd5;
         key88cc4 = joy88b40;
         key88cc5 = joy88b42;
         key88cc6 = joy88b44;
