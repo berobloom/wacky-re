@@ -216,7 +216,11 @@ word in all 42 files (7..38 entities). `ents_load` 0x21490 does
 `y += 0x400` (`src/ww.c:9051-9067`), so the record matches `struct ent`
 (`short id, f2, x, y, f8, frame`, `src/ww.c:2640`) with `f2` cleared on load and
 `id` naming the sprite set in `SPRITE.ATR` (`ent_sprites_load` 0x21310,
-`src/ww.c:8248-8252`).
+`src/ww.c:8248-8252`). CONFIRMED by census: the `id` fields over all 42 files
+span exactly 0..35 and `SPRITE.ATR` is 1442 = 2 + 36 * 40 bytes, i.e. the 36
+`struct attr` records `sprites_load` reads (`src/ww.c:2326-2327`) - `frame`
+counts frames of `w * h` bytes inside that record (`src/ww.c:2731-2745`). The
+`f8` field is not read there: OPEN.
 
 ## WACKY.ING / WACKY.CFG - the config block (layout CONFIRMED)
 

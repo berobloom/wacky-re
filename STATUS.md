@@ -23,25 +23,23 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: no open status in `src/nearmiss.txt` (QUEUE.md's only item is the unfilled
-   `Q1 <short title>` template - not actionable, iters 46-51); every remaining line's cause is a
+   `Q1 <short title>` template - not actionable, iters 46-52); every remaining line's cause is a
    class in GOTCHAS "Dead ends". Take one only with an idea its `differs:` note does not list.
    nmrefs after every change; `src/check.sh` count +1 before `src/matched.baseline` goes up.
-2. The per-track payloads (offline, no harness): `tools/le/datdump.py 1.SIN 1.POS 1.PAR 1.M`
-   against the byte-identical `track_load` 0x279e8 and `data_load` 0x28180 - sizes 1296, 8194,
-   25600, 4096; lay the records out field by field in findings/formats.md.
-3. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
-   `WACKY.CFG` - it is the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
+2. The 12 zone-less track slots (QUESTIONS 19, offline half): dump the `.GAM` of 16-21/37-42 and
+   compare their name/start/order fields against the 30 slots that do have zone maps, plus which
+   `.PAR`/`.SIN`/`.POS` hash group they share (`tools/le/datdump.py` + md5 census) - say in
+   findings/formats.md which art family each slot uses and what differs functionally.
+3. `SPRITE.ATR` (offline): 36 `struct attr` records of 40 bytes (1442 = 2 + 36 * 40, `nsprattr`
+   word CONFIRMED); lay out the fields against `sprites_load` 0x13a74 and `ent_sprites_load`
+   0x21310 (`src/ww.c:2693`, `2731-2745`) and name the 36 ids seen in the `.SPW` census.
+4. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
+   `WACKY.CFG` - the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
    and 24 records, and the 12 key words of `cfg7b6d8` (QUESTIONS 16/17).
-4. `savedir` 0x7c158: `""` unless `APOGEECD` is set (`src/ww.c:19266`, `19277`), so the save files
-   are `<cwd>WACKY<n>.HI`/`.TIM` by default and the shipped `WACKY.CFG` picks slot 1
-   (`cfg7ee1c` +0x3e); what is left is what `records_load`'s create-from-DAT path writes on a
-   fresh install (`src/ww.c:19069-19110`, the rebuild MATCHes) and how `duckfame_load` 0x35534
-   finds `WACKY.DTT` there.
-4. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+5. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-5. After a MATCH: rerun `tools/progress.py` (PROGRESS.md, per part and per subsystem of
-   `analysis/ww_subsystems.txt`; src/ww.c stays one file); docs/media pictures come from the
-   original (DOSBox-X states `mainmenu`, `trackpick` in .work/dos/states; accelerate is Alt).
+6. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
+   the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED
 
