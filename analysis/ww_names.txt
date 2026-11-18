@@ -211,12 +211,12 @@
 0x0775d6 ctl775d6
 0x0775d8 ctl775d8
 0x0775da ctl775da
-0x0775dc ctl775dc
+0x0775dc ctl775dc    # CONFIRMED (xref iter 53): = cfg77128 + 0x4b4; stores 0x31b42/0x324f9 (in the unnamed 0x30aae); read at 0x1fde5 into v7ecb4
 0x077128 cfg77128     # SPECULATIVE: 0x630 bytes saved by save_config
 0x07a9c8 voices       # LIKELY: 0x18-byte records {data, ?, pitch, priority, handle, plays}: voice_play passes them to FX_PlayVOC
 0x07b6d8 cfg7b6d8     # SPECULATIVE: 0x18 bytes saved by save_config
 0x07c0d8 cfgname      # LIKELY: the configuration file name
-0x07ecb4 v7ecb4
+0x07ecb4 v7ecb4      # CONFIRMED (xref iter 53): track-group offset in fn_17928's switch: 0 (0x16669 zones_menu, 0x1e4a8 demo_mode, 0x1f8a0/0x1fbf0 main_menu) or 3 (0x167c8 zones_menu 'BONUS PACK ZONES'); 0x1fdec copies ctl775dc
 0x07ee1c cfg7ee1c     # SPECULATIVE: 0x492 bytes saved by save_config
 0x07ee2a cfg7ee2a     # SPECULATIVE: short inside cfg7ee1c (+0xE); cleared by save_config(keep)
 0x07ee4e sfxon        # SPECULATIVE: short; voice functions do nothing when 0
@@ -266,7 +266,7 @@
 0x07eb64 errlog       # LIKELY: FILE* of ERR.LOG
 0x042dae fprintf      # LIKELY: clib, cdecl (stack args)
 0x0124e8 track_setup  # SPECULATIVE: switch on track sets trk7ebc8/trk7ec44 (0x348/0x438 or 0x528/0x618)
-0x07e728 track        # SPECULATIVE: unsigned (the switch compares unsigned); tracks 3..35 seen
+0x07e728 track        # CONFIRMED (xref iter 53): three stores, all in fn_17928 - 0x17aa5 (v88b88, arm 0), 0x17ac6 (= 7, arm 0 with v7ec80), 0x17b52 (arms 1..5 share it via the jmps 0x17b0c/0x17b22/0x17b38, value v88b88 + {5,0xa,0x15,0x1a,0x1f}); subject guarded cmp eax,5; ja 0x17a79, jump table 0x17910; v88b88 wraps 1..5, so only 1..30 loadable. Reads 0x124f6, 0x24ee5, 0x25090, 0x275ca, 0x276bc, 0x279fb. unsigned (the compare is unsigned)
 0x07ebc8 trk7ebc8     # SPECULATIVE
 0x07ec44 trk7ec44     # SPECULATIVE
 0x07ebc4 trk7ebc4     # SPECULATIVE
@@ -593,7 +593,7 @@
 0x088c00 v88c00       # SPECULATIVE
 0x088bb0 v88bb0       # LIKELY: game/mode selector choosing the initial cursor (5,0xd,0xe,0x10,1,6,2 seen)
 0x088b86 v88b86       # SPECULATIVE: cursor for v88bb0==5
-0x088bb6 v88bb6       # SPECULATIVE: cursor for v88bb0==2
+0x088bb6 v88bb6       # SPECULATIVE: cursor for v88bb0==2; CONFIRMED (iter 53) also restored by main_menu from the rsave774e8 field +0x10 (read 0x1fe35, stored 0x1fe43) - v88b88 is +0x14 (0x1fe3c/0x1fe4a) - and written by race_run 0x2fd8c (src/ww.c:16547-16548)
 0x088bb8 v88bb8       # SPECULATIVE: cursor for v88bb0==1
 0x088c28 v88c28       # SPECULATIVE: cleared when the menu returns a choice
 0x088cf2 v88cf2       # SPECULATIVE: chat-request bit from the peer? (== 1 opens chat)

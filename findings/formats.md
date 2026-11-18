@@ -222,6 +222,72 @@ span exactly 0..35 and `SPRITE.ATR` is 1442 = 2 + 36 * 40 bytes, i.e. the 36
 counts frames of `w * h` bytes inside that record (`src/ww.c:2731-2745`). The
 `f8` field is not read there: OPEN.
 
+### The twelve zone-less slots 16-21 and 37-42 (CONFIRMED: six duplicate pairs)
+
+md5 over every `<n>.<EXT>` payload of the 42 sets (`tools/le/datdump.py`):
+
+- The all-zero `.POS` is ONE 8194-byte blob shared by exactly those twelve
+  slots (it is one of the 30 distinct `.POS`).
+- The twelve form six pairs - (16,42) (17,41) (18,40) (19,38) (20,39) (21,37).
+  In a pair the `.PAR` and the `.SIN` are byte-identical (that `.SIN` group is
+  used by no other slot, except 19/38 whose `.SIN` is also that of slots 10
+  and 15), and only `.M`, `.RD` and `.SPW` differ. Five pairs have an
+  identical `.GAM` too; (16,42) differ in nothing but their first two order
+  pairs - 16 `256,1050` / `1856,1080`, 42 `1800,196` / `210,1800`, all other
+  24 lines equal (`16.GAM` 160 bytes, `42.GAM` 159).
+- In all twelve the first two order pairs - the start slots `order_a[0..1]` /
+  `order_b[0..1]`, each `+ 0x3e0` - sit far apart at the map edges: 21/37
+  `1800,196` and `196,1800`, 19/38 `1980,126` and `126,1980`, 20/39 `1900,200`
+  and `200,1860`, 18/40 `324,960` and `1776,1280` - where the 30 zone-having
+  slots put them beside the six grid rows (x 190..450, y 384..1300). Order
+  pairs 3..8 are a six-row grid in all 42: the y step is 96 except in 7, 15 and
+  23 (64), and the x alternates between two values except in 17, 20, 39, 41
+  where one row sits at x 300. `fn_16f90` 0x16f90 rewrites
+  only `order_a[4..7]` when `twoplayer == 0` (`src/ww.c:4071-4081`), so pairs
+  0..3 always come from the file. The same census: the twelve write line 8 as
+  a bare `1` where the other 30 pad it to 17 chars - both parse to 1, no
+  functional difference.
+- Art families: nine distinct picture-name sets over the 42 slots and nine
+  distinct `.PAR`, but not 1:1 - three `.PAR` each serve two picture families
+  (`f3/f4`+`f3/f11`, `f1/f2`+`f1/f15`, `f13/f14`+`f16/f17`) and every family
+  uses one or two `.PAR`. Every zone-less pair shares its `.PAR` with
+  zone-having slots.
+- What the engine can reach: `track` 0x7e728, the number `track_load` 0x279e8
+  and `gam_load` 0x2717c turn into the `<n>.EXT` names, has exactly three
+  stores in the whole image, all inside `fn_17928` - 0x17aa5, 0x17ac6 (`= 7`,
+  the `v7ec80` override) and 0x17b52 (`tools/le/xref.py ww 0x7e728`). The
+  switch subject is `(short)v88bb6 + v7ecb4 - 1`, guarded `cmp eax,5; ja`
+  0x17a79-0x17a7c with jump table 0x17910, and its six arms copy `BRONZEM.SP`,
+  `SILVERM.SP`, `GOLDM.SP`, `BONUSB.SP`, `BONUSS.SP`, `BONUSG.SP` to 0x80ace
+  while assigning `v88b88 + {0, 5, 0xa, 0x15, 0x1a, 0x1f}`
+  (`src/ww.c:4321-4350`). `v88b88` wraps 1..5 (`fn_1832c`, `src/ww.c:5006-5017`);
+  `v7ecb4` is 0 or 3 (`zones_menu` 0x16664 stores 0 at 0x16669 and 3 at 0x167c8 -
+  the only other store, 0x1fdec in `main_menu` 0x1f858, copies `ctl775dc`
+  0x775dc); `v88bb6` 1..3 is LIKELY (`fn_1832c`). An out-of-range subject takes
+  the `ja` and writes nothing. The same two switch inputs are also restored from
+  the saved-game records `rsave774e8` 0x774e8 (`struct rsave` fields `metal`
+  +0x10, `track` +0x14, read back as words at 0x1fdf1-0x1fe4a, written by
+  `race_run` 0x2fd8c, `src/ww.c:16543-16548`).
+  CONFIRMED statically: no arm can write more than `5 + 0x1f`, so **only slots
+  1..30 are ever loaded** and 31..42 are dead data - 16..20 come from arm 3 and
+  21 from arm 4, 37..42 from nothing. Which menu item selects which arm is the
+  live-harness half of QUESTIONS 19.
+- The only code that touches 31..42 does it by name: `release_check` 0x34458
+  sets `v7eca0` 3 if `datfind("42.GAM")` finds an entry, 2 if `datfind("20.GAM")`
+  does, else 1 (shareware) and shows "WACKY WHEELS VERSION 1.1" plus the
+  release line (`src/ww.c:18516-18530`). Both sentinels are zone-less slots.
+- No append fingerprint in this DAT: the `.GAM` records are directory slots
+  96..137 in track order 1..42 and each slot's six payloads follow as a block
+  in track order (138..389), so the file was regenerated rather than patched
+  (CONFIRMED, directory census over the 577 entries).
+- STRONGLY SUPPORTED: the twelve are duplicates - six art sets shipped twice.
+  SPECULATIVE which release each copy was for; nothing in WW.EXE can load the
+  37..42 copies.
+- Functional effect in all twelve (CONFIRMED from the map bytes and `map_at`
+  `src/ww.c:1511-1519`): every zone test answers class 0, `ncells` = 0 and so
+  `v88ba0` = 0 (a global with no read, QUESTIONS 18). The far-apart start pair
+  is the only other authored difference.
+
 ## WACKY.ING / WACKY.CFG - the config block (layout CONFIRMED)
 
 `main` 0x35ca4 (0x35e15: `mov eax, 0x6201c`, the literal at 0x6201c) does
@@ -332,7 +398,10 @@ DHATT, CHRIST WHITE, ...). |
   that reads `count` records and then expects data at `2 + count*22` lands 22
   bytes early.
 - 42 tracks ≠ 42 `.GAM` "records": `42.GAM` is the file of track 42. Its
-  presence in the archive - not its contents - is what `release_check` tests.
+  presence in the archive - not its contents - is what `release_check` tests,
+  and slots 31..42 are never loaded: `track` 0x7e728 has three stores, all in
+  `fn_17928`. A track-number range census that greps the port for `track =`
+  also hits the record-book menus, whose `track` is a local.
 - The 24 record slots inside `WACKY.ING` are **inert** (range census: nothing
   touches +0x42..+0x491). Seeding `tbl77758` from them is wrong - the table's
   defaults come from the DAT entries `WAC<n>.HTT`/`WAC<n>.OTT` through

@@ -311,13 +311,21 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    `tools/le/xref.py ww 0x88ba0` finds one store (0x27d09) and no read.
    Test that would settle the first: a track editor's file, or the same fields in another Apogee
    title's data; nothing in WW.EXE can read them.
-19. **OPEN** (findings/formats.md "The per-track payloads"): what are the 12 track slots 16-21 and
-   37-42? CONFIRMED (census of the DAT entries): all 12 have the same all-zero `.POS` map and
-   `ncells` = 0, i.e. every zone test in them answers class 0, while their `.M`, `.SIN`, `.PAR` and
-   `.GAM` are real; the 42 slots share art heavily (9 distinct `.PAR`, 18 `.SIN`, 30 `.POS`, 29
-   `.GAM`, 42 distinct `.M`).
-   Test: the live harness - which slots the menus can reach, and whether the zone behaviours
-   (`map_at` users, `in_zone` 0x125bc) are inert in those twelve.
+19. **PARTLY CLOSED** (findings/formats.md "The twelve zone-less slots"): what are the 12 track
+   slots 16-21 and 37-42? CONFIRMED (census of the DAT entries): all 12 have the same all-zero
+   `.POS` map and `ncells` = 0, i.e. every zone test in them answers class 0, while their `.M`,
+   `.SIN`, `.PAR` and `.GAM` are real; the 42 slots share art heavily (9 distinct `.PAR`, 18 `.SIN`,
+   30 `.POS`, 29 `.GAM`, 42 distinct `.M`).
+   Closed offline (iter 53, md5 census of every payload + `tools/le/xref.py ww 0x7e728`): they are
+   six duplicate pairs (16,42) (17,41) (18,40) (19,38) (20,39) (21,37), identical in `.PAR`, `.SIN`
+   and (except 16/42) `.GAM`, differing only in `.M`/`.RD`/`.SPW`; their `.GAM` puts start slots 0
+   and 1 at opposite map edges; and `track` 0x7e728 is written only in `fn_17928` (0x17aa5,
+   0x17ac6, 0x17b52) by a switch guarded `cmp eax,5; ja` 0x17a79, so **only slots 1..30 are ever
+   loaded** - 16..21 are reachable through the bonus arms, 37..42 only by name in `release_check`
+   (`datfind("42.GAM")`/`datfind("20.GAM")`). SPECULATIVE: which release each copy was shipped for.
+   Test still open: the live harness - which menu choice sets `v7ecb4` 3 (bonus pack) and so picks
+   arms 3-5, and whether the zone behaviours (`map_at` users, `in_zone` 0x125bc) are inert in a
+   loaded 16-21 race.
 20. **OPEN** (findings/formats.md ".PAR", findings/video.md): what is the pixel geometry of the
    25600-byte `.PAR` blobs? CONFIRMED: `fn_36f55` writes them as 25600 bytes over 6400 video
    addresses at A000:7d00, four writes per address with the sequencer map mask (port 0x3c4 index 2)

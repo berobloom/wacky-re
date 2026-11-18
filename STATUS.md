@@ -26,19 +26,21 @@ Short: where the project stands, and what is next. History is in git; no diary.
    `Q1 <short title>` template - not actionable, iters 46-52); every remaining line's cause is a
    class in GOTCHAS "Dead ends". Take one only with an idea its `differs:` note does not list.
    nmrefs after every change; `src/check.sh` count +1 before `src/matched.baseline` goes up.
-2. The 12 zone-less track slots (QUESTIONS 19, offline half): dump the `.GAM` of 16-21/37-42 and
-   compare their name/start/order fields against the 30 slots that do have zone maps, plus which
-   `.PAR`/`.SIN`/`.POS` hash group they share (`tools/le/datdump.py` + md5 census) - say in
-   findings/formats.md which art family each slot uses and what differs functionally.
-3. `SPRITE.ATR` (offline): 36 `struct attr` records of 40 bytes (1442 = 2 + 36 * 40, `nsprattr`
+2. Live harness, next time it is up (QUESTIONS 19 second half): pick the BONUS PACK ZONES choice
+   (`zones_menu` 0x16664 -> `v7ecb4` = 3), confirm the loaded track is 16..20, and check whether
+   `in_zone` 0x125bc / the `map_at` users do anything at all in such a race.
+3. `ctl775dc` 0x775dc = `cfg77128` + 0x4b4 (offline): its two stores are 0x31b42 and 0x324f9 in
+   the unnamed 0x30aae - map that function and the range this word takes; `main_menu` 0x1fdec
+   copies it into `v7ecb4`, which selects the track group.
+4. `SPRITE.ATR` (offline): 36 `struct attr` records of 40 bytes (1442 = 2 + 36 * 40, `nsprattr`
    word CONFIRMED); lay out the fields against `sprites_load` 0x13a74 and `ent_sprites_load`
    0x21310 (`src/ww.c:2693`, `2731-2745`) and name the 36 ids seen in the `.SPW` census.
-4. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
+5. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
    `WACKY.CFG` - the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
    and 24 records, and the 12 key words of `cfg7b6d8` (QUESTIONS 16/17).
-5. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+6. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-6. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
+7. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
    the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED
