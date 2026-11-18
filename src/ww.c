@@ -1869,16 +1869,23 @@ extern int v7ec7c;
 extern char *img7eb5c, *img7eb3c, *img7d83c, *img7eb60, *img7d814, *img7d810;
 void blit372c7(void);
 
-/* differs (30 rows, 11 bytes short): (int) casts on both arms of the v7eb80 ternary give the game's
-   per-arm movsx (no cwde) and, as a side effect, the esi form (movsx esi; imul esi; add esi,$pnames) at
-   the first v88c6a strcpy: 48 -> 30. Left: (a) the ternary strcpy - 9.5b hoists `mov ebx,esp` and
-   `xor ecx,ecx` (print_at args) above the inline strcpy, the game issues them after `pop edi`; (b) the
+/* differs (17 rows, 1100 bytes vs the game's 1080, 243 insns vs 246): (int) casts on both arms of the
+   v7eb80 ternary give the game's per-arm movsx (no cwde) and, as a side effect, the esi form (movsx
+   esi; imul esi; add esi,$pnames) at the first v88c6a strcpy: 48 -> 30. Left: (a) the ternary strcpy
+   and every later print_at - 9.5b hoists `mov ebx,esp` and `xor ecx,ecx` (print_at args) above the
+   inline strcpy, the game issues them after `pop edi` (0x13103/0x13123, 0x13267/0x132ff); (b) the
    second netgame==1 if/else - the game builds v88c6a in the esi form in the first arm and myplayer in
-   the eax form in the second (no tail merge, 11 bytes), 9.5b emits one form and merges the two arms
-   into one imul. Tried: 7 index spellings (all canonicalise), strcpy before/between the spr stores,
-   ternary as arms/an int or short local k (if/else and ?:), single-arm casts, != 0, (int)/(short)/+0
-   on the netgame sites, both if/else orders, a ternary there, spr_y = spr_y + 0x1E; permute.py 12
-   rounds: nothing */
+   the eax form in the second (0x132ba, 0x132ce; no tail merge, one pnames ref more), 9.5b selects the
+   index in each arm and shares one imul; the first pair (0x13218, 0x13237) matches byte for byte in
+   both arms, so only the second merges. Tried: 7 index spellings (all canonicalise), strcpy
+   before/between the spr stores, ternary as arms/an int or short local k (if/else and ?:),
+   single-arm casts, != 0, (int)/(short)/+0 on the netgame sites, both if/else orders, a ternary there,
+   spr_y = spr_y + 0x1E; permute.py 12 rounds. iter 46: `strcpy(buf, (char *)pnames + (int)v88c6a *
+   12)` in the then arm (canonicalises, 17), and the pointer ternary `strcpy(buf, netgame == 1 ?
+   pnames[v88c6a] : pnames[myplayer])` (17 -> 35: it also splits the FIRST pair's arms and sinks
+   print_at's args). The game's duplicated pair is 9 bytes longer than our join (246 insns vs 243)
+   while our OBJ span is 20 bytes longer overall; the last row is the game's `mov eax,eax` padding vs
+   our nop. */
 void draw_status(void)
 {
     char buf[80];
