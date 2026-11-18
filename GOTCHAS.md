@@ -72,6 +72,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   right) and `fncompare.py` print displacements as `@`, so swapped stack slots show 0 rows while
   check.sh says "differs" (net_send 0x2dc38). A MATCH masks fixup bytes, so read the `WRONG sym@addr`
   lines after it too (fn_1c88c loaded save_c for save_a). [generic]
+- **A function out of address order can own another's jump table.** fndiff and check.sh measure a
+  function up to the next public, and Watcom puts a switch's table in front of its function, so a
+  function standing before a switch function in `src/ww.c` but not in the game counts that table as
+  its own rows: ent_sprites_load (0x21310) stood before main_menu and read 75 rows, 43 of them
+  main_menu's table, called "padding" for 40 iterations; in address order it is 32 (iter 56c). Check
+  that a near miss's neighbours in the source are its neighbours in the game. [generic]
 - **Fake rows to subtract first** (iter 39: fndiff, variants, permute and nmrefs now fold the `- @`/`+ @`
   pair themselves, so their counts no longer include it): a `[reg - 0x6f6f6f70]`/`[reg +/- @]` pair is a masked fixup
   (0x90 filler) - 7 of self_project's 10 rows; rows past the end of a shorter function are its own

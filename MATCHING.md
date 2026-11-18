@@ -213,7 +213,8 @@ code, not the name.
 ## 9. What is left
 
 - The near misses in `src/nearmiss.txt` (`STATUS.md`, "Next").
-- The gaps in the C range: 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857.
+- The gap in the C range: 0x1bf7e-0x1c0f3 (a fade-out). 0x1f824-0x1f857 is main_menu's switch
+  table, which the compile already emits.
 - The assembler module 0x36A4E-0x409EE: reassemble it (WASM), or port it by
   behaviour; it cannot be matched from C.
 - A WLINK link of C, asm and libraries that reproduces `WW.EXE`'s layout: the
