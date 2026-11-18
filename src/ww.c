@@ -18576,7 +18576,7 @@ void release_check(void)
     p7d714 = p6a978;
     f375cd();
     pal_a = 0x3e80;
-    for (i = 1; i <= n; i++) {
+    for (i = 1; i <= n; i = 1 + i) {    /* this spelling gives the game's slot order (permute.py, iter 56) */
         print_at(center_x(strlen(lines[i]) * 8), y, lines[i], 0);
         y += 10;
     }
