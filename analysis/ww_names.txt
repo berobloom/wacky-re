@@ -162,6 +162,11 @@
 0x042160 MUSIC_SongPlaying # SPECULATIVE: Apogee Sound System; polled until 0
 0x04219c MUSIC_StopSong # SPECULATIVE: Apogee Sound System
 0x0421e0 MUSIC_PlaySong # SPECULATIVE: Apogee Sound System; (song, loop), non-zero = error
+0x040e38 TS_ScheduleTask # LIKELY: Apogee Sound System TS_ScheduleTask(func, rate, priority, data): main 0x364d6/0x364f4/0x3650f with tick_task and rates 0x88 / 10 / 1, the result kept as a task handle
+0x040f68 TS_Terminate # LIKELY: Apogee Sound System; main 0x36943-0x36957 on the three task handles at exit
+0x040fcc TS_Dispatch  # LIKELY: Apogee Sound System; main 0x36519 right after the three TS_ScheduleTask calls
+0x04191c FX_Shutdown  # LIKELY: Apogee Sound System; main 0x3697a at exit when sfxon
+0x042064 MUSIC_Shutdown # LIKELY: Apogee Sound System; main 0x3696b at exit after MUSIC_StopSong when musicon
 0x042488 MUSIC_FadeVolume # LIKELY: Apogee Sound System MUSIC_FadeVolume(tovolume, milliseconds): called (0, 4000) from fade_out when music is on, clamps arg1 to 0..255 (0x424aa-0x424bb) after checking a handle 0x63ff8
 0x042bec printf       # CONFIRMED: clib (libmatch)
 0x042c11 exit         # LIKELY: clib exit module (0x42C10) entry

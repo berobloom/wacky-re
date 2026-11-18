@@ -4668,9 +4668,13 @@ retry:
     strcat(pcx, "SB1.PCX");
     datfind(pcx);
     seekdat(telldat() + datsize() - 0x300);
-    readdat(pcx, 0x300);
-    for (card_n = 1; card_n <= 4; card_n++) {
-        pal_6bit(pcx);
+    /* The palette goes to pal7d84c and is converted once (0x18519-0x18537: esi = [0x7d84c] for
+       readdat and pal_6bit); three cards SB1-SB3, one 16000-byte page each (0x18664 cmp card_n,3 /
+       jle). Found by the hybrid link: the old readdat(pcx, 0x300) wrote 768 bytes over this frame's
+       20-byte pcx[] and the return address, and the zone select crashed. */
+    readdat(pal7d84c, 0x300);
+    pal_6bit((unsigned char *)pal7d84c);
+    for (card_n = 1; card_n <= 3; card_n++) {
         itoa(card_n, num, 10);
         strcpy(fname, card);
         strcat(fname, "SB");
