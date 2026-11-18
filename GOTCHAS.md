@@ -394,3 +394,17 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - Pinned -o letters from single-function probes can be wrong for the whole program: re-check every
   flag against the full MATCH count (com_open needs `e`). [generic]
 - Two-digit padding: `buf[1] = buf[0]` before `buf[2] = 0` (bigdigits 0x2b558; not every site).
+- The gdb stub refuses every breakpoint above linear 0xFFFFF (`Z0` -> `E01`, dos-re-suite's
+  `gdb_addr_to_seg_off`): a DOS/4GW program's code (here 0x1e2000+) cannot be broken on at all.
+  Halt + read registers works: sample EIP/SS in a loop instead (SS tells the program from an ISR
+  stack). [generic]
+- After `load` of a saved state, QMP key taps did not reach the game (it stayed in `menu_`): for a
+  key-driven run boot fresh and press the keys. A sampler that halts every 30 ms also swallows taps:
+  press first, then sample. [generic]
+- WLINK 9.5b page-faults (`CS:EIP = 000Ch:0001FFD5h`, stock DOSBox then aborts) on a hand-written OMF
+  object that has fixups but lacks WCC386's two COMENT records (class 0xAA `OS220`, 0x9B `3fOp`);
+  OMF segment indices are 1-based (index 0 crashes it too). With `option quiet` nothing is printed:
+  read the map. [generic]
+- A near miss with a low-looking row count can still be semantically wrong: fn_1832c read 0x300
+  bytes into a 20-byte stack array; only running the hybrid link (tools/link) showed it.
+- The LE entry is obj1 offset 201128 *decimal* = 0x311a8 -> 0x411a8, not 0x41128.

@@ -4209,7 +4209,7 @@ void fn_16eac(void)
 
     cnt = 0;
     for (i = 1; i <= nplayers; i++)
-        if (players[i].place == 2 && players[i].f56 == 4)
+        if (players[i].f02 == 2 && players[i].f56 == 4)   /* +2, not place (0x16ec5 cmp [eax+0x6aa92],2) */
             cnt++;
     if (cnt >= nplayers) {
         nplayers += 2;
