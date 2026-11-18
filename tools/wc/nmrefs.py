@@ -12,6 +12,10 @@ differences:
   branches  for each jump inside the function, the addresses used by the block it lands on (up to
             its next branch) and whether that block returns. A jump to the epilogue in one build only,
             or to the block holding the other string, shows here (both bugs were found by hand once).
+consts    small immediates and [reg+disp] field offsets (not stack slots) only one side uses: a
+            wrong loop bound, size or struct field (fn_1832c's 4 cards vs 3, fn_16eac's +0x20 vs +2)
+            shows here; a constant one build keeps in a register shows too. Reported, not counted
+            as DIFFER.
 DIFFER (an address only one side uses: `ours only` / `game only`) is a behaviour difference until
 shown otherwise; `counts` (the same addresses, used a different number of times: a cached global, a
 shared address computation) usually is not. Small numeric
@@ -196,6 +200,7 @@ def main():
         return '0x%x%s' % (v, '(%s)' % inv[0] if inv else '')
 
     flagged = 0
+    nconst = [0]
     for name, addr in todo:
         hit = [p for p in pubs if p[2] == name or M.plain(p[2]) == name]
         if not hit or not addr:
@@ -215,7 +220,22 @@ def main():
             insl = list(md.disasm(buf, addr))
             lim = addr + len(buf)
             ir = []
+            consts = collections.Counter()
             for ins in insl:
+                # small constants: immediates (loop bounds, sizes, enum values) and the displacement
+                # of a [reg+disp] that is not a stack slot (a struct field); masked fixup bytes skipped
+                for op in ins.operands:
+                    if op.type == capstone.x86.X86_OP_IMM and not (ins.group(capstone.CS_GRP_JUMP)
+                                                                   or ins.group(capstone.CS_GRP_CALL)):
+                        v = op.imm & 0xFFFFFFFF
+                        fo = off + ins.address - addr + ins.imm_offset
+                        if v < LO and not (which == 'ours' and (seg, fo) in fix):
+                            consts['#0x%x' % v] += 1
+                    elif op.type == capstone.x86.X86_OP_MEM and op.mem.base and \
+                            ins.reg_name(op.mem.base) not in ('esp', 'ebp') and 0 < op.mem.disp < 0x400:
+                        fo = off + ins.address - addr + ins.disp_offset
+                        if not (which == 'ours' and (seg, fo) in fix):   # a global's addend, not a field
+                            consts['+0x%x' % op.mem.disp] += 1
                 refs = []
                 for fo, v, kind in fields(ins):
                     at = off + ins.address - addr + fo
@@ -246,8 +266,9 @@ def main():
                     t = ins.operands[0].imm
                     if addr <= t < lim and t in start:
                         brs[(ins.mnemonic in ('jmp',), blocks_sig(ir, start[t], len(ir)))] += 1
-            sides.append((refs, brs))
-        (ro, bo), (rg, bg) = sides
+            sides.append((refs, brs, consts))
+        (ro, bo, co), (rg, bg, cg) = sides
+        c_ours, c_game = set(co) - set(cg), set(cg) - set(co)
         r_ours, r_game = ro - rg, rg - ro
         b_ours, b_game = bo - bg, bg - bo
         # a branch whose target block is just shaped differently (same addresses) is not news
@@ -275,6 +296,10 @@ def main():
             if bad and (r in ro or r in libg) and not verbose:
                 continue
             print('    game %s %dx %s' % ('only ' if r not in ro else 'more ', c, label(r)))
+        if c_ours or c_game:
+            nconst[0] += 1
+            print('    consts ours only: %s | game only: %s   (#imm, +field; a register-held constant shows too)'
+                  % (' '.join(sorted(c_ours)) or '-', ' '.join(sorted(c_game)) or '-'))
         if verbose or nb:
             for sig in sorted(so_b - sg_b, key=str):
                 print('    jumps ours -> %s' % ' '.join(label(x) for x in sig))
@@ -285,7 +310,8 @@ def main():
                 print('    branch ours %s-> %s' % ('jmp ' if j else '', ' '.join(label(x) for x in s) or '(no addresses)'))
             for (j, s), c in sorted(b_game.items(), key=str):
                 print('    branch game %s-> %s' % ('jmp ' if j else '', ' '.join(label(x) for x in s) or '(no addresses)'))
-    print('%d of %d functions reference different addresses' % (flagged, len(todo)))
+    print('%d of %d functions reference different addresses; %d use constants only one side has'
+          % (flagged, len(todo), nconst[0]))
 
 
 if __name__ == '__main__':

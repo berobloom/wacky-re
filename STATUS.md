@@ -22,11 +22,16 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: iter 56's lever is `tools/wc/permute.py` (MATCHING.md section 7): release_check
-   MATCH, gains in 25 near misses; every winner verified in place and its diff read. No open status in `src/nearmiss.txt`; iter 55 re-probed `players_project` 0x255d4
-   (10 loop-shape variants, all = control: the `v7d800` register cache is not a source-shape fact).
-   Take one only with an idea its `differs:` note does not list. nmrefs after every change;
-   `src/check.sh` count +1 before `src/matched.baseline` goes up.
+1. Behaviour night (overnight/prompt.md step 2): `tools/wc/nmrefs.py` now also lists `consts` -
+   immediates and struct-field offsets only one side uses (15 of 79 near misses). Read the game's
+   instruction for each, fix our C where it computes something else (fn_1832c and fn_16eac were real
+   bugs that row counts hid); write `BEHAV:` into `src/nearmiss.txt`. MATCH count never drops.
+2. Hybrid link (`tools/link/build.sh`, delinked data first so literal addresses hold): boots through
+   every menu; with all our C it stalls at LOADING RACE (music ISR runs, main starved), with the 81
+   near misses from the game (`ORIG=`) it reaches the race. Bisection on the fixed layout: see the
+   commit after this one.
+3. Near misses only with an idea their `differs:` note does not list (`tools/wc/permute.py`,
+   MATCHING.md section 7); nmrefs after every change.
 
 ## BLOCKED
 

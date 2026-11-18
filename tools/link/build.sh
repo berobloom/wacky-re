@@ -25,6 +25,8 @@ tools/wc/wcc.sh $wc $w EXTRA.C -s -3r -oneatx | grep -iE ' error|errors' || true
 python3 tools/link/symmap.py $w/WW.OBJ --out $w/symmap.txt
 python3 tools/link/cpublics.py $w/WW.OBJ $w/EXTRA.OBJ > $w/cpublics.txt
 DELINK_ORIG="${ORIG:-}" python3 tools/link/delink.py original/WW.EXE $w/symmap.txt $w/BLOB.OBJ
+# BLOB.OBJ first: its data segment then opens DGROUP at 0x60000 like WW.EXE's data object, so the
+# literal addresses src/ww.c uses ((char *)0x80ace, 28 lines) and every names-file address hold
 # names our source declares under an old name next to the defining one (one function, two names)
 cat > $w/WW.LNK <<LNK
 system dos4g
@@ -35,9 +37,9 @@ alias fn_279e8_=track_load_
 alias fn_2754c_=effects_load_
 alias fn_27920_=wait_input_
 alias f29e0c_=hud_draw_
+file BLOB.OBJ
 file WW.OBJ
 file EXTRA.OBJ
-file BLOB.OBJ
 LNK
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 300 dosbox -noconsole -exit \
     -c "mount c \"$(cd $wc && pwd)\"" -c "mount d \"$(cd $w && pwd)\"" -c "set WATCOM=C:\\" \
