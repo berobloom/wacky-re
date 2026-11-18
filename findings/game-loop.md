@@ -83,6 +83,43 @@ block inside both arms of the test, our build merges them — see the `differs:`
   inverted sense at 0x21ab9 is source-level, not a compiler choice). There the follow-up
   `voice_play(0x11)` is gated on `v7ec74 == 0` (0x21af7).
 
+## Pickups, weapons and shot kinds: `SPRITE.ATR` kind -> `kart.f16` -> shot kind
+
+STRONGLY SUPPORTED: read from the rebuilt C of three near misses whose addresses agree with the
+game (nmrefs): `kart_bump` 0x22bf4 (pickup), `kart_fire` 0x24364 (fire), `shot_hit` 0x218a4 (hit).
+What the sprites look like and what the player sees are not checked live.
+
+- **Pickup** (`kart_bump`, the entity touched is `ents[CR->f22]`, its set's `kind` from
+  `SPRITE.ATR` +0x00, findings/formats.md): kind 0 = an obstacle (one-player, off-line only, and only
+  with `f42 >= 100` and `CR->f20 == 3`: crash, voice 0xd, engine stopped, `f7e = 1`); kind 1 (OB1) = a one-off effect (voice 0x16, `v88c8c = -1`, three `tb80ae8`
+  rows 0xb apart; not in split screen); kind 2 (the 18 H sets) = **ammo**, `f6a += 4` up to
+  0x63; kinds 3..7 (H1, H15, H12, H16, H20) = **a weapon**, `f16 = kind`, taken only when the
+  kart holds no weapon (`f16 == 0`) and `f6a < 0x63`. A taken pickup is hidden (`ents[].f2 = -1`).
+  In a network race kinds above 2 are all replaced by the first kind-2 set (`ents_flags`).
+- **Fire** (`kart_fire`, fire key `joy88b42`, blocked while `players[].f12` is set): the weapon is
+  `f16`, or with `f16 == 0` the ammo (`f6a--` per shot) and the `fe0` bits (4 -> 0, 0x10 -> 3,
+  8 -> 8). Holding fire 20 `ticks2` sets weapon 8 (not in the shareware, `v7e574 == 0`).
+
+  | weapon (`f16`) | shots | shot kind | placed | sprite | voice |
+  |---|---|---|---|---|---|
+  | 0 (ammo) | 1 | 0 | at the kart | `hm7d740` | 0x14 |
+  | 3 (H1) | 3 (`v7eb9c` 0, 1, 2) | 0 | at the kart | `hm7d73c` | 0x13 |
+  | 4 (H15) | 2 | 1 | `curpos` +-0x1e0 on the track (0x780 a lap) | `hm7d738` | 0x17 |
+  | 5 (H12) | 1 | 2 | `curpos` + 0x3c0 (half a lap ahead) | `hm7d734` | 0x17 |
+  | 6 (H16) | 1 | 3 | same | `hm7d730` | 0x17 |
+  | 7 (H20) | 1 | 4 | same | `hm7d72c` | 0x17 |
+  | 8 (held fire) | 1 | 5 | at the kart | `hm7d728` | 0x14 |
+
+- **Hit** (`shot_hit`): the owner is immune to kinds 0 and 5 and to an armed shot (`f08`).
+  A computer driver: kind 5 spins (`f58 = 2`, voice 0x19), any other kind slows it (`f58 = 1`,
+  voice 0x11; in a network race the taunt path above). A human: in a two-player race kinds 0-2
+  knock the kart out (`f02 = 2`, engine stopped); kind 4 sets `kart.f14`, which swaps the two
+  inputs `key88cd5`/`key88cdd` (input bits 1 and 2, LIKELY left/right: they set turn frames
+  `f1c` 1 and 3) in `kart_frame` 0x290a0 (**reversed controls**, LIKELY; who
+  clears `f14` is not found in the C - its stamp `f8a` has no reader there, OPEN); kind 5 spins;
+  the rest play the hit animation (`f1a = 7`, `tb7b448`). Kind 5 counts as kind 0 in two-player
+  and network races.
+
 ## Traps
 
 - The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`
