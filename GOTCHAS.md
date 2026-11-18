@@ -231,6 +231,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   0x32e60); `strcpy(p, "")` is a 1-byte copy of the pooled "" at 0x600ac (the NUL of "WACK").
   Watch check.sh's `segment CONST` line after every new string: one base = literals in place.
   [generic]
+- **Score the control copy before trusting a variants.py probe:** copies of a function appended to
+  the end of a probe file do not always compile like the original in place. race_records_menu
+  0x1d13c: the unchanged copy scored 38 rows / 476 bytes appended, 12 / 512 in place (fn_1c0f4's
+  control did reproduce). When the control differs, compile each variant in place in its own
+  directory (parallel wcc.sh runs are fine). [generic]
 - **A near miss can hide a behaviour bug the row count never shows:** a wrong field (cboxes[1].x2
   for .x), a swapped string, a store into the wrong table, or code made unreachable (no label after
   a `goto`, which 9.5b drops without a warning: fn_1832c lost its joystick path and trial_book
