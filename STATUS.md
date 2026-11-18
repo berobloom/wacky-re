@@ -21,15 +21,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## Next
 
 1. Near misses: no open status in `src/nearmiss.txt`; iter 46 took fn_1c0f4 14 -> 8 rows and to the
-   game's size (a temp `t = (int)strlen(rows[10]) * 8;` before the centred line puts the `lea`
-   before the constant and sinks the print_at mode too; the split for-init `for (i = 1, q = rows[0],
-   q += 80; ...)` gives `mov edi,esp; add edi,0x50` where one expression gives a `lea`). Its two
-   remaining blocks are the scheduling/coin-flip classes. Next leads, from
-   `nmrefs.py ww .work/src/WW.OBJ` (`game more`/`ours more` = a local copy or an extra read, not
-   noise): chat 0x14d00 (**`ours only ?int386x_`** - we call an external the game does not, plus one
-   extra spr_y read), kart_fire 0x24364 (game has 12 more v7eb9c reads), ents_project 0x25a78 (6 more
-   v7d7f4), players_ahead 0x34208 (v7d800 promoted in ECX there, not here). Re-rank with
-   `tools/wc/nearmiss.sh` - its first column is stale on several lines. nmrefs after every change.
+   game's size (its `differs:` note has the two spellings that did it; what is left there is
+   scheduling/coin flip). Next leads from `nmrefs.py ww .work/src/WW.OBJ` (`game more`/`ours more` =
+   a local copy or an extra read, not noise): chat 0x14d00 (**`ours only ?int386x_`**, plus one extra
+   spr_y read), kart_fire 0x24364 (12 more v7eb9c reads), players_ahead 0x34208. nmrefs after every
+   change; re-rank with `tools/wc/nearmiss.sh` (its first column is stale).
 2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
    PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
    rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
@@ -40,13 +36,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
    `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` (random-mode permuter, 30 copies a
    compile) found shot_fire's last swap in one round; it is worth a 20-round run once a function is
    down to scheduling rows.
-3. Near misses just below the top: `fn_1c0f4` 0x1c0f4 (8 rows) and `draw_status` 0x12f80 (17) are the
-   smallest with named non-home causes - draw_status: print_at's `mov ebx,esp`/`xor ecx,ecx` hoisted
-   into the inline strcpy's setup at every site, and only the SECOND `netgame == 1` pnames pair
-   merges (the first is byte-identical, so a spelling must not touch it); `showlines` 0x2a268 (18) is
-   10 slot rows plus 2 `mov ax,word[spr_x]` vs the game's `movsx eax` (width rule; plain `int x/y`
-   tried, a mixed `short`/`int` pair was not). `com_open` 0x102f4 (13), `shot_step` 0x25e6c and
-   `fn_182d0` 0x182d0 (2-3) - only with an idea the `differs:` note does not list.
+3. Near misses just below the top: `fn_1c0f4` (8 rows) and `draw_status` 0x12f80 (17) are the
+   smallest with named non-home causes (draw_status: print_at's args hoisted into the inline strcpy's
+   setup at every site, and only the SECOND `netgame == 1` pnames pair merges); `showlines` 0x2a268
+   (18) has 2 `mov ax,word[spr_x]` vs the game's `movsx eax` (width rule; mixed `short`/`int` x/y
+   untried) under 10 slot rows. Take the rest only with an idea its `differs:` note does not list.
 4. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
    the `(int *)charbase + i * 2` spelling of every `(int *)(v7d6a0 + curpos * 8)` site
    (`view_at_curpos` 0x2f408, `view_box`, `in_sector`, `cpu_drive`), split arithmetic
