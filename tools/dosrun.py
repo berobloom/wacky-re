@@ -238,7 +238,7 @@ def locate(d, prog):
     """Where DOS/4GW loaded each object of a .work/le program: returns
     [(file_base, runtime_base)].  Searches memory for a 64-byte window that
     no fixup touches (raw LE bytes == fixed-up image bytes)."""
-    sys.path.insert(0, str(Path(__file__).parent))
+    sys.path.insert(0, str(Path(__file__).parent / 'le'))   # lelib/leparse live in tools/le
     from lelib import Image
     from leparse import LE
     img = Image(prog)
