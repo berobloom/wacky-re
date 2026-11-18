@@ -248,12 +248,19 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   `mov ecx,esp`. Declaration order, `(void)numbuf`, a block-local array or a late `nb = numbuf` did
   nothing; using nb everywhere cost an EBP frame. [generic]
 - **Stores near an inline strcpy slide into its setup unit**; which ones is a source-position fact,
-  probe every position (classes_menu 0x19f01-0x19f27). [generic]
+  probe every position (classes_menu 0x19f01-0x19f27).
+- **A permuted group of scalar slots: hold those values in one `volatile` array.** A plain
+  `int sl[4]` or a struct local with constant indices is scalarized by 9.5b (each element becomes
+  its own pseudo, the frame grows, the slots scramble: wtext 0x146d4 6 -> 21); `volatile int sl[4]`
+  keeps a real array at esp+0, so the elements land in the game's slots in declaration order
+  (wtext 6 -> 2 -> MATCH; read one element into a plain local to get the game's load hoisted above
+  the following global store). [generic] [generic]
 
 ### Dead ends: SKIP at once (0 variants) unless you bring a new idea
 
 - **Stack-slot permutation of scalar locals** (QUESTIONS 9, 10), unless one of the swapped slots
-  is a compiler-made pointer (lever above): neither declaration nor first-use
+  is a compiler-made pointer (lever above) or the group is written as one `volatile` array (Levers,
+  wtext 0x146d4): neither declaration nor first-use
   order (arrays DO follow declaration order, ascending from esp+0). 43 orders in enter_name, also
   release_check, wtext, scores_screen, fn_1c0f4, showlines, cars_menu. In a function that already
   has 20+ scalar slots the pointer lever backfires - it renumbers every slot (trial_book 0x2e4b8,

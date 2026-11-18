@@ -2808,29 +2808,29 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
 
 extern short v88c2e, v88c10;
 
-/* differs: stack slots only: x, hw, hh are permuted (QUESTIONS 2) - re-read with fndiff.py in
- * iter 20: all 7 rows are the three slots ([esp], [esp+8], [esp+0xc]) plus the masked-fixup
- * artefact (GOTCHAS "fake [reg - 0x6f6f6f70]"); a slot permutation, QUESTIONS 9/10 dead end. */
 void wtext(int x, int y, char *s, int scaled)
 {
-    int i, ok, c;
-    int hw, hh;
+    int i, ok, c, xv;
+    volatile int sl[4];       /* volatile: keep it a real array, the game's slots 0/4/8/0xc */
     short sx, sy;
 
+    sl[0] = x;
+    sl[1] = scaled;
     i = 0;
     if (strlen(s) == 0)
         return;
-    if (scaled) {
+    if (sl[1]) {
         spr_h = v88c2e;
         spr_w = v88c10;
-        hw = spr_h >> 1;
-        hh = spr_w >> 1;
+        sl[2] = spr_h >> 1;
+        sl[3] = spr_w >> 1;
     } else {
         spr_h = 0xF;
         spr_w = 0xD;
     }
+    xv = sl[0];
     spr_y = y;
-    spr_x = x;
+    spr_x = xv;
     for (; s[i] != 0; i++) {
         if (s[i] >= 'A' && s[i] <= 'Z') {
             c = s[i] - 'A';
@@ -2868,13 +2868,13 @@ void wtext(int x, int y, char *s, int scaled)
         if (!ok)
             c = 0x24;
         sprptr = sp6a888[c];
-        if (scaled) {
+        if (sl[1]) {
             sx = spr_x;
             sy = spr_y;
             spr_x += 7;
             spr_y += 6;
-            spr_x -= hw;
-            spr_y -= hh;
+            spr_x -= sl[2];
+            spr_y -= sl[3];
             f37487();
             spr_x = sx;
             spr_y = sy;
