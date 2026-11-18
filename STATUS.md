@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **200 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+- **201 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
   0x10260-0x36a4d bar the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status

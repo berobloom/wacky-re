@@ -3185,8 +3185,8 @@ void chat(void)
     while (strlen(theirs) < 38)
         strcat(theirs, " ");
     y1 = 0x49;
-    x1 = 8;
     x2 = 8;
+    x1 = 8;
     y2 = 0x8F;
     strcpy(blank, mine);
     n1 = 0;
@@ -3214,7 +3214,7 @@ void chat(void)
             stext((short)x1, (short)y1, mine);
             n1 = 0;
         }
-        if (other == 13) {
+        if (13 == other) {
             stext((short)x2, (short)y2m, theirs);
             strcpy(theirs, blank);
             n2 = 0;
@@ -4628,8 +4628,8 @@ void fn_1832c(void)
     /* shorts: slot order in the game is s350@0x350 ... nav@0x368; declaring the
        loop temporaries (i/up/down/ret) after the seven slot-locals reproduces it
        (arrays above: declaration order alone fixes those slots) */
-    int eight;
     char *gp;
+    short eight;
     short down, up, ret, i;
     short s350, s354, s358, card_n, s360, s364, nav;
 
@@ -4642,7 +4642,7 @@ retry:
     s350 = 0;
     v684e0 = 0;
     v685e4 = 0;
-    for (i = 0; i <= 7; i++)
+    for (i = 0; i <= 7; i += 1)
         *(short *)(p6aaae + i * 0x68) = 0;
     for (i = 0; i <= 1; ++i) {
         cars[i].f5a = 0;                     /* +0x5a first, then the inc, then .face (0x183a7-0x183b1) */
@@ -4660,7 +4660,7 @@ retry:
     v88b88 = 1;
     pal_a = 0;
     pcx[0] = 0;
-    if (v7ecb4 == 0)
+    if (0 == v7ecb4)
         strcpy(card, "");
     else
         strcpy(card, "B");
@@ -4690,7 +4690,7 @@ retry:
     pal_a = (v88bb6 - 1) * 16000;
     frame_wait();
     gp = pal7d84c;
-    for (i = 0; i <= 0x2ff; i++)
+    for (i = 0; i <= 0x2ff; ++i)
         pal[i] = gp[i];
     fn_182d0(pal, 0xe9, 1, 0, (int)gp);
     fn_182d0(pal, 0xec, 1, 0, (int)gp);
@@ -4700,7 +4700,7 @@ retry:
         fn_182d0(pal, i, 1, 0, (int)gp);
     fade_in((unsigned char *)pal);
     wait_release(0);
-    if (v88bb2 == 4 && v7ecf0 != -1) {
+    if (4 == v88bb2 && v7ecf0 != -1) {
         v88b88 = (short)v7ecf0;
         palptr = pal;
         w88b1e = v88b88 + 4;
@@ -4778,8 +4778,8 @@ mainloop:
             v88cf0 += 0x40;
         v88cf3 = 0;
         net88c14 = net_key(v88cf0, v88cf3, 0);
-        v7ecc4++;
-        if (v7ecc4 > 1) {
+        v7ecc4 += 1;
+        if (v7ecc4 >= 2) {
             v7ecc4 = 2;
             v7ed20 = 0x88;
             v7ed1c = 0x2a8;
@@ -4854,7 +4854,7 @@ mainloop:
 merged:
     if (joy88b40 || up || down || v88cec)
         wait_or_key(20);
-    s354++;
+    ++s354;
     if (s354 > 12) {
         w88b1e = v88bb6 * 3 + 0xe6;
         if (s364 == 0) {
@@ -4878,7 +4878,7 @@ merged:
     }
     if (joy88b40) {
         voice_play(0x12);
-        if (v88bb2 != 4)
+        if (4 != v88bb2)
             return;
         ret = 0;
         if (v7e574 && v88bb6 > 1) {
@@ -4904,8 +4904,8 @@ merged:
         return;
     }
     s364 = 0;
-    s354 = 0;
     w88b1e = v88bb6 * 3 + 0xe6;
+    s354 = 0;
     w88b10 = 1;
     fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 0, (int)gp);
     f37cf1();
@@ -4976,8 +4976,8 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
     s358++;
     if (s358 > 12) {
         w88b1e = v88b88 + 4;
-        if (s360 == 0) {
-            fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
+        if (!s360) {
+            fn_182d0(pal, 4 + v88b88, 1, 1, (int)gp);
             s360 = 1;
         } else {
             fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
@@ -5020,7 +5020,7 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
         f37cf1();
     }
     if (up) {
-        v88b88++;
+        ++v88b88;
         if (v88b88 > 5)
             v88b88 = 1;
         w88b1e = v88b88 + 4;
@@ -5038,8 +5038,8 @@ joyretry:
     trial_book(v88bb6 + v7ecb4, v88b88, 0);
     if (v88cec == 0)
         return;
-    palptr = pal;
     w88b1e = v88b88 + 4;
+    palptr = pal;
     fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
     w88b10 = 1;
     f37cf1();
@@ -7971,7 +7971,7 @@ void credits_page(int n, int first)
 void credits_screen(void)
 {
     int save;                         /* EDI: movzx loads (0x1efd2) */
-    int dir, page, first, y;          /* esp+0x08, esp+0x00, esp+0x0c, esp+0x10: this order is the closest */
+    int first, page, dir, y;          /* esp+0x08, esp+0x00, esp+0x0c, esp+0x10: this order is the closest */
     int k, x, face, frame;            /* EDX, EBX, ESI, ECX */
 
     page = 1;
@@ -11364,7 +11364,7 @@ void ents_project(void)
 {
     struct ent *e;
     short sx, c, dy, n, k;
-    int i, sy, m, d, id, t, side, a;
+    int t, sy, i, m, d, side, id, a;
 
     for (e = ents, i = 0; i < nents; e++, ++i) {
         if (e->f2 == -1)
@@ -11392,7 +11392,7 @@ void ents_project(void)
             continue;
         d = isqrt(d * d + side * side);
         m = tb6b7f8[c];
-        if (m) {
+        if (m != 0) {
             t = d * m;
             d = t >> 14;
             if (t - (d << 14) >= 0x1fa0)
@@ -11403,10 +11403,10 @@ void ents_project(void)
         k = (d - 0x7c) / 0x46;
         if (k < 0)
             k = 0;
-        if (k > 9)
+        if (k >= 10)
             k = 9;
-        p7d838 = tab6e470[attrs[id].f0c * 20 + k];
         spr_y = tb6bd00[d];
+        p7d838 = tab6e470[attrs[id].f0c * 20 + k];
         sprptr = attrs[id].data + e->frame * (short)(attrs[id].h * attrs[id].w);
         p7d764 = p7d838;
         p7d838 += 2;
@@ -11417,10 +11417,10 @@ void ents_project(void)
             continue;
         c -= spr_h >> 1;
         v7d878 = 0;
-        if (c < 0) {
+        if (c <= -1) {
             c = -c;
             spr_h -= c;
-            if (spr_h <= 0)
+            if (spr_h < 1)
                 continue;
             p7d838 = (short *)((char *)p7d838 + (short)(c * (spr_w + 1) * 4));
             c = 0;
@@ -11448,7 +11448,7 @@ void ents_project(void)
         CR->f06 = spr_y;
         CR->f08 = p7d838;
         CR->f0c = (int)sprptr;
-        v88b78++;
+        v88b78 = v88b78 + 1;
         CR->f14 = v7d878;
         CR->f22 = i;
     }
@@ -12923,11 +12923,11 @@ extern short v88c24;
 
 void kart_catchup(int n)
 {
-    int d, gap;
+    int gap, d;
 
     if (!splitscreen && !netvoices && !v7edb0) {
         gap = karts[0].f2e - karts[n].f2e;
-        if (n >= 4 && v7d800->f04 != 1 && v7d800->f04 != 0) {
+        if (n >= 4 && v7d800->f04 != 1 && 0 != v7d800->f04) {
             if (7 - n + v7ece0 <= gap) {
                 if (v7d800->f04 != 3) {
                     d = tbl7e730[v88b84];
@@ -12964,7 +12964,7 @@ void kart_catchup(int n)
                     break;
                 case 2:
                     if (n == 7)
-                        v88c24 = 1 + v88c24;
+                        v88c24 = v88c24 + 1;
                     if (n == 6)
                         v88c24 += 2;
                     if (n == 5)
@@ -13871,7 +13871,7 @@ void overlay_draw(void)
 {
     char str[0x14];
     char buf[0xc];
-    int i, t, s, f, k, up, down, lim, one, v, n;
+    int v, n, t, one, s, f, k, i, up, lim, down;
 
     minimap();
     one = 1;
@@ -13926,7 +13926,7 @@ void overlay_draw(void)
                 continue;
             if (soundon && cars[i].fcc && !FX_SoundActive(cars[i].fc8))
                 gig_sound2(i);
-            n--;
+            --n;
             f = cars[i].fb8;
             if (cars[i].fb4)
                 sprptr = sp6a538[f + 3 - (f + f)];
@@ -13934,7 +13934,7 @@ void overlay_draw(void)
                 sprptr = sp7b210[n] + f * 0x688;
             if (v88bde) {
                 n = 1;
-                if (i == 0)
+                if (0 == i)
                     spr_y = 0x78 - p2offset;
                 else
                     spr_y = 0x78;
