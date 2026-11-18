@@ -9281,7 +9281,7 @@ void shot_hit(void)
     v7d7f4 = ents;
     for (i = 0; i < nents; i++) {
         if (v7d7f4->f2 == -1) {
-            v7d7f4++;
+            ++v7d7f4;
             continue;
         }
         if ((short)(abs(v7d7f4->x - v7d7a4) + abs(v7d7f4->y - v7d7a8)) < 0xe) {
@@ -9290,10 +9290,10 @@ void shot_hit(void)
         }
         v7d7f4++;
     }
-    if (v88bae != 0)
+    if (v88bae)
         return;
     v7d800 = players;
-    for (i = 0; i <= nplayers; i++) {
+    for (i = 0; i <= nplayers; i += 1) {
         hit = 0;
         if (v7d800->f02 == 2 || karts[i].f0a != 0) {
             v7d800++;
@@ -9323,14 +9323,14 @@ void shot_hit(void)
                 if ((twoplayer || netvoices) && kind == 5)
                     kind = 0;
                 if (ai) {
-                    if (kind != 5) {
+                    if (5 != kind) {
                         flag = 1;
                         if (netvoices != 0) {   /* 0x21ab9 je: the block runs when v7ec74 != 0 */
                             voice_play(0xff);
                             if (v7d800->face == *(int *)&v7ec6c) {
+                                flag = 0;
                                 v7d800->f66 = 1;
                                 v7d800->f64--;
-                                flag = 0;
                                 if (v7d800->f64 < 0)
                                     flag = 1;
                             }
@@ -19243,11 +19243,11 @@ extern short w88c46;
 
 int main(int argc, char **argv)
 {
-    int bad, iscd, size, pos, vga, n;
+    char *pal, *endpal;
     FILE *f;
     char *env;
-    short i, j, k, v;
-    char *pal, *endpal;
+    short v, j, i, k;
+    int bad, iscd, size, pos, vga, n;
     union REGS r;
 
     v7ebd4 = 0x2580;
@@ -19358,7 +19358,7 @@ int main(int argc, char **argv)
         if (!strcmp(argv[i], "JUMP"))
             kfe0_684f0 += 2;
         if (!strcmp(argv[i], "HOG"))
-            kfe0_684f0 += 4;
+            kfe0_684f0 = kfe0_684f0 + 4;
         if (!strcmp(argv[i], "ICE"))
             kfe0_684f0 += 8;
         if (!strcmp(argv[i], "FIRE"))
@@ -19429,7 +19429,7 @@ nomem:
     sounds_load();
     if (!songs_load())
         goto nomem;
-    for (i = 0; i <= 0x2ff; i++)
+    for (i = 0; i <= 0x2ff; i = i + 1)
         v7d858[i] = 0;
     kbd_off();
     ticks = 0;
@@ -19500,8 +19500,8 @@ nomem:
     key88cdd = 0;
     key88cd0 = 0;
     v88bb2 = 4;
-    v88b86 = 1;
     v88bb8 = 1;
+    v88b86 = 1;
     v88c20 = v7ee58;
     v88bb6 = 1;
     v7ea58 = v7ee5a;
@@ -19527,7 +19527,7 @@ nomem:
         f37de0();
         if (key88ccd) {
             screenshot();
-            while (key88ccd)
+            while (key88ccd != 0)
                 ;
         }
         fade_in((unsigned char *)pal7d850);
