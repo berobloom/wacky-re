@@ -1752,14 +1752,19 @@ void car_finished(int i);
    The laptimes index is a block-local `int k` (the game's temp in EAX, value in EDX 0x12c0f, size
    back to the game's 1084), the backward score2 is `(lap - 1) * ncells` (the shared imul tail
    0x12e1e takes lap-1 in EDI), and the lap cap is written `nlaps + 1 > players[i].lap` (the game
-   loads nlaps first 0x12ed0). Left: that compare's operand order (`cmp edi,eax; jge` 0x12ee0, ours
-   `cmp eax,edi; jle`); `lap < nlaps + 1` gives the compare but loads lap first, and
-   `!(...)`, `1 + nlaps`, a temp, casts on either side: no better; permute.py 20 rounds: no gain.
-   Iter 47 in the real file: `lap < nlaps + 1` 4 rows (it swaps the two movsx homes AND the add
-   destination - lap EAX, nlaps EDI - only the cmp/jge pair lands), `lap <= nlaps` and
-   `nlaps >= lap` 21 each; 8 more spellings in one probe compile (.work/probe_cl: `!(lap > nlaps)`,
-   `1 + nlaps`, `{ int m = nlaps + 1; ... lap < m }`, braced/indent forms) none under 3. The game's
-   pairing (nlaps loaded first into EAX, `cmp edi,eax; jge`) is emitted by none of them.
+   loads nlaps first 0x12ed0). Left: that compare's operand pair only - game `cmp edi,eax; jge`
+   0x12ee0, ours `cmp eax,edi; jle`, same two loads, same `add eax,edx` 0x12ede. Twenty-one more
+   spellings in one probe compile (.work/probe_cl2) never break it, and the rule explains why: 9.5b
+   gives the source comparison's LEFT operand both the cmp destination and the first-loaded value's
+   home, so the lap-left forms (`lap < nlaps + c`, `!(lap >= nlaps + 1)`, `lap < nlaps + 1`) emit the
+   game's cmp and `jge` but swap the two movsx homes and the add (4 rows), while every sum-left form
+   keeps the game's homes with our cmp direction (2). Also tried: `nlaps + c > lap`, `c + nlaps`,
+   `lap - nlaps < c` (2 rows of `sub edi,eax` + `cmp edi,edx` instead), `c > lap - nlaps` (3),
+   `lap - c < nlaps` (4), `nlaps + c >= lap + 1` and `lap + 1 <= nlaps + c` (12, 13), a local for the
+   sum (4), `players[i].lap = players[i].lap + 1` (11), a `struct player *pp` for the row (35 rows,
+   1073 bytes), `1 + nlaps`, casts either side, plus iter 47's `lap <= nlaps`/`nlaps >= lap` (21 each)
+   and permute.py 20 rounds: dead end (GOTCHAS "coin flip"). The game's `add eax,edx` is no evidence
+   its source added `c`: 9.5b proves c == 1 at 0x12eba and reuses EDX for our literal 1.
    The game inlines since2(cars[i].f82) (argument in EAX, ticks2 - t in EDX) where our -oe keeps
    the call: written out with a temp, `(t = cars[i].f82, ticks2 - t)`, that site matches. */
 void car_laps(void)
