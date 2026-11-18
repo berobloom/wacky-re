@@ -27,7 +27,7 @@ name, addr, endg = sys.argv[1], int(sys.argv[2], 16), int(sys.argv[3], 16)
 rounds = int(sys.argv[4]) if len(sys.argv) > 4 else 10
 copies = int(sys.argv[5]) if len(sys.argv) > 5 else 30
 rng = random.Random(int(sys.argv[6]) if len(sys.argv) > 6 else 1)
-work = os.path.join(ROOT, '.work', 'perm', name[:8].upper())
+work = os.path.join(ROOT, '.work', 'perm', name.upper())    # full name: name[:8] collided (netkeys_in/_out/_pack, iter 56)
 os.makedirs(work, exist_ok=True)
 
 src = open(os.path.join(ROOT, 'src', 'ww.c')).read()
