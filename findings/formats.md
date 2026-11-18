@@ -75,16 +75,148 @@ The 116 `.PCX` entries include the title/logo pages and the menus' one-file
 pictures, e.g. `BSBCS.PCX` / `SBCS.PCX` picked by `fn_193a8` 0x193a8
 (findings/menus.md).
 
-## .GAM - per track text (CONFIRMED it is text; fields OPEN)
+## .GAM - per track text (CONFIRMED: 25 or 28 CRLF-separated lines)
 
-CRLF-separated lines, 150-171 bytes. `1.GAM` starts
+`gam_load` 0x2717c (byte-identical rebuild, `src/ww.c:12126-12180`) reads one
+value per line: four picture names into the 14-byte slots `gam7eabc[0..1]` and
+`gam7eaa0[0..1]`, a fifth name into `gam6a4e0`, two numbers (the start point
+`v88b0a`/`v88b0e`, each `+ 0x400`), one line nobody reads (line 8, `1` in every
+file), eight pairs of numbers (the start-grid slots `order_a[0..7]` /
+`order_b[0..7]`, each `+ 0x3e0`), then `v88b60`; if that is non-zero, three more
+numbers (`v88b5a`, `v88b4e`, `v88b4c`). CONFIRMED by the line census over all 42
+files: 36 have exactly 25 lines, 6 have 28, `v88b60` is 0 or 1 and 28 lines
+occurs exactly when it is 1 (`1.GAM` 162 bytes/25 lines, `16.GAM` and `42.GAM`
+160/159 bytes/28 lines).
 
-    f1.pcx / f2.pcx / ma1.pcx / ma2.pcx / back1.pcx / 1250 / 1500 / 1 ...
+The four picture names get an `A_` prefix (`src/ww.c:12143-12151`) and every
+prefixed name exists in WACKY.DAT (census over all 42: `1.GAM` line 1 `f1.pcx`
+-> entry `A_F1.PCX`), as do the fifth names, which are only `back1.pcx`,
+`back2.pcx`, `back3.pcx`; `datfind` 0x1418c uppercases its argument (findings
+note in `analysis/ww_names.txt:256`), which is why the mixed case works.
+`str7d784` = `gam7eabc[0]` (whose trailing 0x300 bytes are the track's palette,
+`src/ww.c:12440-12444`), `gam6a4e0` is `pcx_load`ed as screen 1 (0x27de0), and
+the four `A_` names are the tile and mask pictures painted into `v7d75c` by
+`track_pics_load` 0x277b8 - see `.M` below.
 
-which matches what `track_load` 0x279e8 parses (four names, then the fifth,
-then numbers; `src/ww.c:12113`). Numbers per line, no other text. `20.GAM` and
-`42.GAM` have the same shape and one line fewer or more; the field list is not
-pinned (the extra trailing lines in `42.GAM` - `1 2 4 3` - are unread).
+## The per-track payloads: `.POS`, `.SIN`, `.M`, `.PAR`, `.RD`, `.SPW`
+
+Sizes are constant per extension over all 42 tracks (census of every entry with
+`tools/le/datdump.py`): `.SIN` 1296, `.POS` 8194, `.PAR` 25600, `.M` 4096; `.RD`
+and `.SPW` are count-prefixed and vary. The blobs are shared between track
+slots: all 42 `.M` differ, but there are only 30 distinct `.POS` (12 of them -
+tracks 16-21 and 37-42 - are the same all-zero map), 18 `.SIN`, 9 `.PAR` and 29
+`.GAM`. The track slot is therefore not the same thing as the track art.
+
+### .POS - the 64x64 zone map (CONFIRMED)
+
+`track_load` does `readdat_in(map, 0x2000); readdat_in(&ncells, 2);`
+(`src/ww.c:12450-12451`), so the 8194 bytes are a 64x64 array of shorts (8192)
+plus one word. `map_at` (rebuild `src/ww.c:1513-1517`) reads it as
+`map[((y - 0x400) >> 5) * 64 + ((x - 0x400) >> 5)]` and returns 0 outside
+0..0x7ff, so the array covers the 2048x2048 world in 32-unit cells and a cell
+value is a zone class. `ncells` is the highest class in the map: for all 42
+files max(map) == `ncells` and the number of distinct values is `ncells` + 1
+(census: 26..71 for tracks 1-15 and 22-36; tracks 16-21 and 37-42 have
+`ncells` = 0 and an all-zero map while their `.M`/`.SIN`/`.PAR` are real).
+`v88ba0 = ncells / 4` (`shr` at 0x27dc7, `src/ww.c:12452`).
+
+### .SIN - 108 records of 12 bytes, one per tile: the surface classes (CONFIRMED)
+
+`track_load` loops 0x6c times doing `readdat_in(&skip, 4); readdat_in(sp, 8);`
+(`src/ww.c:12458-12462`): stride 12 in the file (108 * 12 = 1296 = the size),
+stride 8 in memory (`sin7ad88[0x6c][8]` at 0x7ad88), and the first 4 bytes of
+every record are read and thrown away.
+
+The array is written once (0x27dbc -> `v7d870 0x7d870`) and read once - by the
+asm `f37b04` 0x37b04 (`tools/le/xref.py ww 0x7d870` finds exactly those two
+sites). It takes the tile under a point from the tile map (`mov edx,[v7d6a4]`,
+`shr eax,5; shl eax,9`, `shr ecx,5; shl ecx,2` 0x37b5c-0x37b72 = the dword at
+row `[y>>5]`, column `[x>>5]` of a 0x80-dword map), converts the tile pointer
+to a tile index (`sub eax,[v7d64c]`, `shr eax,0xa`, `shl eax,3` 0x37b74-0x37b7c
+- so a tile is 0x400 bytes) and indexes `v7d870 + index * 8` (0x37b80-0x37b86).
+Then it reads one byte of the tile's **mask** half, `tile + 0x1b000 +
+(y&31)*32 + (x&31)` (0x37b8d-0x37b95): if it is 0 `v7e568` gets the record's
+first stored dword, otherwise the second (0x37b9e / 0x37ba9). So the file's
+`.SIN[12*i+8]` = the surface class over the transparent part of tile i and
+`.SIN[12*i+12]` = the class over its solid part. `v7e568` indexes the 0x12e-byte
+`surfs[]` records (src/ww.c:1425), and the two dwords run 0..27 across all 42
+files (24 and 23 distinct values) while `WACKY.SDX`'s count word is 30, 29
+records read after `v88b7c--` (`src/ww.c:12592-12593`) - LIKELY the surface
+index; CONFIRMED that these dwords are what `f37b04` stores into `v7e568`.
+
+The discarded leading 4 bytes are 0x1, 0x10000 or 0x10001 (two shorts, each 0 or
+1; census over all 42: 1544 / 476 / 2516 records). Nothing in WW.EXE reads them
+(the only reader of the array uses the two dwords at +4 and +8 of the memory
+record, which is the file's +8 and +12): meaning OPEN.
+
+### .M - 64x64 tile indices (CONFIRMED)
+
+4096 bytes. `track_load` reads one byte per column for rows 0x20..0x5f of the
+dword map at `v7d6a4` and stores `v7d75c + (byte << 10)` per column
+(`src/ww.c:12471-12479`); `v7d648 = v7d644 = 0x80` (`src/ww.c:17557-17558`) so
+the map is 128x128 dwords and the file fills its centre 64x64. Observed byte
+range over all 42 files: 1..107, i.e. 108 tiles. A tile is 0x400 bytes = 32x32
+8-bit pixels (`>> 0xa` at 0x37b7a above, and the pixel address
+`(y&31)*32 + (x&31)` at 0x37b4d-0x37b5a).
+
+The tile *graphics* are not in `.M`: `track_pics_load` 0x277b8 `pcx_load`s the
+four `A_` names from the `.GAM` and the asm `f376d7` 0x376d7 paints them into
+`v7d75c` in four quarters `q = v7d604 / 4` apart (`src/ww.c:12288-12305`,
+`v7d604 = 0x36000` at `src/ww.c:18127`): `gam7eabc[0..1]` at +0 and +0xd800,
+`gam7eaa0[0..1]` at +0x1b000 and +0x28800. 0x36000 / 0x400 = 216 tiles = 108
+picture tiles plus 108 mask tiles, which is exactly the `.SIN` record count and
+the +0x1b000 `f37b04` adds. CONFIRMED for the addresses; what `f376d7` does
+inside a quarter is asm and unpinned (OPEN).
+
+### .PAR - 25600 bytes of raw picture, blitted to A000:7d00 (transfer CONFIRMED)
+
+Read raw (no PCX header) into `p6a980` (`src/ww.c:4415`); when `v7d998` is 0 or
+3 - not in the record/playback modes 1 and 2 (`v7d998` is set to 2 or 3 at
+0x1e450-0x1e485, to 1 by `demo_start`) - `v7eb54 = p6a980` and the asm
+`fn_36f55` 0x36f55 streams it (disasm):
+
+    0x36f5e mov edi,0xa0000 ; 0x36f63 add di,0x7d00   ; A000:7d00
+    0x36f68 mov cx,0x6400                             ; 25600 iterations
+    0x36f6c mov dx,0x3c4 ; 0x36f70 mov ah,1 ; 0x36f72 mov al,2 ; 0x36f74 out dx,ax
+    0x36f76 lodsb ; 0x36f77 mov [edi],al              ; one byte per plane
+    0x36f79 shl ah,1 ; cmp ah,8 ; jle loop ; 0x36f84 inc di ; ah=1
+
+The sequencer map-mask register (port 0x3c4 index 2) is re-written on every
+iteration with a value rotated by `shl ah,1`, and DI advances only when the
+rotation passes 8, so the mask sequence is 1, 2, 4, 8: each of the 6400 video
+addresses A000:7d00..0xe0ff is written four times, once per VGA plane, i.e. the
+blob stores **4 bytes per video address** (CONFIRMED from the loop shape). 0x7d00
+= 32000 = the start of the third 0x3e80-byte page.
+
+What that means per pixel is **OPEN** (QUESTIONS 20): the game sets INT 10h mode
+`0x13` (`setvmode_keep(0x13)`, `src/ww.c:19453`, a byte-identical rebuild) and
+`setpalette` programs `0x3ce ax=0x4105` (chain-4 write) and mask `0x0f02`
+(findings/video.md), so what four map-mask writes at one chained address do is
+not settled here. The data fits a 320-pixel row stored as 4 bytes per pixel - a
+**320x20 band at page offset 32000** - LIKELY: `1.PAR` has 41 distinct byte
+values, and mean |Δ| between bytes `l` apart is 8.0 at l=1, 19.6 at 4, 33.4 at
+320, 2.8 at 640 and 5.77 at 1280, the 1280 = a 320-pixel row at 4 bytes each
+being the row stride and 640 (half a row) even stronger, i.e. the band repeats
+horizontally. A port should reproduce the loop and the blob, not reinterpret it.
+
+### .RD - the track line segments (CONFIRMED)
+
+A word count then that many 14-byte records; `(size - 2) / 14` equals the count
+word in all 42 files (census, no exceptions) - 22..83 lines. `track_load` reads
+`v88b7a` and then `readdat_in(&rd7ee0c, 0xe)` per line and adds 0x400 to the
+four coordinates, so the record is `short x0, y0, x1, y1, f08, f0a, f0c` with
+the coordinates in the 0x400-based world (`src/ww.c:12485-12502`,
+`struct rdrec` at `src/ww.c:12375`).
+
+### .SPW - the entity list (CONFIRMED)
+
+A word count then that many 12-byte records; `(size - 2) / 12` equals the count
+word in all 42 files (7..38 entities). `ents_load` 0x21490 does
+`fread(&nents, 2, 1); fread(ents, nents * 12, 1)` and then `x += 0x400`,
+`y += 0x400` (`src/ww.c:9051-9067`), so the record matches `struct ent`
+(`short id, f2, x, y, f8, frame`, `src/ww.c:2640`) with `f2` cleared on load and
+`id` naming the sprite set in `SPRITE.ATR` (`ent_sprites_load` 0x21310,
+`src/ww.c:8248-8252`).
 
 ## WACKY.ING / WACKY.CFG - the config block (layout CONFIRMED)
 
@@ -208,3 +340,16 @@ DHATT, CHRIST WHITE, ...). |
   Watcom reaches each field through its own absolute address (`cfg7ee1c + 0x3e`
   is `word [0x7ee5a]` = `v7ee5a`). Census the range with
   `tools/le/rangexref.py` before concluding a field is unused.
+- The `.GAM` picture names are not DAT entry names: the exe prepends `A_`
+  (`src/ww.c:12143-12151`) and `datfind` uppercases. Asking the archive for
+  `f1.pcx` finds nothing; `A_F1.PCX` is the entry.
+- Two different "maps" per track. The surface class under a point comes from
+  `.M` (tile indices) + `.SIN` + the mask half at `v7d75c + 0x1b000`
+  (`f37b04` 0x37b62-0x37baf); the `.POS` zone classes and their `ncells` are a
+  separate lookup (`map_at`, `src/ww.c:1513`). Indexing `.SIN` by a `.POS` cell
+  value is wrong - it is indexed by tile index, and 108 = the number of tiles
+  in one half of the tile area.
+- `.SIN` is stride 12 in the file and stride 8 in memory (`sin7ad88[0x6c][8]`),
+  and the file's leading dword of every record is read into a scratch and never
+  used again; a port that parses the record as three dwords from +0 indexes the
+  wrong pair (the live pair is file +8 and +12).

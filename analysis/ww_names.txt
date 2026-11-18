@@ -305,7 +305,10 @@
 0x088c40 nplayers     # SPECULATIVE: short; calc_places loops i <= nplayers
 0x012b44 car_laps     # LIKELY: map cell under each car; lap counting at cell 1 after the last cell, backward crossing, cars[].score = lap<<10 + cell, then calc_places
 0x088bb4 curcell      # LIKELY: short, the map cell under the car car_laps is on
-0x088ba2 ncells       # LIKELY: short, the last cell number of the track
+0x088ba2 ncells       # CONFIRMED: short, the highest zone class of the track's .POS map (census: max(map) == ncells and ncells+1 distinct values in all 42 files); v88ba0 = ncells / 4
+0x07ad88 arr7ad88     # CONFIRMED (track_load rebuild + xref ww 0x7d870): the <n>.SIN table, 108 records, 12 bytes in the file / 8 in memory {class when the tile's mask byte is 0, class when nonzero}; read only by f37b04
+0x07d870 v7d870       # CONFIRMED: pointer to arr7ad88 (written 0x27dbc, read 0x37b80)
+0x07d75c v7d75c       # CONFIRMED: base of the tile area - track_load stores v7d75c + (byte << 10) per .M byte; 0x400-byte tiles, 0x36000 = 216 tiles (v7d604), the mask half at +0x1b000
 0x088b9c nlaps        # LIKELY: short, laps of the race
 0x088c60 finished     # LIKELY: short, cars over the line so far (gives players[].place)
 0x07e71c racetime     # SPECULATIVE: int; lap times are differences of it
@@ -351,7 +354,9 @@
 0x07d86c p7d86c       # SPECULATIVE
 0x027060 pcx_load     # CONFIRMED (rebuild src/ww.c): (name, n) DAT PCX picture data (no header, no palette) into p6a978[n]
 0x01bf94 f1bf94       # SPECULATIVE: called from frame_draw
+0x036f55 fn_36f55     # CONFIRMED (disasm): planar blit, 0x6400 bytes from [v7eb54] to A000:7d00, the map mask (port 3c4 idx 2) rotated 1,2,4,8 so each video byte is written 4x (findings/video.md)
 0x0375cd f375cd       # CONFIRMED: pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
+0x037b04 f37b04       # CONFIRMED (disasm 0x37b04-0x37bb0): surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
 0x037e94 f37e94       # SPECULATIVE: called from frame_draw
 0x0287ec players_frames # CONFIRMED (rebuild src/ww.c): per player f38[v88b7e] = arr706a0[dir class][f1a], f30[v88b7e] visibility flag; loops v88b72 0..nplayers inclusive
 0x028998 sprites_build # CONFIRMED (rebuild src/ww.c): resets the list at arr79a28, players_frames, the five *_project, sprites_draw when v88b78

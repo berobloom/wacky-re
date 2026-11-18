@@ -4264,7 +4264,9 @@ void fn_2754c(void);
 short fn_27920(int n);
 void duck_screen(int after);
 void fn_32e60(void);
-void fn_36f55(void);              /* asm: writes 0x6400 bytes from v7eb54 to A000:7D00 */
+void fn_36f55(void);              /* asm 0x36f55: 0x6400 bytes from v7eb54 to A000:7D00, four
+                                   * writes per video byte with the map mask rotated 1,2,4,8
+                                   * (0x36f6c-0x36f88, findings/video.md) */
 
 void fn_17928(void)
 {
@@ -12360,10 +12362,12 @@ int wait_input(short mode)
 /* ---- 0x279e8, 1614 bytes: loads track `track` (caller 0x17d6a in 0x17928): its picture set from
  * 0x80ace (0xf3c bytes per v88b88; 2 while v7ec80, then 5) unless v88ca0/v88bde; the names
  * SHRINK<n>.PCX, <n>.SPW (entname), <n>.PAR, <n>.RD; gam_load; the palette of str7d784 into p7d718;
- * <n>.POS: the 0x2000-byte map and ncells (v88ba0 = ncells / 4); <n>.SIN: 0x6c 8-byte records at
- * 0x7ad88 (each after a skipped dword); screen 1 from gam6a4e0 unless v7d998 is 1 or 2; f37a06;
+ * <n>.POS: the 0x2000-byte map (64x64 shorts, zone classes, map_at src/ww.c:1513) and ncells
+ * (its max; v88ba0 = ncells / 4); <n>.SIN: 0x6c 12-byte records at 0x7ad88 - the first dword
+ * is read and dropped, the kept pair is the surface class of that tile with mask byte 0 /
+ * nonzero, read back by f37b04 0x37b80-0x37ba9 (findings/formats.md); screen 1 from gam6a4e0 unless v7d998 is 1 or 2; f37a06;
  * <n>.M: rows 0x20..0x5f of v7d6a4 (v7d648 dwords each), 0x40 tile pointers v7d75c + b * 0x400 from
- * offset 0x80; track_pics_load; ents_load; <n>.RD: v88b7a + 1 lines of 14 bytes, each a segment
+ * offset 0x80, b = 1..107 (tile 32x32, mask half at v7d75c + 0x1b000); track_pics_load; ents_load; <n>.RD: v88b7a + 1 lines of 14 bytes, each a segment
  * (+0x400) whose points line_points appends at linep (trklines[i]: points, count, f0a).
  * Most DAT reads here are the inlined seekdat/readdat/telldat (the _in copies), the palette ones
  * real calls, pal_6bit a call (alias).

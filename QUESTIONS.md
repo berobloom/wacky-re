@@ -302,3 +302,29 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `cfg77128` at 0x77432. LIKELY: the per-player key map and its names. Test that would settle
     it: run `SETUP.EXE`, change two keys, diff `WACKY.CFG` against this copy (the diff offsets name
     the slots).
+18. **OPEN** (findings/formats.md ".SIN"): why does every `.SIN` record start with four bytes the
+   engine throws away, and what are they? CONFIRMED: `track_load` reads 4 bytes then 8 per record
+   over 108 iterations (0x27d7b-0x27dbc), the only reader of the table is `f37b04` (0x37b80), and it
+   uses only the two kept dwords; the dropped leading value is 0x1, 0x10000 or 0x10001 (two 0/1
+   shorts; 1544 / 476 / 2516 records over all 42 tracks), so it is inert in the shipped engine and
+   must come from whatever wrote the tracks. Also CONFIRMED inert: `v88ba0 = ncells / 4` -
+   `tools/le/xref.py ww 0x88ba0` finds one store (0x27d09) and no read.
+   Test that would settle the first: a track editor's file, or the same fields in another Apogee
+   title's data; nothing in WW.EXE can read them.
+19. **OPEN** (findings/formats.md "The per-track payloads"): what are the 12 track slots 16-21 and
+   37-42? CONFIRMED (census of the DAT entries): all 12 have the same all-zero `.POS` map and
+   `ncells` = 0, i.e. every zone test in them answers class 0, while their `.M`, `.SIN`, `.PAR` and
+   `.GAM` are real; the 42 slots share art heavily (9 distinct `.PAR`, 18 `.SIN`, 30 `.POS`, 29
+   `.GAM`, 42 distinct `.M`).
+   Test: the live harness - which slots the menus can reach, and whether the zone behaviours
+   (`map_at` users, `in_zone` 0x125bc) are inert in those twelve.
+20. **OPEN** (findings/formats.md ".PAR", findings/video.md): what is the pixel geometry of the
+   25600-byte `.PAR` blobs? CONFIRMED: `fn_36f55` writes them as 25600 bytes over 6400 video
+   addresses at A000:7d00, four writes per address with the sequencer map mask (port 0x3c4 index 2)
+   rotated 1,2,4,8 (0x36f6c-0x36f88); the game is in INT 10h mode `0x13` (`setvmode_keep(0x13)`,
+   `src/ww.c:19453`) with chain-4 write programmed by `setpalette` (`0x3ce ax=0x4105`). LIKELY:
+   4 bytes per pixel, a 320x20 band (a row = 1280 blob bytes) written at page offset 32000 -
+   supported by `1.PAR`'s 41 distinct byte values and mean |Δ| per lag of 8.0 (1), 19.6 (4), 33.4
+   (320), 2.8 (640), 5.77 (1280): a horizontal period of 160 pixels and a smooth vertical step.
+   Test that would settle it: dump the 6400 video bytes after the blit through the harness (memory
+   read of 0xa7d00..0xa95ff) and see which four blob bytes land on one screen byte.

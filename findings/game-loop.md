@@ -63,6 +63,14 @@ block inside both arms of the test, our build merges them — see the `differs:`
   points at one of these records. Both rebuilds use `struct kart` (pack(1), src/ww.c).
 - Both functions call the asm map probe `f37b04` 0x37b04 with the point in `v7d7a4`/`v7d7a8`; it
   returns a class in `v7e568` (CONFIRMED by the code: 10 = pickup for a kart, 3 = v88bae 1).
+  How it computes it (CONFIRMED, disasm 0x37b04-0x37bb0): both coordinates are clamped to
+  0..0xfff (0x37b10-0x37b48), the 128x128 tile-pointer map `v7d6a4` is indexed at row `[y>>5]`,
+  column `[x>>5]` (0x37b5c-0x37b72, `[0x7d7a8]` is the row), the tile pointer becomes a tile
+  index by `- v7d64c` and `>> 0xa` (0x37b74-0x37b7c), the byte at
+  `tile + 0x1b000 + (y&31)*32 + (x&31)` is read (0x37b8d-0x37b95 - the mask picture of that
+  tile) and the `<n>.SIN` record of that tile index supplies dword 0 when the byte is 0, dword 1
+  otherwise (0x37b9e / 0x37ba9) as `v7e568`, the index of the 0x12e-byte `surfs[]` record
+  (src/ww.c:1425). Data layout: findings/formats.md, ".SIN - one 12-byte record per tile".
 - The touch test is `|dx| + |dy|` (abs, `cdq/xor/sub`) as a short against 14 for entities and kart
   to player, 18 for a shot to a player (CONFIRMED, byte-identical / near-miss rebuilds).
 - The result goes to `v88bae`: 1 map, 2 entity, 3 player, 4 pickup (CONFIRMED). The player loops
@@ -77,6 +85,10 @@ block inside both arms of the test, our build merges them — see the `differs:`
 
 ## Traps
 
+- The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`
+  tile map, and its transparent/solid test byte lives 0x1b000 bytes past the tile pointer - the
+  second half of `v7d75c` (`add esi,0x1b000` 0x37b8f). Tiles are 32x32 with the pixel at
+  `(y&31)*32 + (x&31)` (0x37b4d-0x37b5a).
 - `fn_1bf00` starts at index **1**, not 0: `players[0]` is left alone (0x1bf1e `mov $1,%edx`).
 - The clamp is on `v7eca4 + 1`, not on `v7eca4`: `cmp $0x15` after `inc ebx` (0x1bf12-0x1bf13),
   so at most 0x15 rows take `v7ec6c`.

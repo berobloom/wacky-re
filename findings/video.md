@@ -86,6 +86,26 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   rebuild: switching `src/ww.c` to this prototype removed those rows in credits_screen, demo_mode,
   main_menu and 6 other functions (iter 36).
 
+## `fn_36f55` 0x36f55 - the second map-mask writer: 0x6400 bytes to A000:7d00 — CONFIRMED (disasm)
+
+- `pushal`/`popal`, no arguments, source `[0x7eb54]`: `mov edi,0xa0000` + `add di,0x7d00`
+  (0x36f5e-0x36f63), `mov cx,0x6400` (0x36f68), then per source byte a write of `[edi]` plus
+  `shl ah,1; cmp ah,8; jle loop` and, only when the rotated value passes 8, `inc di` and `ah=1`
+  (0x36f79-0x36f86), with the sequencer map mask (port 0x3c4 index 2) re-programmed to `ah` at
+  each iteration. So the mask runs 1, 2, 4, 8 and 25600 writes cover 6400 video
+  addresses (A000:7d00..0xe0ff), each written once per plane: the source holds 4
+  bytes per video address (CONFIRMED by the loop shape). `setpalette` programs
+  `0x3ce ax=0x4105` (chain-4 write, line 12 above) and the game sets INT 10h
+  `0x13` (`setvmode_keep(0x13)`, `src/ww.c:19453`), so what four map-mask writes at
+  one chained address do is OPEN - see findings/formats.md ".PAR" and QUESTIONS 20.
+- 0x7d00 = 32000 = the start of the third 0x3e80-byte page. The blob's pixel geometry is
+  LIKELY a 320x20 band (findings/formats.md ".PAR"): `1.PAR` has 41 distinct byte values and
+  its strongest byte-to-byte correlation is at lag 640 (mean |Δ| 2.8), with 1280 (a 320-pixel
+  row at 4 bytes each) at 5.77 and lag 1 at 8.0.
+- Callers pass `p6a980` and guard on `v7d998` being 0 or 3 (`src/ww.c:4416-4417` where `p6a980`
+  holds the `<n>.PAR` blob, `src/ww.c:17259-17260`, `src/ww.c:17479-17480`): the image is
+  blitted once at race start, not per frame.
+
 ## Traps
 
 - A ternary is not the game's flip: `pal_a = pal_a ? 0 : 0x3e80;` selects the value in EAX and
