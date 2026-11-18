@@ -90,7 +90,7 @@
 44   0x02a4ac minimap                MATCH
 46   0x02a92c overlay_draw         SKIP: iter 39 62 -> 46 (buf[0xc] gives the 0x34 frame, f26 * 0x14 - 0x708, banner index inline, up/down order); left: scalar slot permutation and loop-counter register pairs (dead ends)
 48   0x02d94c netkeys_in             SKIP: the c-in-DL one-local register home (documented dead end, GOTCHAS "which of two locals gets EAX") - same cause as netkeys_out 0x2d9e4 (21 spellings) and netkeys_pack 0x2da28 (10), and 9.5/9.5a/9.5b all pick AL; our body is 2 bytes shorter (no push/pop edx) - 0 variants
-50   0x01ce14 scores_screen          (iter 38: src and p replaced by the global v7d8a8 itself, the game re-reads it per strcpy: 118 -> 54)
+51   0x01ce14 scores_screen          (iter 38: src and p replaced by the global v7d8a8 itself, the game re-reads it per strcpy: 118 -> 54; iter 49 fndiff 51)
 57   0x02d548 shot_fire              MATCH (iter 37: walk the cached global v7d874 itself, no local p; v7d5d0 = curpos after the y store - permute.py)
 70   0x035ca4 main             SKIP: register / stack-slot choices only (the REGS temporaries of the inlined setvmode calls sit in other slots; `ah = 0` before `al` in setvmode orders the stores like the game but the slots still differ: 71 either way)
 74   0x024364 kart_fire            SKIP: the game caches v7eb9c in ECX (entry load, store before calls, a dead reload before every ret) - not emitted by our 9.5b; `static int v7eb9c` no change (iter 39)
@@ -110,5 +110,5 @@
 185  0x016f90 fn_16f90             SKIP: the three documented dead ends (QUESTIONS fn_16f90 a/b/c: zero stored via a CSEd CX, byte-counter loop without strength reduction, interleaved order_a/b loads); new idea spent: `#pragma loopopt OFF` on the definition is inert under WCC386 (WPP-only pragma) - committed code re-measures 185, not 241
 233  0x0155c0 menu             SKIP: slots permuted (dead end) + frame 0xd4 vs 0xe0 + our 5 epilogues vs the game's 1 + one dead inline strlen(mnames); kept isnet as int (267 -> 233); tried one-epilogue goto, int state, int four
 476  0x01a380 cars_menu             SKIP: slot permutation (dead end) + frame 4 bytes short; kept cd15c/slide_up/slide_dn as shorts (499 -> 476); tried short slide pair alone (521), short stage (483)
-577  0x01832c fn_1832c               (iter 38: the wait's timeout exit restored, joystick nav + trial_book were unreachable and dropped; 611 -> 926 only because the body is now its full size, 4320 vs the game's 4220 bytes)
+583  0x01832c fn_1832c               (iter 38: the wait's timeout exit restored, joystick nav + trial_book were unreachable and dropped; 611 -> 926 only because the body is now its full size, 4320 vs the game's 4220 bytes; iter 49 fndiff 583)
 535  0x0290a0 kart_frame             SKIP: the game caches the global curkart in EDX (19 more refs than any C form); the local-pointer lever (k at entry, 139 sites, sync pairs) gains 2 rows (535 -> 533); return-vs-break tried earlier

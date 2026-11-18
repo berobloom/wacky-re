@@ -16,39 +16,28 @@ Short: where the project stands, and what is next. History is in git; no diary.
   *Levers that produced MATCHes*, *Dead ends*. Do not copy levers into this file.
 - Findings, evidence at the links: serial (findings/serial.md) rings 0x84b00/0x80afa, wrap 0x4000;
   classes (findings/classes.md) `v88bb2` is 1 AMATEUR..5 KID MODE **signed**; car select
-  (findings/car_select.md) `ents[8]` 0x73998 is the box; scores (findings/scores.md) `tbl77758`.
+  (findings/car_select.md) `ents[8]` 0x73998 is the box; scores (findings/scores.md) `tbl77758`;
+  disc files (findings/formats.md) WACKY.DAT = 577 records of 22 bytes, offsets from 2, 42 sets of
+  per-track files.
 
 ## Next
 
 1. Near misses: no open status in `src/nearmiss.txt` (QUEUE.md's only item is the unfilled
-   `Q1 <short title>` template - not actionable, iters 46-47). Next leads from `nmrefs.py
-   ww .work/src/WW.OBJ` (`game more`/`ours more` = a local copy or an extra read, not noise):
-   chat 0x14d00 (**`ours only ?int386x_`**, plus one extra spr_y read), kart_fire 0x24364
-   (12 more v7eb9c reads), players_ahead 0x34208. nmrefs after every change; re-rank with
-   `tools/wc/nearmiss.sh` (its first column is stale).
-2. After a MATCH: rerun `tools/progress.py` (writes PROGRESS.md, byte-identical functions per part
-   and per subsystem of `analysis/ww_subsystems.txt`; src/ww.c stays one file); docs/media pictures
-   come from the original (DOSBox-X states `mainmenu`, `trackpick` in .work/dos/states; accelerate is
-   Alt). Before probing, run
-   the GOTCHAS scans on the game's code: a
-   cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
-   the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
-   the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).
-   `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` (random-mode permuter, 30 copies a
-   compile) found shot_fire's last swap in one round; it is worth a 20-round run once a function is
-   down to scheduling rows.
-3. Take a SKIPped near-miss line only with an idea its `differs:` note does not list: a row that
-   differs only in the operand order of one `cmp`, and a register-home row, are the tie-break class
-   (GOTCHAS "Reading a near-miss diff" / "Dead ends").
-4. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
-   split arithmetic `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`, `net_recv`, `shots_move`;
-   `intro` 0x348f4 for the `= .*== 0` assignment. (`(int *)charbase + i * 2`: view_at_curpos' head
-   and the view_box/cpu_drive sites already match - the idea is spent, in_sector's rows are the
-   leading-block rotation.)
-5. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+   `Q1 <short title>` template - not actionable, iters 46-49); every remaining line's cause is a
+   class in GOTCHAS "Dead ends". Take one only with an idea its `differs:` note does not list.
+   nmrefs after every change; `src/check.sh` count +1 before `src/matched.baseline` goes up.
+2. findings/formats.md follow-ups (offline, no harness): the `WACKY.ING` rows - a 0x44 stride with
+   the strings "MAR 1994" / "KNOCK ME OFF!" - against the users of `cfg7ee1c` 0x7ee1c
+   (`src/ww.c:3015`, the read at 0x35e15 in `main`); then the per-track payloads `.SIN` 1296,
+   `.M` 4096, `.POS` 8194, `.PAR` 25600 in `track_load` 0x279e8 and `data_load` 0x28180.
+3. `tbl77758` 0x77758 still has no writer (findings/scores.md): `tools/le/xref.py ww 0x77758` and
+   follow the stores; pin the `WACKY1.HI` / `WACKY1.TIM` name construction on the way (the
+   ".TIM" 0x61fa4 and "UPG.HI" 0x61fa9 literals, `scores_write` 0x3542c).
+4. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-6. Inventory: WACKY.DAT archives and formats, the `42.GAM`/`20.GAM` records (`v88bd6` = `datfind`'s
-   index), "BSBCS.PCX", `tbl77758`'s writer.
+5. After a MATCH: rerun `tools/progress.py` (PROGRESS.md, per part and per subsystem of
+   `analysis/ww_subsystems.txt`; src/ww.c stays one file); docs/media pictures come from the
+   original (DOSBox-X states `mainmenu`, `trackpick` in .work/dos/states; accelerate is Alt).
 
 ## BLOCKED
 
