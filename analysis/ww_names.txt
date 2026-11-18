@@ -504,7 +504,7 @@
 0x06e560 tab6e560     # SPECULATIVE: short* per sel (custom)
 0x07d338 v7d338       # SPECULATIVE: int per ent; draws lp7d804 beside it
 0x088c68 v88c68       # SPECULATIVE: short ent index marked with gn7eae8
-0x037487 f37487       # SPECULATIVE: asm, draws the sprite stream
+0x037487 f37487       # STRONGLY SUPPORTED: asm Mode X scaled sprite blit: per screen column (plane mask 0x3c4), source sprptr stepped by the p7d838 .INF delta table, colour 0 skipped (findings/formats.md .SP)
 0x0146d4 wtext        # LIKELY: (x, y, s, scaled) draws s with the WFONT1 glyphs (A-Z, 0-9, ! ? ~ space . < > #), 11 px apart
 0x088c2e v88c2e       # SPECULATIVE: glyph height when scaled
 0x088c10 v88c10       # SPECULATIVE: glyph width when scaled

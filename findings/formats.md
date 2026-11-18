@@ -274,6 +274,43 @@ Trap: `SPRITE.ATR` record offsets reach the disassembler as folded immediates
 (`movsx eax, word ptr [eax + 0x72998]`), not as `sprattr + id*40`, so an xref of
 0x72998 finds the base loads only - grep the folded offsets instead.
 
+### .SP payloads - column-major 8-bit indexed, colour 0 transparent (CONFIRMED)
+
+A frame of a `w x h` set is `w * h` bytes stored **column by column**: pixel
+(x, y) is byte `x * h + y`, frame f starts at `f * w * h`. One byte per pixel,
+no mask plane (the census above: size = `w*h*nframes` exactly). Evidence:
+
+- The blitter `f37487` 0x37487 (asm module) draws in Mode X: the outer loop
+  is per screen column (map mask 0x3C4 index 2 per plane, `edi++` every four
+  columns, 0x374fd-0x3755a), the inner loop goes down the column (`stosb`
+  then `add di,0x4f` = 80 bytes a row, 0x3751d-0x37529), skips colour 0
+  (`cmp al,0; je` 0x37515 - transparency), and steps the source by a dword
+  delta from the table at `p7d838` for every pixel (`add esi,[edx]; add
+  edx,4`), restarting from the sprite base for every column (`push esi` /
+  `pop esi`).
+- Those delta tables are the `.INF` files (below): at the 1:1 step, column c
+  starts at `c * h` and the deltas inside a column are +1, in all six sets.
+- Rendered with that order, H1/H2/H15 (32x24) and OB2/OB5 (14x28) are clean
+  pictures (a matchbox with a flame, an owl, a ball, a cattail, a barrel);
+  read row-major they are diagonal smears.
+
+Which palette the race uses is not pinned here (the render used WIN.PCX's).
+
+### .INF - the 10-step scaling tables for sprites (CONFIRMED)
+
+`kartsets_load` 0x28038 reads 10 steps per file into `tab6e470[set][step]`
+(`kartfr` in `src/ww.c`): each step is `short w, h` (the size drawn on
+screen) then `(h + 1) * w` dwords, per screen column one start offset into
+the source frame followed by h per-row deltas (the last one is applied after
+the last pixel and is not used). Step 0 is 1:1, steps 1-9 shrink by skipping
+source rows and columns (32X24 step 9 is 9x7, deltas 3/4). The seven files
+are named by their step-0 size: `251X6.INF` (ACTION.SP, `kartsets_load(1)`),
+`38X28`, `28X28`, `14X28`, `32X24`, `15X13`, `18X13` (the six `kartsets[]`
+names, `kartsets_load(0)`). Each file is exactly the sum of its 10 steps,
+except `18X13.INF`: 4992 bytes, 4900 read; the last 92 are never read.
+`SPRITE.ATR`'s size class +0x0c picks the set (`tab6e470[class * 20 + step]`,
+`ents_project` 0x25c73).
+
 ### The twelve zone-less slots 16-21 and 37-42 (CONFIRMED: six duplicate pairs)
 
 md5 over every `<n>.<EXT>` payload of the 42 sets (`tools/le/datdump.py`):

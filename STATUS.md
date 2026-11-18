@@ -36,15 +36,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 4. `kind` 3..7 (offline): the five single sets H1/H15/H12/H16/H20 - read the `kind` branches of
    `ents_flags` 0x213f0, `shot_hit` 0x218a4 and `kart_state` 0x224ec and say what each one does in
    the race (findings/formats.md now pins the record layout and the id -> name table).
-5. `.SP` payload format (offline): render one record - `H1.SP` 1536 bytes = 2 frames of 32x24 - from
-   `original/WACKY.DAT` with `tools/le/datdump.py` and look at it; the port blits these bytes today
-   without knowing whether the 32x24 is 8bpp indexed or has a mask plane.
-6. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
+5. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
    `WACKY.CFG` - the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
    and 24 records, and the 12 key words of `cfg7b6d8` (QUESTIONS 16/17).
-7. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+6. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-8. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
+7. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
    the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED
