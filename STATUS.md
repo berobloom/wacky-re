@@ -26,22 +26,20 @@ Short: where the project stands, and what is next. History is in git; no diary.
    chat 0x14d00 (**`ours only ?int386x_`**, plus one extra spr_y read), kart_fire 0x24364
    (12 more v7eb9c reads), players_ahead 0x34208. nmrefs after every change; re-rank with
    `tools/wc/nearmiss.sh` (its first column is stale).
-2. README and progress (iter 38, done): src/ww.c stays one file; `tools/progress.py` writes
-   PROGRESS.md (byte-identical functions per part and per subsystem of `analysis/ww_subsystems.txt`);
-   rerun it after MATCHes. Pictures in docs/media from the original (DOSBox-X states `mainmenu`,
-   `trackpick` in .work/dos/states; accelerate is Alt). Before probing, run the GOTCHAS scans on the game's code: a
+2. After a MATCH: rerun `tools/progress.py` (writes PROGRESS.md, byte-identical functions per part
+   and per subsystem of `analysis/ww_subsystems.txt`; src/ww.c stays one file); docs/media pictures
+   come from the original (DOSBox-X states `mainmenu`, `trackpick` in .work/dos/states; accelerate is
+   Alt). Before probing, run
+   the GOTCHAS scans on the game's code: a
    cached global (`mov [G],r` up to 12 instructions before a call, `mov r,[G]` after it: compute in
    the global), a dword slot reloaded `movsx word` (an int passed to a short parameter), a `je` to
    the epilogue (an early `return`), raw `WS(0x...)` addresses (use the named fields).
    `tools/wc/permute.py NAME ADDR END [ROUNDS COPIES SEED]` (random-mode permuter, 30 copies a
    compile) found shot_fire's last swap in one round; it is worth a 20-round run once a function is
    down to scheduling rows.
-3. Near misses just below the top: `fn_1c0f4` (8 rows) and `draw_status` 0x12f80 (17) are the
-   smallest with named non-home causes (draw_status: print_at's args hoisted into the inline strcpy's
-   setup at every site, and only the SECOND `netgame == 1` pnames pair merges). car_laps 0x12b44 is 2
-   rows from MATCH but only the cmp-operand pair (`cmp edi,eax; jge` 0x12ee0) is left and 13
-   spellings do not emit it (its note). Take the rest only with an idea its `differs:` note does not
-   list.
+3. Take a SKIPped near-miss line only with an idea its `differs:` note does not list: a row that
+   differs only in the operand order of one `cmp`, and a register-home row, are the tie-break class
+   (GOTCHAS "Reading a near-miss diff" / "Dead ends").
 4. Re-try the newest levers on SKIPped lines whose cause is a register home or a hoisted load:
    split arithmetic `x = <expr>; x *= k;` and the braced 0/1 if/else, e.g. `pcx_load`, `net_recv`, `shots_move`;
    `intro` 0x348f4 for the `= .*== 0` assignment. (`(int *)charbase + i * 2`: view_at_curpos' head
