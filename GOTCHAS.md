@@ -297,7 +297,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   (fn_182d0 `mov esi,ebx`), an allocator spill `mov [esp],eax; mov edx,[esp]` with no room for a
   local (view_at_curpos), a param a copy into a local will not spill the way the game does (its
   mirror image: the incoming value lands in the new slot at the prologue and the register is
-  reloaded after the call - fn_1d704 0x1d7b5, 11 spellings). `-3` vs `-3r` is not the cause
+  reloaded after the call - fn_1d704 0x1d7b5, 11 spellings). `tools/wc/permute.py` does not move
+  these pairs either (shot_step 0x25f46, track_setup 0x124f6: 270 copies over 9 rounds, best =
+  control every round). `-3` vs `-3r` is not the cause
   (identical object). [generic]
 - **Address constants 9.5b folds:** `&netstats[1]` as one immediate vs the game's `mov esi,0x3c;
   add esi,0x7c818` (showlines 0x2a359). But `mov r,N*stride; add r,sym` in a loop names an array

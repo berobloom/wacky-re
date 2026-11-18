@@ -1383,7 +1383,8 @@ extern int trk7ebc8, trk7ec44, trk7ebc4, trk7ec40;
 /* differs: one moved load - the game loads x (ebx) at +8 and the switch subject (eax) at +14, ours
  * hoists the switch subject above the x load. Tried x/y assignment order, `int y, x;` declaration order
  * (that changes the register choice, 13 diffs), `register`, `unsigned`, switching on a local copy, and
- * compiling with -3 instead of -3r (identical object): all give these same 212 bytes. */
+ * compiling with -3 instead of -3r (identical object): all give these same 212 bytes. Iter 49: permute.py
+ * 4 rounds x 30 copies (seed 11) - best 2 = control, no mutation sinks the `mov eax,[track]`. */
 void track_setup(void)
 {
     int x, y;
@@ -11450,7 +11451,9 @@ void ents_project(void)
  * `(char *)`/int-typed global, `&v7d6a0[t]`, a `char *b` or `int *base` local, a comma assignment) keeps
  * our order - global into EAX, then `mov ebx,[esp]`; every form with `p = t;` in its own statement gets
  * the game's order but pairs EAX with the slot and EBX with the global (3 rows). Same slot in
- * kart_move 0x237e4. Fixed earlier: lx1 = lx0 as its own statement lets the ly1 store be shared. */
+ * kart_move 0x237e4. Fixed earlier: lx1 = lx0 as its own statement lets the ly1 store be shared.
+ * Iter 49: permute.py 5 rounds x 30 copies (seed 7) - best 3 = control (probe 3, fndiff 2), no
+ * permutation puts the `[esp]` reload above the v7d6a0 load in their current homes. */
 extern int v7d5d0;
 
 void shot_step(short move)
