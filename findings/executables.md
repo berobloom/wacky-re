@@ -49,8 +49,15 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   needed), `i/l/r` also break com_open — full-build evidence shows the optpin probes for `-oi/-ol/-or`
   were probe-context artifacts (sendstr/find12/crchware match under `-oneatx` in the full build).
 - `-om`, `-on` (floating point), `-zp` still open.
-- The paragraph-aligned library modules after 0x409EF: which belong to the Apogee Sound System, which to other
-  libraries; whether the ASS source of a matching version is available (not found in a first search).
+- The paragraph-aligned library modules after 0x409EF: **the Apogee Sound System and the Gravis UltraSound
+  SDK it bundles.** Jim Dosé's released ASS source (github.com/jimdose/Apogee_Sound_System, GPL v2, cloned
+  to `.work/ext/`, not committed) ships `AUDIO_WF.LIB`: `tools/wc/libmatch.py -l ww` finds 21 of its 59
+  modules byte for byte - all the GUS SDK (`gf1*.c`, `gf1*.asm`, `os.c`, `timer.c`, `digital.c`) at
+  0x4dd30-0x56f9x (CONFIRMED). Of ASS's own 386 functions only 25 are found whole (18 in `pas16.c`, one each
+  in `task_man.c` 0x40ff0, `sndscape.c`, `gus.c`, `blaster.c` x3), so the game has an earlier release of
+  the same code (STRONGLY SUPPORTED: same function names - `MUSIC_FadeVolume` 0x42488, `TS_*`, `FX_*` - and
+  the strings). The shipped LIB was built `/omaxnet /zp4 /5r` (`AUDIO.MAK`); the game's build options are
+  open. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module.
 
 ## Probe functions (the option evidence)
