@@ -3128,12 +3128,12 @@ void chat(void)
     char blank[80], mine[80], theirs[80], buf[80], ch[80];
     union REGS r;
     struct SREGS s;
-    int sx, sw, sy, s34, x1, c8, s20, key, n2, sh, y1, s1c, x2, c9, y2, other, y2m, y1m;
     int n1, t;
+    int x1, key, sy, y1m, n2, y1, y2m, c9, sh, y2, x2, s1c, sw, s20, sx, other, c8, s34;
 
     save_a = pal_a;
-    save_b = pal_b;
     save_c = pal_c;
+    save_b = pal_b;
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
@@ -3184,8 +3184,8 @@ void chat(void)
         strcat(mine, " ");
     while (strlen(theirs) < 38)
         strcat(theirs, " ");
-    x1 = 8;
     y1 = 0x49;
+    x1 = 8;
     x2 = 8;
     y2 = 0x8F;
     strcpy(blank, mine);
@@ -3222,13 +3222,13 @@ void chat(void)
         }
         if (key == 8 && n1 > 0) {
             stext((short)(x1 + n1 * 8), (short)y1, " ");
-            n1--;
+            n1 = n1 - 1;
             mine[n1] = ' ';
             stext((short)(x1 + n1 * 8), (short)y1, " ");
         }
-        if (other == 8 && n2 > 0) {
+        if (other == 8 && n2 >= 1) {
             stext((short)(x2 + n2 * 8), (short)y2, " ");
-            n2--;
+            n2 = n2 - 1;
             theirs[n2] = ' ';
             stext((short)(x2 + n2 * 8), (short)y2, " ");
         }
@@ -3246,8 +3246,8 @@ void chat(void)
         }
         v88ce9 = 0xFF;
         v88ce8 = 0xFF;
-        spr_h = 8;
         spr_w = 8;
+        spr_h = 8;
         spr_x = x1 + n1 * 8;
         spr_y = y1;
         f371e4();
@@ -3314,7 +3314,7 @@ short menu(short n, short d, short mode, short c)
 {
     char cbuf[0x48], pbuf[0x3c];        /* game slots 0x00 and 0x48; sizes make the frame 0xe0 */
     unsigned short savepal;
-    short bounce, tk, cursor, mow, show13, quit, sel, anim, cnt, state, four, i;
+    short four, bounce, anim, cursor, cnt, mow, quit, tk, show13, sel, state, i;
     int w11, x0, yb, bx1, sy, ybase, d4, isnet;
 
     if (mode == 2)
@@ -3521,8 +3521,8 @@ short menu(short n, short d, short mode, short c)
                 return 1;
             }
             if (netgame != 1) {
-                key88cd6 = v88cef & 1;
-                key88cd3 = v88cef & 2;
+                key88cd6 = 1 & v88cef;
+                key88cd3 = 2 & v88cef;
                 joy88b40 = v88cef & 4;
                 v7ecc0 = v88cef & 0x40;
             }
@@ -3566,7 +3566,7 @@ short menu(short n, short d, short mode, short c)
             pal_a = 16000;
         while (ticks - v7ea70 < 8)
             ;
-        tk++;
+        tk += 1;
         cnt++;
         switch (state) {
         case 1:
@@ -4038,12 +4038,12 @@ void fn_1bf00(void);
  * WCC386 - a WPP pragma, and the pipeline has no preprocessor. */
 void fn_16f90(void)
 {
-    int k;
-    int j, d;
-    short bx;
     int ax, dx, absy;
+    int j, d;
+    short k;
+    int bx;
 
-    if (netvoices != 0) {
+    if (netvoices) {
         v70720[0] = myplayer;
         for (v88b72 = 0; v88b72 <= 0x17; v88b72++) {
             k = v88b72;
@@ -4076,7 +4076,7 @@ void fn_16f90(void)
         fn_16f24();
         fn_1bf00();
     } else {
-        if (twoplayer == 0) {
+        if (!twoplayer) {
             j = 4;
             bx = order_a[0] + 0x50;
             for (d = 1; d <= 8; d++) {
@@ -4084,7 +4084,7 @@ void fn_16f90(void)
                 order_b[j] = order_b[0];
                 bx -= 0x14;
                 j--;
-                if (j < 0)
+                if (j <= -1)
                     j = 7;
             }
         }
@@ -4110,10 +4110,10 @@ void fn_16f90(void)
             ax = v88c06 - players[k].y;
             if (ax < 0)
                 ax = -ax;
-            players[k].f1c = 0;
             absy = ax;
+            players[k].f1c = 0;
             dx = v88c04 - players[k].x;
-            if (dx < 0)
+            if (dx <= -1)
                 dx = -dx;
             players[k].f10 = *(short *)0x72354 - absy;
             players[k].f5e = *(int *)0x72350 + absy * 4;
@@ -4136,7 +4136,7 @@ void fn_16f90(void)
         arr16[0x6F] = 30;
         arr16[0x3B] = 28;
         arr16[7] = 22;
-        for (j = 7; j >= 0; j--) {
+        for (j = 7; j >= 0; --j) {
             players[j].f08 = v88b84;
             players[j].f0a = v88b84 + j * 10 - 10;
         }
@@ -4628,10 +4628,10 @@ void fn_1832c(void)
     /* shorts: slot order in the game is s350@0x350 ... nav@0x368; declaring the
        loop temporaries (i/up/down/ret) after the seven slot-locals reproduces it
        (arrays above: declaration order alone fixes those slots) */
-    short s350, s354, s358, card_n, s360, s364, nav;
-    char *gp;
-    short i, up, down, ret;
     int eight;
+    char *gp;
+    short down, up, ret, i;
+    short s350, s354, s358, card_n, s360, s364, nav;
 
     v7ecc4 = 0;
     v7ed20 = 0x440;
@@ -4644,7 +4644,7 @@ retry:
     v685e4 = 0;
     for (i = 0; i <= 7; i++)
         *(short *)(p6aaae + i * 0x68) = 0;
-    for (i = 0; i <= 1; i++) {
+    for (i = 0; i <= 1; ++i) {
         cars[i].f5a = 0;                     /* +0x5a first, then the inc, then .face (0x183a7-0x183b1) */
         cars[i].face = 0;
     }
@@ -4679,7 +4679,7 @@ retry:
         pcx_load(fname, 2);
         v88b4a = 0;
         {
-            short fs;
+            int fs;
             p7d714 = p6a980;
             fs = pal_a;
             f375cd();
@@ -4808,8 +4808,8 @@ mainloop:
         joy88b46 = 0;
         v88cec = 0;
         v88cf0 = 0;
-        v88cf3 = 0;
         v7ecc0 = 0;
+        v88cf3 = 0;
         up = 0;
         down = 0;
         nav = 0;
@@ -4838,7 +4838,7 @@ mainloop:
     if (netgame == 2) {
         key88cd6 = v88cef & 1;
         key88cd3 = v88cef & 2;
-        joy88b40 = v88cef & 4;
+        joy88b40 = 4 & v88cef;
         v7ecc0 = v88cef & 0x40;
         if (key88cd3)
             up = 1;
@@ -4885,7 +4885,7 @@ merged:
             voice_play(0x1a);
             ret = showlines(3, 1, 0, 1);
         }
-        if (ret == 0)
+        if (!ret)
             goto joyopen;
         s364 = 0;
         s354 = 0;
@@ -4966,7 +4966,7 @@ joyloop:
     palptr = pal;
     s364 = 0;
     w88b1e = v88b88 + 4;
-    fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
+    fn_182d0(pal, 4 + v88b88, 1, 0, (int)gp);
     w88b10 = 1;
     f37cf1();
     goto mainloop;
@@ -5085,7 +5085,7 @@ void fn_193a8(void)
 {
     char pal[0x300];            /* esp+0x000: working palette */
     char name[0x28];            /* esp+0x300: "(B)SBCS.PCX"; 0x28 = the game's frame (flash at esp+0x328) */
-    int flash;                  /* esp+0x328: fn_182d0 a4 toggle */
+    short flash;                  /* esp+0x328: fn_182d0 a4 toggle */
     short i, idx, enter;
 
     v7ecc4 = 0;
@@ -6931,8 +6931,9 @@ void scores_screen(void)
     char name[0x14];
     short which;                      /* esp+0x50 in our build, the game's esp+0x54 (0x1ce83) */
     short j, i;                       /* j: the game's esp+0x50 (0x1cf5f); i stays in BX (0x1ceb9) */
-    int k;                            /* as short k it takes a stack slot and the frame grows to
-                                     * 0x5c; as int it stays in ECX like the game's 0x1cf8c */
+    short k;                          /* short again (permute.py iter 56, 51 -> 44 rows with the
+                                     * (v7ecb4 + v88bb6) and `better != 0` spellings); alone, short k
+                                     * took a stack slot and grew the frame to 0x5c */
     int better;                       /* 0x1cf2f/0x1cf44/0x1cf4d: the game's temp is ECX, not CX */
     struct score *dst;                /* the source and the new entry are v7d8a8 itself: the game
                                      * re-reads it for each strcpy (0x1cff3, 0x1d08c; nmrefs) */
@@ -6963,14 +6964,14 @@ void scores_screen(void)
         break;
     case 3:
         for (i = 0; i <= 3; i++)      /* 0x1cf04-0x1cf2d, the displacement 0x77a3c */
-            sc[i] = *(short *)(tbl77758 + (v88bb6 + v7ecb4) * 0x450 + 0x2e0 + i * 0x2e + 4);
+            sc[i] = *(short *)(tbl77758 + (v7ecb4 + v88bb6) * 0x450 + 0x2e0 + i * 0x2e + 4);
         break;
     }
     better = 1;                       /* 0x1cf2f */
     for (i = 0; i <= 3; i++)          /* 0x1cf3c-0x1cf4b */
         if (v7ed5c >= sc[i])
             better = 0;
-    if (better)
+    if (better != 0)
         sc[3] = v7ed5c - 1;           /* 0x1cf51-0x1cf57: guarantees the loop below takes a slot */
     fn_1c994(stamp);                  /* 0x1cf5b-0x1cf67 */
     for (j = 0; j <= 3; j++) {        /* 0x1cf72, the inc test at 0x1d0b9-0x1d0c3 */
@@ -11241,7 +11242,7 @@ extern char *gnspr[];
 
 void players_project(void)
 {
-    short n, dy, sx, k, c, h;
+    short h, sx, k, n, c, dy;
     int sy, d, side, a, m, t;
 
     for (v7d800 = players, v88b72 = 0; v88b72 <= nplayers; v7d800++, v88b72++) {
@@ -11269,7 +11270,7 @@ void players_project(void)
         d = isqrt(d * d + side * side);
         m = tb6b7f8[c];
         if (m) {
-            t = d * m;
+            t = m * d;
             d = t >> 14;
             if (t - (d << 14) >= 0x1fa0)
                 d++;
@@ -11327,7 +11328,7 @@ void players_project(void)
             spr_w -= n;
             if (spr_w <= 0)
                 continue;
-            v7d878 = n * 4;
+            v7d878 = 4 * n;
         }
         p7d86c += 0x28;
         CR->f24 = 1;
@@ -11341,7 +11342,7 @@ void players_project(void)
         CR->f02 = spr_w;
         CR->f08 = p7d838;
         CR->f0c = (int)sprptr;
-        v88b78++;
+        v88b78 += 1;
         CR->f14 = v7d878;
     }
 }
@@ -11362,10 +11363,10 @@ extern struct attr attrs[];
 void ents_project(void)
 {
     struct ent *e;
-    short n, dy, sx, k, c;
-    int i, id, sy, d, side, a, m, t;
+    short sx, c, dy, n, k;
+    int i, sy, m, d, id, t, side, a;
 
-    for (e = ents, i = 0; i < nents; e++, i++) {
+    for (e = ents, i = 0; i < nents; e++, ++i) {
         if (e->f2 == -1)
             continue;
         v7d7f4 = e;
@@ -11376,12 +11377,12 @@ void ents_project(void)
             continue;
         if (in_sector() == 0)
             continue;
-        sx = v88b20 - v88b0a;
         sy = v88b22;
+        sx = v88b20 - v88b0a;
         dy = v88b22 - v88b0e;
         d = (v7d614 * sx + v7d5e4 * dy) >> 16;
-        a = (d * 0x93cd) >> 16;
         side = (dy * v7d614 - sx * v7d5e4) >> 16;
+        a = (d * 0x93cd) >> 16;
         if (dy < sy)
             a = -a;
         c = 0xa0;
@@ -11395,7 +11396,7 @@ void ents_project(void)
             t = d * m;
             d = t >> 14;
             if (t - (d << 14) >= 0x1fa0)
-                d++;
+                ++d;
         }
         if (d < 0x50 || d > 0x462)
             continue;
@@ -11404,9 +11405,9 @@ void ents_project(void)
             k = 0;
         if (k > 9)
             k = 9;
-        spr_y = tb6bd00[d];
         p7d838 = tab6e470[attrs[id].f0c * 20 + k];
-        sprptr = attrs[id].data + e->frame * (short)(attrs[id].w * attrs[id].h);
+        spr_y = tb6bd00[d];
+        sprptr = attrs[id].data + e->frame * (short)(attrs[id].h * attrs[id].w);
         p7d764 = p7d838;
         p7d838 += 2;
         spr_h = *p7d764++;
@@ -11781,7 +11782,7 @@ extern char *lights[];
 
 void lights_project(void)
 {
-    short n, dy, sx, k, c, h, sy, a;
+    short sy, dy, k, sx, n, c, h, a;
     int d, side, m, t;
 
     if (v88c44)
@@ -13870,7 +13871,7 @@ void overlay_draw(void)
 {
     char str[0x14];
     char buf[0xc];
-    int one, lim, i, n, f, k, t, up, down, s, v;
+    int i, t, s, f, k, up, down, lim, one, v, n;
 
     minimap();
     one = 1;
@@ -14129,7 +14130,7 @@ void overlay_draw(void)
         }
         if (viewer7eb80[i]) {
             spr_x = 4;
-            if (i == 1)
+            if (1 == i)
                 spr_y -= p2offset;
             if (cars[i].fd4 == 0)
                 print_at(spr_x, spr_y, str, 0);
@@ -15834,8 +15835,8 @@ void trial_book(int a, int b, int show)
     char name[20];
     char buf[0x50];
     char num[0x50];
-    int y, ly, i, j, k, idx, pos, best, entered, first, blink, oy, ox, done;
-    int newrace, newlap, bestlap, mx, my, nx, ny, rx, ry, my2;
+    int best, k, blink, idx, ly, y, pos, first, oy, entered, done, j, ox, i;
+    int newrace, ny, my, newlap, my2, bestlap, ry, nx, mx, rx;
 
     pcx_load("ORDER.PCX", 0);
     palptr = pal7d850;
@@ -15921,7 +15922,7 @@ void trial_book(int a, int b, int show)
                 newrace = 1;
             }
             if (pos != 6) {
-                for (j = 0; j <= 3; j++) {
+                for (j = 0; j <= 3; j = j + 1) {
                     if (best <= trial70730[idx].lap[j]) {
                         if (j != 3)
                         for (k = 3; k >= j + 1; k--) {
@@ -15952,8 +15953,8 @@ void trial_book(int a, int b, int show)
             time_str(laptimes[i], num);
             strcat(buf, num);
             print_at_s(center_x(strlen(buf) * 8), y, buf, 0);
-            if (i == bestlap) {
-                mx = spr_x + 2;
+            if (bestlap == i) {
+                mx = 2 + spr_x;
                 my = my2;
             }
             my2 += 10;
@@ -15977,7 +15978,7 @@ void trial_book(int a, int b, int show)
         y += 20;
     }
     ly = y - 10;
-    for (j = 0; j <= 3; j++) {
+    for (j = 0; j <= 3; j = j + 1) {
         strcpy(buf, trial70730[idx].lapname[j]);
         strcat(buf, " ");
         time_str(trial70730[idx].lap[j], num);
@@ -16047,7 +16048,7 @@ void trial_book(int a, int b, int show)
         sprptr = gn7eae4;
         if (newlap != -1) {
             spr_x = nx - ox;
-            spr_y = ny + oy;
+            spr_y = oy + ny;
             drawsprite();
         }
         if (bestlap != -1) {
@@ -16071,7 +16072,7 @@ void trial_book(int a, int b, int show)
             first = 0;
             v7d854 = v7d85c;
             fade_in((unsigned char *)v7d85c);
-            if (newlap == 0) {
+            if (!newlap) {
                 strcpy(title, "YOU HAVE THE BEST LAP TIME EVER!");
                 fn_1c068();
                 msgbox(title, 0);
@@ -19242,9 +19243,9 @@ extern short w88c46;
 
 int main(int argc, char **argv)
 {
-    char *env;
-    FILE *f;
     int bad, iscd, size, pos, vga, n;
+    FILE *f;
+    char *env;
     short i, j, k, v;
     char *pal, *endpal;
     union REGS r;
@@ -19442,7 +19443,7 @@ nomem:
             if (++v > 7)
                 v = 0;
         }
-        if (--k < 0)
+        if (--k <= -1)
             k = 7;
     }
     v7eb84 = 0x7cbe8;
