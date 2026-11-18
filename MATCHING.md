@@ -146,18 +146,41 @@ search over equivalent spellings can find what hand probes do not
 (release_check MATCH, kart_bump 49 -> 36, chat 194 -> 122 in iter 56).
 
 ```sh
-tools/wc/permute.py NAME 0xADDR 0xEND [ROUNDS [COPIES [SEED]]]
+tools/wc/permute.py [--weighted] [--slack N] [--hill] NAME 0xADDR 0xEND [ROUNDS [COPIES [SEED]]]
 tools/wc/permute_all.sh LIST [JOBS [ROUNDS [COPIES]]]   # LIST: "name ourbytes 0xADDR" lines
+PERMUTE_FLAGS=--weighted tools/wc/permute_all.sh LIST   # options for every run
 grep -H 'final best\|^control' .work/perm_all/*.log
 ```
 
 Each round compiles `src/ww.c` plus COPIES mutated copies of the function in
-`.work/perm/NAME/` and keeps the best one. Mutations: compare operand swap,
-commuted operands, `x == 0` / `!x`, `i++` / `++i` / `i += 1` / `i = i + 1`,
-`< N` / `<= N-1`, declaration order, local types, swapping two independent
-statements. Copies that do not compile are dropped by their `WCC.OUT` error
-line. A function defined under an alias (showlines is `showlines_def` with
-`#pragma aux showlines_def "showlines_"`) is reported as "definition not found".
+`.work/perm/NAME/`. Copies that do not compile are dropped by their `WCC.OUT`
+error line, and a source text already scored is not compiled again.
+
+Mutations (borrowed from decomp-permuter's random-mode passes, as regexes
+over the source):
+- compare operand swap, commuted operands;
+- `if (x)` / `while (x)` / `x != 0` / `!x` / `x == 0`;
+- `i++` / `++i` / `i += 1` / `i = i + 1`, and `x = x op y` <-> `x op= y`;
+- `< N` / `<= N-1`;
+- `x = a op b` -> `x = a; x op= b` (scalars only);
+- `a = E; b = a;` <-> `b = a = E;`;
+- declaration order;
+- local types and an `(int)` cast on a compared operand (both `!`);
+- an unused pad local;
+- a no-op statement (`;`, `if (1) {}`, `do {} while (0);`);
+- swapping two independent statements (`!`).
+
+Search: decomp-permuter's random walk rather than pure hill climbing. A sixth
+of each round's copies restart from the best; the rest mutate the walk's
+current position, which follows the round's winner when it is no worse, and
+with probability 0.3 when it is at most `--slack` worse. `--hill` is the old
+rule. `--weighted` ranks candidates with decomp-permuter's scorer weights:
+5 for a pair with the same mnemonic (register or slot), 60 for a row that only
+moved, 100 for an inserted or missing row. The reported score stays in rows,
+because rows are what `nearmiss.txt` counts.
+
+A function defined under an alias (showlines is `showlines_def` with
+`#pragma aux showlines_def "showlines_"`) is found through that pragma.
 
 **A winner is a candidate, not a result.** Before keeping one:
 
