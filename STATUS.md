@@ -26,10 +26,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
    immediates and struct-field offsets only one side uses (15 of 79 near misses). Read the game's
    instruction for each, fix our C where it computes something else (fn_1832c and fn_16eac were real
    bugs that row counts hid); write `BEHAV:` into `src/nearmiss.txt`. MATCH count never drops.
-2. Hybrid link (`tools/link/build.sh`, delinked data first so literal addresses hold): boots through
-   every menu; with all our C it stalls at LOADING RACE (music ISR runs, main starved), with the 81
-   near misses from the game (`ORIG=`) it reaches the race. Bisection on the fixed layout: see the
-   commit after this one.
+2. Hybrid link (`tools/link/build.sh`): all our C + the game's library and data. Known state:
+   `tools/link/racetest.sh` = RACETEST OK (the first race's overview, identical to WW.EXE's). Next:
+   drive into the race itself and compare frames (the racetest stops at the overview).
 3. Near misses only with an idea their `differs:` note does not list (`tools/wc/permute.py`,
    MATCHING.md section 7); nmrefs after every change.
 

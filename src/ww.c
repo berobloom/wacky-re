@@ -12,6 +12,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/* Game globals the source addresses by number (the game has an LE fixup at each use, so they
+ * must be symbols: a bare constant is not relocated by DOS/4GW and writes to low memory -
+ * found by the hybrid link, fn_17928 hung the race load). tools/link/symmap.py maps litNNNNN. */
+extern char lit600a0[], lit6a4b8[], lit6aa68[], lit72350[], lit72354[], lit72356[], lit7b238[], lit7b378[], lit7d770[], lit7d7b8[], lit7d9a0[], lit7eb6c[], lit80ace[];
+
 /* ---- serial link: CRC (the public-domain table CRC: crchware / mk_crctbl / crcupdate) */
 
 extern unsigned short crctbl[256];
@@ -4059,7 +4064,7 @@ void fn_16f90(void)
                 players[k].f1c = 0;
                 players[k].x = order_a[k];
                 players[k].y = order_b[k];
-                players[k].f1a = *(short *)0x72356;
+                players[k].f1a = *(short *)lit72356;
             }
             j = 0;
             do {
@@ -4106,7 +4111,7 @@ void fn_16f90(void)
             } while (j != 4);
             players[k].x = order_a[k];
             players[k].y = order_b[k];
-            players[k].f1a = *(short *)0x72356;
+            players[k].f1a = *(short *)lit72356;
             ax = v88c06 - players[k].y;
             if (ax < 0)
                 ax = -ax;
@@ -4115,8 +4120,8 @@ void fn_16f90(void)
             dx = v88c04 - players[k].x;
             if (dx <= -1)
                 dx = -dx;
-            players[k].f10 = *(short *)0x72354 - absy;
-            players[k].f5e = *(int *)0x72350 + absy * 4;
+            players[k].f10 = *(short *)lit72354 - absy;
+            players[k].f5e = *(int *)lit72350 + absy * 4;
             if (players[k].x < v88c04)
                 players[k].f00 = 3;
             if (players[k].x > v88c04)
@@ -4328,32 +4333,32 @@ setdone:;
     }
     switch ((short)v88bb6 + v7ecb4 - 1) {
     case 0:
-        strcpy((char *)0x80ace, "BRONZEM.SP");
+        strcpy((char *)lit80ace, "BRONZEM.SP");
         v7ed98 = 1;
         track = v88b88;
         if (v7ec80) {
-            strcpy((char *)0x80ace, "SILVERM.SP");
+            strcpy((char *)lit80ace, "SILVERM.SP");
             track = 7;
         }
         break;
     case 1:
-        strcpy((char *)0x80ace, "SILVERM.SP");
+        strcpy((char *)lit80ace, "SILVERM.SP");
         track = v88b88 + 5;
         break;
     case 2:
-        strcpy((char *)0x80ace, "GOLDM.SP");
+        strcpy((char *)lit80ace, "GOLDM.SP");
         track = v88b88 + 0xa;
         break;
     case 3:
-        strcpy((char *)0x80ace, "BONUSB.SP");
+        strcpy((char *)lit80ace, "BONUSB.SP");
         track = v88b88 + 0x15;
         break;
     case 4:
-        strcpy((char *)0x80ace, "BONUSS.SP");
+        strcpy((char *)lit80ace, "BONUSS.SP");
         track = v88b88 + 0x1a;
         break;
     case 5:
-        strcpy((char *)0x80ace, "BONUSG.SP");
+        strcpy((char *)lit80ace, "BONUSG.SP");
         track = v88b88 + 0x1f;
         break;
     }
@@ -4369,18 +4374,18 @@ setdone:;
             if (v88b88 == 5) {
                 if (v7ec80) {
                     strcat(msg, " BONUS! ");
-                    strcpy((char *)0x6aa68, "BONUS");
+                    strcpy((char *)lit6aa68, "BONUS");
                 } else {
                     strcat(msg, " FINAL ");
-                    strcpy((char *)0x6aa68, "FINAL");
+                    strcpy((char *)lit6aa68, "FINAL");
                 }
             } else {
                 itoa(v88b88, nb, 10);
-                strcpy((char *)0x6aa68, "RACE ");
-                strcat((char *)0x6aa68, numbuf);
+                strcpy((char *)lit6aa68, "RACE ");
+                strcat((char *)lit6aa68, numbuf);
                 strcat(msg, " RACE ");
                 strcat(msg, numbuf);
-                strcat(msg, (char *)0x600a0);
+                strcat(msg, (char *)lit600a0);
             }
         }
     } else
@@ -4408,7 +4413,7 @@ setdone:;
     }
     if (v7d998 == 0 || v7d998 == 3) {
         if (netvoices == 0) {
-            pcx_load((char *)0x7eb6c, 2);
+            pcx_load((char *)lit7eb6c, 2);
             palptr = pal7d850;
             getpalette();
             fade_out(pal7d850);
@@ -4420,7 +4425,7 @@ setdone:;
         }
         if (netvoices)
             duck_screen(0);
-        v88bd6 = datfind((char *)0x6a4b8);
+        v88bd6 = datfind((char *)lit6a4b8);
         fread(p6a980, 0x6400, 1, datfile);
         if (v7d998 == 0 || v7d998 == 3) {
             v7eb54 = p6a980;
@@ -4521,11 +4526,11 @@ setdone:;
     return;
 demo:
     if (v7d998 == 2 || v7d998 == 3) {
-        strcpy((char *)0x7d7b8, (char *)0x7d770);
-        strcat((char *)0x7d7b8, ".BMC");
-        datfind((char *)0x7d7b8);
+        strcpy((char *)lit7d7b8, (char *)lit7d770);
+        strcat((char *)lit7d7b8, ".BMC");
+        datfind((char *)lit7d7b8);
         readdat(&bmcn, 2);
-        readdat((char *)0x7d9a0, bmcn * 3);
+        readdat((char *)lit7d9a0, bmcn * 3);
     }
 music:
     if (musicon && v7d998 != 2) {
@@ -12462,7 +12467,7 @@ void track_load(void)
 
     itoa(track, str7d770, 10);
     if (v88ca0 && v88bde == 0) {
-        datfind((char *)0x80ace);
+        datfind((char *)lit80ace);
         t = telldat_in();
         if (v7ec80)
             v88b88 = 2;
@@ -15748,9 +15753,9 @@ extern volatile unsigned char v88ccav;    /* the same byte, declared volatile: d
 void demo_start(void)
 {
     if (v7d998 == 1) {
-        strcpy((char *)0x7d7b8, (char *)0x7d770);
-        strcat((char *)0x7d7b8, ".MAC");
-        v7eb68 = fopen((char *)0x7d7b8, "wb");
+        strcpy((char *)lit7d7b8, (char *)lit7d770);
+        strcat((char *)lit7d7b8, ".MAC");
+        v7eb68 = fopen((char *)lit7d7b8, "wb");
         return;
     }
     v7d994 = 0;
@@ -17152,13 +17157,13 @@ loop:
         if ((short)players[0].place >= 1 && (short)players[0].place <= 3) {
             v88c5c = 0;
             v88c36 = 0xa;
-            curkart->f4e = (int *)0x7b378;
+            curkart->f4e = (int *)lit7b378;
             v88c9c = 0;
             voice_play(0x11);
         } else {
             v88c5a = 0;
             v88c36 = 0xd;
-            curkart->f4e = (int *)0x7b238;
+            curkart->f4e = (int *)lit7b238;
         }
         curkart->f18 = v88c36;
         v88c3a = 0;

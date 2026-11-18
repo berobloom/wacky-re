@@ -48,7 +48,17 @@ Do exactly this, in order:
    Never commit a src/ww.c that lowers the MATCH count; overnight/check.sh rejects it.
    Do not guess: an item you cannot place in our C with the game's instruction in front of you is
    SAME-unknown, written down as such, not "fixed".
-   Live-harness work is not needed tonight; do not start the emulator, do not run tools/link.
+   f. Behaviour check, once per function after a BUG fix (not for SAME-only functions):
+      `tools/link/racetest.sh` (~4 minutes; builds the hybrid WW.EXE from our C and the game's
+      library and data, boots it in the harness, drives the menus to the first race's overview and
+      compares the screen with the original's). It prints one line: `RACETEST OK`, `RACETEST FAIL`,
+      `RACETEST NOBUILD` or `RACETEST NOHARNESS`. Put that line in the function's commit message.
+      Read STATUS.md `## Next` for the known state: a FAIL that STATUS already explains is not
+      caused by your fix; an OK where STATUS says FAIL is news - write it into STATUS.md. NOBUILD
+      after your change means your C broke the link: read `.work/link/racetest.build` and fix it.
+      NOHARNESS: note it in the commit and do not retry this iteration.
+   The emulator is used ONLY through `tools/link/racetest.sh`: no `tools/dosrun.py`, no MCP dosre
+   tools, no DOSBox commands of your own, never two racetests at once.
 
 3. Mark every claim CONFIRMED / STRONGLY SUPPORTED / LIKELY / SPECULATIVE with its evidence
    (addresses, capture files, the experiment). Facts go to `findings/<subsystem>.md` (+ INDEX row

@@ -408,3 +408,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - A near miss with a low-looking row count can still be semantically wrong: fn_1832c read 0x300
   bytes into a 20-byte stack array; only running the hybrid link (tools/link) showed it.
 - The LE entry is obj1 offset 201128 *decimal* = 0x311a8 -> 0x411a8, not 0x41128.
+- A game global written as a number in C (`strcpy((char *)0x80ace, ...)`) matches byte for byte,
+  because the game's unrelocated bytes hold the same constant, but it has no fixup: the linked program
+  writes to linear 0x80ace, not to the relocated variable (DOS/4GW loads the data object elsewhere).
+  It hung the hybrid's race load (fn_17928, music ISR starved). Use an extern symbol (`litNNNNN`,
+  src/ww.c line 18). [generic]
