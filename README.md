@@ -33,7 +33,7 @@ changes or redistributes the original files.
 
 <a href="docs/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
 
-**201 of the game's 285 C functions compile to the original's exact bytes.**
+**202 of the game's 285 C functions compile to the original's exact bytes.**
 83 more are near misses and 4 are not written yet. The game's assembler
 module and the libraries are outside that count.
 
@@ -99,8 +99,8 @@ there.
 
 ## Status
 
-The game's C is written apart from 4 small functions between 0x1BF80 and 0x1C0F3, and 201 of
-its functions match. The next near misses to work on are listed in
+The game's C is all written (fn_1c068 and fn_1c0ac stay out on purpose: the compiler would
+inline them where the game calls them), and 202 of its functions match. The next near misses to work on are listed in
 `STATUS.md`. Not started: the assembler module (VGA drawing, interrupt
 handlers), the sound library, and a build that links into a playable program.
 

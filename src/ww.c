@@ -2006,7 +2006,7 @@ extern char *palptr;
 void getpalette(void);
 void setpalette(void);
 void pcx_load(char *name, int n);
-void f1bf94(char *p);
+void fade_out(char *p);
 void f375cd(void);                  /* asm 0x375cd: pushal..popal, no arguments, reads p7d714; every register survives */
 void view_box(void);
 void f37e94(void);
@@ -2036,7 +2036,7 @@ void frame_draw(void)
     if (!v7d998) {
         palptr = pal7d850;
         getpalette();
-        f1bf94(pal7d850);
+        fade_out(pal7d850);
     }
     v88b4a = 0;
     pal_a = 16000;
@@ -4411,7 +4411,7 @@ setdone:;
             pcx_load((char *)0x7eb6c, 2);
             palptr = pal7d850;
             getpalette();
-            f1bf94(pal7d850);
+            fade_out(pal7d850);
             v88b4a = 0;
             p7d714 = p6a980;
             pal_a = 0;
@@ -4656,7 +4656,7 @@ retry:
     palptr = pal7d850;
     strcpy(str7c8cc, " THESE EXTRA RACES.      ");
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v88b88 = 1;
     pal_a = 0;
     pcx[0] = 0;
@@ -5099,7 +5099,7 @@ void fn_193a8(void)
     palptr = pal7d850;
     strcpy(str7c8cc, " THESE EXTRA ZONES.      ");
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     pal_a = 0;
     if (v7ecb4 != 0)
         strcpy(name, "BSBCS.PCX");
@@ -6458,6 +6458,20 @@ void fn_1bf00(void)
     nplayers = n;                       /* 0x1bf71 */
 }
 
+/* ---- 0x1bf80, 20 bytes: the palette now on screen into pal7d850, then fade it out (callers 0x1ffa9,
+ * 0x200a9 in main_menu). No `jmp` at the end: the tail call is a jump to fade_out, whose entry block
+ * the compiler emits right here (fade_out is defined after pic_show, see there), so the jump goes to
+ * the next instruction and is dropped. */
+void fade_out(char *p);
+
+void fade_out_screen(void)
+{
+    palptr = pal7d850;
+    getpalette();
+    fade_out(pal7d850);
+}
+
+
 /* ---- the DOS clock wrapper 0x43164: INT 21h/2Ah into a 5-byte record (stores at
  * 0x4316d-0x43179: word [p+2] = cx, [p+1] = dh, [p] = dl, [p+4] = al). */
 
@@ -6755,7 +6769,7 @@ void fn_1c88c(char *s, int flag)        /* arg1 = eax, arg2 = edx */
     }
 }
 
-/* ---- 0x1c968: saves the palette over pal7d850 and calls f1bf94, setting 0x88bda. Also
+/* ---- 0x1c968: saves the palette over pal7d850 and calls fade_out, setting 0x88bda. Also
  * unreferenced in the image (same scan as fn_1c88c). Rebuild byte-identical. */
 extern short v88bda;
 
@@ -6764,7 +6778,7 @@ void fn_1c968(void)
     pal_a = 0;                                          /* 0x1c96d */
     palptr = (unsigned char *)pal7d850;                 /* 0x1c968, 0x1c976 */
     getpalette();                                       /* 0x1c97b */
-    f1bf94(pal7d850);                                   /* 0x1c985 */
+    fade_out(pal7d850);                                   /* 0x1c985 */
     v88bda = 1;                                         /* 0x1c98a */
 }
 
@@ -6941,7 +6955,7 @@ void scores_screen(void)
     pcx_load("LEAD.PCX", 2);     /* 0x1ce1c-0x1ce26, the string 0x60dc4 */
     palptr = pal7d850;                /* 0x1ce2b-0x1ce30 */
     getpalette();                     /* 0x1ce35 */
-    f1bf94(pal7d850);                 /* 0x1ce3a-0x1ce44 */
+    fade_out(pal7d850);                 /* 0x1ce3a-0x1ce44 */
     v88b4a = 0;                       /* 0x1ce49 */
     {
         short fs;
@@ -7632,7 +7646,7 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
             v7ec60 = 0;
         palptr = pal7d850;
         getpalette();
-        f1bf94(pal7d850);
+        fade_out(pal7d850);
         pcx_load("CHECK.PCX", 0);   /* 0x1e615 */
         if (v7ec68 != 0)              /* 0x1e61a */
             break;
@@ -8269,7 +8283,7 @@ void main_menu_names(void)
  * 92 -> 79 rows, tools/wc/fndiff.py; the case 3/4 `v7eca8 = v7ee5a; v7ee5a = 2;` pair through an int
  * temp (t) is worse: 79 -> 99 (9.5b sinks the load+stores past the five constant stores either way).
  * nmrefs iter 40: ours carries 765 of the game's 773 references; the game has one more each to
- * f1bf80, p7d718, pal_a and v88bda, all inside blocks one side only (4 of them) - a block-order lead
+ * fade_out_screen, p7d718, pal_a and v88bda, all inside blocks one side only (4 of them) - a block-order lead
  * for (d), not a missing statement. */
 struct cfgp {                       /* 0x774e4, 0x74 bytes, [0] one-player and [1] split-screen saved game */
     int on;
@@ -8286,7 +8300,10 @@ extern int cfg77174, cfg77178, v7ebb4, v7ebd0, v7ebd8;
 extern short v88bd4, v88c1e, optmap, optclock, optspeed;
 extern char *v7d708;
 extern char str7c908[], str7c944[];
-void f1bf80(void);
+/* fade_out_screen 0x1bf80 is defined above; called by its own name -oe inlines it here, where the
+ * game calls 0x1bf80 (0x1ffa9, 0x200a9), so main_menu calls it through an alias. */
+void fade_out_screen_call(void);
+#pragma aux fade_out_screen_call "fade_out_screen_"
 void digger_load(void);
 void faces_reset(void);
 void duckfame_write(void);
@@ -8360,7 +8377,7 @@ void main_menu(void)
             v88bd4 = 0;
             palptr = pal7d850;
             getpalette();
-            f1bf94(pal7d850);
+            fade_out(pal7d850);
             sel = menu(m, 1, 0, 0);
             if (v7ed0c >= 500) {
                 demo_mode(3);
@@ -8480,7 +8497,7 @@ void main_menu(void)
                 if (v88c58) {
                     palptr = p7d718;
                     pal_a = 0;
-                    f1bf80();
+                    fade_out_screen_call();
                     v88bda = 1;
                 }
             } else {
@@ -8517,7 +8534,7 @@ void main_menu(void)
                         pcx_load("CHECK.PCX", 0);
                         palptr = p7d718;
                         pal_a = 0;
-                        f1bf80();
+                        fade_out_screen_call();
                         v88bda = 1;
                         break;
                     }
@@ -8588,7 +8605,7 @@ void main_menu(void)
                 pcx_load("CHECK.PCX", 0);
                 palptr = pal7d850;
                 getpalette();
-                f1bf94(pal7d850);
+                fade_out(pal7d850);
                 pal_a = 0;
                 v88bda = 1;
             }
@@ -8647,7 +8664,7 @@ void main_menu(void)
                 pcx_load("CHECK.PCX", 0);
                 palptr = pal7d850;
                 getpalette();
-                f1bf94(pal7d850);
+                fade_out(pal7d850);
                 datfind("CARS.SP");
                 fread(v7d708, 0x18f00, 1, datfile);
                 faces_reset();
@@ -14285,7 +14302,7 @@ void duck_screen(int after)
     pcx_load("ORDER.PCX", 2);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a980;
@@ -14304,7 +14321,7 @@ void duck_screen(int after)
             enter_name(name, "DUCK SHOOT HALL OF FAME", 0xf);
             palptr = pal7d850;
             getpalette();
-            f1bf94(pal7d850);
+            fade_out(pal7d850);
             v88b4a = 0;
             pal_a = 0;
             p7d714 = p6a980;
@@ -14381,7 +14398,7 @@ void duck_screen(int after)
     wait_input(0);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v88b9e = 0;
 }
 
@@ -14403,7 +14420,7 @@ void overall_winner(void)
     pcx_load("ORDER.PCX", 0);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a978;
@@ -14489,7 +14506,7 @@ void overall_winner(void)
         wait_input(0);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
 }
 
 /* ---- 0x2bff0, 4722 bytes: after a race (callers 0x315fa, 0x31e01 in 0x30aae). The points
@@ -14563,7 +14580,7 @@ void race_results(void)
     pcx_load("ORDER.PCX", 0);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     pal_a = 0;
     v88b4a = 0;
     pal_a = 0;
@@ -14786,7 +14803,7 @@ void race_results(void)
         ;
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v88b4a = 0;
     {
         short save;
@@ -15843,7 +15860,7 @@ void trial_book(int a, int b, int show)
     palptr = pal7d850;
     getpalette();
     entered = 0;
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a978;
@@ -15910,7 +15927,7 @@ void trial_book(int a, int b, int show)
             enter_name(name, "TIME TRIAL - HALL OF FAME!", 15);
             palptr = pal7d850;
             getpalette();
-            f1bf94(pal7d850);
+            fade_out(pal7d850);
             v88b4a = 0;
             pal_a = 0;
             p7d714 = p6a978;
@@ -16137,7 +16154,7 @@ void trial_book(int a, int b, int show)
     wait_release(0);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     pal_a = 0;
     f37de0();
     if (key88ccd) {
@@ -16755,7 +16772,7 @@ restart:
     if (v7d998 && first && v7d998 != 3) {
         palptr = pal7d850;
         getpalette();
-        f1bf94(pal7d850);
+        fade_out(pal7d850);
         pal_a = 0;
         f37de0();
         if (key88ccd) {
@@ -17778,9 +17795,9 @@ void kbd_restore(void)
 
 /* ---- 0x32c98, 41 bytes (no direct caller found): f375cd with p7d714 = p, v88b4a = n and pal_a = a
  * for the call, pal_a restored after; the same steps race_run does inline for the demo records.
- * check.sh says differs at +41: the code is byte-identical; the next 3 bytes are our alignment
- * padding, where the game has the out-of-line tail (0x32cc1-0x32cf7) of the fade-out function in
- * the unrebuilt 0x1bf7e gap (same 0x308 frame; its branches go to 0x1c03a / 0x32cc5). */
+ * Followed by fade_out's loop tail (0x32cc1-0x32cf7), which the compiler emits here because fade_out
+ * is defined next (see there); check.sh differs only in the tail's two rel32 jumps back to 0x1c03a /
+ * 0x1c017 (LAYOUT, iter 56c). */
 void pic_show(char *p, short n, short a)
 {
     short save;
@@ -17791,6 +17808,64 @@ void pic_show(char *p, short n, short a)
     pal_a = a;
     f375cd();
     pal_a = save;
+}
+
+/* ---- 0x1bf94 and 0x32cc1-0x32cf7: fade the palette `p` out to black (callers: frame_draw, main_menu,
+ * fn_1c968 and eight more). The mirror of fade_in 0x32cf8: a 0x300-byte working copy (signed bytes), w88b10 =
+ * 0x100 entries from w88b1e = 0, palptr = the copy; with v88caa and musicon set the music fades
+ * too (ticks = ticks2 = 0, MUSIC_FadeVolume(0, 4000)); every step lowers each entry above 0 by
+ * v88c46 (read as a word for the test, 0x1c033), clamped at 0, then f37cf1 uploads it; stops after a
+ * step with no entry above 0. The k counter (0..2) is computed but unused, as in fade_in.
+ * Layout (CONFIRMED by this rebuild): defined HERE, after pic_show and before its mirror fade_in, the
+ * compiler emits the loop tail (the clamp store, k, i++, f37cf1, the epilogue) here, at 0x32cc1
+ * straight after pic_show's `ret`, and the entry block where the tail call in fade_out_screen jumps to it,
+ * at 0x1bf94; that is the game's layout. Instruction-identical in both parts; the only differing
+ * bytes are the six rel32 displacements between them, each 0x2c4 short = the size our build lacks
+ * between 0x1c068 and 0x32cc1, so a LAYOUT match. Spellings that mattered: the copy loop is a
+ * `while` on k (a `for` gets an alignment nop; `for` on i swaps the i/k registers), the clamp in the
+ * else arm, k short. */
+extern short w88c46;
+#pragma aux w88c46 "_v88c46"
+extern short v88caa;
+int MUSIC_FadeVolume(int tovolume, int milliseconds);
+
+void fade_out(char *p)
+{
+    signed char cur[0x300];
+    short hi, lo;
+    short k, i, same;
+
+    lo = 0;
+    hi = 0x2ff;
+    w88b10 = 0x100;
+    w88b1e = 0;
+    k = 0;
+    while (k <= 0x2ff) {
+        cur[k] = p[k];
+        k++;
+    }
+    palptr = (char *)cur;
+    if (v88caa && musicon) {
+        ticks = 0;
+        ticks2 = 0;
+        MUSIC_FadeVolume(0, 4000);
+    }
+    do {
+        same = -1;
+        k = 0;
+        for (i = lo; i <= hi; i++) {
+            if (cur[i] > 0) {
+                same = 0;
+                if (cur[i] - w88c46 >= 0)
+                    cur[i] -= w88c46;
+                else
+                    cur[i] = 0;
+            }
+            if (++k > 2)
+                k = 0;
+        }
+        f37cf1();
+    } while (!same);
 }
 
 /* ---- 0x32cf8, 218 bytes (callers race_run 0x307a9, main_menu 0x1e9d4, 0x1ec2e, ...): fades the
@@ -18699,7 +18774,7 @@ void intro(void)
         file_pal("TABLES.DAT", (unsigned char *)v7d858);
         palptr = pal7d850;
         getpalette();
-        f1bf94(pal7d850);
+        fade_out(pal7d850);
         v88b4a = 0;
         pal_a = 0x3e80;
         p7d714 = p6a978;
@@ -18728,7 +18803,7 @@ void intro(void)
     }
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     f37e23();
     pal_a = 0xbb80;
     pcx_load("APOG1.PCX", 0);
@@ -18851,7 +18926,7 @@ void intro(void)
     }
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     v7d998 = oldmode;
     music_start(menusong, 1);
     kartsets_load(0);
@@ -18884,7 +18959,7 @@ void intro(void)
     } while (!joy88b40 && key88cd0 != 1 && ticks < 0x110);
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     pcx_load("WINTRO.PCX", 0);
     pal = v7d85c;
     datfind("WINTRO.PCX");
@@ -19513,7 +19588,7 @@ nomem:
     if (v7e574) {
         palptr = pal7d850;
         getpalette();
-        f1bf94(pal7d850);
+        fade_out(pal7d850);
         pcx_load("END1.PCX", 2);
         endpal = pal7d850;
         datfind("END1.PCX");
@@ -19538,7 +19613,7 @@ nomem:
     v88caa = 1;
     palptr = pal7d850;
     getpalette();
-    f1bf94(pal7d850);
+    fade_out(pal7d850);
     TS_Terminate(t7ee00);
     TS_Terminate(t7ee04);
     TS_Terminate(comtask_t);

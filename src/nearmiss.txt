@@ -13,7 +13,9 @@
 # (the first column below is often stale: kart_bump read 86 here and 71 on the committed code).
 
 0    0x02e318 demo_rec               LAYOUT: call displacement only, our function sits elsewhere; not fixable in C
-1    0x032c98 pic_show               LAYOUT: code identical, only the padding after it differs (0x32cc1 is another function's tail)
+0    0x032c98 pic_show               LAYOUT: iter 56c - 0x32cc1-0x32cf7 is fade_out's loop tail, which our build now emits here too (fade_out defined after pic_show); 0 rows, the only differing bytes are the two rel32 jumps back to fade_out's head, 0x2c4 short = what our build lacks between 0x1c068 and 0x32cc1
+0    0x01bf94 fade_out               LAYOUT: iter 56c new - instruction-identical (0 rows, nmrefs same); the only differing bytes are the four rel32 jumps to its tail at 0x32cc1, each 0x2c4 short (the size our build lacks in between)
+0    0x01bf80 fade_out_screen        MATCH (iter 56c new; main_menu calls it through an alias so -oe does not inline it)
 2    0x011884 music_jingle             SKIP: -oe sinks the zero loop-arg (xor edx,edx) below the inlined stores; int/short/register local, local in both calls, 2nd param, hand-spelled inline, store order in music_start, #pragma aux parm, for(;;) wait
 2    0x0124e8 track_setup              SKIP: one moved load (ours hoists the switch subject above the trk7ebc8 load, the game loads it last); assignment order, declaration order, register, unsigned, subject in a local, -3 without r; iter 49 permute.py 4x30 copies, best = control
 2    0x012b44 car_laps             SKIP: 2 real rows (63 masked fixups): one compare operand order (`cmp edi,eax; jge` 0x12ee0); iter 39 29 -> 2 (block-local int k for laptimes, (lap - 1) * ncells, nlaps + 1 > lap); permute.py no gain; iter 48 21 more spellings (two probe compiles) - 9.5b ties the cmp destination and the EAX home to the source comparison's left operand, so the pair is unreachable (GOTCHAS coin flip)

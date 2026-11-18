@@ -6,8 +6,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **201 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
-  0x10260-0x36a4d bar the gap 0x1bf7e-0x1c0f3 (a fade-out); 0x36a4e on is the
+- **202 of 283 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+  all of 0x10260-0x36a4d (no gaps left, iter 56c); 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
   column MATCH / SKIP: cause / LAYOUT / empty = open). Each function's causes and tried spellings
@@ -30,9 +30,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 2. Live harness, next time it is up (QUESTIONS 19 second half): pick the BONUS PACK ZONES choice
    (`zones_menu` 0x16664 -> `v7ecb4` = 3), confirm the loaded track is 16..20, and check whether
    `in_zone` 0x125bc / the `map_at` users do anything at all in such a race.
-3. The C gap: the fade-out 0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7
-   (`pic_show`'s padding diff). (0x1f824-0x1f857 was main_menu's jump table, iter 56c.)
-4. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
+3. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
    the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED

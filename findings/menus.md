@@ -151,7 +151,7 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   more functions in this module and nothing in the image refers to either. Both are rebuilt
   byte-identical (`fn_1c88c` 0x1c88c-0x1c964: save the three page offsets, page to `pal_d` with
   `pal_c` = 48000, `msgbox(arg1, 0)`, 300-tick wait, page back, restore; `fn_1c968` 0x1c968-0x1c993:
-  `palptr = pal7d850`, `pal_a = 0`, `getpalette`, `f1bf94(pal7d850)`, `v88bda = 1`). SPECULATIVE:
+  `palptr = pal7d850`, `pal_a = 0`, `getpalette`, `fade_out(pal7d850)`, `v88bda = 1`). SPECULATIVE:
   the linker kept them because the module was linked whole.
 
 - CONFIRMED (0x2bace-0x2bad6, `cmp [after],0; je 0x2bbc9` = the epilogue): the Duck Shoot screen

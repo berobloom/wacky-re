@@ -366,6 +366,16 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   [generic]
 - Structs are pack(1) (`imul 0x6a` where the game has `0x68` = natural packing). [generic]
 - Literals land at the game's CONST addresses only when functions are added in address order.
+- **A function's entry block can land far from its body.** When function A ends in a tail call to
+  B and B is not compiled yet, 9.5b emits B's entry block right after A (the `jmp` to the next
+  instruction is dropped) and B's remaining blocks where B is defined. fade_out_screen 0x1bf80 falls
+  into fade_out's head at 0x1bf94; fade_out is defined after pic_show, so its loop tail sits at
+  0x32cc1 straight after pic_show's `ret` (iter 56c: a "gap" plus a "padding diff" were one
+  function). Signs: a function with no prologue that falls into the next, and a block right after
+  another function's `ret` with no alignment and no entry of its own. [generic]
+- A caller placed after a small function's definition gets it inlined by -oe: when the game calls
+  it, call it through a `#pragma aux` alias (fade_out_screen_call in main_menu; fn_1c068 is
+  left undefined for the same reason).
 - A switch's jump table sits in the gap BEFORE the function (0x1a360 in cars_menu), table order is
   source-label order, and case bodies are emitted in source order: sort the cases by jump-table
   target before writing the switch (main_menu case 7 before case 6; 0x19da8 for fn_19db8).

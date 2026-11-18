@@ -17,7 +17,7 @@ fn_1e6dc volume_menu gig_sound2 song_size songs_pick songs_load
 
 ## Video and palette
 drawsprite_clip frame_wait pal_shift screenshot fn_182d0 setvmode setvmode_keep pal_6bit dat_pal
-file_pal ytab_init bigdigits render_scales pic_show fade_in pic_at vga_check f1bf80 f1bf94
+file_pal ytab_init bigdigits render_scales pic_show fade_in pic_at vga_check fade_out_screen fade_out
 fn_1c068 fn_1c0ac
 
 ## Input

@@ -162,6 +162,7 @@
 0x042160 MUSIC_SongPlaying # SPECULATIVE: Apogee Sound System; polled until 0
 0x04219c MUSIC_StopSong # SPECULATIVE: Apogee Sound System
 0x0421e0 MUSIC_PlaySong # SPECULATIVE: Apogee Sound System; (song, loop), non-zero = error
+0x042488 MUSIC_FadeVolume # LIKELY: Apogee Sound System MUSIC_FadeVolume(tovolume, milliseconds): called (0, 4000) from fade_out when music is on, clamps arg1 to 0..255 (0x424aa-0x424bb) after checking a handle 0x63ff8
 0x042bec printf       # CONFIRMED: clib (libmatch)
 0x042c11 exit         # LIKELY: clib exit module (0x42C10) entry
 0x07c648 menusong     # SPECULATIVE: restarted by music_jingle
@@ -353,7 +354,7 @@
 0x079a28 arr79a28     # SPECULATIVE: p7d86c is reset to it each view
 0x07d86c p7d86c       # SPECULATIVE
 0x027060 pcx_load     # CONFIRMED (rebuild src/ww.c): (name, n) DAT PCX picture data (no header, no palette) into p6a978[n]
-0x01bf94 f1bf94       # SPECULATIVE: called from frame_draw
+0x01bf94 fade_out     # CONFIRMED (rebuild src/ww.c, LAYOUT match: instruction-identical, only the head<->tail jump displacements differ): fades palette p to black by v88c46 a step, MUSIC_FadeVolume(0, 4000) with music on; loop tail at 0x32cc1-0x32cf7 (defined after pic_show, the mirror of fade_in)
 0x036f55 fn_36f55     # CONFIRMED (disasm): planar blit, 0x6400 bytes from [v7eb54] to A000:7d00, the map mask (port 3c4 idx 2) rotated 1,2,4,8 so each video byte is written 4x (findings/video.md)
 0x0375cd f375cd       # CONFIRMED: pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
 0x037b04 f37b04       # CONFIRMED (disasm 0x37b04-0x37bb0): surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
@@ -723,7 +724,7 @@
 0x077758 tbl77758          # CONFIRMED data table read by fn_1cad0: rows of 0x450 = 24 records of 0x2e bytes; **used rows are 1..6** (0x77ba8..0x79587; `v88bb6 + v7ecb4` is never 0), row 0 at 0x77758 is slack/zeros; rows 1..6 come from <savedir>WACKY<n>.HI in records_load 0x357ac (0x19e0 = 6 rows)
 0x07d8a8 v7d8a8            # CONFIRMED dword pointer, written by fn_1cad0 (0x1cb3d) and 0x1d8a8, read at 0x1cfa9..0x1d08c
 0x01c88c fn_1c88c           # CONFIRMED: save_a/b/c, pal_a=pal_b=pal_d + pal_c=48000 + setpalette, msgbox(arg1,0), then ticks/ticks2=0 spin to 300, pal_b=48000/pal_a=pal_c=pal_d, setpalette, restore. Unreferenced in the image (no E8/E9 rel32 target in the code object, no absolute dword in either object) -> dead code kept by the linker
-0x01c968 fn_1c968           # CONFIRMED (disasm): pal7d850 -> palptr, pal_a=0, getpalette 0x36cca, f1bf94(pal7d850), word 0x88bda=1; also unreferenced
+0x01c968 fn_1c968           # CONFIRMED (disasm): pal7d850 -> palptr, pal_a=0, getpalette 0x36cca, fade_out(pal7d850), word 0x88bda=1; also unreferenced
 0x077432 ctl_names77432     # CONFIRMED: inside cfg77128 (0x77128+0x30a); 84-byte per-player records of six 14-byte control names (+0,0xe,0x1c,0x2a,0x38,0x46), read by fn_1c0f4 0x1c43d/0x1c535
 0x077128 cfg77128w          # CONFIRMED: 16-bit compare of cfg77128+0 in fn_1c0f4 0x1c18d (with v7ee4a -> vals[0])
 0x07712a cfg7712a           # CONFIRMED: fn_1c0f4 0x1c1d3 (player 2 device, -> vals[1])
@@ -818,7 +819,7 @@
 0x080ae8 tb80ae8      # SPECULATIVE: short[3], three y values 11 apart set on a kind-1 pickup (kart_bump)
 0x088c12 v88c12       # STRONGLY SUPPORTED: short, index of the viewing kart's own arr79a28 record (kart_bump)
 0x01f858 main_menu    # CONFIRMED (rebuild src/ww.c): the main menu dispatcher, cases 1-9 of menu(9); 9 returns through engines_menu's epilogue
-0x01bf80 f1bf80       # STRONGLY SUPPORTED: asm, palptr = pal7d850; getpalette(); falls into f1bf94(pal7d850)
+0x01bf80 fade_out_screen # CONFIRMED (rebuild src/ww.c, MATCH): palptr = pal7d850; getpalette(); fade_out(pal7d850) - the tail jump is dropped because fade_out's entry block follows
 0x077174 cfg77174     # SPECULATIVE: int, COM port for the serial cable (-> v7ec50, main_menu)
 0x077178 cfg77178     # SPECULATIVE: int, COM port for the modem (-> v7ec50, main_menu)
 0x077284 pbook        # STRONGLY SUPPORTED: phonebook, 0x30-byte {int, name[0x16], number[0x16]}, [1..6] (main_menu)
