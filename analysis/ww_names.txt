@@ -432,8 +432,8 @@
 0x042e91 fseek        # LIKELY: clib (seekdat)
 0x043039 ftell        # LIKELY: clib (telldat)
 0x013a74 sprites_load # LIKELY: reads the .SP sprite files and SPRITE.ATR, then points the sprite tables into them
-0x088b82 nsprattr     # LIKELY: short, SPRITE.ATR record count (records of 40 bytes)
-0x072998 sprattr      # LIKELY: SPRITE.ATR records
+0x088b82 nsprattr     # CONFIRMED: short, SPRITE.ATR record count = 36; the read of it feeds `readdat(sprattr, n*40)` (0x13ea6-0x13ec6)
+0x072998 sprattr      # CONFIRMED: 36 SPRITE.ATR records of 40 bytes, layout findings/formats.md "SPRITE.ATR" (kind +0, w +4, h +6, class +0xc, nframes +0xe, name[8] +0x10, data ptr +0x24)
 0x07d6c0 wfont        # LIKELY: buffer the .SP file is read into (sprites_load)
 0x07d70c ajdata       # LIKELY: buffer the .SP file is read into (sprites_load)
 0x07d6c4 pufdata      # LIKELY: buffer the .SP file is read into (sprites_load)

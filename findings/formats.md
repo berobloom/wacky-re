@@ -222,6 +222,58 @@ span exactly 0..35 and `SPRITE.ATR` is 1442 = 2 + 36 * 40 bytes, i.e. the 36
 counts frames of `w * h` bytes inside that record (`src/ww.c:2731-2745`). The
 `f8` field is not read there: OPEN.
 
+### SPRITE.ATR - the 36 entity sprite sets (CONFIRMED layout)
+
+1442 bytes = a count word (36) plus 36 records of 40 bytes. `sprites_load`
+0x13a74 reads the word into `nsprattr` 0x88b82 (0x13e96) and then
+`readdat(sprattr 0x72998, nsprattr * 40)` - the game's size math is
+`lea eax,[edx*4]; add edx,eax; lea edx,[edx*8]` = n*40 (0x13eb2-0x13ec6), so the
+record size is CONFIRMED, not inferred. Dump: `tools/le/datdump.py SPRITE.ATR`.
+
+Record layout (every field the game READS is listed with its site; a complete
+scan of the code object finds reads of exactly these seven offsets -
+`grep -oE '\[[a-z0-9]+ \+ 0x729..\]'` over `tools/le/disasm.py ww` output over
+0x10260-0x36a60 gives 0x72998/0x7299c/0x7299e/0x729a4/0x729a6/0x729bc plus the
+name at +0x10 via `add eax,0x10` 0x2137c):
+
+| Offset | Field | Evidence |
+|---|---|---|
+| 0x00 | `short kind` | `cmp word [ebp+0x72998],2` 0x2139d (first kind-2 id -> `v7eda4`), `movsx ... ,2`/`jl` 0x21439/`jle` 0x21454 in `ents_flags` 0x213f0, 0x2322d, and the hit tests (`src/ww.c:9038,9043,10121`) |
+| 0x02 | unused, 10 in all 36 records | no read anywhere (offset scan above) |
+| 0x04 | `short w` | `movsx edx,[ebp+0x7299c]` 0x2134f |
+| 0x06 | `short h` | `movsx eax,[ebp+0x7299e]` 0x21356 |
+| 0x08, 0x0a | unused, always a copy of w,h | no read anywhere |
+| 0x0c | size class: 3 = 32x24, 2 = 14x28, 1 = 28x28 | the only read is `mov dx,[eax+0x729a4]` 0x25c73 in `ents_project` 0x25a78 -> `tab6e470[class*20 + step]` |
+| 0x0e | `short nframes` | `movsx eax,[ebp+0x729a6]` 0x21360 |
+| 0x10 | `char name[8]` - the WACKY.DAT entry to load | `lea`/`add eax,0x10` 0x2137c feeding `datfind` 0x21384 |
+| 0x18-0x23 | zero, unused | no read |
+| 0x24 | `char *data` (zero in the file) | `mov [ebp+0x729bc],eax` 0x2136f, re-read 0x2138f/0x213b9 as `v7eb4c += size` |
+
+`w * h * nframes` is the payload size, CONFIRMED by census: for all 36 records
+the DAT entry named at +0x10 exists and its `size` equals `w*h*nframes` exactly
+(no exception; the multiplication is 0x2134f-0x21367 and the count reaching
+`fread` is read back at 0x213b6).
+
+The id is the record index; ATR order is not file-name order, and the names run
+H1,H2,H4,H5,H7,H6,H8,H9,H10,H11,H12,H14..H25 (ids 0-22) then OB1..OB13
+(ids 23-35). H3.SP and H13.SP are absent from the ATR list AND from WACKY.DAT
+(census of `H*.SP`: 23 such entries besides `HANDLE.SP`/`HOGMIS.SP`; `OB*.SP`:
+13) - so the numbering gaps are in the archive, not in the table.
+
+`kind` groups the 36 sets (CONFIRMED from the record data, SPECULATIVE as a
+meaning): kind 0 = the 12 OB sets (one frame, never animated by `ents_show`'s
+`nframes` wrap), kind 1 = OB1 alone, kind 2 = the 18 animated H sets, and kinds
+3-7 one set each: 3 = id 0 (H1.SP, the only set present in all 42 `.SPW` lists),
+4 = H15.SP, 5 = H12.SP, 6 = H16.SP, 7 = H20.SP. `.SPW` census over all 42 files:
+838 entity records, every id 0..35 used at least once, id 0 in 69 records.
+`ents_flags` 0x213f0 clears `ents[].f2` for `kind >= 2` in a one-player off-line
+KID MODE race and, with `netvoices`, rewrites every `kind > 2` entity's id to
+`v7eda4` = the first kind-2 record (`src/ww.c:9035-9050`).
+
+Trap: `SPRITE.ATR` record offsets reach the disassembler as folded immediates
+(`movsx eax, word ptr [eax + 0x72998]`), not as `sprattr + id*40`, so an xref of
+0x72998 finds the base loads only - grep the folded offsets instead.
+
 ### The twelve zone-less slots 16-21 and 37-42 (CONFIRMED: six duplicate pairs)
 
 md5 over every `<n>.<EXT>` payload of the 42 sets (`tools/le/datdump.py`):

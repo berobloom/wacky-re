@@ -2694,15 +2694,19 @@ void ents_draw(int n)
     }
 }
 
-struct attr {                   /* SPRITE.ATR, 40 bytes */
-    short kind;                 /* 2 and up: see ents_flags / ent_sprites_load */
-    short f02;
-    short w, h;
-    char f08[0x0C - 8];
-    short f0c;                  /* size class: tab6e470[f0c * 20 + step] (ents_project) */
+struct attr {                   /* SPRITE.ATR, 36 records of 40 bytes: layout and evidence in
+                                 * findings/formats.md "SPRITE.ATR"; the game reads only these offsets */
+    short kind;                 /* 0 the 12 OB sets, 1 OB1, 2 the 18 H sets, 3..7 one set each
+                                 * (3 = id 0, in every .SPW); see ents_flags / ent_sprites_load */
+    short f02;                  /* 10 in all 36 records, never read */
+    short w, h;                 /* payload w * h * nframes == the DAT entry's size (census of 36) */
+    char f08[0x0C - 8];         /* a copy of w,h in all 36 records, never read */
+    short f0c;                  /* size class: tab6e470[f0c * 20 + step] (ents_project 0x25c73);
+                                 * 3 = 32x24, 2 = 14x28, 1 = 28x28 */
     short nframes;
-    char f10[0x24 - 0x10];
-    char *data;
+    char f10[8];                /* the WACKY.DAT entry to load: H1..H25.SP (no H3/H13) then OB1..OB13.SP */
+    char f18[0x24 - 0x18];      /* zero in the file, never read */
+    char *data;                 /* filled by ent_sprites_load 0x2136f */
 };
 
 extern short *p7d838, *p7d764;

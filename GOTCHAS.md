@@ -338,7 +338,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **A block's fields need a range census, not an xref of its base**: Watcom reads a struct/array
   element through its own absolute address (`cfg7ee1c + 0x3e` is `word [0x7ee5a]` = `v7ee5a`), so
   `xref.py ww 0x7ee1c` returns only the whole-block transfers; `tools/le/rangexref.py ww 0x7ee1c
-  0x7f2ae` -> 17 addresses, which is what proves the `WACKY.ING` record area is unread. [generic]
+  0x7f2ae` -> 17 addresses, which is what proves the `WACKY.ING` record area is unread. The same trap
+  in the listing: when the base is held in a register capstone prints the field reads with the base
+  folded into the displacement (`movsx edx, word ptr [ebp + 0x7299c]` = `sprattr[0].w`), so grepping
+  the disassembly for the name finds only the 9 base loads - census the fields by offset
+  (`grep -oE '\[[a-z0-9]+ \+ 0x729..\]'` gave the whole SPRITE.ATR read set, 0x72998/9c/9e/a4/a6/bc).
+  [generic]
 - Structs are pack(1) (`imul 0x6a` where the game has `0x68` = natural packing). [generic]
 - Literals land at the game's CONST addresses only when functions are added in address order.
 - A switch's jump table sits in the gap BEFORE the function (0x1a360 in cars_menu), table order is
