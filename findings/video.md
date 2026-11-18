@@ -96,12 +96,12 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   addresses (A000:7d00..0xe0ff), each written once per plane: the source holds 4
   bytes per video address (CONFIRMED by the loop shape). `setpalette` programs
   `0x3ce ax=0x4105` (chain-4 write, line 12 above) and the game sets INT 10h
-  `0x13` (`setvmode_keep(0x13)`, `src/ww.c:19453`), so what four map-mask writes at
-  one chained address do is OPEN - see findings/formats.md ".PAR" and QUESTIONS 20.
-- 0x7d00 = 32000 = the start of the third 0x3e80-byte page. The blob's pixel geometry is
-  LIKELY a 320x20 band (findings/formats.md ".PAR"): `1.PAR` has 41 distinct byte values and
-  its strongest byte-to-byte correlation is at lag 640 (mean |Δ| 2.8), with 1280 (a 320-pixel
-  row at 4 bytes each) at 5.77 and lag 1 at 8.0.
+  `0x13` (`setvmode_keep(0x13)`, `src/ww.c:19453`), and the four map-mask writes
+  go to planes 0..3 of one Mode X address (CONFIRMED live, findings/formats.md ".PAR").
+- 0x7d00 = 32000 = the start of the third 0x3e80-byte page. The blob is a 1280x20 horizon
+  panorama stored off-screen there; every race frame the asm copier 0x395dd latch-copies a
+  20-row, 80-address (320-pixel) window of it from `v7d860` to screen rows 110..129 (`pal_a +
+  0x2260`) - CONFIRMED live (findings/formats.md ".PAR").
 - Callers pass `p6a980` and guard on `v7d998` being 0 or 3 (`src/ww.c:4416-4417` where `p6a980`
   holds the `<n>.PAR` blob, `src/ww.c:17259-17260`, `src/ww.c:17479-17480`): the image is
   blitted once at race start, not per frame.

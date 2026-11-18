@@ -294,7 +294,7 @@
 0x088c6a v88c6a       # SPECULATIVE
 0x088b7e v88b7e       # SPECULATIVE: 1 while player 2's view is in
 0x07d898 v7d898       # SPECULATIVE
-0x07d860 v7d860       # SPECULATIVE
+0x07d860 v7d860       # CONFIRMED (live iter 56c + asm copier 0x395ef): the horizon window, a pointer into the 1280x20 .PAR strip at A000:7d00 (0xa7d2a seen); the copier sends 20 rows x 80 addresses from it to screen rows 110..129; f24834 moves it between v7d824 (0xa7d00, set in main 0x36789) and v7d830
 0x07d840 v7d840       # SPECULATIVE
 0x06aa90 players      # SPECULATIVE base (most-used low address): 0x68-byte records {+0x16 x, +0x18 y, +0x20 place, +0x22 lap, +0x24 cell, +0x26 face, +0x50 pos}
 0x012770 show_place   # LIKELY: prints 1ST/2ND/3RD and the face of player n at y = (place-1)*28+4

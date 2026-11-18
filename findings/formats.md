@@ -104,7 +104,7 @@ Sizes are constant per extension over all 42 tracks (census of every entry with
 `tools/le/datdump.py`): `.SIN` 1296, `.POS` 8194, `.PAR` 25600, `.M` 4096; `.RD`
 and `.SPW` are count-prefixed and vary. The blobs are shared between track
 slots: all 42 `.M` differ, but there are only 30 distinct `.POS` (12 of them -
-tracks 16-21 and 37-42 - are the same all-zero map), 18 `.SIN`, 9 `.PAR` and 29
+tracks 16-21 and 37-42, never loaded - are the same all-zero map), 18 `.SIN`, 9 `.PAR` and 29
 `.GAM`. The track slot is therefore not the same thing as the track art.
 
 ### .POS - the 64x64 zone map (CONFIRMED)
@@ -188,16 +188,28 @@ addresses A000:7d00..0xe0ff is written four times, once per VGA plane, i.e. the
 blob stores **4 bytes per video address** (CONFIRMED from the loop shape). 0x7d00
 = 32000 = the start of the third 0x3e80-byte page.
 
-What that means per pixel is **OPEN** (QUESTIONS 20): the game sets INT 10h mode
-`0x13` (`setvmode_keep(0x13)`, `src/ww.c:19453`, a byte-identical rebuild) and
-`setpalette` programs `0x3ce ax=0x4105` (chain-4 write) and mask `0x0f02`
-(findings/video.md), so what four map-mask writes at one chained address do is
-not settled here. The data fits a 320-pixel row stored as 4 bytes per pixel - a
-**320x20 band at page offset 32000** - LIKELY: `1.PAR` has 41 distinct byte
-values, and mean |Δ| between bytes `l` apart is 8.0 at l=1, 19.6 at 4, 33.4 at
-320, 2.8 at 640 and 5.77 at 1280, the 1280 = a 320-pixel row at 4 bytes each
-being the row stride and 640 (half a row) even stronger, i.e. the band repeats
-horizontally. A port should reproduce the loop and the blob, not reinterpret it.
+**Pixel geometry: a 1280x20 8-bit panorama, row-major (`pixel(x, y) = blob[1280*y + x]`)** -
+CONFIRMED (iter 56c, live harness on track 22 plus the copier's disasm):
+
+- The four writes per address land in planes 0, 1, 2, 3 (Mode X, unchained): a
+  CPU read of A000:7d00..e0ff in the race returned one plane, and it equals
+  `22.PAR[1::4]` in all 6400 bytes. So blob byte `4a + k` is plane `k` at address
+  `a`, i.e. pixel `4a + k` of the off-screen area.
+- The copier (asm, 0x395dd-0x396c8, in the race branch `v7d998 != 2`) copies 20
+  rows of 0x50 bytes, adding 0xf0 to the source after each (a 320-byte = 1280-pixel
+  source row), from `v7d860` (the scroll window, a pointer into A000:7d00..) to
+  `0xa0000 + 0x2260 + pal_a` = screen rows 110..129 of the page being drawn, with
+  `rep movsb` (the latch copy moves 4 pixels a byte). So the screen shows a
+  320-pixel window of a 1280-pixel horizon strip: the 20 rows directly above the
+  horizon, scrolled with the view.
+- Live check: with `v7d860` = 0xa7d2a (window 42 addresses = 168 pixels in), the
+  screenshot's rows 110..129 against `22.PAR` as 1280x20 from x = 168 give one
+  colour per index for 93.9% of the 6400 pixels (karts and HUD cover the rest);
+  rows 108..112 and other offsets score 0.83 or less. 22.PAR is a sunset sky
+  gradient (indices 235..254) with the sun's disc.
+- `v7d998 == 2` (demo playback) instead copies 0x28a0 bytes in one block (0x39604).
+- The old statistic (mean |Δ| smallest at lag 640) only says the strip is smooth
+  over half its width; the earlier LIKELY "4 bytes per pixel, 320x20" was wrong.
 
 ### .RD - the track line segments (CONFIRMED)
 
@@ -358,10 +370,14 @@ md5 over every `<n>.<EXT>` payload of the 42 sets (`tools/le/datdump.py`):
   the saved-game records `rsave774e8` 0x774e8 (`struct rsave` fields `metal`
   +0x10, `track` +0x14, read back as words at 0x1fdf1-0x1fe4a, written by
   `race_run` 0x2fd8c, `src/ww.c:16543-16548`).
-  CONFIRMED statically: no arm can write more than `5 + 0x1f`, so **only slots
-  1..30 are ever loaded** and 31..42 are dead data - 16..20 come from arm 3 and
-  21 from arm 4, 37..42 from nothing. Which menu item selects which arm is the
-  live-harness half of QUESTIONS 19.
+  CONFIRMED (static, and live iter 56c): the arms give 1..5, 6..10, 11..15
+  (regular; 7 for the `v7ec80` case) and 22..26, 27..31, 32..36 (bonus pack:
+  0x15/0x1a/0x1f = 21/26/31 plus 1..5), so **the loadable tracks are 1..15 and
+  22..36 - exactly the 30 slots with a zone map - and the twelve zone-less slots
+  16..21 and 37..42 are never loaded** (iter 53 said "1..30" by adding 0x15 as 15).
+  Live: `v7ecb4` = 3 (what `zones_menu`'s BONUS PACK row stores; the menu itself
+  only shows when `v7eca0 == 3`) and pick 1 load `track` = 0x16 = 22 with
+  BONUSB.SP and the "BONUS BRONZE WHEELS" screen (state `bonus22.sav`).
 - The only code that touches 31..42 does it by name: `release_check` 0x34458
   sets `v7eca0` 3 if `datfind("42.GAM")` finds an entry, 2 if `datfind("20.GAM")`
   does, else 1 (shareware) and shows "WACKY WHEELS VERSION 1.1" plus the

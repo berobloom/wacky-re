@@ -27,11 +27,6 @@ Short: where the project stands, and what is next. History is in git; no diary.
    (10 loop-shape variants, all = control: the `v7d800` register cache is not a source-shape fact).
    Take one only with an idea its `differs:` note does not list. nmrefs after every change;
    `src/check.sh` count +1 before `src/matched.baseline` goes up.
-2. Live harness, next time it is up (QUESTIONS 19 second half): pick the BONUS PACK ZONES choice
-   (`zones_menu` 0x16664 -> `v7ecb4` = 3), confirm the loaded track is 16..20, and check whether
-   `in_zone` 0x125bc / the `map_at` users do anything at all in such a race.
-3. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
-   the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED
 
