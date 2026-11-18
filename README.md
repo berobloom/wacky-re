@@ -72,6 +72,7 @@ it is compared as an object file, function by function.
 | `findings/` | What has been established about the game, by subsystem, with evidence |
 | `analysis/` | Function names with their evidence, the subsystem grouping |
 | `QUESTIONS.md` | Open questions and hypotheses |
+| `MATCHING.md` | The matching workflow: toolchain, the check, one function, nmrefs, the permuter |
 | `GOTCHAS.md` | Traps in the tools and in matching Watcom's output, and what worked |
 | `tools/le/` | LE loader and function finder |
 | `tools/wc/` | Compiler driver, function comparison, library matching, near-miss tools |

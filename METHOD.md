@@ -139,7 +139,10 @@ matches from day one (unmatched routines as reassembled asm), convert one
 routine at a time, name only after the match with a source tag on each name.
 Worked through for Turbo Pascal in SAM2's `MATCHING.md` (where offsets
 are plain immediates, so the build's layout has to match before any
-routine can: unmatched routines are size-exact stubs). Hand-written
+routine can: unmatched routines are size-exact stubs). For Watcom C in an
+LE program, wacky-re's `MATCHING.md` (one C module compared as an object
+function by function, near misses checked by the addresses they use, a
+source permuter whose winners are verified in place). Hand-written
 assembly games cannot be matched from C/Pascal: port them by behaviour.
 Once it matches, port by translation (section 10), not by rewriting.
 
