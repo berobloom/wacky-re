@@ -283,17 +283,23 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     0x114a8, and search for a far-pointer table whose offset field is 0x114a8 with a nonzero
     selector.
 
-16. **OPEN** (findings/formats.md): why do the 24 default records of `WACKY.ING` start their class
+16. **ANSWERED as far as the shipped files go** (iter 56, findings/formats.md "SETUP.EXE"):
+    SETUP.EXE never reads or writes the record area either (field census empty), so no shipped
+    program explains the order; it stays SPECULATIVE authoring data. Original question: why do the 24 default records of `WACKY.ING` start their class
     groups at slot 0 / 4 / 7? CONFIRMED (byte dump of the DAT entry `WACKY.ING`, decoded with the
     `tbl77758` record shape): the block is a 0x42 header + 24 records of 0x2e = 0x492 exactly; every
     record is ("MAR 1994", "KNOCK ME OFF!", f04 = 0) and (f00, f02) runs 1/0-7, 2/4-7+0-3, 3/7+0-6.
     Also CONFIRMED (`tools/le/rangexref.py ww 0x7ee1c 0x7f2ae`): nothing in WW.EXE touches the
     record area, so this table is data the game carries but never reads. SPECULATIVE: the rotated
     start slot is an artifact of whatever wrote the file, not a game rule. Test that would settle
-    it: `SETUP.EXE` (MZ 16-bit, untouched so far) - if it rewrites `WACKY.CFG`'s record area, its
+    it: `SETUP.EXE` (a bound DOS/4GW LE, not 16-bit) - if it rewrites `WACKY.CFG`'s record area, its
     writer shows the intended order.
 
-17. **OPEN** (findings/formats.md, findings/menus.md): what are `cfg7b6d8` 0x18 (12 words) and
+17. **ANSWERED** (iter 56, from SETUP.EXE statically; findings/formats.md "SETUP.EXE"):
+    `cfg7b6d8` = 2 players x 6 key slots (steer left, steer right, accelerate, fire, brake,
+    hand-brake turn), scancode in the low byte; `cfg77128` holds the six 14-byte key names per
+    player at +0x30a, the baud rates, the modem strings and the joystick flags. The live
+    test below is no longer needed for the slot order. Original question: what are `cfg7b6d8` 0x18 (12 words) and
     `cfg77128` 0x630 for? CONFIRMED: the CFG's 12 words are BIOS scancodes `4b 4d 38 1d 50 39 20
     21 1e 1f 22 23`; `main` puts the block's address into `v7d8ac`/`v7d8b0`(+0xc)/`v7d8a4`/`v7d990`
     (0x35d39-0x35d57) and `cars_menu` 0x1a380 tests its bytes indexed (0x1abc2, 0x1b3db);

@@ -405,8 +405,9 @@ All 24 names are `"KNOCK ME OFF!"`, all 24 stamps `"MAR 1994"`, all 24 `f04 = 0`
 and (f00, f02) = group 1 slots 0-7, group 2 slots 4,5,6,7,0,1,2,3, group 3 slots
 7,0,1,2,3,4,5,6. LIKELY: `f00` is the class group and `f02` the slot inside it -
 three groups of eight is exactly how `fn_1cad0` splits a row (`{0, 0x170, 0x2e0}`
-= 8 and 16 records). Why each group starts at slot 0 / 4 / 7: OPEN
-(QUESTIONS.md 16).
+= 8 and 16 records). Why each group starts at slot 0 / 4 / 7: not answerable
+from the shipped programs - neither WW.EXE nor SETUP.EXE reads or writes the
+records (QUESTIONS.md 16).
 
 CONFIRMED (`tools/le/rangexref.py ww 0x7ee1c 0x7f2ae` - every decoded
 instruction with an operand inside the range; 17 distinct addresses, **none in
@@ -442,9 +443,9 @@ CONFIRMED (byte compare `original/WACKY.CFG` against the DAT entry `WACKY.ING`):
 +0x18 and **all 24 records** are zeroed, `cfg7ee2a` stays 1, and +0x3c/+0x3e/+0x40
 are 1/1/1 against the ING's 2/3/3. `v7ee5a` = 1 means this config selects save
 slot 1, so the shipped `WACKY1.HI`/`WACKY1.TIM` are its files
-(findings/scores.md iter-50 row). LIKELY: `SETUP.EXE` writes those zeros - it is
-the program the game's error texts name; SPECULATIVE: that it is also what
-clears the 24 default records.
+(findings/scores.md iter-50 row). CONFIRMED (SETUP.EXE, below): those zeros are
+SETUP's - it never writes +0x02, +0x0a, +0x14, +0x18 or the 24 records, so a CFG
+it creates carries the zeros of its uninitialised data there.
 
 ### the other two config blocks (bytes CONFIRMED, meaning OPEN)
 
@@ -453,9 +454,13 @@ clears the 24 default records.
   space, then D F A S G H). `main` stores its address into `v7d8a4` (0x35d57),
   `v7d8ac` (0x35d39), `v7d990` (0x35d4d) and `v7d8b0 = 0x7b6e4` = base+0xc
   (0x35d43); `cars_menu` 0x1a380 tests bytes of
-  it through an index (`cmp byte [eax + 0x7b6d9], 0` 0x1abc2). LIKELY the
-  player key map (the first six match the control names stored in `cfg77128`,
-  see below); which slot is which player: OPEN.
+  it through an index (`cmp byte [eax + 0x7b6d9], 0` 0x1abc2).
+  CONFIRMED by SETUP (below): the key map, 12 bytes per player (player 1 at
+  +0, player 2 at +0xc), six word slots each in the order steer left, steer
+  right, accelerate (button 1), fire (button 2), brake (button 3), hand-brake
+  turn (button 4); the low byte of a slot is the scancode. The high byte is
+  LIKELY the key's live pressed state: the game reads +1 into `key88cd5` and +3
+  into `key88cdd` (names file 0x7b6d9/0x7b6db), i.e. steer left / steer right.
 - `cfg77128` 0x630: 56 distinct addresses inside it are touched
   (`rangexref.py ww 0x77128 0x77758`); `ctl_setup` 0x14b00 reads +0x08..+0x12
   (0x14ba6-0x14bf4), `main` tests +0x308 (`w77430 == 0xfa`, 0x36072), and the
@@ -463,6 +468,40 @@ clears the 24 default records.
   CURSOR", "RIGHT CURSOR", "ALT", "CTRL", "DOWN CURSOR", "SPACE", "D", ...
   (findings/menus.md has the 84-byte form used by the F1 controls screen).
   It ends at 0x77128 + 0x630 = 0x77758, the address of `tbl77758`.
+  CONFIRMED by SETUP (below): the names at +0x30a (0x77432) are 2 players x
+  0x54 bytes = six 14-byte names, one per key slot, made from the scancodes
+  (SETUP 0x19420-0x194ec); a player on a joystick gets "LEFT", "RIGHT",
+  "BUTTON1", "BUTTON2" in the first four. +0x18..+0x28 are the five baud rates
+  2400..115200 (`0x2580, 0x4b00, 0x9600, 0xe100, 0x1c200`), +0x54 / +0x94 /
+  +0xd4 the modem init, dial (`ATDT`) and hang-up strings.
+
+### SETUP.EXE - the program that writes WACKY.CFG (CONFIRMED, static)
+
+`original/SETUP.EXE` is not 16-bit: like WW.EXE it is a bound DOS/4GW LE
+(LE header at 0x290FC, the same stub), Watcom C/C++32 run-time, "WACKY WHEELS VER
+1.1 setup. Copyright BEAVIS-SOFT 1994". Load it with `tools/le/leparse.py
+original/SETUP.EXE .work/le/setup`; addresses below are its own image's (its
+copies of the three blocks: 0x61708 = `cfg7ee1c`, 0x5e230 = `cfg7b6d8`,
+0x48100 = `cfg77128`).
+
+- Start (0x196cc): requires WACKY.DAT, honours `APOGEECD` like the game, opens
+  `WACKY.CFG`; missing (0x198d8) or not 0xada bytes (0x1990c: "Incorrect config
+  for this version", "Removing old setup CFG") -> fill the defaults (0x11d1c),
+  write the file (0x19284), and read it back; it also requires `+0x308 == 0xfa`
+  (0x199b9) as the game does. SETUP never reads `WACKY.ING`.
+- Writer 0x19284: the same three `fwrite`s as the game's `save_config`
+  (0x492 / 0x18 / 0x630); called with -1 it first rebuilds the key names.
+- Defaults 0x11d1c: the 12 scancodes above, block +0x0e = 1, +0x28 = 0, +0x2a = 1,
+  +0x2e = 0, +0x30 = 0, +0x32 = 1, +0x34 = 1, +0x36 = 1, +0x38 = 7, +0x3a = 0x220,
+  +0x3c = 2, +0x3e = 1, +0x40 = 1; the baud and modem strings.
+- Field census (`tools/le/rangexref.py setup 0x61708 0x61b9a`): **nothing in
+  +0x42..+0x491** (the 24 records), and nothing at +0x02, +0x0a, +0x14, +0x18.
+  Joystick calibration (0x129a4: centre, top-left, bottom-right) writes
+  +0x1c..+0x26, the game's `ctl_setup` inputs; the control-options menu 0x18a98
+  sets +0x2e (player one's joystick); the detail menu 0x181a8 ("High / Medium /
+  Low detail") reads and writes +0x3c (`v7ee58` in the game). +0x34..+0x3a are
+  set only by the defaults (0x220 and 7 look like a Sound Blaster port and IRQ:
+  SPECULATIVE).
 
 ## Other disc files
 

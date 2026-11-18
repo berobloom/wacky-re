@@ -30,12 +30,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 2. Live harness, next time it is up (QUESTIONS 19 second half): pick the BONUS PACK ZONES choice
    (`zones_menu` 0x16664 -> `v7ecb4` = 3), confirm the loaded track is 16..20, and check whether
    `in_zone` 0x125bc / the `map_at` users do anything at all in such a race.
-3. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
-   `WACKY.CFG` - the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
-   and 24 records, and the 12 key words of `cfg7b6d8` (QUESTIONS 16/17).
-4. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+3. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-5. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
+4. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
    the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED

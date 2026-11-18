@@ -6,6 +6,7 @@
 |---|---|---|
 | Release | Wacky Wheels 1.1, registered (CD, files dated 1996-12-24) | CONFIRMED: string `WACKY WHEELS VERSION 1.1`; `original/SHA256SUMS` (sha256 376260464dd60c1a...) |
 | Format | MZ stub with DOS/4GW (Rational 1990-1994) bound in front of the program's own MZ at file 0x26654; its LE header at 0x290FC, page offsets relative to that inner MZ | CONFIRMED: `tools/mz.py`, `tools/le/leparse.py` (bound support added for this) |
+| SETUP.EXE | Also a bound DOS/4GW LE (LE header at 0x290FC, Watcom C/C++32 run-time, "WACKY WHEELS VER 1.1 setup. Copyright BEAVIS-SOFT 1994"), not a 16-bit MZ program | CONFIRMED: `tools/mz.py`, `tools/le/leparse.py original/SETUP.EXE .work/le/setup`; what it writes: findings/formats.md "SETUP.EXE" |
 | Objects | obj1 code at 0x10000, 0x4BE2E bytes; obj2 data at 0x60000, 0x33100 bytes (stack at its end); entry 0x411A8 | CONFIRMED: `.work/le/ww.json` |
 | Compiler | Watcom C/C++32 | CONFIRMED: run-time strings `WATCOM C/C++32 Run-Time system. (c) Copyright by WATCOM International Corp. 1988-1993` |
 | Version | **9.5b** (9.5 with patch levels A and B) | STRONGLY SUPPORTED: `tools/wc/libmatch.py ww` against CLIB3R.LIB of 9.5 / 9.5a / 9.5b: 72 / 84 / 93 modules found byte for byte (fixup bytes masked). 12 modules occur only from 9.5a on, 9 more only in 9.5b (`exit` 0x42C10, `fread` 0x42C68, `fseek` 0x42E91, `signal` 0x431FA, `scnf` 0x54651, `grownear`, `allocfp`, `grabfp87`, `sigsys`); none favours an older level. Not yet excluded: a later 9.5 patch or 10.0 (copyright 1988-1993 argues against 10.0) |

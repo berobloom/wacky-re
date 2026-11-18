@@ -114,8 +114,9 @@ What the sprites look like and what the player sees are not checked live.
   A computer driver: kind 5 spins (`f58 = 2`, voice 0x19), any other kind slows it (`f58 = 1`,
   voice 0x11; in a network race the taunt path above). A human: in a two-player race kinds 0-2
   knock the kart out (`f02 = 2`, engine stopped); kind 4 sets `kart.f14`, which swaps the two
-  inputs `key88cd5`/`key88cdd` (input bits 1 and 2, LIKELY left/right: they set turn frames
-  `f1c` 1 and 3) in `kart_frame` 0x290a0 (**reversed controls**, LIKELY; who
+  inputs `key88cd5`/`key88cdd` (steer left / steer right: the state bytes of key slots 0 and 1,
+  whose SETUP labels are "Steer left"/"Steer right", findings/formats.md) in `kart_frame`
+  0x290a0 (**reversed steering**; who
   clears `f14` is not found in the C - its stamp `f8a` has no reader there, OPEN); kind 5 spins;
   the rest play the hit animation (`f1a = 7`, `tb7b448`). Kind 5 counts as kind 0 in two-player
   and network races.
