@@ -22,26 +22,28 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: no open status in `src/nearmiss.txt` (iter 54 took `wtext` 0x146d4 to MATCH with one
-   `volatile int sl[4]`; `screenshot` 0x114c8, `release_check` 0x034458 and `shot_step` 0x25e6c were
-   probed and left as SKIP - their notes now say what was tried). Take one only with an idea its
-   `differs:` note does not list. nmrefs after every change; `src/check.sh` count +1 before
-   `src/matched.baseline` goes up.
+1. Near misses: no open status in `src/nearmiss.txt`; iter 55 re-probed `players_project` 0x255d4
+   (10 loop-shape variants, all = control: the `v7d800` register cache is not a source-shape fact).
+   Take one only with an idea its `differs:` note does not list. nmrefs after every change;
+   `src/check.sh` count +1 before `src/matched.baseline` goes up.
 2. Live harness, next time it is up (QUESTIONS 19 second half): pick the BONUS PACK ZONES choice
    (`zones_menu` 0x16664 -> `v7ecb4` = 3), confirm the loaded track is 16..20, and check whether
    `in_zone` 0x125bc / the `map_at` users do anything at all in such a race.
 3. `ctl775dc` 0x775dc = `cfg77128` + 0x4b4 (offline): its two stores are 0x31b42 and 0x324f9 in
    the unnamed 0x30aae - map that function and the range this word takes; `main_menu` 0x1fdec
    copies it into `v7ecb4`, which selects the track group.
-4. `SPRITE.ATR` (offline): 36 `struct attr` records of 40 bytes (1442 = 2 + 36 * 40, `nsprattr`
-   word CONFIRMED); lay out the fields against `sprites_load` 0x13a74 and `ent_sprites_load`
-   0x21310 (`src/ww.c:2693`, `2731-2745`) and name the 36 ids seen in the `.SPW` census.
-5. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
+4. `kind` 3..7 (offline): the five single sets H1/H15/H12/H16/H20 - read the `kind` branches of
+   `ents_flags` 0x213f0, `shot_hit` 0x218a4 and `kart_state` 0x224ec and say what each one does in
+   the race (findings/formats.md now pins the record layout and the id -> name table).
+5. `.SP` payload format (offline): render one record - `H1.SP` 1536 bytes = 2 frames of 32x24 - from
+   `original/WACKY.DAT` with `tools/le/datdump.py` and look at it; the port blits these bytes today
+   without knowing whether the 32x24 is 8bpp indexed or has a mask plane.
+6. `SETUP.EXE` (MZ 16-bit, never analysed; `tools/mz.py` loads it): what it writes into
    `WACKY.CFG` - the only thing that can explain the zeroed version/`+0x0a`/`+0x14`/`+0x18`
    and 24 records, and the 12 key words of `cfg7b6d8` (QUESTIONS 16/17).
-6. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
+7. The two C gaps: 0x1f824-0x1f857 (small, between two rebuilt functions) and the fade-out
    0x1bf7e-0x1c0f3 with its out-of-line tail at 0x32cc1-0x32cf7 (`pic_show`'s padding diff).
-7. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
+8. `.PAR` pixel geometry (QUESTIONS 20): needs one harness memory read of 0xa7d00..0xa95ff after
    the blit - do it with the next live-harness session, do not guess it in the port.
 
 ## BLOCKED

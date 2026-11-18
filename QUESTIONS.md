@@ -336,3 +336,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    (320), 2.8 (640), 5.77 (1280): a horizontal period of 160 pixels and a smooth vertical step.
    Test that would settle it: dump the 6400 video bytes after the blit through the harness (memory
    read of 0xa7d00..0xa95ff) and see which four blob bytes land on one screen byte.
+21. **OPEN** (findings/formats.md "SPRITE.ATR"): what do `kind` 3..7 do in the race? CONFIRMED: the
+   record field at +0x00 partitions the 36 sets - kind 0 the twelve one-frame OB sets, kind 1 OB1.SP
+   alone, kind 2 the eighteen animated H sets, and kinds 3,4,5,6,7 exactly one set each: H1.SP (id 0,
+   the only set in all 42 `.SPW` lists, 69 instances), H15.SP, H12.SP, H16.SP, H20.SP; the game reads
+   the field only at 0x2139d (`v7eda4` = first kind-2 id), 0x21439/0x21454 (`ents_flags` 0x213f0:
+   `kind >= 2` clears `ents[].f2` in an off-line KID MODE race, `kind > 2` is rewritten to `v7eda4`
+   under `netvoices`) and in the hit tests (`src/ww.c:9038,9043,10121`, `kart_state`'s `k != 1` /
+   `k == 2` arms). Also CONFIRMED unused: +0x02 (10 in all 36), +0x08/+0x0a (copies of w,h) and
+   +0x18..+0x23 (zero) - no read of those offsets exists in 0x10260-0x36a60. Test: read the `kind`
+   branches per function offline and state, per kind, what the player notices (shootable? score?
+   blocks the kart?).
