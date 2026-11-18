@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **199 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
+- **200 of 281 compared functions byte-identical** (`src/matched.baseline`, `src/check.sh`). C covers
   0x10260-0x36a4d bar the gaps 0x1bf7e-0x1c0f3 (a fade-out) and 0x1f824-0x1f857; 0x36a4e on is the
   hand-written asm module.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
@@ -22,7 +22,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Near misses: no open status in `src/nearmiss.txt`; iter 55 re-probed `players_project` 0x255d4
+1. Near misses: iter 56's lever is `tools/wc/permute.py` (MATCHING.md section 7): release_check
+   MATCH, gains in 25 near misses; every winner verified in place and its diff read. No open status in `src/nearmiss.txt`; iter 55 re-probed `players_project` 0x255d4
    (10 loop-shape variants, all = control: the `v7d800` register cache is not a source-shape fact).
    Take one only with an idea its `differs:` note does not list. nmrefs after every change;
    `src/check.sh` count +1 before `src/matched.baseline` goes up.
