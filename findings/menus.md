@@ -108,6 +108,15 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   is not rebuilt and net_end 0x110d4 passes 4 after filling `netstats`, so which buffer it reads
   is not proven.
 
+- CONFIRMED (0x15f98 `cmp word [esp+0xc8],0` and 0x15fad `movsx edx, word [esp+0xc8]` are the same
+  slot, the frame's spill of menu's 4th argument; the only one of the code module's 38 `msgbox`
+  0x2a414 call sites that passes a variable instead of 0 or a literal; experiment:
+  `tools/wc/difffn.py engines_menu` ends with `spr_y` 0x52 in the original and 0x40 in a build that
+  passes the literal 0x3c there): `menu` 0x155c0's 4th argument does
+  double duty - nonzero also draws 'LEE & JACKSON LAWNMOWERS' (when `netgame == 0`) at y = that same
+  argument. `engines_menu` 0x167d8 is the only caller passing nonzero (0x4e, 0x168cd), so the sponsor
+  banner belongs to the engine-choice menu and sits on the row its caller chose.
+
 ### The F1 controls screen (fn_1c0f4, 0x1c0f4)
 
 - CONFIRMED (rebuild `src/ww.c`: 1944 bytes, the same size as the game's, 67 aligned instruction

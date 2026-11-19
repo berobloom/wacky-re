@@ -205,7 +205,7 @@ def main():
     if not todo:
         for line in open(os.path.join(ROOT, 'src', 'nearmiss.txt')):
             f = line.split()
-            if len(f) >= 3 and f[1].startswith('0x') and 'MATCH' not in line:
+            if len(f) >= 4 and f[1].startswith('0x') and not f[3].startswith('MATCH'):
                 todo.append((f[2], int(f[1], 16)))
     for name, addr in todo:
         naddr = new_addr(name)

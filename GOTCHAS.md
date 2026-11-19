@@ -66,7 +66,10 @@ it can be copied back into DREA.
   0x36a4e in the original, below `_TEXT` in the hybrid) or a helper runs in one build and is stubbed
   in the other; a run stopped by the instruction cap is at whatever progress its own code reached, so
   a DIFF there needs re-running at two caps before it means anything; the DPMI zero page is mapped and
-  compared, which turns a null-pointer crash into data that can be diffed.
+  compared, which turns a null-pointer crash into data that can be diffed; and its no-argument sweep
+  selects the open lines with `'MATCH' not in line`, so a line whose note only *quotes* another
+  function's status is skipped - iter 70's one real bug (menu 0x155c0's msgbox y) sat on the
+  `engines_menu` line the sweep never printed, and was found by naming that function explicitly.
 
 Rules only: each entry is the rule plus one piece of evidence (an address). The per-function story
 (what was tried, row counts) lives in that function's `differs:` note in `src/ww.c` and in git

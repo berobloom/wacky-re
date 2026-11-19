@@ -3356,8 +3356,12 @@ void f377ae(void);
 void fn_1c068(void);
 void fn_1c0ac(void);
 
-/* differs (233 rows, was 267: `isnet` is an int - the game loads it `movzx eax,al; mov [esp+0x84],eax`
-   0x1563d, ours had a 16-bit `movzx ax,al`): stack slots all permuted (QUESTIONS 2; the game's
+/* differs (266 rows, 228 before iter 70's behaviour fix and 233 before that: the sponsor banner's y
+   is menu's own `c` (0x15f98 tests [esp+0xc8], 0x15fad passes that same slot to msgbox) and not a
+   literal, which keeps `c` live to 0x15fad and moves all 20 scalar slots: +38 rows, difffn
+   engines_menu now SAME. Before it: 233 rows, was 267, `isnet` is an int - the game loads it
+   `movzx eax,al; mov [esp+0x84],eax` 0x1563d, ours had a 16-bit `movzx ax,al`): stack slots all
+   permuted (QUESTIONS 2; the game's
    menu(n,d,mode,c) has mode@0xc4, c@0xc8, n@0xcc, d@0xd8 and 23 scalar slots, frame 0xe0; ours 20, frame
    0xd4); the game homes `four` in EBP (`mov ebp,4` 0x15640) where ours spills it; the game has ONE epilogue
    (`mov word [v88c28],0; mov eax,[esp+0xbc]; add esp,0xe0; ret` 0x163df) where our five returns get five;
@@ -3605,7 +3609,9 @@ short menu(short n, short d, short mode, short c)
             msgbox(pbuf, 0x3c);
         }
         if (c && netgame == 0)
-            msgbox("LEE & JACKSON LAWNMOWERS", 0x3c);
+            /* 0x15fad `movsx edx, word [esp+0xc8]`: the sponsor banner goes at the y the caller
+               handed menu (engines_menu passes 0x4e, 0x168cd), not at a constant row */
+            msgbox("LEE & JACKSON LAWNMOWERS", c);
         if (net7ed78 && netgame == 2 && mode == 0)
             msgbox("REMOTE IS CONTROLLING MENU", 0x3a);
         if (v7ecac)
