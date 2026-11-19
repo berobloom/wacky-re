@@ -42,7 +42,7 @@ import objmatch as M                                                            
 
 md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 CMOD_END = 0x36a4e        # the game's C module ends here (STATUS, iter 56c); asm module + clib above
-COUNT = 3_000_000         # instruction cap; a run that hits it is reported CAPPED
+COUNT = int(os.environ.get('COUNT', '3000000'))   # instruction cap; a run that hits it is CAPPED
 CALLS = int(os.environ.get('CALLS', '300'))   # stop after this many stubbed calls: the loop
 # counter a menu function never leaves, and the one thing that puts both runs at the same progress
 ACC = {16: 'read', 17: 'write', 18: 'fetch', 19: 'write_prot', 20: 'read_prot', 21: 'fetch_prot'}

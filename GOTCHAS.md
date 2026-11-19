@@ -55,6 +55,19 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **Compare behaviour, not bytes: run the function.** `tools/wc/difffn.py` calls one function in
+  `original/WW.EXE` and in the hybrid build (`.work/link/WWNEW.EXE`, leparsed to `.work/le/wwnew`),
+  each on its own image, and compares every byte of the data segment plus the zero page, EAX, and the
+  library calls. It found `players[].f14` stored as 0 where the game stores `abs(v88c04 - x)` - one
+  store, same address, same instruction on both sides: no row count, address census or constant
+  census can see that (iter 69, findings/game-loop.md). Traps of the tool itself: one function per
+  process (a second `Uc` in the same Python process dies with "Could not allocate dynamic translator
+  buffer"); the library stub range is the mirror image in the two builds (above the game's C module
+  0x36a4e in the original, below `_TEXT` in the hybrid) or a helper runs in one build and is stubbed
+  in the other; a run stopped by the instruction cap is at whatever progress its own code reached, so
+  a DIFF there needs re-running at two caps before it means anything; the DPMI zero page is mapped and
+  compared, which turns a null-pointer crash into data that can be diffed.
+
 Rules only: each entry is the rule plus one piece of evidence (an address). The per-function story
 (what was tried, row counts) lives in that function's `differs:` note in `src/ww.c` and in git
 history. Before adding an entry, grep this section and extend the matching one; tag entries that are

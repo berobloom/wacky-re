@@ -150,6 +150,18 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    (v7d874/EDX, stored before shot_step, reloaded after, stored at both exits) walk shots[] with the
    global itself; written with a local pointer they differ in registers only (near misses).
 
+24. **OPEN** (iter 69, `tools/wc/difffn.py`, src/nearmiss.txt engines_menu): running `engines_menu`
+    0x167d8 in the original and in the hybrid build leaves different memory - the game ends with
+    `spr_y` (0x88b34) = 0x52, our build 0x40. The two last writes to it are analogous instructions in
+    helpers (the game's msgbox 0x2a469 `mov word [0x88b34],si` then print_at 0x149c5
+    `mov word [0x88b34],dx`, ours 0x4f455 / 0x3a29d) with different values, and it does not move when
+    the instruction cap goes from 1M to 6M, so it is not the two runs sitting at different loop
+    progress. Run on their own, msgbox (a MATCH) and print_at are each SAME, so the value comes from
+    what engines_menu hands them: the y it computes for a menu row, 18 (0x12) lower in ours. The
+    `menu(2, 0x4e, 0, 0)` call site is byte-identical (our 0x6daf-0x6db9 = the game's
+    0x168c8-0x168d2), so the arguments are not the difference. Untriaged: scores_screen 0x1ce14 ends
+    with 0x7d760 = 0xe8 (game) / 0xe4 (ours), which may be the same cause one level down.
+
 ## Hypotheses
 
 - LIKELY: <claim>. For: <evidence>. Against / gap: <what is missing>.

@@ -24,25 +24,22 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Screen-level is the only lever left. `tools/link/racetest.sh` ran RACETEST OK in iter 67 (the last
-   code change: `cars_menu`'s carstat==0 slide arm now stores `ents[i].frame = 2`, game 0x1b7de), so the
-   hybrid build is good - run it again at the next code change, then drive into CHOOSE VEHICLE and
-   compare the slide (the icon frame each row gets while sliding is what that store decides,
-   findings/car_select.md), then the race frames (the 0x7b238 animation table, a `clipy` sprite clipped
-   at row 199, findings/video.md).
-2. Behaviour classes the tools cover are worked out: iter 68 checked every open line of
-   `src/nearmiss.txt` against `tools/wc/nmrefs.py` and all 18 functions it flags with `DIFFER` or a
-   `consts` line already carry a `BEHAV:` verdict, so a behaviour night needs a new class. One exists
-   now: `tools/wc/datamatch.py ww .work/src/WW.OBJ` diffs our data groups with the game's byte for byte
-   (base voted, not typed). Clean: our CONST group 0x60004-0x6235A equals the game's at every byte
-   something reads; 25 differing bytes are dead pooled-literal space (findings/executables.md "Data
-   layout (obj2)"), and `test_datamatch.py` pins it with a flipped literal byte. Still open from it:
-   7869 initialized bytes of the game come from BLOB.OBJ rather than from our C - the credits table and
-   the praise strings are `extern` (QUESTIONS 23).
-3. `tools/wc/nearmiss.sh` (~5 min) is overdue and its first column drifts both ways (iter 67 corrected
-   cars_menu 433 -> 431 by hand; fn_17928 read 7 in the file and 25 on the committed code, iter 65).
-4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept), so
-   iters 61-68 took the overnight prompt's step 2 again; the human should put a real item there.
+1. `engines_menu` 0x167d8 is a known behaviour bug with no cause yet (QUESTIONS 24): `tools/wc/difffn.py
+   engines_menu` ends with `spr_y` 0x52 in the game and 0x40 in ours, stable from a 1M to a 6M
+   instruction cap, while `msgbox` (a MATCH) and `print_at` are each SAME run on their own. Find which
+   row's y differs - the two last spr_y writes are in those helpers, so read the value engines_menu
+   hands them (its `menu(2, 0x4e, 0, 0)` call site is byte-equal, so not the arguments). `scores_screen`
+   ends with 0x7d760 = 0xe8/0xe4 and may be the same cause one level down.
+2. Run the behaviour sweep after every C change (69 s for all 76 open lines, one process per function):
+   `awk '$2 ~ /^0x/ && $0 !~ /MATCH/ {print $3}' src/nearmiss.txt | while read n; do
+   .work/venv/bin/python tools/wc/difffn.py $n; done`. It found `players[].f14` (iter 69), a wrong
+   stored value that check.sh, fndiff rows, and nmrefs' address and constant censuses all pass.
+3. The f14 fix has not been seen on screen yet: the racetest overview is unchanged (RACETEST OK 0.0).
+   `cpu_drive` 0x28cac walks the karts into their slots with `dir = +-f14` over the first frames of the
+   race, so compare a capture taken *inside* the first race, not the overview.
+4. 22 of the 76 open lines still have no behaviour verdict (14 hit the instruction cap, 8 the call cap,
+   2 crash at the same instruction). Each needs its loop ended or its pointer globals seeded; try
+   `COUNT=`/`CALLS=` first, they are env knobs of difffn.py.
 
 ## BLOCKED
 
