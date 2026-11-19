@@ -341,7 +341,21 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    +0x18..+0x23 (zero) - no read of those offsets exists in 0x10260-0x36a60. Test: read the `kind`
    branches per function offline and state, per kind, what the player notices (shootable? score?
    blocks the kart?).
-22. **OPEN** (six switch tables that sit inside MATCHed functions; `tools/wc/fixsites.py`, iter 66):
+22. **RESOLVED** iter 67 (six switch tables that sit inside MATCHed functions; `tools/wc/fixsites.py
+    --arms NAME`, iters 66-67): all 54 entries decided - 14 `kart_frame` by hand (iter 62), 4
+    `fn_19db8` (iter 66), and the last 36 (`cars_menu` 8, `kart_fire` 9, `main_menu` 13, `trial_book` 6)
+    by comparing the two blocks an entry points at: each side's 4-byte fields resolved to the address
+    that side means, jump targets and fields pointing into a near-miss body masked, the numbers in the
+    op_str masked (the game folds a base into a displacement), 1- and 2-byte immediates included. One
+    BUG came out of it: `cars_menu`'s carstat==0 slide arm lost the store `ents[i].frame = 2`
+    (game 0x1b7de, findings/car_select.md) - no row count and no address-set census saw it, the global
+    `ents` is read by both sides either way. The other 35 pairs are same-shape: the game keeps values in
+    registers we re-read or reload (v7eb9c in ECX, curpos hoisted 0x24613), uses another register (the
+    voice number ESI vs CX), and schedules independent stores differently - in the four `main_menu`
+    order-only blocks the read-before-write order of every touched address is kept.
+    The 36 entries and how they were decided, per function, are in `src/nearmiss.txt`'s `BEHAV:` cells.
+    Old text follows.
+22b. (iter 66, open then) six switch tables that sit inside MATCHed functions:
    Watcom emits a switch's table *in front of* its function, so those dwords are inside the preceding
    function's bytes and MATCH there while their targets are arms of a near miss: `cpu_drive_` 14 ->
    `kart_frame` (the table at 0x29068), `ctl_label_` 4 -> `fn_19db8` (0x19da8), `fn_1a2f8_` 8 ->

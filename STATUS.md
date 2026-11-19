@@ -24,31 +24,21 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. The address/const/count census class is closed on both halves. All 21 nmrefs candidates carry
-   `BEHAV:`, and the near-miss half (20 one-sided items) is done; what is left of it is 35 switch-table
-   entries the byte census cannot decide, hand-check them with
-   `tools/wc/fixsites.py ww .work/src/WW.OBJ --arms NAME`: the tables at 0x1a360 (8 entries, arms of
-   `cars_menu`), 0x24340 (9, `kart_fire`), 0x1f824 (12 more, `main_menu`) and 0x2e4a0 (6, `trial_book`)
-   - QUESTIONS 22. Iter 66 did the MATCH half: 4556 sites in the 202 matched functions, 0 disagree (no
-   matched function reads another global, calls another function or passes another literal), and two
-   tables resolved same-shape (`kart_frame`'s 14 arms with iter 62's check, `fn_19db8`'s 4; the one
-   entry that leaves its function, `main_menu` 0x1f844 -> `engines_menu`'s epilogue 0x16978, is the
-   game sharing a tail).
-   Iter 65 also ran `tools/wc/globrefs.py ww .work/src/WW.OBJ NAME 0xADDR` over all 102 lines of
-   src/nearmiss.txt (after fixing that tool's wrong bodies and its half-read operands): 20 near misses
-   still show a one-sided non-string item and all 20 carry `BEHAV:`; the last fresh one, showlines
-   0x2a268, is SAME. The LAYOUT trio (demo_rec 0x2e318, pic_show 0x32c98, fade_out 0x1bf94): every
-   cross-region jump lands at the same intra-function offset as the game's, only the displacement
-   differs. Ignore `game only 0x6xxxx` string lines (GOTCHAS).
-2. Screen-level is the only lever left: `tools/link/racetest.sh` last ran RACETEST OK (iter 60) and
-   iters 61-66 changed no executable code, so none was run - run it once at the next code change,
-   then drive into CHOOSE VEHICLE and compare, then the race frames (the 0x7b238 animation table, a
-   `clipy` sprite clipped at row 199, findings/video.md).
-3. `tools/wc/nearmiss.sh` (~5 min) is overdue and its first column drifts both ways: fn_17928 read 7
-   in the file and 25 on the committed code, 15 of those one whole-frame swap of numbuf/msg (a BLOCKED
-   class - re-measure, do not chase). Iter 65 corrected fn_17928's column only.
+1. Screen-level is the only lever left. `tools/link/racetest.sh` ran RACETEST OK in iter 67 (the last
+   code change: `cars_menu`'s carstat==0 slide arm now stores `ents[i].frame = 2`, game 0x1b7de), so the
+   hybrid build is good - run it again at the next code change, then drive into CHOOSE VEHICLE and
+   compare the slide (the icon frame each row gets while sliding is what that store decides,
+   findings/car_select.md), then the race frames (the 0x7b238 animation table, a `clipy` sprite clipped
+   at row 199, findings/video.md).
+2. The switch-table census class is closed: all 54 table entries in the 6 tables that sit inside MATCHed
+   functions are decided (QUESTIONS 22), one of them a real BUG now fixed. `tools/wc/fixsites.py
+   --arms NAME [-v]` prints the two arm blocks side by side if a table is ever added; 16 pairs still
+   print DIFFER because a register or a stack slot differs - each one's verdict is in the function's
+   `BEHAV:` cell in src/nearmiss.txt, so re-reading them is wasted time.
+3. `tools/wc/nearmiss.sh` (~5 min) is overdue and its first column drifts both ways (iter 67 corrected
+   cars_menu 433 -> 431 by hand; fn_17928 read 7 in the file and 25 on the committed code, iter 65).
 4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept), so
-   iters 61-66 took the overnight prompt's step 2 again; the human should put a real item there.
+   iters 61-67 took the overnight prompt's step 2 again; the human should put a real item there.
 
 ## BLOCKED
 

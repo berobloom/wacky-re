@@ -180,6 +180,23 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   cars_menu, kart_fire, main_menu, trial_book), because a near miss's blocks are laid out differently
   and its intra-function offsets mean nothing (QUESTIONS 22). `tools/wc/test_fixsites.py` pins both.
   Fed to DREA the same session (harness/TRAPS.md "Old compilers", commit e28a7eb). [generic]
+- **The switch-table entries that census leaves over ARE decidable - compare the two arm blocks, not the
+  entry addresses** (iter 67, `tools/wc/fixsites.py ww .work/src/WW.OBJ --arms NAME [-v]`). A pair is linked
+  by its slot: both sides' table sits at the same mirrored offsets of a MATCHed function, so slot *i* of ours
+  is slot *i* of the game's and the question is what the two blocks DO. Per block (up to its first branch or
+  `ret`): mnemonic + `op_str` with the numbers masked (the game folds a base into a displacement -
+  `[eax+0x6aaa2]` is our `[eax+0x12]` + fixup) followed by the resolved fields: 4-byte disps/immediates
+  through the same fixup resolution the census uses, **every 1- and 2-byte immediate too** (`mov word
+  [ents frame], 6` hides its 6 in a 2-byte field, and a wrong one there is exactly this bug class), jump
+  targets masked and any field pointing into a near-miss body masked. `sorted(a) == sorted(b)` says "same
+  instructions, another order" - then hand-check that the read-before-write order of each address the block
+  touches held. Of the 36 entries left from iter 66, that found ONE bug (`cars_menu`'s carstat==0 slide arm
+  never stored `ents[i].frame = 2`, game 0x1b7de: the arm reads `ents` either way so no address census saw
+  it, and fndiff rows went 433 -> 431 when the store came back) and 35 same-shape (another register; the
+  value carried in ECX to its store, 0x2459c -> 0x245bb; `mov ecx,[curpos]` 0x24613 hoisted above a branch;
+  independent stores swapped). Capstone needs the game's virtual address, not the file offset, or every
+  branch/call target it prints is off by the 0x10000 code base - that faked 3 "different call targets".
+  Fed to DREA the same session (harness/TRAPS.md "Old compilers"). [generic]
 - **Our C can hold the game's expression and never use it, and then both counters move the WRONG way**
   (iter 60, cars_menu: `capx = (0x140 - 8*strlen(buf1))/2` was in the source but the print call passed
   `x2e`, so 9.5b deleted the division and the caption drew at x=46 instead of centred; the same

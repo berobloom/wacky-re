@@ -46,6 +46,7 @@ Exit 0 prints the summary; a disagreeing site is printed and makes the exit 1.
 import os
 import re
 from bisect import bisect_right
+import difflib
 import struct
 import sys
 
@@ -222,6 +223,12 @@ def main():
                     armok += 1
                     print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)  %d insns SAME'
                           % (i, g, addr(g), ours, addr(ours), len(so)))
+                elif sorted(so) == sorted(sg):
+                    # the same instructions, another order: scheduling, unless a moved read/write pair
+                    # touches the same address - read the pair before calling it same-shape
+                    armok += 1
+                    print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)  %d insns SAME (order only)'
+                          % (i, g, addr(g), ours, addr(ours), len(so)))
                 else:
                     armbad += 1
                     print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)  DIFFER game %d / ours %d insns'
@@ -229,10 +236,26 @@ def main():
                     for k in range(max(len(sg), len(so))):
                         print('      game %-42s | ours %s'
                               % (sg[k] if k < len(sg) else '', so[k] if k < len(so) else ''))
+                if verbose and so != sg:
+                    for k in range(max(len(sg), len(so))):
+                        print('      + game %-40s | ours %s'
+                              % (sg[k] if k < len(sg) else '', so[k] if k < len(so) else ''))
+                    # print only the regions that differ (an inserted instruction shifts a positional
+                    # pair, which buries the one line that matters)
+                    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, sg, so,
+                                                                      autojunk=False).get_opcodes():
+                        if tag == 'equal':
+                            continue
+                        for k in range(max(i2 - i1, j2 - j1)):
+                            print('      game %-42s | ours %s'
+                                  % (sg[i1 + k] if i1 + k < i2 else '',
+                                     so[j1 + k] if j1 + k < j2 else ''))
 
     if args:                       # --arms NAME: compare the two blocks an entry points at, the
-        for nm in args:            # hand check the byte census cannot do. A pair is already linked:
-            arm(nm)                # both entries sit in the same slot of the same mirrored table.
+        verbose = '-v' in args     # hand check the byte census cannot do. A pair is already linked:
+        args = [a for a in args if a != '-v']
+        for nm in args:            # both entries sit in the same slot of the same mirrored table.
+            arm(nm)                # -v also prints the whole pair for the order-only ones.
         print('%d/%d arm blocks equal, %d differ' % (armok, armtot, armbad))
     n = sum(counts.values())
     print('%d sites in %d matched functions: %s | %d disagree'
