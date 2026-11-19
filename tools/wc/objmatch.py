@@ -13,6 +13,13 @@ Then the fixups of the matched functions are checked against the game's bytes (3
 self-relative): an external named in analysis/PROG_names.txt must point at that address; one not named is
 listed as a proposed name; references into one of the module's own segments must agree on one base address
 per segment (the module's _TEXT base follows from the function addresses).
+
+A near rel32 call or jump between two functions of the same object carries no fixup (the compiler
+resolves it), so its 4 bytes depend on where our build places the target. Such a function is a MATCH
+(the line says how many branches were compared by target) when every other byte agrees and each
+differing rel32 branch lands on the same function + offset in both builds: ours resolved through the
+object's publics, the game's through the address that function is compared at (iter 74, reccmp's rule;
+demo_rec, pic_show and fade_out had only these bytes differing, iter 65 checked their targets by hand).
 """
 import json
 import os
@@ -122,6 +129,37 @@ def check_fixups(recs, pubs, placed, code, cbase, known):
         print('  unnamed %-16s %s' % (nm, ' '.join('0x%06x' % a for a in sorted(addrs))))
 
 
+def rel32_by_target(b, m, code, a, cbase, seg, off, pubs, addr_of):
+    """Number of rel32 branches that differ only in displacement but land on the same function +
+    offset (see the module doc), or None when anything else differs."""
+    import capstone
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+    game = code[a:a + len(b)]
+    ours = list(md.disasm(bytes(b), off))
+    theirs = list(md.disasm(game, a + cbase))
+    if sum(i.size for i in ours) != len(b) or len(ours) != len(theirs):
+        return None
+    n, k = 0, 0
+    starts = sorted((o, nm) for sg, o, nm in pubs if sg == seg)
+    for i, j in zip(ours, theirs):
+        if i.size != j.size:
+            return None
+        diff = [x for x in range(i.size) if not m[k + x] and b[k + x] != game[k + x]]
+        if diff:
+            op = bytes(b[k:k + i.size])
+            imm = 1 if op[0] in (0xe8, 0xe9) else 2 if op[0] == 0x0f and 0x80 <= op[1] <= 0x8f else 0
+            if not imm or i.size != imm + 4 or op[:imm] != game[k:k + imm] or min(diff) < imm:
+                return None
+            t_ours = i.address + i.size + struct.unpack_from('<i', op, imm)[0]
+            t_game = j.address + j.size + struct.unpack_from('<i', game, k + imm)[0]
+            f = [(o, nm) for o, nm in starts if o <= t_ours]
+            if not f or not addr_of(f[-1][1]) or addr_of(f[-1][1]) + t_ours - f[-1][0] != t_game:
+                return None
+            n += 1
+        k += i.size
+    return n
+
+
 def main():
     if len(sys.argv) < 3:
         print(__doc__)
@@ -148,7 +186,15 @@ def main():
         a = want[fi] - cbase if fi < len(want) and want[fi] else None
         d = None if a is None else next((k for k in range(len(b)) if not m[k] and code[a + k] != b[k]), None)
         hits = L.find(code, b, m)
-        if a is not None and d is None:
+        r = None
+        if a is not None and d is not None:
+            r = rel32_by_target(b, m, code, a, cbase, seg, off, pubs,
+                                lambda nm: want[[q[2] for q in pubs].index(nm)] if nm in [q[2] for q in pubs] else None)
+        if r:
+            placed[name] = want[fi]
+            print('%-20s %3d bytes  MATCH at 0x%06x (fixup bytes not compared; %d rel32 branch%s compared by target)'
+                  % (name, len(b), want[fi], r, '' if r == 1 else 'es'))
+        elif a is not None and d is None:
             placed[name] = want[fi]
             print('%-20s %3d bytes  MATCH at 0x%06x (fixup bytes not compared)' % (name, len(b), want[fi]))
         elif hits:

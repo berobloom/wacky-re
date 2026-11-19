@@ -6,8 +6,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **204 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 74: check.sh also
-  compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted), and iter
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 74: check.sh also
+  compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
+  compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
+  MATCH, `tools/wc/test_objmatch.py`), and iter
   66 checked what a MATCH masks inside those 202: all 4556 linker-filled operands point where the
   game's point (`tools/wc/fixsites.py`, 0 disagreements; `test_fixsites.py`). C covers
   all of 0x10260-0x36a4d (no gaps left, iter 56c); 0x36a4e on is the
