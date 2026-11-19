@@ -97,7 +97,15 @@ it can be copied back into DREA.
   a DIFF byte that is a **stack address** is not behaviour - `palptr` 0x7d760 ends scores_screen
   0x1ce14 pointing at fade_in's local palette buffer (0x32d4c `mov dword [0x7d760],eax`), which sits
   4 bytes lower in our build because the frames are a different size, while the 0x800 bytes below it
-  are byte-equal (iter 70: compare what the pointer points at before calling it a BUG).
+  are byte-equal (iter 70: compare what the pointer points at before calling it a BUG). A **capped**
+  run needs a seed, and the seed has to be what the loop cannot get by itself: `SEED=addr=value[:b|:w|:d]`
+  writes globals into both images, `TICK=n` adds n to `ticks` 0x7e720 per stubbed call because the
+  timer ISR is stubbed (iter 75). A static seed can never exit a wait that compares a counter with a
+  snapshot of itself (menu 0x16057 `jl 0x1604c` after 0x15bd9 stored `ticks` into 0x7ea70), and it can
+  set an input flag but never release one - the release spin 0x16286 `cmp byte [0x88cd0],1; je 0x16286`
+  is unseedable, so look for the branch that returns without waiting (0x16331). The control run needs
+  the function to be a public in `.work/link/WWORIG.MAP`: a static original (`com_wait_byte` 0x2df70)
+  has no control. Recipe and its evidence: findings/menus.md, findings/serial.md.
 - **`tools/le/disasm.py` stops at the first undecodable byte**, so a whole-module census must be
   restarted from the next address: `disasm.py ww 0x10000 0xbad9` ended at 0x1ffff after 15506 lines and
   the file reads complete - it made iter 70 write "38 `msgbox` call sites" where the C module has 53

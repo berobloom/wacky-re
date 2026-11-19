@@ -171,6 +171,39 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   after-the-shoot call shows PRESS FIRE and waits. The rebuild had the tail unconditional until
   iter 37; `if (!after) return;` gives the game's 1520 bytes (10 rows left, all codegen).
 
+## `menu` 0x155c0 never ends under emulation: what makes it return (CONFIRMED, iter 75)
+
+Every capped near miss whose run sits in a menu is inside `menu` 0x155c0 (31 direct call sites in the C
+module, `classes_menu`'s at 0x19f87). Two blockers, both measured with `tools/wc/difffn.py`
+(a capstone census of the C module 0x10000-0x36a4e is quoted below):
+
+- The frame delay `while (ticks - v7ea70 < 8)`: 0x16047 loads `v7ea70` 0x7ea70 once, then 0x1604c
+  loads `ticks` 0x7e720, 0x16052 `sub edx,eax`, 0x16054 `cmp edx,8`, 0x16057 `jl 0x1604c`. The
+  snapshot is `ticks` itself (0x158f6 and 0x15bd9 `mov [0x7ea70],eax` after `mov eax,[0x7e720]`), and
+  the C module never increments `ticks`: of its 85 stores 83 are `mov dword [0x7e720],0`, one is
+  `mov [0x7e720],ebx` at 0x11166 with `ebx` known 0 (0x11151 `test ebx,ebx; jne 0x1118f`), and one is
+  the race-clock restore `mov eax,[0x7ec4c]; mov [0x7e720],eax` 0x32598. The incrementer is the timer
+  ISR above the C module, which difffn stubs. So **no static `SEED=` of 0x7e720 or 0x7ea70 can make
+  the difference >= 8.** `TICK=8` (difffn.py, iter 75) adds 8 to 0x7e720 on every stubbed call - the
+  loop tail's frame pump `call 0x37de0` 0x16004 is the stubbed call - and the delay ends.
+- Without input `menu` still does not return: the key globals are set only by the stubbed asm input
+  layer (C-module reads/writes: 0x88ccd 143/1, 0x88cd0 60/3, 0x88cce 21/1; and the three C writes to
+  0x88cd0 - 0x15546, 0x2fd18, 0x367f3 - all store 0, as do 0x32ba4 for 0x88cce and 0x32bab for
+  0x88ccd). So a seeded key flag is cleared but never re-set, and the release wait at 0x16286
+  (`cmp byte [0x88cd0],1; je 0x16286`) spins.
+  The way out is the joystick arm: `SEED=0x88cce=1:b` -> 0x16258 sees it nonzero, 0x16261 sets
+  `joy88b40` 0x88b40 to 1, and 0x16331 `cmp word [0x88b40],0; jne 0x163df` returns the selection in
+  EAX from `[esp+0xbc]`.
+
+With `TICK=8 SEED=0x88cce=1:b` (one process per function) these capped lines now return, both sides
+(`classes_menu` 0x19eac adjudicated this iteration, its control with the same seeds is SAME; the other
+three are leads, no control run yet): `engines_menu` 0x167d8, `race_results` 0x2bff0, `menu` 0x155c0
+SAME; `cars_menu` 0x1a380 returns with **DIFF 1 byte** - a real candidate bug for the next iteration.
+`intro` 0x348f4, `credits_screen` 0x1efb0, `race_records_menu` 0x1d13c, `main_menu` 0x1f858,
+`fn_1832c` 0x1832c moved from the 3M-instruction cap to the 300-call cap (their own outer loops);
+`com_open`, `showlines`, `volume_menu`, `chat`, `kart_draw`, `fn_193a8` still sit at the instruction
+cap - `kart_draw` and `fn_193a8` crash at the same instruction on both sides (inconclusive).
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands

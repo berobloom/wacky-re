@@ -11,6 +11,7 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     .work/venv/bin/python tools/wc/difffn.py cars_menu             # one function
     .work/venv/bin/python tools/wc/difffn.py                       # every open line of nearmiss.txt
     SEED=0x88ccd=1:b .work/venv/bin/python tools/wc/difffn.py NAME   # globals set first (parse_seed)
+    TICK=8 .work/venv/bin/python tools/wc/difffn.py NAME   # ticks (0x7e720) += 8 per stubbed call
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
         control: the game against itself, which must print SAME
 
@@ -52,6 +53,8 @@ CMOD_END = 0x36a4e        # the game's C module ends here (STATUS, iter 56c); as
 COUNT = int(os.environ.get('COUNT', '3000000'))   # instruction cap; a run that hits it is CAPPED
 CALLS = int(os.environ.get('CALLS', '300'))   # stop after this many stubbed calls: the loop
 # counter a menu function never leaves, and the one thing that puts both runs at the same progress
+TICK = int(os.environ.get('TICK', '0'))       # ticks (0x7e720) added per stubbed call; 0 = off
+TICKADDR = int(os.environ.get('TICKADDR', '0x7e720'), 0)   # hex, so base 0
 
 
 def parse_seed(text):
@@ -103,6 +106,10 @@ class Run:
         self.stubs.append((addr, self.e.reg('eax'), self.e.reg('ecx'), self.e.reg('edx'),
                            [self.e.u32(esp + 4 * i) for i in range(3)]))
         self.e.reg('eax', 0)
+        if TICK:                                  # the timer ISR that drives ticks lives above the C
+            self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)   # module (0x10a15 et al only zero it),
+        # so `while (ticks - snapshot < 8)` at 0x1604c can never end. A stubbed call is the frame pump
+        # (menu's tail call 0x37de0), so this is the one place both sides can advance it, identically.
         uc.reg_write(UC_X86_REG_EIP, self.e.u32(esp))   # pretend the stub returned
         uc.reg_write(UC_X86_REG_ESP, esp + 4)
         if len(self.stubs) >= CALLS:
@@ -112,6 +119,8 @@ class Run:
     def _intr(self, uc, num, _):
         self.stubs.append(('int%d' % num, self.e.reg('eax'), 0, 0, []))
         self.e.reg('eax', 0)
+        if TICK:
+            self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)
         if len(self.stubs) >= CALLS:
             self.calls = True
             uc.emu_stop()

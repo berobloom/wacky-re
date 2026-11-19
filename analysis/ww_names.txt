@@ -589,7 +589,7 @@
 0x07ed0c v7ed0c       # SPECULATIVE: 1p idle counter, exits the menu at 500
 0x07ecc0 v7ecc0       # LIKELY: Enter/button pressed flag (sent as bit 0x40 of net_key's eax)
 0x07ecc4 v7ecc4       # LIKELY: menu loop iteration counter (clamped 2; slows v7ed20 after 1)
-0x07ea70 v7ea70       # LIKELY: loop timestamp (frame wait of 8 ticks)
+0x07ea70 v7ea70       # CONFIRMED (census + difffn, iter 75): the tick snapshot of menu's frame wait - 0x158f6/0x15bd9 store ticks 0x7e720 into it, 0x16047 loads it, 0x16052 sub, 0x16054 cmp 8, 0x16057 jl 0x1604c; C never increments ticks (85 stores: 83 zeros, 0x11166 with ebx known 0, 0x32598 restores the saved clock from 0x7ec4c)
 0x07d85c v7d85c       # SPECULATIVE: passed to f32cf8 when arg d != 0
 0x07d8ac v7d8ac       # SPECULATIVE: copied to 0x7d8a4 before ctl_setup(0)
 0x07d8a4 v7d8a4       # SPECULATIVE
@@ -658,7 +658,7 @@
 0x07c890 str7c890     # CONFIRMED: 26-byte buffer, " FIND OUT HOW TO ORDER   "
 0x07c8cc str7c8cc     # CONFIRMED: 26-byte buffer, " THESE EXTRA ZONES.      " (races version in fn_1832c)
 0x088c96 v88c96       # LIKELY: short, bonus-zones menu selection, wrapped 6..0xb (0x19aa5/0x19b23), also read at 0x19591/0x197fe/0x19b91
-0x088cce v88cce       # LIKELY: char; set -> joy88b40 = 1 in the bonus menus (0x196c6, 0x19781)
+0x088cce v88cce       # CONFIRMED (difffn seed, iter 75): input byte set only by the stubbed asm layer (C reads 21, writes 1 = 0 at 0x32ba4); seeding 1 makes menu return through the joy arm (0x16258 -> 0x16261 joy88b40=1 -> 0x16331 -> ret 0x163df)
 0x088cec v88cec       # LIKELY: char; menu "escape/exit chosen" flag, set by the 8-tick wait and by v88cef & 0x40
 0x088cd2 key88cd2     # LIKELY: char key state, sets key88cdd in the zone menu (0x19701)
 0x088cdb key88cdb     # LIKELY: char key state, sets key88cd5 (0x1971a)
