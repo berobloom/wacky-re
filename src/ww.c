@@ -1905,7 +1905,16 @@ void blit372c7(void);
    pnames[v88c6a] : pnames[myplayer])` (17 -> 35: it also splits the FIRST pair's arms and sinks
    print_at's args). The game's duplicated pair is 9 bytes longer than our join (246 insns vs 243)
    while our OBJ span is 20 bytes longer overall; the last row is the game's `mov eax,eax` padding vs
-   our nop. */
+   our nop.
+   iter 64 BEHAV census (globrefs: `counts 0x7d228 ours x6 game x7`): SAME, it is cause (b). Both arms
+   give the game's index (game 0x132ba `movsx esi,[v88c6a]` in the netgame==1 arm, 0x132ce
+   `movsx eax,[myplayer]` in the else arm; ours 0x32aa / 0x32b3 into one shared `imul eax,eax,0xc`
+   0x32ba + one base load 0x32bd), pnames is read here and nowhere written, and no store is missing.
+   The `game only 0x60278 x2 / 0x60280 / 0x6028c` are the game's string literals - "SCORE" twice
+   (0x13283, 0x13316), "DEMO MODE " 0x13384, "TIME TRIAL" 0x133c1 - against our four (0x3273, 0x32fb,
+   0x3369, 0x33a6), same count, our literals are fixups globrefs skips (GOTCHAS). The one-sided branch
+   signature is the same jump landing on our shared-index block 0x32ba rather than on the game's
+   strcpy head 0x132e1 (that block uses no absolute address). No BUG, no code change. */
 void draw_status(void)
 {
     char buf[80];
