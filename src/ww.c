@@ -6469,7 +6469,15 @@ animframe:
  * pushed register where the game rematerialises the constant: here 0 in EDI with `push/pop edi`, the
  * game `cmp word [splitscreen],0`, `xor ebx,ebx`, `xor edx,edx` and no EDI in its prologue).
  * 3 of the 13 rows are the masked-fixup artifact (`[eax*2 - @]` vs `[eax*2 + @]`, GOTCHAS iter 16);
- * 2 more are one EAX/EDX choice at 0x1be6a (`mov ax,[myplayer]`+store vs the game's `mov dx`). */
+ * 2 more are one EAX/EDX choice at 0x1be6a (`mov ax,[myplayer]`+store vs the game's `mov dx`).
+ * Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the game runs the
+ * two retry loops on ONE head, 0x1beae, so all three of its retry jumps re-read `splitscreen` first
+ * (the rand range retries 0x1bec2 `jl 0x1beae` / 0x1bec8 `jg 0x1beae`, and the duplicate found in the
+ * v70720 scan 0x1bee0 `je 0x1beae`, which skips the store 0x1beed and the post-increment 0x1beec, so
+ * the same seat cd is drawn again); our build jumps back to the rand call 0x1beb8 or to the bottom
+ * test 0x1bef5 `cmp cx,7; jle 0x1beaf` and also leaves cx alone, so every retry is the same. The only
+ * extra effect in the game is re-reading splitscreen 0x1beae, dead: nothing between the test and the
+ * call writes it and 0x43088 is the clib rand. refs 13/13 same, no one-sided const. */
 void fn_1be3c(void)
 {
     short i, seat, cd, cand;
