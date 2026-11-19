@@ -4309,7 +4309,14 @@ int rand(void);
  * both reads (6), the max block written first (7), a temp for racetime (18), a `lim` local for the
  * bound (14), `while` and do/while and if/break forms of the i loop (14 - the game's jmp-to-test is
  * what the plain `for` gives), `short i` (23) and the 0x104 literal with the wrapper gone (16).
- * What matched the rest: 0x104 in a local (EDI, 5 pushes) and no `for(;;)`/`break` wrapper. */
+ * What matched the rest: 0x104 in a local (EDI, 5 pushes) and no `for(;;)`/`break` wrapper.
+ * Iter 71 behaviour pass (nmrefs consts, the one-sided `+0x7a`): not a struct field at all - capstone
+ * decodes it out of the 24-byte switch table our span covers after the ret (`_TEXT` fixups
+ * 0x7884-0x789b, six entries 0x7a02/0x7a52/0x7a6d/0x7a86/0x7a9c/0x7ab2, every one inside fn_17928 =
+ * its six switch arms). Our table sits in the same place relative to fn_17928 as the game's
+ * (0x17910-0x17927, `jmp dword ptr cs:[eax*4 + 0x17910]` 0x17a82) - what differs is the public list:
+ * the game has fn_16f90 (0x16f90-0x17910) between the two, our object is in source order, so the gap
+ * falls in fn_16f24's span and fndiff compares our table with the game's fn_16f90 head. LAYOUT. */
 void fn_16f24(void)
 {
     int r, m, i, c;
