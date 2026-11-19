@@ -2762,7 +2762,13 @@ void f37487(void);
    ([esp] has no displacement byte). The braced `if (..) { two = 1; } else { two = 0; }` (iter 37)
    gave the game's `mov ebx,1`/`xor ebx,ebx` AND its loop shape (jmp to the bottom test, one
    epilogue): 49 -> 36. An explicit int wh for the temp (3 declaration positions x 2 forms) moves
-   nothing. */
+   nothing. Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the
+   game's `jmp 0x146bd` 0x145c3 (right after `call f37487` 0x145be, the end of the `if (sel != -1)`
+   arm) leaves the loop body at the loop tail 0x146bd `inc edx; cmp eax,[esp+4]; jl 0x14398`, because
+   sel != -1 is known on that path and the two blocks it skips are both `sel == -1 && ...`
+   (0x14623-0x1462b and 0x1468d-0x14695, the second testing sel before EBX, so the stale EBX is never
+   read there); our build jumps to the twoplayer test 0x14603 and re-reads sel at 0x14620/0x1468a.
+   Same reachable paths and values - refs 76/76 same, no one-sided const, nothing else open. */
 void ents_show(short sel, int n, int animate, int custom, int skip)
 {
     short i;
