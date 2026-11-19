@@ -14713,7 +14713,23 @@ void overall_winner(void)
  * match now) + the EAX/ECX sort-pair and EAX/EDX product coin flips + one dead je at the fire
  * test + the trailing lea/nop pad. Frame gap solved this iter: grp[10] and pods[8] (not 9/6) -
  * array rows +0x2c, scalar rows +0x74, padding unchanged (175 -> 110). Tried before: loop forms,
- * a save local, operand order, exit-test shapes. The 1x extra joy88b40 ref in nmrefs predates. */
+ * a save local, operand order, exit-test shapes. The 1x extra joy88b40 ref in nmrefs predates.
+ * iter 64 BEHAV census (globrefs: `counts 0x88b40 joy88b40 ours x12 game x11`, every other address the
+ * same count, and its `game only 0x61624/0x6171c x2/0x61730/0x61754/0x61778/0x6179c/0x617a8 x2` are the
+ * nine string literals = our nine (WIN.PCX x2, EXCESSIVE ERRORS! x2, THE ROSTRUM, ORDER.PCX, the four
+ * win lines)): SAME. Every store matches one for one; the extra use is our third fire test. The game
+ * tests joy once at the top of the tail (`cmp [joy],0; je 0x2cb84` 0x2d1e9 - its joy==0 path jumps
+ * straight to the loop-continue block 0x2cb84, which our build has instruction for instruction at
+ * 0x1c77a: v7e724 = ticks, pal_c = pal_a, setpalette, musicon test), then its `if (mypod != 1) break`
+ * (`cmp word [esp+0x338],1` 0x2d1f9), then its second joy read + splitscreen (0x2d204/0x2d20e = our
+ * 0x1cdf2/0x1cdfc), and for the scores_screen arm only `cmp word [esp+0x338],1; jne 0x2cb84` 0x2d218 -
+ * no joy read, joy != 0 is already true there (its `je 0x2d1f7` after the first je and its
+ * `jne 0x2d221` are both dead - the documented dead je). Our build does not jump at joy==0 but falls
+ * through the two ifs, so `mypod == 1 && joy88b40` must re-read it: ours 0x1ce15 `cmp joy,0; je
+ * 0x1c77a` lands on that same continue block and no path with joy == 0 reaches scores_screen on either
+ * side. Dropping the `&& joy88b40` to match the count WOULD be a bug: with joy == 0 and mypod == 1 our
+ * fall-through would call scores_screen, where the game left the loop at 0x2d1f1. No BUG, no code
+ * change. */
 struct ptgroup { int n; int pl[10]; };
 extern char *flags7eb24[];
 extern volatile char vk88cd5, vk88cdd, vk88cd6, vk88cd3;    /* written by the keyboard handler; */
