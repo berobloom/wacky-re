@@ -63,6 +63,16 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **An absolute operand with no fixup is a bug, however identical its bytes.** Our
+  `WI(0x6e6e0 + edx)` in `fn_17928` was byte-for-byte the game's `mov [edx+0x6e6e0],eax` 0x17a3a,
+  and iter 65's globrefs pass read exactly that ("an absolute disp32 with no fixup on it") as SAME.
+  The game has a fixup there; DOS/4GW loads DGROUP away from its link base, so ours wrote the raw
+  link address and the race place icon read a NULL table (QUESTIONS 25, two sessions). Run
+  `tools/link/fixcensus.py` after `tools/link/build.sh`: any data target the game relocates and the
+  hybrid never does is such a literal (it found six more: `fn_173c4`, `fn_16f90`, main). Spell
+  game addresses as `litNNNNN` (src/ww.c:15) or a `#pragma aux` alias, never as a number. A
+  `difffn` run does not catch it either: it loads both images at their link base. [generic]
+
 - **Compare behaviour, not bytes: run the function.** `tools/wc/difffn.py` calls one function in
   `original/WW.EXE` and in the hybrid build (`.work/link/WWNEW.EXE`, leparsed to `.work/le/wwnew`),
   each on its own image, and compares every byte of the data segment plus the zero page, EAX, and the

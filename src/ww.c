@@ -15,7 +15,7 @@
 /* Game globals the source addresses by number (the game has an LE fixup at each use, so they
  * must be symbols: a bare constant is not relocated by DOS/4GW and writes to low memory -
  * found by the hybrid link, fn_17928 hung the race load). tools/link/symmap.py maps litNNNNN. */
-extern char lit600a0[], lit6a4b8[], lit6aa68[], lit72350[], lit72354[], lit72356[], lit7b238[], lit7b378[], lit7d770[], lit7d7b8[], lit7d9a0[], lit7eb6c[], lit80ace[];
+extern char lit600a0[], lit6a4b8[], lit6aa68[], lit72350[], lit72354[], lit72356[], lit7b238[], lit7b378[], lit7d770[], lit7d7b8[], lit7d9a0[], lit7eb6c[], lit80ace[], lit6aab6[], lit6e728[], lit70660[], lit7cbe8[];
 
 /* ---- serial link: CRC (the public-domain table CRC: crchware / mk_crctbl / crcupdate) */
 
@@ -2567,14 +2567,14 @@ void fn_173c4(void)
     char *p;
 
     q = (int *)(size_t)v7d868;
-    v7d884 = 0x70660;
-    v7d888 = 0x6e728;
+    v7d884 = (int)(size_t)lit70660;
+    v7d888 = (int)(size_t)lit6e728;
     if (v88b7e == 0) {
         datfind(arr7bba0 + myplayer * 0xc);
         fread((void *)(size_t)v7d6c8, faces[myplayer].f94, 1, datfile);
         v7d87c = v7d884;
     } else {
-        v7d87c = 0x6e728;
+        v7d87c = (int)(size_t)lit6e728;
         p = (char *)(size_t)v7d6c8 + 0x10a0;
         datfind(arr7bba0 + myplayer * 0xc);
         fread(p, 0x10a0, 1, datfile);
@@ -4136,8 +4136,8 @@ void fn_16f90(void)
             j = 0;
             do {
                 j += 2;
-                *(short *)(0x6aab6 + j + k * 0x68) = 0;
-                *(short *)(0x6aabe + j + k * 0x68) = 0;
+                *(short *)(lit6aab6 + j + k * 0x68) = 0;
+                *(short *)(lit6aab6 + 8 + j + k * 0x68) = 0;
             } while (j != 4);
             players[k].f02 = 0;
             players[k].cell = 0;
@@ -4173,8 +4173,8 @@ void fn_16f90(void)
             j = 0;
             do {
                 j += 2;
-                *(short *)(0x6aab6 + j + k * 0x68) = 0;
-                *(short *)(0x6aabe + j + k * 0x68) = 0;
+                *(short *)(lit6aab6 + j + k * 0x68) = 0;
+                *(short *)(lit6aab6 + 8 + j + k * 0x68) = 0;
             } while (j != 4);
             players[k].x = order_a[k];
             players[k].y = order_b[k];
@@ -4346,6 +4346,8 @@ void fn_16f24(void)
  * (0x17c5b; all three compiler patch levels and every statement order give ours), and fread's
  * `mov eax,[v7eb00]` before `mov ecx,[datfile]` 0x182b2 (casts on both arguments: no change).
  * (The old readdat cause is gone: readdat is called through readdat_x, QUESTIONS 6.)
+ * Iter 73: the iter-65 verdict below was WRONG - "byte-identical" operands without the game's fixup
+ * are not relocated by DOS/4GW, so the place-icon table stayed NULL (QUESTIONS 25); now symbols.
  * Iter 65 behaviour pass (globrefs census): 0 bugs, 3 same-shape - the three one-sided data
  * addresses were our own absolute disp32s, which the census had not been reading on our side: our
  * `mov [edx+0x6e6e0],eax` 0x79ae and `mov [edx+0x6e6e4],eax` 0x79b9 are byte-identical to the
@@ -4361,6 +4363,13 @@ extern short v88bd0, v88b88, v7eb82, v88bd6, v88b4a, v88c90;
 extern int v7ed98, v7ec80, v7eb00;
 extern char *v7eb54;
 extern char *lapdata;
+/* Data addresses through linker symbols, never bare numbers: the hybrid links DGROUP at 0x60000 but
+ * DOS/4GW loads it elsewhere and moves only what carries a fixup, so `WI(0x6e6e0 + edx)` wrote the
+ * place-icon table at the raw link address while overlay_draw read the relocated one (QUESTIONS 25). */
+extern char placeic_c[], datdir_c[], songs_c[];
+#pragma aux placeic_c "_arr6e6ec"
+#pragma aux datdir_c "_datdir"
+#pragma aux songs_c "_arr7c530"
 void fn_279e8(void);
 void fn_2754c(void);
 short fn_27920(int n);
@@ -4414,10 +4423,10 @@ setdone:;
         edx = 0;
         do {
             edx += 0x10;
-            WI(0x6e6e0 + edx) = eax;  eax += 0x27e;
-            WI(0x6e6e4 + edx) = eax;  eax += 0x27e;
-            WI(0x6e6e8 + edx) = eax;  eax += 0x27e;
-            WI(0x6e6ec + edx) = eax;  eax += 0x27e;
+            WI(placeic_c - 0xc + edx) = eax;  eax += 0x27e;
+            WI(placeic_c - 0x8 + edx) = eax;  eax += 0x27e;
+            WI(placeic_c - 0x4 + edx) = eax;  eax += 0x27e;
+            WI(placeic_c + edx) = eax;  eax += 0x27e;
         } while (edx != 0x20);
     }
     switch ((short)v88bb6 + v7ecb4 - 1) {
@@ -4628,8 +4637,8 @@ music:
         else {
             r = v88b88 - 1;
         }
-        datfind((char *)(0x7c530 + r * 0xe));
-        edx = WI(0x6508e + datidx * 0x16);
+        datfind(songs_c + r * 0xe);
+        edx = WI(datdir_c + 0xe + datidx * 0x16);
         if (cursong == v7eb00) {
             if (MUSIC_SongPlaying())
                 MUSIC_StopSong();
@@ -19798,7 +19807,7 @@ nomem:
         if (--k <= -1)
             k = 7;
     }
-    v7eb84 = 0x7cbe8;
+    v7eb84 = (int)(size_t)lit7cbe8;
     f36d42();
     v7d81c = 0x462;
     v7d818 = 0x460;

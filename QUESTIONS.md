@@ -405,7 +405,7 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `ww.c`, where adding literals moves every later literal of its CONST group and breaks the
     327-references base check. Unknown neighbour: the three `01` bytes at 0x60000-0x60002 (four dwords in
     the image hold 0x60000: 0x35580, 0x47692, 0x476c6, 0x4d636; none of the other three addresses).
-25. **OPEN** (iter 71, `tools/link/racetest.sh` race-grid screen, findings/video.md "The race HUD box
+25. **RESOLVED** iter 73 (unrelocated literals in `fn_17928`; see the end of this entry) (iter 71, `tools/link/racetest.sh` race-grid screen, findings/video.md "The race HUD box
     loses its bright-yellow figure"): inside the race HUD box (`img7d83c`, drawn by `draw_status`
     0x12f80 at 0x1313a-0x13168, 41x38 at `spr_x` 0x11 / `spr_y` 6) the game paints a figure of
     ~1380 shot px of full-bright yellow (255,255,0) at shot px x50-95, y26-82 and our build paints
@@ -424,3 +424,13 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     Next step, no new tooling: `ORIG=kartsets_load tools/link/racetest.sh`, then
     `ORIG=fn_17928`, then `ORIG=overlay_draw`, and after each run re-run the box census on
     `.work/link/racetest_race.png` looking for 278 px of (255,255,0).
+    Iter 73, CONFIRMED by the bisect: `ORIG=kartsets_load` and `ORIG=overlay_draw` still paint 4
+    yellow / 1288 black shot px in the box, `ORIG=fn_17928` paints 1112 / 88, the original's exact
+    count. Cause: our `WI(0x6e6e0 + edx)` .. `WI(0x6e6ec + edx)` are the game's bytes but carry no
+    fixup (the game has four, at 0x17a3c/0x17a47/0x17a52/0x17a5d -> 0x6e6e0..0x6e6ec), so under DOS/4GW,
+    which loads DGROUP away from its 0x60000 link base, the stores hit the raw link address and the
+    relocated table `overlay_draw` reads (fixup 0x2af1b) stayed NULL. The kartsets_load hypothesis
+    was wrong (its highest index is 5*20+9 = 109, not 159). Fixed with linker symbols, plus the same
+    class at 0x7c530/0x6508e (same function), 0x70660/0x6e728 (`fn_173c4`), 0x6aab6/0x6aabe
+    (`fn_16f90` area) and 0x7cbe8 (main): 202 MATCH unchanged, every verdict line unchanged, RACETEST
+    race mean 2.3 -> 1.1. `tools/link/fixcensus.py` finds the class (0 unexplained now).

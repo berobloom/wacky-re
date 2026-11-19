@@ -193,7 +193,7 @@ seven-segment "8" pixel-for-pixel as `captures/race_play_ww.png` shows it (278 g
 px of (255,255,0), the count measured in the iter-71 census). So the original draws `place == 8`
 there, and the icon *is* the race place.
 
-Our build (CONFIRMED that it is wrong, cause still open): the same 22x29 rect is painted, but with
+Our build (CONFIRMED that it was wrong; cause found iter 73, below): the same 22x29 rect is painted, but with
 garbage — 45-69 % of its bytes read as index 0 (black) and the rest as skin/blue/cyan speckle
 (`/tmp` census of `.work/link/racetest_race.png[24:82,50:92]`), while *no* `LAP.SP` cell contains a
 single index-0 byte (each cell is 360 x 46 + 278 x 83 / 45). So `sprptr` is not
@@ -215,6 +215,15 @@ those C functions taken from the game's bytes, so it bisects state bugs by funct
 `ORIG=kartsets_load`, then `ORIG=fn_17928`, then `ORIG=overlay_draw`, and after each run render
 `.work/link/racetest_race.png[24:82,50:92]` with the census one-liner above: the fix shows up as
 278 px of (255,255,0) (place 8) appearing again.
+
+**Cause (iter 73, CONFIRMED by bisect and fix):** the bisect put it in `fn_17928` (ORIG=kartsets_load
+and ORIG=overlay_draw: 4 yellow / 1288 black shot px; ORIG=fn_17928: 1112 / 88, the original's own
+count). The filler's four stores were the game's bytes without the game's fixups (0x17a3c, 0x17a47,
+0x17a52, 0x17a5d): DOS/4GW loads DGROUP away from its link base, so our stores wrote the raw link
+address and the relocated table `overlay_draw` reads (fixup 0x2af1b) stayed NULL; slot NULL draws
+whatever sits at linear 0, hence the black-and-speckle block. The frameset hypothesis above was wrong:
+`kartsets_load`'s highest index is 5*20+9 = 109. Fixed through linker symbols (src/ww.c, `placeic_c`);
+`tools/link/fixcensus.py` finds every such literal by comparing per-target fixup counts.
 
 ## Traps
 

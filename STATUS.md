@@ -24,14 +24,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. QUESTIONS 25 (iter 72 mapped it): the yellow figure is the race *place* icon - `overlay_draw`
-   0x2aec8-0x2af50 draws `[cars[i].place*4 + 0x6e6ec]`, a 22x29 `LAP.SP` cell, at 25,12, and cell 8
-   matches the original pixel for pixel, while our build paints a non-cell source at that rect with
-   the reader, the filler and the `place` writers all byte-identical -> state, not code. Next step is
-   a bisect, not more reading: `ORIG=kartsets_load tools/link/racetest.sh`, then `ORIG=fn_17928`, then
-   `ORIG=overlay_draw`, and after each run count the (255,255,0) px in
-   `.work/link/racetest_race.png[24:82,50:92]` (the original has 1112; findings/video.md).
-   Prime suspect: 0x6e6ec = 0x6e470 + 4*159, and `kartsets_load` 0x280e2 writes `[ebp+eax*4+0x6e470]`. Whole-code sweeps use `tools/le/gd.py`.
+1. Run `tools/link/fixcensus.py` after every `tools/link/build.sh` (must print `0 unexplained`):
+   iter 73 found the race place icon (QUESTIONS 25, RESOLVED) was an unrelocated literal in
+   `fn_17928`, and five more literal sites in `fn_173c4`, `fn_16f90` and main - bytes equal to the
+   game's, fixups missing (GOTCHAS, first trap). Those sites are fixed; their effects were never
+   observed on screen, so a racetest past the race start (lives, faces, end screen) is the next
+   check on them.
 2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
    `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
    .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/
