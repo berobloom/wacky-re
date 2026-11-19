@@ -237,6 +237,43 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   then agree through the return (control SAME). `ARGS=` takes the Watcom registers in order, so this
   is eax=3, edx=1, ebx=0.
 
+### The input pair `wait_release` 0x278c4 / `wait_input` 0x27920 sets the ceiling on a seeded run (CONFIRMED, iter 77)
+
+Both take their mode in EAX (`0x278c6`/`0x27922` `mov edx, eax`). Every one of the ten
+`wait_release` call sites in the C module passes 0 (`xor eax,eax` immediately before it: 0x18765,
+0x18e97, 0x1c7d7, 0x1cc2a, 0x1d7b0, 0x1da9c, 0x2a38d, 0x2f093, 0x3474b, 0x3690b), so the key test at
+0x278cf is dead there; `wait_input` is called with 0 or 1 (0x1c7ea, 0x1c801, 0x2bba2, 0x2bf24,
+0x2bfc5 pass 0; 0x17f24, 0x17fa0, 0x1da77, 0x2a397, 0x36917 pass 1), so the mode-2 arm 0x27948/0x2796f
+is not reached from this module either. Under `tools/wc/difffn.py` the input globals are only ever
+what `SEED=` left them, so:
+
+- `wait_release` with mode 0 skips the key test (0x278ca `test dx,dx; je 0x278d8`) and returns through
+  0x2791c **only when `v88cce` 0x88cce is 0 and `joy88b40/42/44/46` 0x88b40/42/44/46 are all 0**
+  (0x278e7 and 0x278f8-0x2791a compare them against `ebx`, which 0x278c8 zeroes). If `v88cce` is
+  nonzero it stores `joy88b40 = 1` at 0x278ef and then compares EBX=0 with it at 0x278f8, `jne
+  0x278ca` - a pump of `call 0x377ae` per iteration that can never be seeded out of (119700 iterations
+  counted in `race_records_menu` 0x1d13c).
+- `wait_input` needs one of those flags to be nonzero: with mode 1 it returns EAX=1 at 0x27984 ->
+  0x2798d when `key88cd0` 0x88cd0 == 1, with mode 2 (no C-module caller) it would return at 0x2796f
+  when `ticks` >= 0x440 - that loop does call `0x377ae`, so `TICK=` ends it - and otherwise it re-pumps
+  0x2795a forever. Mode 0 can be exited only by `v88cce != 0` (0x27995 -> 0x279e2, EAX=0) or a nonzero
+  joy flag (0x279ba-0x279e2).
+- So the pair is a contradiction under one static seed: a menu needs `joy88b40` or `v88cce` set to
+  return (menu 0x155c0: 0x16258 -> 0x16261 -> 0x16331) and a mode-0 `wait_release` needs both clear.
+  Measured stop points (a `Run.go` probe printing `done`/`calls`/EIP, iter 77): `fn_1c0f4` 0x1c0f4 with
+  no seeds sits in `wait_input`'s pump - EIP 0x27969, i.e. its own call at 0x1c7ea (mode 0); with
+  `SEED=0x88cce=1:b` that call returns and its earlier one at 0x1c7d9 (also mode 0, so the key test is
+  skipped) takes the 0x278ef store instead. `race_records_menu` 0x1d13c with that seed gets menu to
+  return and then sits in the `wait_release` inside fn_1d704 0x1d704 (return address 0x1d7b5, mode 0
+  from 0x1d7ae). `race_records_menu`'s exit arm - 0x1d2f1 `cmp dword [0x7ecc0],0` -> 0x1d2fa
+  `v88b9e = 1` -> 0x1d312 `cmp edi,4` -> return at 0x1d32b - is not seedable either: menu stores 0 to
+  `v7ecc0` 0x7ecc0 at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77).
+- CONFIRMED (0x1c7de, 0x1c821-0x1c831): fn_1c0f4's second tail wait compares `ticks` with itself -
+  0x1c821 loads `dword [0x7e720]` into EAX once, the loop body 0x1c826 reloads it into EDX, `sub
+  edx,eax`, `cmp edx,0x3c`, `jl 0x1c826` - and is reached only on the net-game side of 0x1c7de `cmp
+  word [0x88c0c],0`; with netgame 0 the `jmp 0x1c833` at 0x1c7ef skips it. Nothing in that body calls
+  the stub, so `TICK=` never advances it: another wait no seed ends (its difference is always 0).
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands

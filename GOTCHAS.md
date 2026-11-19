@@ -121,6 +121,25 @@ it can be copied back into DREA.
   0x92000 is zero in the game but `+++.OK` at 0x92126 in ours, which invented a 5-byte `kart_draw`
   DIFF (iter 76).
   Recipe and its evidence: findings/menus.md, findings/serial.md, findings/game-loop.md.
+- **A capped `difffn.py` run is only as good as the progress its cap allows**, and `hotfn.py`'s
+  `capped` does not say which limit fired (instruction cap, `CALLS`, or the quiet stop at an `in`/`out`
+  or a fault), so read the stop point yourself: `Run(...).go(addr)` then print `done`, `calls`,
+  `ncalls` and EIP - that is how `fn_1c0f4` (CALLS=300, stop 0x27969 inside `wait_input`) turned out to
+  be an input pump rather than a stuck loop (iter 77). Two rules for the seeds:
+  `TICK=n` fires **only at a stubbed call or interrupt**, so it cannot end a wait whose body has no
+  call (`credits_screen` 0x1f305, `showlines` 0x2a3bd, `intro` 0x34cb4) - seed the global there, or
+  size `TICK` to beat the deadline in one add when the wait zeroes the counter first (`TICK=65536`
+  clears the word deadline 0xbb80 after 0x1f05a zeroed `ticks`, `TICK=8` needed > 2000 calls); and
+  `SEED=` is applied once before the run, so a press is seedable and a release never is
+  (findings/menus.md: `wait_release` 0x278c4 with mode 0 returns only when `v88cce` and all four
+  joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0). `CALLS=` is the useful lever for
+  a screen that prints a lot: `credits_screen` returns between CALLS=2000 and 20000. For an argument
+  register use `ARGS=` (eax, edx, ebx, ecx): `showlines` prints its three lines with `ARGS=3,1,0` and
+  its mode argument decides which tail runs (findings/menus.md).
+- **`SEED=` a global that a callee clears is no seed at all**: `SEED=0x7ecc0=1:d` makes
+  `race_records_menu` 0x1d13c take its exit arm at 0x1d2f1 only if it is still nonzero there, and
+  `menu` 0x155c0 stores 0 to it at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77). Name the
+  writer with a `UC_HOOK_MEM_WRITE` probe over `difffn.Run` before blaming the seed or the C.
 - **`overnight/check.sh` runs `tools/*/test_*.py` with plain `python3`, not `.work/venv/bin/python`**,
   so a test that imports unicorn/capstone fails the check in a tree that compiles fine (`test_difffn.py`
   iter 76). Such a test catches ImportError and
