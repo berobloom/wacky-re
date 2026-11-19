@@ -6459,7 +6459,8 @@ animframe:
  * fn_1f858 at 0x1ffee and 0x202c9. v70720[0..7] (short) is filled with eight distinct seat
  * numbers: [0] = myplayer, [1] = v88c6a when a second player takes part, the rest from rand()
  * (single-player) or counting up with wrap (splitscreen). LIKELY: the calls and the stores. */
-/* differs: near miss, 196 bytes (the game's size exactly), 13 instructions off, all of them the
+/* differs: near miss, 196 bytes (the game's size exactly), 10 instructions off (13 before fndiff
+ * folded the masked-fixup rows, GOTCHAS iter 16/39), all but two of them one
  * same Watcom choice: it keeps a constant 0 in edi across the loop (`push edi`, `xor edi,edi`,
  * `cmp splitscreen,di`, `mov edi,ebx`, `mov edi,edx`) where the game materialises each zero
  * (`cmpw $0,splitscreen`, `xor ebx,ebx`, `xor edx,edx`). Every statement, jump and loop bound
@@ -6468,8 +6469,11 @@ animframe:
  * family as QUESTIONS.md 2 and 3, and as iter 23's netkeys_out (ours homes a long-lived value in a
  * pushed register where the game rematerialises the constant: here 0 in EDI with `push/pop edi`, the
  * game `cmp word [splitscreen],0`, `xor ebx,ebx`, `xor edx,edx` and no EDI in its prologue).
- * 3 of the 13 rows are the masked-fixup artifact (`[eax*2 - @]` vs `[eax*2 + @]`, GOTCHAS iter 16);
- * 2 more are one EAX/EDX choice at 0x1be6a (`mov ax,[myplayer]`+store vs the game's `mov dx`).
+ * The 10 rows today (fndiff, iter 63) are that class - `push edi` 0x1be3f, `xor edi,edi` 0x1bead,
+ * `cmp di,[splitscreen]` 0x1beaf, `mov ebx,edi` 0x1bed1, `mov edx,edi` 0x1bed3, `pop edi` 0x1befb -
+ * the one EAX/EDX choice at 0x1be6a (`mov ax,[myplayer]` + our store 0x1be70 vs the game's `mov dx`
+ * and its store at 0x1be75) and the game's `nop` 0x1beff. The masked-fixup rows (`[eax*2 - @]` vs
+ * `[eax*2 + @]`, GOTCHAS iter 16) were 3 of the 13 before fndiff folded them (iter 39).
  * Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the game runs the
  * two retry loops on ONE head, 0x1beae, so all three of its retry jumps re-read `splitscreen` first
  * (the rand range retries 0x1bec2 `jl 0x1beae` / 0x1bec8 `jg 0x1beae`, and the duplicate found in the

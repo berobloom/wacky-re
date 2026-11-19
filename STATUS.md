@@ -22,26 +22,24 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night (overnight/prompt.md step 2): iter 62 took kart_fire 0x24364, main_menu
-   0x1f858 and kart_frame 0x290a0 - 0 bugs; their one-sided items were cached globals (v7eb9c in
-   ECX, curkart in EDX, write-backs only), our tail merges (src's 9 ANIM_RESET copies compile to 5
-   base loads where the game has 9) and kart_frame's switch table 0x29068, indexed by f18-1
-   (`mov bx,[edx+0x18]`; `dec ebx` 0x298d3). Near misses still without `BEHAV:`: shot_step 0x25e6c
-   (`jumps game -> 0x88ba6(lx1) 0x88bc4(ly1) RET`), ents_show 0x014380 (`jumps ours ->
-   0x88be2(twoplayer)`), fn_1be3c 0x01be3c (`jumps ours -> 0x43088(rand)`), then the counts-only
-   three draw_status 0x12f80, lights_project 0x266a8, race_results 0x2bff0 (`ours more 1x
-   joy88b40`). Read the game's branch first: a Watcom-dropped block is a bug, a merged tail is not.
+1. Behaviour night (overnight/prompt.md step 2): iter 63 took the last three near misses that
+   nmrefs flagged by address or const - shot_step 0x25e6c, ents_show 0x014380, fn_1be3c 0x01be3c -
+   0 bugs; their one-sided blocks were Watcom shapes (a tail-merged store pair 0x26021/0x26008, a
+   block the game proves unreachable 0x145c3 -> 0x146bd, one head for nested retry loops 0x1beae);
+   GOTCHAS has the three-class rule. Every nmrefs DIFFER/consts candidate now carries `BEHAV:`.
+   What is left of that list: the counts-only trio draw_status 0x12f80, lights_project 0x266a8,
+   race_results 0x2bff0 (each `ours more 1x joy88b40`) - do the store census first (GOTCHAS).
 2. Run globrefs (`tools/wc/globrefs.py ww .work/src/WW.OBJ NAME 0xADDR`) over the whole near-miss
    list in one loop and triage the hits - it finds this bug class in MATCHed functions too, where
    fndiff has 0 rows. Ignore its `game only <string>` lines (our own literals are segment fixups it
    skips, GOTCHAS); expect address-shape noise otherwise too: the line is a question, not a finding.
-3. Hybrid link (`tools/link/racetest.sh`): still RACETEST OK (the first race's overview) - iters 61
-   and 62 changed no C code, so no racetest was run. Next: drive into the CHOOSE VEHICLE screen and
-   compare it - iter 60's two cars_menu fixes (the centred caption, the selection box drawn a third
-   time) show there and nowhere near the overview; the race frames need the same (the 0x7b238
-   animation table, a `clipy` sprite clipped at row 199).
+3. Hybrid link (`tools/link/racetest.sh`): still RACETEST OK (the first race's overview) - iters 61-
+   63 changed no executable code (comment-only), so no racetest was run since iter 60. Next: drive
+   into the CHOOSE VEHICLE screen and compare it - iter 60's two cars_menu fixes (the centred
+   caption, the selection box drawn a third time) show there and nowhere near the overview; the race
+   frames need the same (the 0x7b238 animation table, a `clipy` sprite clipped at row 199).
 4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept),
-   so iters 61-62 took the overnight prompt's step 2 again; the human should put a real item there.
+   so iters 61-63 took the overnight prompt's step 2 again; the human should put a real item there.
 
 ## BLOCKED
 

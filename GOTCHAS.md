@@ -299,6 +299,16 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   store that is missing, and a global left with a different value at the return - xref the global and
   check who reads it without writing (shots_project's v7d874: the game stores the past-the-table
   pointer 0x26697, and it is dead because every reader sits under a writer, findings/game-loop.md). [generic]
+- **A one-sided nmrefs jump-target block is three SAME classes before it is a bug:** (1) the game
+  tail-merges a store pair, so the block an arm jumps into uses only the second half (shot_step
+  0x25ff1 stores x then `jmp 0x26021` 0x26008 into the shared y store, where our `return` jumps to
+  the epilogue and our tail block re-reads the struct); (2) the game skips a block it can prove dead
+  from the condition that got it there (ents_show 0x145c3 `jmp 0x146bd` = the loop tail, leaving both
+  `sel == -1 && ...` blocks 0x14623/0x1468d, reached only from inside `if (sel != -1)`); (3) the game
+  keeps ONE head for nested retry loops, so its retry jumps re-test an outer condition our build
+  tests once (fn_1be3c 0x1beae: the rand retries 0x1bec2/0x1bec8 and the duplicate-found `je 0x1beae`
+  all land on the `splitscreen` test, ours land on the call 0x1beb8 or on the bottom test 0x1bef5).
+  In all three compare reachability and the values at the stores, not the jump targets. [generic]
 - **An unsigned `cmp eax,1; jbe A` + `cmp eax,2; je B` + `jmp` chain is a `switch` with `case 0: case
   1:`**, not `if (v <= 1) ... else if (v == 2)` (signed `jg`, other block order). A block the game
   jumps BACK into from a later test is the same statements written twice in the source and

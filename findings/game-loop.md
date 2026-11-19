@@ -24,8 +24,14 @@ first — a starting-grid order. It is read at 0x17273 (`mov dx,[edx*2+0x70720]`
 written per player at 0x1fe78 (`fn_1f858`). The random draw is seeded from the elapsed
 `racetime`, so with `racetime < 8` the grid is the same every time (0x1be44 clamps to 8).
 
-Rebuild: `src/ww.c` `fn_1be3c`, near miss (196 bytes = the game's size, 13 instruction diffs;
+Rebuild: `src/ww.c` `fn_1be3c`, near miss (196 bytes = the game's size, 10 instruction diffs;
 see the `differs:` mark and `analysis/shapes/SHAPES.C` k1-k4).
+
+The retry is per slot, CONFIRMED at the instruction level (iter 63): the game keeps one head for the
+nested loops at 0x1beae, and the reject path jumps there (`je 0x1beae` 0x1bee0) over the
+post-increment 0x1beec and the store 0x1beed, so `cd` is unchanged and that slot is drawn again; the
+two range rejects of the candidate (0x1bec2 `jl 0x1beae`, 0x1bec8 `jg 0x1beae`) are the same head,
+which re-reads `splitscreen` 0x1beae - dead, nothing between the test and the draw writes it.
 
 ## `fn_1bf00` (0x1bf00-0x1bf7d) writes one row per player before the race
 
