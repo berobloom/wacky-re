@@ -119,6 +119,17 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   (0x1c88c and 0x1c968 are dead code with their own prologue/ret/padding). Decide from
   prologue/ret/padding. [generic]
 
+- **A data address of ours can be plain wrong and no row count sees it** (iter 59, fn_173c4: a table
+  written at 0x7b230 instead of 0x7b238, two record fans reading faces+0x44/+0x60 instead of +0x3c/
+  +0x58 - 3 bugs, fndiff rows and the MATCH count unmoved). Our disp32 data operands are linker
+  fixups, so fndiff masks them, and nmrefs labels an indexed access by the array it lands in
+  (`array_of`), which folds a base wrong by a few bytes into that array's name. The OMF addend is in
+  the .OBJ bytes at the fixup location (libmatch's `fixups_of` reports 0 for loc 9), so a resolved
+  address = the symbol's address in `.work/link/symmap.txt` + those bytes. `tools/wc/globrefs.py
+  ww .work/src/WW.OBJ NAME 0xADDR` prints the data addresses only one side touches plus count gaps;
+  run it on every near miss that touches a table (`counts 0x7d868 ours x1 game x2` = the game's dead
+  load, a typical SAME line - read the game's instruction before believing one).
+
 ### Probes (`tools/wc/variants.py`)
 
 - **A probe file must hold what the function sees in src/ww.c:** `#include <string.h>` (else real

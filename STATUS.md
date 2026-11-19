@@ -22,32 +22,25 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night (overnight/prompt.md step 2): 9 of the 15 nmrefs-flagged near misses now carry
-   `BEHAV:` in `src/nearmiss.txt` (players_ahead's clipy was a real bug, findings/video.md; the other
-   8 are frame/slot/register/folded-base shape). Method: GOTCHAS "Read a nmrefs count line as a store
-   census first". Next in file order: fn_193a8 0x193a8 (`game only 1x pal_6bit` - we call the aux
-   alias), fn_173c4 0x173c4 (`game more 1x v7d868`; our `+0x14 +0x1c +0x24 +0x2c +0x4 +0xc` should
-   pair with its folded bases as ent_sprites_load's did), ents_project 0x25a78 (`ours only #0xa` vs
-   the game's `game more 1x nents` - check a loop bound first).
-2. Same shift, later in the file: fn_16f90 0x16f90 (`ours only #0x2d8`, a 728 we alone use),
+1. Behaviour night (overnight/prompt.md step 2), and now with a new tool: run
+   `tools/wc/globrefs.py ww .work/src/WW.OBJ NAME 0xADDR` on a near miss and read every
+   `ours only` / `game only` / `counts` line against the game's instruction. fn_173c4 gave up 3
+   wrong-data-address bugs that way (the 0x7b238 table written at 0x7b230, two record fans reading
+   faces+0x44/+0x60 instead of +0x3c/+0x58) with its fndiff row count unmoved at 100 - GOTCHAS "A
+   data address of ours can be plain wrong". 11 of the 15 nmrefs-flagged near misses now carry
+   `BEHAV:`; next in file order: fn_16f90 0x16f90 (`ours only #0x2d8`, a 728 we alone use),
    cars_menu 0x1a380 (`#0x178 #0x54 +0x78` ours vs `#0x140 #0x17c #0x1f #0x24 #0xb4` game - menu
-   coordinates, the likeliest real bug of the rest) and fn_1832c 0x1832c (`#0xe6` vs `#0xe8`).
-3. Hybrid link (`tools/link/build.sh`): all our C + the game's library and data. Known state:
-   `tools/link/racetest.sh` = RACETEST OK (the first race's overview, identical to WW.EXE's). Next:
-   drive into the race itself and compare frames (the racetest stops at the overview) - a sprite
-   clipped at row 199 (`clipy`, findings/video.md) only shows inside a race.
-4. The clipy class, once more: a global read a second time *after* a store that used the same
-   expression changes meaning (players_ahead). The correct spelling keeps the value in a local -
-   `n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... v7d878 = n * 4;` (src/ww.c:11353, drawsprite_clip
-   0x11404); check the other sprite-draw sites against the game's `mov [g],reg` after its `sub`.
-2. Hybrid link (`tools/link/build.sh`): all our C + the game's library and data. Known state:
-   `tools/link/racetest.sh` = RACETEST OK (the first race's overview, identical to WW.EXE's). Next:
-   drive into the race itself and compare frames (the racetest stops at the overview) - a sprite
-   clipped at row 199 (`clipy`, findings/video.md) only shows inside a race.
-3. The clipy class, once more: a global read a second time *after* a store that used the same
-   expression changes meaning (players_ahead). The correct spelling keeps the value in a local -
-   `n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... v7d878 = n * 4;` (src/ww.c:11353, drawsprite_clip
-   0x11404); check the other sprite-draw sites against the game's `mov [g],reg` after its `sub`.
+   coordinates, the likeliest real bug of the rest), fn_1832c 0x1832c (`#0xe6` vs `#0xe8`).
+2. Run globrefs over the whole near-miss list in one loop and triage the hits - it finds this bug
+   class in MATCHed functions too, where fndiff has 0 rows. Expect address-shape noise (a global
+   held in a register, a folded absolute base): the line is a question, not a finding.
+3. Hybrid link (`tools/link/build.sh`): `tools/link/racetest.sh` = RACETEST OK (the first race's
+   overview, identical to WW.EXE's). Next: drive into the race itself and compare frames - the
+   0x7b238 animation table (findings/formats.md) is only read inside a race (`curkart+0x4e` set at
+   0x3174a, walked by 0x2bff0), so iter 59's fan fixes cannot show at the overview; a `clipy`
+   sprite clipped at row 199 (findings/video.md) needs the same.
+4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept),
+   so iter 59 took the overnight prompt's step 2 instead; the human should put a real item there.
 
 ## BLOCKED
 

@@ -585,3 +585,16 @@ DHATT, CHRIST WHITE, ...). |
   and the file's leading dword of every record is read into a scratch and never
   used again; a port that parses the record as three dwords from +0 indexes the
   wrong pair (the live pair is file +8 and +12).
+
+## The face record and the tables fn_173c4 fans it into (CONFIRMED, iter 59)
+
+`fn_173c4` (0x173c4) loads one player's record (`datfind(arr7bba0 + myplayer*0xc)`, `fread` into
+`v7d6c8`) and fans fields of `faces[myplayer]` (0x73c08, 0x98-byte records) into per-player pointer
+tables: eight dwords from `faces+eax+0x3c` into the table at 0x7b324
+(`mov edx,[ebx+eax+0x73c44]` 0x17594) and eight from `faces+eax+0x58` into 0x7b2d0
+(`mov ebx,[ebx+eax+0x73c60]` 0x175cb), and the eight-write fan 0x17661-0x17714 writes the
+animation table at **0x7b238** (dwords 0x7b238..0x7b270, indexed `v88b7e*4` + 0/8/.../0x38,
+sources img[8],9,8,4,10,11,10,4). 0x7b238 is the base stored into `curkart+0x4e` at 0x3174a and
+walked by 0x2bff0 (`tools/le/xref.py 0x7b238`); no instruction in the image mentions 0x7b230.
+Our port had all three addresses wrong (table written at 0x7b230, fans reading +0x44/+0x60) until
+iter 59 - the byte diff never moved (src/ww.c fn_173c4 note, `BEHAV:` row in src/nearmiss.txt).
