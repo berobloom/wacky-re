@@ -129,6 +129,21 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   ww .work/src/WW.OBJ NAME 0xADDR` prints the data addresses only one side touches plus count gaps;
   run it on every near miss that touches a table (`counts 0x7d868 ours x1 game x2` = the game's dead
   load, a typical SAME line - read the game's instruction before believing one).
+- **`ours only ?signal_` + `game only 0x43231` is ONE clib call, not a behaviour difference** (iter
+  61: enter_name 0x1cb44, chat 0x14d00 and main 0x035ca4 each carried such a pair through several
+  passes). In the unlinked `.OBJ` a library call is an *external* (`signal_`, `getenv_`, `int386x_`)
+  and nmrefs can name it only if `analysis/ww_names.txt` has a row; unnamed, it prints one-sided on
+  both sides. `.work/link/symmap.txt` proves the binding without guessing: its `observed` rows are
+  the target found in the *game's* bytes at the site of our fixup (`signal_ 0x043231 observed`).
+  Name the entry and the pair cancels - code shape confirms the name (0x43231 range-checks 1..0xc =
+  a signal number and installs 0x431fa; 0x4338f walks the environ block at [0x644ec]; 0x43065 is the
+  `int386x` register shuffle, `mov ebx,ecx / esi,eax / edi,edx` then `call 0x4c748`). After naming
+  all three, enter_name and main showed no one-sided address and no one-sided jump block at all.
+  Read a `?name_` line before believing any DIFFER next to a library call.
+- **globrefs prints every string of the game as `game only`** (iter 61, chat): it resolves only
+  *external* fixups through symmap, and our own literals hang off *segment* fixups, which it skips.
+  nmrefs does resolve them (it votes a common base), so strings from nmrefs, data addresses from
+  globrefs. [generic]
 - **Our C can hold the game's expression and never use it, and then both counters move the WRONG way**
   (iter 60, cars_menu: `capx = (0x140 - 8*strlen(buf1))/2` was in the source but the print call passed
   `x2e`, so 9.5b deleted the division and the caption drew at x=46 instead of centred; the same

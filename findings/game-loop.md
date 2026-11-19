@@ -132,6 +132,28 @@ What the sprites look like and what the player sees are not checked live.
   the rest play the hit animation (`f1a = 7`, `tb7b448`). Kind 5 counts as kind 0 in two-player
   and network races.
 
+## The entity iterator `v7d7f4` 0x7d7f4 (CONFIRMED)
+
+- `ents[]` records are **0xc bytes** (`add ecx,0xc` at the `ents_project` loop tail 0x25e43; base
+  0x73938, so `ents[8]` is 0x73938 + 8*0xc = 0x73998, findings/car_select.md). Fields: `id` +0,
+  `f2` +2, `x` +4, `y` +6, `f8` +8, `frame` +0xa (0x25a9c-0x25ac3 reads them in that order, 0x25c82
+  `movsx edi, word ptr [ecx + 0xa]`).
+- The game walks the array through the **global** `v7d7f4`, never a local, in six functions:
+  `ents_flags` 0x213f0, `kart_hit` 0x216a0, `shot_hit` 0x218a4, `kart_bump` 0x22bf4, `anim_tick`
+  0x261fc and `ents_project` 0x25a78. A scan of the code object for the operand bytes `f4 d7 07`
+  finds 23 references and they sit only in those six.
+- Watcom keeps that global in ECX and materializes it where another path needs it: stores at
+  0x25aab, 0x25ba3, 0x25e33 and the loop-exit path 0x25e5b, reloads after the `in_sector` 0x25b08
+  and `isqrt` 0x25bc7 calls at 0x25b6d / 0x25bf6 / 0x25e3d. "Ours uses a local pointer and stores
+  once per record" is therefore the same behaviour, and `nmrefs` reports the difference as
+  `game more 6x 0x7d7f4`.
+- **What `ents_project` leaves in `v7d7f4` is dead** - which is why it is safe for our rebuild to
+  leave the last kept record where the game stores `ents + nents*0xc` (0x25e5b): every other reader
+  *writes* the global before its first read (0x21483, 0x2176f, 0x218dc, 0x23234, 0x26317, all
+  `mov dword ptr [0x7d7f4], ...`), and this function calls only `in_sector` and `isqrt`, which do
+  not touch it. Method: prove a global's exit value dead by write-before-read in every reader, not
+  by finding no reader.
+
 ## Traps
 
 - The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`
@@ -145,5 +167,8 @@ What the sprites look like and what the player sees are not checked live.
   not an off-by-one to copy back: the pointer is only read under `shots_move`/`shot_fire`, which
   both store it before the call (see the `v7d874` bullet above). Adding `v7d874 = p;` after the
   loop to match costs rows for nothing (tried: 117 -> 120, `src/nearmiss.txt`).
+- `ents_project` 0x25a78 leaves `v7d7f4` at the last record it drew where the game stores the
+  past-the-end pointer (0x25e5b). Do not "fix" that: the value is dead, see the `v7d7f4` section
+  above (same shape as the `v7d874` bullet).
 - `v70720` is `short`, not `int`: every compare and store in `fn_1be3c` is 16-bit
   (`cmp $7,%dx`, `movw $0xffff`), and -1 is used as the "empty seat" sentinel.
