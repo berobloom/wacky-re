@@ -411,8 +411,16 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     ~1380 shot px of full-bright yellow (255,255,0) at shot px x50-95, y26-82 and our build paints
     black there - the box frame itself matches ((239,195,0): 536 px vs 540 px). Not a fade or
     animation phase: the block is identical at 3 s and at 9 s after the start key in both builds, and
-    the same region on the track overview is pixel-identical. No refs census sees it (`draw_status`
-    107/108 `counts`, `race_run`/`overlay_draw` `same`), so the draw is either in another function or
-    reaches its sprite through an index-folded table address. Owners to try first: `race_run` 0x2fd8c,
-    `overlay_draw` 0x2a92c, `lights_project` 0x266a8; the screen check is
-    `RACEDELAY=3 tools/link/racetest.sh` and the box census command is in the findings file.
+    the same region on the track overview is pixel-identical.
+    Iter 72 (findings/video.md "The HUD box's figure is the `place` icon"): the figure is the race
+    place icon - `overlay_draw` 0x2aec8-0x2af50 draws `[cars[i].place*4 + 0x6e6ec]` as a 22x29 cell
+    at game px (25,12), the table's slots 1..8 hold `lapdata + 0x27e*k` (`fn_17928` 0x17a35-0x17a69,
+    slot 0 is never written = NULL), and rendering `LAP.SP` cell 8 from WACKY.DAT reproduces the
+    game's 278 yellow game px exactly, so the original shows `place == 8`. Our build paints the same
+    rect from something that is not a `LAP.SP` cell (45-69 % index 0; the cells contain none), with
+    the reader, the filler and every writer of `place` all byte-identical: a state difference, most
+    likely a variable-index write into the adjacent frameset/countdown tables clobbering the place
+    slots (`kartsets_load` 0x280e2 `mov [ebp+eax*4+0x6e470], edx`, 0x6e6ec = 0x6e470 + 4*159).
+    Next step, no new tooling: `ORIG=kartsets_load tools/link/racetest.sh`, then
+    `ORIG=fn_17928`, then `ORIG=overlay_draw`, and after each run re-run the box census on
+    `.work/link/racetest_race.png` looking for 278 px of (255,255,0).

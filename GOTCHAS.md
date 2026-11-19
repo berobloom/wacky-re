@@ -575,3 +575,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   writes to linear 0x80ace, not to the relocated variable (DOS/4GW loads the data object elsewhere).
   It hung the hybrid's race load (fn_17928, music ISR starved). Use an extern symbol (`litNNNNN`,
   src/ww.c line 18). [generic]
+- `drawsprite` 0x36fd0 / `f373ee` 0x373ee are column-major: `spr_w` = bytes per column = the height,
+  `spr_h` = the number of columns = the width, cell byte = col*spr_w+row (findings/video.md Traps).
+- Wrong screen block but the reader, the filler and the index writers are all byte-identical? Bisect
+  the *state*: `ORIG=<fn> tools/link/racetest.sh` builds that C function from the game's bytes; census
+  the block's pixels before and after. Proving which bytes were read (decode the data file) beats
+  reading more code. `[generic]` (iter 72)
+- `tools/le/disasm.py` stops at the first undecodable byte, so a sweep of the whole code object is
+  silently truncated and a grep for "this address is never stored" may only have seen the first part.
+  Use `tools/le/gd.py <prog> <from> <to>` (same annotation, skips a bad byte and resumes). `[generic]`

@@ -24,13 +24,14 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. QUESTIONS 25: the race HUD box's bright-yellow figure. `tools/link/racetest.sh` now compares three
-   screens - the overview (0.00%), the engines menu (0.7-0.83%, own floor 0.45%) and the pre-race grid
-   taken `RACEDELAY=3` after the overview's dismiss key (2.22%, the original's floor 1.2-2.1%): the
-   excess is a full-bright-yellow figure the game paints inside the HUD box and we never draw
-   (findings/video.md). Smallest step: read `race_run` 0x2fd8c's drawsprite/pic calls in chunks
-   (`tools/le/disasm.py ww 0x2fd8c 200` stops at the first undecodable byte - GOTCHAS) for one whose
-   sprite is about 345 game px, and compare with the race-time HUD calls in `src/ww.c`.
+1. QUESTIONS 25 (iter 72 mapped it): the yellow figure is the race *place* icon - `overlay_draw`
+   0x2aec8-0x2af50 draws `[cars[i].place*4 + 0x6e6ec]`, a 22x29 `LAP.SP` cell, at 25,12, and cell 8
+   matches the original pixel for pixel, while our build paints a non-cell source at that rect with
+   the reader, the filler and the `place` writers all byte-identical -> state, not code. Next step is
+   a bisect, not more reading: `ORIG=kartsets_load tools/link/racetest.sh`, then `ORIG=fn_17928`, then
+   `ORIG=overlay_draw`, and after each run count the (255,255,0) px in
+   `.work/link/racetest_race.png[24:82,50:92]` (the original has 1112; findings/video.md).
+   Prime suspect: 0x6e6ec = 0x6e470 + 4*159, and `kartsets_load` 0x280e2 writes `[ebp+eax*4+0x6e470]`. Whole-code sweeps use `tools/le/gd.py`.
 2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
    `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
    .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/

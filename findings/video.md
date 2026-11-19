@@ -159,8 +159,72 @@ colour triples - `from PIL import Image; import numpy; a=numpy.asarray(Image.ope
 QUESTIONS 25. Owners to try first: `race_run` 0x2fd8c, `overlay_draw` 0x2a92c, `lights_project`
 0x266a8.
 
+## The HUD box's figure is the `place` icon; the C reads the right slot, the state is wrong — iter 72
+
+Draw site (CONFIRMED, `overlay_draw`): 0x2aec8-0x2af50 — when the `one` local (`[esp+0x2c]`, test
+0x2aec2) is set, `spr_h = 0x16`, `spr_w = 0x1d`, `spr_x = 0x19`, `spr_y = 0x6f` if `v88bde` else
+`0xc` (0x2aeed `mov [spr_y],0x6f`, 0x2af8 `mov [spr_y],0xc`); per viewer
+word `viewer7eb80[i]` (0x2af07 `cmp word [ecx+0x7eb80],0`, ecx steps 2, `ebx` steps 0x104) it reads
+the index 0x2af11 `movsx eax, word [ebx+0x684bc]` = `cars[i].place` (= `karts[i].fac`, 0x684bc /
+0x685c0) and 0x2af18 `mov eax, dword [eax*4 + 0x6e6ec]` -> `sprptr`; single viewer draws through
+`f373ee` 0x373ee (no colour-0 test), splitscreen through `drawsprite` 0x36fd0 with `spr_x = 4`
+(0x2af40). So the box figure is 22x29 at game px (25,12), i.e. exactly the bad block of
+QUESTIONS 25 (shot px x50-93, y24-87).
+
+Geometry (CONFIRMED, the drawer is column-major): both drawers load `spr_w` into `bh` as the inner
+loop (0x37012/0x37435 `mov bx,[spr_w]`, `add di,0x4f` per byte -> one video byte per *screen row*)
+and `spr_h` into `cx` as the outer loop (0x37021 and 0x3743e `mov cx,[spr_h]`), rotating the
+GC map-mask plane once per outer iteration and `inc edi` when it wraps. The drawn rectangle is
+therefore `spr_h` columns wide by `spr_w` rows tall, and the cell is column-major:
+`byte = col * spr_w + row`. Check: the box (`spr_h` 0x26, `spr_w` 0x29 at 17,6) and the icon
+(`spr_h` 0x16, `spr_w` 0x1d at 25,12) both land where the screenshots show them.
+
+The table (CONFIRMED): `0x6e6ec[1..8] = lapdata + 0x27e*k` (or `lapdata + 0x166e + 0x27e*k` when
+`v88bde`), written only by `fn_17928`'s tail, 0x17a35-0x17a69 (`xor edx,edx` then `add edx,0x10`,
+four stores `[edx+0x6e6e0..0x6e6ec]`, `cmp edx,0x20; jne`), guarded by 0x17a07 `twoplayer == 0` and
+0x17a11 `netvoices == 0`. Slot 0 (0x6e6ec itself) is *never written*, so `place == 0` means
+`sprptr == NULL`. Rebuilt in C at src/ww.c:4412-4421 with the same guard, the same 0x166e and the
+same slots 1..8.
+
+The data (CONFIRMED by file, not by trace): the `LAP.SP` record of WACKY.DAT (size 0x4c56, offset
+6944451) is eight-plus cells of 0x27e = 638 = 22*29 bytes; cell 8 (lapdata + 7*0x27e = 0x1172) is
+278 px of palette index 83 and 360 px of index 46, and rendering it column-major draws the
+seven-segment "8" pixel-for-pixel as `captures/race_play_ww.png` shows it (278 game px = 1112 shot
+px of (255,255,0), the count measured in the iter-71 census). So the original draws `place == 8`
+there, and the icon *is* the race place.
+
+Our build (CONFIRMED that it is wrong, cause still open): the same 22x29 rect is painted, but with
+garbage — 45-69 % of its bytes read as index 0 (black) and the rest as skin/blue/cyan speckle
+(`/tmp` census of `.work/link/racetest_race.png[24:82,50:92]`), while *no* `LAP.SP` cell contains a
+single index-0 byte (each cell is 360 x 46 + 278 x 83 / 45). So `sprptr` is not
+`lapdata + 0x27e*k`: either the slot read is 0 (NULL) or a slot of the table was overwritten.
+The code on both sides is equal, so this is a state difference, not a shape difference:
+`fndiff overlay_draw` has no line touching 0x6e6ec; `tools/link/symmap.txt` gives
+`_arr6e6ec 0x06e6ec`; the fill site matches (above); `cars[].place` is written only by
+`calc_places` 0x128a4 (MATCH; the single-player arm clamps 1..8 at 0x129e6-0x12a08) and by
+`race_run` 0x3021e-0x3023b (8 if `nplayers > 1` else 1), and no writer of `place` is a near miss.
+Nearest suspect, unproven: the tables below are one contiguous block — framesets at 0x6e470,
+the 0x6e5b0 countdown table, then the place icons at 0x6e6ec = 0x6e470 + 4*159 — and the only
+variable-index writer into it is `kartsets_load` 0x280e2 `mov [ebp+eax*4+0x6e470], edx` (inner
+index `di` with 0x28155 `cmp di,9`, outer 0x2816c `cmp eax,[esp+8]; jl 0x280b0`), a 20-row near
+miss: an index or bound that runs 159+ there would overwrite the place slots with frame pointers,
+which is what a colourful noise block looks like.
+
+Handoff experiment (no new tooling): `ORIG=<fn> tools/link/racetest.sh` builds the hybrid with
+those C functions taken from the game's bytes, so it bisects state bugs by function — run it with
+`ORIG=kartsets_load`, then `ORIG=fn_17928`, then `ORIG=overlay_draw`, and after each run render
+`.work/link/racetest_race.png[24:82,50:92]` with the census one-liner above: the fix shows up as
+278 px of (255,255,0) (place 8) appearing again.
+
 ## Traps
 
+- The drawer is column-major: `drawsprite`/`f373ee` put `spr_w` bytes in a *column* and iterate
+  `spr_h` columns (`add di,0x4f` per byte), so a sprite declared `spr_w = 0x1d, spr_h = 0x16` is 22
+  px wide and 29 px tall, and its cell is `byte = col*spr_w + row`. Reading `spr_w` as the width
+  makes the LAP place icons look impossible (iter 72: three readings of the box geometry were wrong
+  before the drawer was read).
+- A `MATCH` reader plus a `MATCH` filler still draws the wrong thing when the table between them is
+  written by a *third* function: check the drawn bytes against the data file, not the code.
 - A QMP screenshot is 2x the game's screen: the shots are 640x400 and the game runs 320x200, so a
   `drawsprite` at `spr_x` 0x11, `spr_y` 6 with `spr_w` 0x29, `spr_h` 0x26 lands at shot px
   34-116 x 12-88. Compare a sprite and a screenshot block with that factor or the box you crop
