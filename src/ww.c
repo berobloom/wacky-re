@@ -4327,6 +4327,15 @@ void fn_16f24(void)
  * (0x17c5b; all three compiler patch levels and every statement order give ours), and fread's
  * `mov eax,[v7eb00]` before `mov ecx,[datfile]` 0x182b2 (casts on both arguments: no change).
  * (The old readdat cause is gone: readdat is called through readdat_x, QUESTIONS 6.)
+ * Iter 65 behaviour pass (globrefs census): 0 bugs, 3 same-shape - the three one-sided data
+ * addresses were our own absolute disp32s, which the census had not been reading on our side: our
+ * `mov [edx+0x6e6e0],eax` 0x79ae and `mov [edx+0x6e6e4],eax` 0x79b9 are byte-identical to the
+ * game's 0x17a3a/0x17a45 (the lapdata -> record-pointer table, `WI(0x6e6e0 + edx)` below), and our
+ * `mov edx,[eax+0x6508e]` 0x81f0 is its 0x1828c; with the census tool fixed (GOTCHAS) this
+ * function prints no one-sided address and no count gap at all. Re-measured 25 rows (nearmiss said
+ * 7): 13 + 2 of them are one whole-frame swap of numbuf and msg - our msg sits at [esp] and numbuf
+ * at [esp+0x50], the game the other way round, and every use flips with it (dst and src of each
+ * copy pair together), so the same strings end in the same places.
  * See findings/executables.md "Open" and GOTCHAS.md. */
 
 extern short v88bd0, v88b88, v7eb82, v88bd6, v88b4a, v88c90;
