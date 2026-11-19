@@ -10,6 +10,7 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     tools/link/build.sh && tools/le/leparse.py .work/link/WWNEW.EXE .work/le/wwnew
     .work/venv/bin/python tools/wc/difffn.py cars_menu             # one function
     .work/venv/bin/python tools/wc/difffn.py                       # every open line of nearmiss.txt
+    SEED=0x88ccd=1:b .work/venv/bin/python tools/wc/difffn.py NAME   # globals set first (parse_seed)
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
         control: the game against itself, which must print SAME
 
@@ -51,6 +52,25 @@ CMOD_END = 0x36a4e        # the game's C module ends here (STATUS, iter 56c); as
 COUNT = int(os.environ.get('COUNT', '3000000'))   # instruction cap; a run that hits it is CAPPED
 CALLS = int(os.environ.get('CALLS', '300'))   # stop after this many stubbed calls: the loop
 # counter a menu function never leaves, and the one thing that puts both runs at the same progress
+
+
+def parse_seed(text):
+    """SEED=addr=value[:b|:w|:d],... -> [(addr, bytes)]: globals written into both images before the run
+    (and before the init snapshot, so the watch re-run starts from the same seeded state). A wait loop
+    that polls a global no stub ever sets (a key flag, a frame counter) runs to the cap; seed the
+    global the loop tests and both sides leave it. Addresses are the game's: the hybrid links its
+    data at the same addresses (iter 74, dosrun locate + the v7d884 pointer check). Width :d (default),
+    :w or :b after the value - a suffix letter alone would be a hex digit (0x1b)."""
+    out = []
+    for item in filter(None, (t.strip() for t in text.split(','))):
+        addr, _, val = item.partition('=')
+        val, _, w = val.partition(':')
+        width = {'b': 1, 'w': 2, 'd': 4, '': 4}[w.lower()]
+        out.append((int(addr, 16), (int(val, 0) & ((1 << (8 * width)) - 1)).to_bytes(width, 'little')))
+    return out
+
+
+SEED = parse_seed(os.environ.get('SEED', ''))
 ACC = {16: 'read', 17: 'write', 18: 'fetch', 19: 'write_prot', 20: 'read_prot', 21: 'fetch_prot'}
 
 
@@ -69,6 +89,8 @@ class Run:
         self.e.uc.mem_map(0, 0x10000)
         self.ranges = [(0, 0x10000), (o[1]['base'], o[1]['vsize'])]
         self.dbase, self.dsize = o[1]['base'], o[1]['vsize']
+        for a, v in SEED:                               # SEED=..., before the snapshot (parse_seed)
+            self.e.uc.mem_write(a, v)
         self.init = self._read()
         self.went = False
         # the per-instruction hook covers only the stub range, so running C costs nothing

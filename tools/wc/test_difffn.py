@@ -6,7 +6,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
-    from difffn import diff_bytes, lin                                    # noqa: E402
+    from difffn import diff_bytes, lin, parse_seed                                    # noqa: E402
 except ImportError:                        # overnight/check.sh uses system python3, no unicorn
     print('test_difffn skipped (run .work/venv/bin/python tools/wc/test_difffn.py)')
     sys.exit(0)
@@ -30,4 +30,9 @@ assert lin(R(), 0) == 0
 assert lin(R(), 0xffff) == 0xffff
 assert lin(R(), 0x10000) == 0x60000
 assert lin(R(), 0x10000 + 0xab0c) == 0x6ab0c     # the f14 address, second range
+# SEED: width after a colon, so a hex value ending in b/d stays a value; default a dword, masked
+assert parse_seed('') == []
+assert parse_seed('0x88ccd=1:b') == [(0x88ccd, b'\x01')]
+assert parse_seed('0x7d800=0x1b') == [(0x7d800, b'\x1b\x00\x00\x00')]
+assert parse_seed('0x88b72=-1:w, 0x7eb84=0x7cbe8:d') == [(0x88b72, b'\xff\xff'), (0x7eb84, b'\xe8\xcb\x07\x00')]
 print('test_difffn ok')
