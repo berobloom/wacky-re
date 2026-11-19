@@ -22,15 +22,21 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night (overnight/prompt.md step 2): `tools/wc/nmrefs.py` now also lists `consts` -
-   immediates and struct-field offsets only one side uses (15 of 79 near misses). Read the game's
-   instruction for each, fix our C where it computes something else (fn_1832c and fn_16eac were real
-   bugs that row counts hid); write `BEHAV:` into `src/nearmiss.txt`. MATCH count never drops.
+1. Behaviour night (overnight/prompt.md step 2): 6 of the 15 nmrefs-flagged near misses now carry
+   `BEHAV:` in `src/nearmiss.txt` (iter 57: players_ahead's clipy was a real bug, findings/video.md;
+   engines_menu, kart_state, pic_at, scores_screen, menu are frame-size/slot/register shape only).
+   Next in nmrefs file order: ent_sprites_load 0x21310 (`game only 6x in sprattr`, the i*40 strength
+   reduction, QUESTIONS 2), fn_193a8 0x193a8 (`game only 1x pal_6bit` - we call the aux alias),
+   fn_173c4, fn_16f90, players_project (#0x8), ents_project, shots_project (+0x22), cars_menu 0x1a380,
+   fn_1832c 0x1832c.
 2. Hybrid link (`tools/link/build.sh`): all our C + the game's library and data. Known state:
    `tools/link/racetest.sh` = RACETEST OK (the first race's overview, identical to WW.EXE's). Next:
-   drive into the race itself and compare frames (the racetest stops at the overview).
-3. Near misses only with an idea their `differs:` note does not list (`tools/wc/permute.py`,
-   MATCHING.md section 7); nmrefs after every change.
+   drive into the race itself and compare frames (the racetest stops at the overview) - a sprite
+   clipped at row 199 (`clipy`, findings/video.md) only shows inside a race.
+3. The clipy class, once more: a global read a second time *after* a store that used the same
+   expression changes meaning (players_ahead). The correct spelling keeps the value in a local -
+   `n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... v7d878 = n * 4;` (src/ww.c:11353, drawsprite_clip
+   0x11404); check the other sprite-draw sites against the game's `mov [g],reg` after its `sub`.
 
 ## BLOCKED
 
