@@ -11485,7 +11485,26 @@ void players_project(void)
  * re-reads v88b20/v88b22, and homes the iterator in ECX and sx in DI (the players_project colourer
  * case, QUESTIONS 2). Tried: store at all three body positions (equal), reading frame/f2 through
  * the global (188), `sy = e->y; v88b22 = sy;` (187), for-init order swap (175).
- * `int i, id` (the game's `inc dword [esp+0x10]`) helped. */
+ * `int i, id` (the game's `inc dword [esp+0x10]`) helped.
+ * Behaviour pass (iter 61), one line per nmrefs item, no bug:
+ * `#0xa` ours = our `if (k >= 10) k = 9`; the game clamps `cmp si,9 / jle` 0x25c2a + `mov esi,9`
+ * 0x25c30 - same 0..9 bound, and `> 9` is already in the tried list above (it costs rows). Game
+ * more 6x v7d7f4: there the ent iterator rides the global (its siblings ents_flags 0x213f0,
+ * kart_hit 0x216a0, shot_hit 0x218a4, kart_bump 0x22bf4 and anim_tick 0x261fc all open
+ * `v7d7f4 = ents`), and the compiler keeps it in ECX, materializing it at 0x25aab / 0x25ba3 /
+ * 0x25e33 / 0x25e5b and reloading after the in_sector 0x25b08 and isqrt 0x25bc7 calls at
+ * 0x25b6d / 0x25bf6 / 0x25e3d. Our local `e` differs only in the value left at the loop exit
+ * (the game stores the past-the-end pointer, 0x25e5b): dead - the 23 references to 0x7d7f4 in the
+ * code object sit only in those five functions and here, every one of the five writes the global
+ * before its first read (0x21483, 0x2176f, 0x218dc, 0x23234, 0x26317), and the only calls here are
+ * in_sector and isqrt, which do not touch it. Ours more 2x v88b22: the game loads y once (0x25b2f),
+ * spills it to [esp+0xc] 0x25b38 for its `dy < sy` test 0x25b79, and does the four view-box compares
+ * in registers 0x25ad4-0x25afb. Ours more 1x p7d838: the game writes p7d764 twice (0x25ca5,
+ * 0x25cbe) where we step the pointer. Game more 1x nents: its `cmp word [nents],0` prologue
+ * 0x25a8e, our loop test. Read equality was checked instruction by instruction over
+ * 0x25a9c-0x25e39: the k clamp 0x25c12-0x25c30, tb6bd00[d] short 0x25c35, tb6b7f8[c] dword 0x25bd1,
+ * tab6e470[attrs[id].f0c*0x50 + k*4] 0x25c43-0x25c6d, the clipped-row skip `+= (short)(c*(spr_w+1)
+ * *4)` 0x25d24-0x25d34, and the sprite record with f22 = i 0x25e39. */
 extern struct attr attrs[];
 #pragma aux attrs "_sprattr"
 
