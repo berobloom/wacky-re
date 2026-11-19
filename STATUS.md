@@ -22,22 +22,24 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night is done for the address/const/count class: every one of the 21 nmrefs candidates
-   carries `BEHAV:`, 0 open bugs. Iter 64 closed the last three, all counts-only - draw_status
-   0x12f80, lights_project 0x266a8, race_results 0x2bff0 - all SAME (a shared `imul`, an in-place
-   `add [g],imm` vs load+store, a flag test Watcom folds: GOTCHAS). Next in that class: run globrefs
-   over the 0-row LAYOUT near misses (demo_rec 0x2e318, pic_show 0x32c98, fade_out 0x1bf94) - their
-   bytes differ only in jump displacements, so the per-address counts are the check fndiff cannot do.
-   Ignore `game only <string>` lines (our literals are segment fixups it skips); the rest of the line
-   is a question, not a finding.
-2. Hybrid link (`tools/link/racetest.sh`): last run RACETEST OK (the first race's overview, iter 60);
-   iters 61-64 changed no executable code, so no racetest was run. Re-run it once next iteration and
-   then drive into the CHOOSE VEHICLE screen and compare it - iter 60's two cars_menu fixes (the
-   centred caption, the selection box drawn a third time) show there and nowhere near the overview.
-3. Race frames need the same screen-level comparison (the 0x7b238 animation table, a `clipy` sprite
-   clipped at row 199, findings/video.md).
+1. The address/const/count census class is now closed. All 21 nmrefs candidates carry `BEHAV:`, and
+   iter 65 ran the other half of it - `tools/wc/globrefs.py ww .work/src/WW.OBJ NAME 0xADDR` over all
+   102 lines of src/nearmiss.txt - after fixing the tool, which had been reading the wrong bodies
+   (`startswith`: `fade_out` meant `fade_out_screen_`, `main` meant `main_menu_names_`) and only half
+   of our operands (our absolute `disp32`s, e.g. 0x6e6e0/0x6508e, were invisible): 20 near misses
+   still show a one-sided non-string item and all 20 carry `BEHAV:`; the last fresh one, showlines
+   0x2a268, is SAME. The LAYOUT trio (demo_rec 0x2e318, pic_show 0x32c98, fade_out 0x1bf94) got the
+   jump-target scan fndiff cannot do: every cross-region jump lands at the same intra-function offset
+   as the game's, so only the displacement differs. Ignore `game only 0x6xxxx` string lines (GOTCHAS).
+2. Screen-level is the only lever left: `tools/link/racetest.sh` last ran RACETEST OK (iter 60) and
+   iters 61-65 changed no executable code, so none was run - run it once at the next code change,
+   then drive into CHOOSE VEHICLE and compare, then the race frames (the 0x7b238 animation table, a
+   `clipy` sprite clipped at row 199, findings/video.md).
+3. `tools/wc/nearmiss.sh` (~5 min) is overdue and its first column drifts both ways: fn_17928 read 7
+   in the file and 25 on the committed code, 15 of those one whole-frame swap of numbuf/msg (a BLOCKED
+   class - re-measure, do not chase). Iter 65 corrected fn_17928's column only.
 4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept), so
-   iters 61-64 took the overnight prompt's step 2 again; the human should put a real item there.
+   iters 61-65 took the overnight prompt's step 2 again; the human should put a real item there.
 
 ## BLOCKED
 
