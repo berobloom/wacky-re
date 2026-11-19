@@ -487,10 +487,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   these pairs either (shot_step 0x25f46, track_setup 0x124f6: 270 copies over 9 rounds, best =
   control every round). `-3` vs `-3r` is not the cause
   (identical object). [generic]
-- **Address constants 9.5b folds:** `&netstats[1]` as one immediate vs the game's `mov esi,0x3c;
-  add esi,0x7c818` (showlines 0x2a359). But `mov r,N*stride; add r,sym` in a loop names an array
-  base one row earlier - declare it (`mrows` 0x7bc00, trial_records_menu) before writing it off.
-  [generic]
+- **Not a dead end: `mov r,N*stride; add r,sym` is an INDEX loop.** 9.5b folds a pointer's
+  `&netstats[1]` (or `netstats + 1`, `(char *)netstats + 0x3c`) into one immediate; only
+  `for (i = 1; ...; i++) f(netstats[i])` makes the strength-reduced pointer start as
+  `mov r,0x3c; add r,netstats` (iter 73 probe, 8 spellings; showlines 18 -> 13 rows and the game's
+  size). Also: a base one row earlier names an array base - declare it (`mrows` 0x7bc00,
+  trial_records_menu). [generic]
 - **Store->load value forwarding:** `v->f0a = d; x = v->f0a;` compiles to a register copy before
   the store, no reload; a `(volatile short *)` cast on the read does not force one (9.5b forwards
   anyway). The game's `mov word [ebx+0xa],dx; mov cx,[ebx+0xa]` (kart_catchup 0x28bf8) is not

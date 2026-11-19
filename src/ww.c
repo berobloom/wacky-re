@@ -13837,7 +13837,13 @@ void hud_draw(void)
  * waits for a key (v88b9e = wait_input(1)) or else until ticks passes t (callers 0x113f3,
  * 0x18de3 and more). Defined under its own name: the callers' prototype carries a pragma for
  * the ECX pass-through.
- * differs (near-miss, 18 rows, 103 vs 104 insns, 10 blocks): the game keeps t in EBP, the line pointer in
+ * Iter 73: 18 -> 13 rows and the game's 428 bytes with `for (i = 1; i <= n; i++, y += 9)
+ * print_at(x, y, netstats[i], 0)` - an index loop, not the line pointer: 9.5b folds a pointer's
+ * `&netstats[1]` into one immediate, an index's strength-reduced pointer starts as `mov esi,0x3c` +
+ * `add esi,netstats` like the game (probe: the shape needs an int index, GOTCHAS dead-end entry
+ * rewritten). Left: the x/y vs n/wait slot order and the two `mov ax` loads (`int x, y` fixes the
+ * loads but gives y a register: 24 rows).
+ * differs (before iter 73, near-miss, 18 rows, 103 vs 104 insns, 10 blocks): the game keeps t in EBP, the line pointer in
  * ESI and i in EDI, with x/y and n/wait in stack slots (x at [esp], y [esp+4]); ours spills t and
  * orders the slots the other way. Tried: all 120 declaration orders, int x/y, an indexed loop.
  * 18 fndiff rows and 10 of them are only the slot displacements (same mnemonic), so the rest cannot
@@ -13863,7 +13869,6 @@ void showlines_def(int n, int wait, int t)
 {
     short h, x, y;
     int i;
-    char *p;
 
     save_a = pal_a;
     save_b = pal_b;
@@ -13881,8 +13886,8 @@ void showlines_def(int n, int wait, int t)
     f371e4();
     y = spr_y + 4;
     x = spr_x + 4;
-    for (i = 1, p = netstats[1]; i <= n; i++, p += 0x3c, y += 9)
-        print_at(x, y, p, 0);
+    for (i = 1; i <= n; i++, y += 9)   /* index, not a pointer: the game's `mov esi,0x3c; add esi,netstats` */
+        print_at(x, y, netstats[i], 0);
     if (wait) {
         wait_release(0);
         v88b9e = wait_input(1);
