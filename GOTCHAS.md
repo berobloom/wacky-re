@@ -107,8 +107,11 @@ it can be copied back into DREA.
   the function to be a public in `.work/link/WWORIG.MAP`: a static original (`com_wait_byte` 0x2df70)
   has no control. To find the loop a capped run sits in, `FN=name .work/venv/bin/python
   tools/wc/hotfn.py` counts executed addresses in the original image and marks the backward jump - it
-  named menu's frame wait 0x1604c and com_wait_byte's ring wait 0x2df7b in seconds. Recipe and its
-  evidence: findings/menus.md, findings/serial.md.
+  named menu's frame wait 0x1604c and com_wait_byte's ring wait 0x2df7b in seconds. A hand-built
+  `difffn.Run` for the **hybrid** must use `main`'s stub range (BLOBTEXT below `_TEXT`), not the
+  original's `(0x36a4e, inf)`: the wrong one leaves a different build's library live and invents
+  behaviour (iter 75: com_wait_byte 0x2df70 looked like EAX 0 plus one phantom stubbed call).
+  Recipe and its evidence: findings/menus.md, findings/serial.md.
 - **`tools/le/disasm.py` stops at the first undecodable byte**, so a whole-module census must be
   restarted from the next address: `disasm.py ww 0x10000 0xbad9` ended at 0x1ffff after 15506 lines and
   the file reads complete - it made iter 70 write "38 `msgbox` call sites" where the C module has 53

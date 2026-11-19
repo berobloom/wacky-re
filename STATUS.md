@@ -27,21 +27,21 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Overnight (prompt step 2): the 28 near misses whose `difffn.py` run stops at the 3M-instruction or
-   300-call cap. Seed the global each wait loop polls (`SEED=0xADDR=VALUE[:b|:w|:d]`, iter 74; the
-   control `NEW=wworig MAP=.work/link/WWORIG.MAP` must stay SAME), get both sides to return, then
-   SAME / BUG / DIFF same-shape, recorded as `SEEDED:` in `src/nearmiss.txt`.
-2. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
-   first trap). Iter 74 checked iter 73's repaired sites at runtime in both builds (v7d884, v7d888,
-   v7d87c, v7eb84 relocated the same; findings/game-loop.md has the start-grid trap).
-3. Re-run the behaviour sweep after every C change (78 lines, about 90 s, one process per function):
-   `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
-   .work/venv/bin/python tools/wc/difffn.py $n; done`. Every uncapped DIFF is adjudicated
-   (`ents_project`/`shots_project` = the dead `v7d7f4`/`v7d874` pointers, findings/game-loop.md), so
-   a new DIFF is news.
-4. `com_wait_byte` 0x2df70 has no call site in the C module (0x10260-0x36a4d), so its EAX
-   (0xffffffff/0x0) is unadjudicated: its caller is in the asm module above 0x36a4d, which difffn stubs.
-   A whole-module dump has to be chunked - `tools/le/disasm.py` stops at the first undecodable byte.
+1. `cars_menu` 0x1a380 returns under `TICK=8 SEED=0x88cce=1:b` and prints **DIFF 1 byte**
+   (findings/menus.md): adjudicate it - difffn re-runs with a watch and prints the instruction that
+   writes the byte on each side. A DIFF you cannot place in our C, game instruction in front of you,
+   is `DIFF unknown`, not "fixed". Then `menu` 0x155c0, `engines_menu` 0x167d8 and `race_results`
+   0x2bff0: same two seeds already get both sides home and print SAME, each still needs its control
+   run and its `SEEDED:` line.
+2. `intro` 0x348f4, `credits_screen` 0x1efb0, `race_records_menu` 0x1d13c, `main_menu` 0x1f858 and
+   `fn_1832c` 0x1832c moved from the 3M-instruction cap to the 300-call cap with those seeds: try
+   `CALLS=1200` and see whether both sides return.
+3. `com_open` 0x102f4, `showlines` 0x2a268, `volume_menu` 0x1e760, `chat` 0x14d00 still sit at the
+   instruction cap with the seeds: `FN=<name> .work/venv/bin/python tools/wc/hotfn.py` prints the loop
+   they burn in, seed what it polls. `kart_draw` 0x24bcc and `fn_193a8` 0x193a8 crash at the same
+   instruction on both sides (a null pointer global) - seed the pointer, do not call it a pass.
+4. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
+   first trap). Iter 75 re-ran it over the iter-74 build: 0 unexplained.
 5. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
    slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
 

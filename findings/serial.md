@@ -83,8 +83,13 @@ The rings are 16 KB: `rxbuf` 0x84b00 with `rxhead`/`rxtail`/`rxcount`
   the same way in our C. `SEED=0x84afe=1:w,0x84afc=3:w` puts one byte in the ring with a non-zero read
   index, so the pop path runs (0x2df8c-0x2dfc4 / 0x2e02d-0x2e065: `inc word [0x84afc]`, the `cwde` +
   `movzx ax,byte [eax+0x84b00]` read, `dec word [0x84afe]`, the `cmp word [0x84afc],0x4000` wrap) and
-  both runs return; with `+0x84b00=0x41:b` EAX on return is 0x41 on both sides, which answers the
-  open EAX question for that path (a pop returns the byte, the timeout arms return 0). `com_expect`
+  both runs return. The byte the pop reads is `rxbuf[rxtail]`, so a non-zero value goes in at
+  `0x84b03` (= 0x84b00 + 3) when rxtail is seeded to 3: with `+0x84b03=0x41:b` both runs still return
+  and EAX agrees (difffn prints EAX only when the sides disagree; a direct probe of the game's
+  0x2df70 shows that value is 0x41), which answers the open EAX question for this path (a pop returns
+  the byte, the timeout arms return 0). For `com_expect` the popped byte must equal its `want`
+  argument, which difffn passes as 0: seeding `0x84b03=0x41:b` puts both runs back at the instruction
+  cap. `com_expect`
   also matches its control (the game against the relinked game); a control for `com_wait_byte` cannot
   be run - it is not a public in `.work/link/WWORIG.MAP` (the nearest are `com_getc_` 1:0x5b0,
   `com_waitfor_` 1:0xa94), the game's spelling of it is static.
