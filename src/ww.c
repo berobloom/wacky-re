@@ -11257,7 +11257,14 @@ void sprites_draw(void)
  * reload 0x288c1), the comma init split both ways, `++v` increments, `volatile int sy, dy` in slots.
  * The promotion is not a loop-shape fact; the game does not cache the global in kart_hit 0x216a0
  * either (`mov dword [v7d800],0x6aa90` 0x21810, `add dword [v7d800],0x68` 0x2188f), so this is
- * register pressure in the big body. */
+ * register pressure in the big body. iter 58 nmrefs: no behaviour difference - a per-global access
+ * census (absolute-address operands only) is 79/78: the v7d800 count lines are the EBX cache and its
+ * write-backs (the game's `mov [v7d800],ebx` 0x25a68 where we keep it in memory and step it with
+ * `add [v7d800],0x68` 0x25a44), p7d838's extra read is one `add dword [0x7d838],eax` 0x25943 that we
+ * load-add-store (0x25930-0x25937, the addend in another register), v88b22's is our `sy` reload for
+ * `if (dy < sy)` 0x256c3 where the game holds y and dy in its `sub esp,8` 0x255d9 frame
+ * (`mov [esp],edx` 0x25694, `movsx eax,word [esp]` 0x256a6), and the game-only `#0x8` constant is
+ * that frame - we spill nothing. */
 struct carv {                   /* the 0x104-byte car records seen from 0x68400 */
     char f00[0x1a];
     short f1a;
