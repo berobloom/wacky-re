@@ -9732,6 +9732,12 @@ void kart_anim0(void)
  *    it is worse (55). Dropping `t` from the tick test is 101.
  * 2. the two charge-start tails (f3a == 0) are cross-jumped in the game (0x22aeb -> 0x22bd5), with
  *    `v88b92 = 0` scheduled late; ours keeps both and schedules that store early (5 spellings tried).
+ * BEHAV iter 57: no behaviour bug. The `#0x8` only we use is our frame (`sub esp,8` 0x224ef vs the
+ * game's `sub esp,4` 0x224ef - cause 1 above). The extra curkart load 0x2265c is the shared tail of
+ * the two kart_anim2 calls: the game lands at 0x22660 with EAX still holding curkart across
+ * `call 0x22334` (0x22609, 0x22659) and never re-reads it; we reload it. kart_anim2 (0x22334,
+ * src/ww.c:9675) writes curkart->fields but never curkart, so the reload reads the same pointer -
+ * same-shape.
  * New this iter (0 kept, 5 probed): reusing `t` for both spills (`t = curkart->f1a * 8;` then
  * `(char *)tb7b448 + t + pl * 4` at 0x22660) DOES give the game's 4-byte frame and `[esp]` spill,
  * but the whole function is then 42 rows - the `pl * 4` (`lea edx,[edx*4]` 0x225ab) is still late
