@@ -9022,7 +9022,14 @@ void main_menu(void)
  * datfind's `attrs[i].f10` is still a reduced EBP pointer (81 rows); `sprattr + i * sizeof(struct
  * attr) + 0x10` reduces both (74 rows, 22 real); `(char *)&attrs[i] + 0x10`, `&sprattr[i * 40] +
  * 0x10` and four more spellings 81 (counts before iter 56c include main_menu's 52-byte jump table, which
- * followed this function while it stood in front of main_menu: 32 rows now, all real). */
+ * followed this function while it stood in front of main_menu: 32 rows now, all real). iter 58 nmrefs:
+ * the six `in sprattr` refs the game alone uses and our `+0x4 +0x6 +0xe +0x24` are one pair, not two
+ * bugs - the game folds the array base into the displacement of its i*0x28 index (`imul ebp,edi,0x28`
+ * 0x2134c, `movsx edx,word [ebp+0x7299c]` 0x2134f = attrs[i].w) and we add the base once and index
+ * (`add edi,@` 0x21356, `movsx edx,word [edi+4]`); the six fields line up 1:1 (w, h, nframes, data x2,
+ * kind), and our precomputed f10 pointer (0x21323/0x21334/0x21376) is the game's three-instruction
+ * address build 0x21375-0x2137c. No behaviour difference: datfind before fread, the size in EDX, the
+ * data store before both, the break out of the inner loop. */
 /* ---- 0x21310, 221 bytes: loads the sprites the level's entities use (callers 0x21504, 0x2152c in
  * ents_load 0x21490). For each SPRITE.ATR record i that some ents[j].id names, w*h*nframes bytes are
  * read from the DAT entry named at +0x10 into the running buffer v7eb4c (from v7eb20), and the first
