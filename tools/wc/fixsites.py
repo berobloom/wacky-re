@@ -185,11 +185,18 @@ def main():
                     if op.type == capstone.x86.X86_OP_MEM:
                         vals.append(show(ins.address + ins.disp_offset - va + off,
                                          op.mem.disp & 0xFFFFFFFF, game_side))
-            if ins.imm_size == 4:
+            if ins.imm_size:
                 for op in ins.operands:
-                    if op.type == capstone.x86.X86_OP_IMM:
-                        vals.append('@' if ins.group(capstone.CS_GRP_JUMP) else
-                                    show(ins.address + ins.imm_offset - va + off,
+                    if op.type != capstone.x86.X86_OP_IMM:
+                        continue
+                    if ins.group(capstone.CS_GRP_JUMP):
+                        vals.append('@')
+                    elif ins.imm_size < 4:
+                        # 1- and 2-byte immediates too: `mov word [ents frame], 6` hides its 6 in a
+                        # 2-byte field, and a wrong one there is exactly this bug class.
+                        vals.append('imm%x:%x' % (ins.imm_size, op.imm & 0xFFFFFFFF))
+                    else:
+                        vals.append(show(ins.address + ins.imm_offset - va + off,
                                          op.imm & 0xFFFFFFFF, game_side))
             out.append('%s %s%s' % (ins.mnemonic, re.sub(r'0x[0-9a-f]+|\d+', '#', ins.op_str),
                                     ('  [' + ','.join(vals) + ']') if vals else ''))

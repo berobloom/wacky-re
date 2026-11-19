@@ -10757,7 +10757,13 @@ void kart_boost(void)
  * iter 39: the load sits at entry (0x24368) and again after the first return test (0x24388) though
  * nothing loops back there, and every exit reloads ECX from v7eb9c just before `pop ecx` (0x247fe,
  * 0x24827): dead loads. `static int v7eb9c` (no address taken, so pointer stores cannot alias it):
- * no change. Not the minimap lever (the source already computes in the global). */
+ * no change. Not the minimap lever (the source already computes in the global).
+ * iter 67 compared the 9 arm blocks of jt_24340 (0x24340) with `fixsites.py --arms kart_fire`: 0 bugs. The
+ * pairs differ only in the register that holds v (ESI in the game), in the game carrying the stored value in
+ * ECX (`mov ecx,1` 0x2459c then `mov [v7eb9c],ecx` 0x245bb after the call in between, where we store the
+ * immediate before it; the value each call sees is the same), in its one hoisted
+ * `mov ecx,[curpos]` 0x24613 above the i test our C evaluates inside the branch, and in the order of the two
+ * independent stores to v88bc0 and v7eb04; table slots 7 and 8 are the same target, the default 0x247c4. */
 extern int v7eb9c;
 extern char *v7eb04;
 extern short v88bc0;
