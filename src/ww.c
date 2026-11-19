@@ -11622,7 +11622,15 @@ void ents_project(void)
  * permutation puts the `[esp]` reload above the v7d6a0 load in their current homes. Iter 54: an
  * `extern char *volatile v7d6a0v` / `#pragma aux v7d6a0v "_v7d6a0"` alias on the other load (so both
  * memory reads are volatile) keeps our order - Watcom schedules volatile reads freely, so it pins
- * nothing here (2 rows, the two loads merely shift by 3 bytes). */
+ * nothing here (2 rows, the two loads merely shift by 3 bytes).
+ * Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the game
+ * tail-merges the two store pairs (the lx0 arm 0x25ff1 stores x, then `jmp 0x26021` 0x26008 into the
+ * shared y store that the lx1 arm 0x2600f falls into), so the block its `je 0x2600f` 0x25fef lands on
+ * uses only lx1/ly1 and RET; our `return` inside `if (v88bae != 3 || kind != 1)` jumps to the
+ * epilogue instead and our tail block reads v7d874 again. Same three paths and values: 0x25fe3
+ * `cmp word [0x88bae],3; jne 0x25ff1` then 0x25fea `cmp word [eax+2],1; je 0x2600f` is our
+ * `!= 3 ||` short-circuit, and 0x25f07/0x25f0c `test dx,dx` + `test bx,bx` are `if (move && stay)`.
+ * refs 44/44 and the consts already matched, so nothing else was open. */
 extern int v7d5d0;
 
 void shot_step(short move)
