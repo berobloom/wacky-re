@@ -137,6 +137,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   right), so a shrinking row count is no evidence of a fix. nmrefs named them: `game more 1x
   0x36fd0(drawsprite)` and `game only #0x140 #0x1f` (`mov eax,0x140` + `sar edx,0x1f` 0x1a456/0x1a466
   = the game's divide by the 320 px screen width). Read a length gap as missing calls, not padding.
+  Fed to DREA the same session (harness/TRAPS.md, iter 60 - the wacky commit for it is the DREA commit
+  "Traps: the port's own dead code deletes a computation the original performs"). [generic]
 
 ### Probes (`tools/wc/variants.py`)
 
