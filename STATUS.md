@@ -22,24 +22,22 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night (overnight/prompt.md step 2): iter 63 took the last three near misses that
-   nmrefs flagged by address or const - shot_step 0x25e6c, ents_show 0x014380, fn_1be3c 0x01be3c -
-   0 bugs; their one-sided blocks were Watcom shapes (a tail-merged store pair 0x26021/0x26008, a
-   block the game proves unreachable 0x145c3 -> 0x146bd, one head for nested retry loops 0x1beae);
-   GOTCHAS has the three-class rule. Every nmrefs DIFFER/consts candidate now carries `BEHAV:`.
-   What is left of that list: the counts-only trio draw_status 0x12f80, lights_project 0x266a8,
-   race_results 0x2bff0 (each `ours more 1x joy88b40`) - do the store census first (GOTCHAS).
-2. Run globrefs (`tools/wc/globrefs.py ww .work/src/WW.OBJ NAME 0xADDR`) over the whole near-miss
-   list in one loop and triage the hits - it finds this bug class in MATCHed functions too, where
-   fndiff has 0 rows. Ignore its `game only <string>` lines (our own literals are segment fixups it
-   skips, GOTCHAS); expect address-shape noise otherwise too: the line is a question, not a finding.
-3. Hybrid link (`tools/link/racetest.sh`): still RACETEST OK (the first race's overview) - iters 61-
-   63 changed no executable code (comment-only), so no racetest was run since iter 60. Next: drive
-   into the CHOOSE VEHICLE screen and compare it - iter 60's two cars_menu fixes (the centred
-   caption, the selection box drawn a third time) show there and nowhere near the overview; the race
-   frames need the same (the 0x7b238 animation table, a `clipy` sprite clipped at row 199).
-4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept),
-   so iters 61-63 took the overnight prompt's step 2 again; the human should put a real item there.
+1. Behaviour night is done for the address/const/count class: every one of the 21 nmrefs candidates
+   carries `BEHAV:`, 0 open bugs. Iter 64 closed the last three, all counts-only - draw_status
+   0x12f80, lights_project 0x266a8, race_results 0x2bff0 - all SAME (a shared `imul`, an in-place
+   `add [g],imm` vs load+store, a flag test Watcom folds: GOTCHAS). Next in that class: run globrefs
+   over the 0-row LAYOUT near misses (demo_rec 0x2e318, pic_show 0x32c98, fade_out 0x1bf94) - their
+   bytes differ only in jump displacements, so the per-address counts are the check fndiff cannot do.
+   Ignore `game only <string>` lines (our literals are segment fixups it skips); the rest of the line
+   is a question, not a finding.
+2. Hybrid link (`tools/link/racetest.sh`): last run RACETEST OK (the first race's overview, iter 60);
+   iters 61-64 changed no executable code, so no racetest was run. Re-run it once next iteration and
+   then drive into the CHOOSE VEHICLE screen and compare it - iter 60's two cars_menu fixes (the
+   centred caption, the selection box drawn a third time) show there and nowhere near the overview.
+3. Race frames need the same screen-level comparison (the 0x7b238 animation table, a `clipy` sprite
+   clipped at row 199, findings/video.md).
+4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept), so
+   iters 61-64 took the overnight prompt's step 2 again; the human should put a real item there.
 
 ## BLOCKED
 

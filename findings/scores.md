@@ -126,6 +126,17 @@ car-select chain and the name entry.
 - CONFIRMED (one call site each): `scores_write` 0x3542c is called only from 0x1d0d0
   (`scores_screen`, argument `v7ee5a`) and `trial_write` 0x35324 only from 0x2f01b (`trial_book`,
   `trial_write(v7ee5a)`): the books are saved with the slot the engine menu chose.
+- CONFIRMED (`race_results`'s fire tail 0x2d1e9-0x2d227, and the rebuild's copy of it is instruction
+  for instruction identical - our `src/ww.c` sites 0x1cddd-0x1ce23, the continue block 0x2cb84 = our
+  0x1c77a): what the fire button (`joy88b40`) does on the victory screen is decided by `mypod`, the own
+  player's podium step (a frame slot, [esp+0x338] in the game, [esp+0x350] in our frame). With
+  `joy88b40 != 0`: `mypod != 1` exits the loop (0x2d1f9/0x2d202 -> 0x2d22c) with no scores screen,
+  `mypod == 1 && splitscreen` exits it the same way (0x2d20e/0x2d216), and `mypod == 1 && !splitscreen`
+  calls `scores_screen` 0x2d227 first. With `joy88b40 == 0` the loop continues at 0x2cb84, which is a
+  mid-loop point (`v7e724 = ticks; pal_c = pal_a; setpalette(); if (musicon && ![esp+0x314] &&
+  MUSIC_SongPlaying()) ...` 0x2cb84-0x2cbbb), not the loop head - and the game reads the flag only twice
+  there because the first test's `je 0x2cb84` 0x2d1f1 already excluded 0 (`je` 0x2d1f7 and
+  `jne 0x2d221` are dead code).
 - CONFIRMED (walks at 0x1da3c `add v7d8a8, 0x2e`): the record pointer is stepped
   record by record elsewhere (0x1d8a8 writes `v7d8a8` the same way 0x1cad0 does,
   from 0x1d870).

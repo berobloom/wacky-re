@@ -298,7 +298,13 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   `attrs[i].w`) mean shape, not behaviour; iter 58's three passes found only that. What is real: a
   store that is missing, and a global left with a different value at the return - xref the global and
   check who reads it without writing (shots_project's v7d874: the game stores the past-the-table
-  pointer 0x26697, and it is dead because every reader sits under a writer, findings/game-loop.md). [generic]
+  pointer 0x26697, and it is dead because every reader sits under a writer, findings/game-loop.md).
+  Two shapes that end the hunt: C's `g += x` is ONE address-bearing instruction (`add [p7d838],eax`
+  0x2692e) where a rebuild that keeps the value in a register has load+store (lights_project 0x266a8,
+  ours x5 vs game x4), and the game skips a flag test Watcom can prove from an earlier `je`
+  (race_results 0x2bff0: three source ifs, two reads, the scores_screen arm tests only its other operand
+  0x2d218, with a dead `je` 0x2d1f7 left behind) - deleting your own test to match the count changes
+  behaviour. Pair the sites in instruction order and compare where each failing test jumps. [generic]
 - **A one-sided nmrefs jump-target block is three SAME classes before it is a bug:** (1) the game
   tail-merges a store pair, so the block an arm jumps into uses only the second half (shot_step
   0x25ff1 stores x then `jmp 0x26021` 0x26008 into the shared y store, where our `return` jumps to
