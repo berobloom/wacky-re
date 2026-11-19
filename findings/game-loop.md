@@ -225,6 +225,12 @@ merged).
 
 ## Traps
 
+- The first race's grid is not one screen: under `tools/link/racetest.sh`'s fixed key path the
+  ORIGINAL (`WWORIG.EXE`) drew grid A in 3 of 4 runs and grid B (other opponents, other order) in 1;
+  our hybrid A 2, B 1 (iter 74). CONFIRMED by pixels (B-run of ours vs B-run of the original: mean
+  0.0, 0.00% bad); the cause is LIKELY the `racetime` seed of `fn_1be3c` above, which wall-clock
+  key timing moves. A wrong grid is therefore no evidence of a bug: compare with both references
+  (`captures/race_play_ww.png`, `captures/race_play_ww_b.png`).
 - The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`
   tile map, and its transparent/solid test byte lives 0x1b000 bytes past the tile pointer - the
   second half of `v7d75c` (`add esi,0x1b000` 0x37b8f). Tiles are 32x32 with the pixel at

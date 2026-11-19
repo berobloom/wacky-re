@@ -66,14 +66,20 @@ def diffs(a, b):
             sum(1 for p in px if max(p) > 40) * 100.0 / len(px))
 pairs = [('.work/link/racetest.png', 'captures/race_overview_ww.png', 'overview'),
          ('.work/link/racetest_menu8.png', 'captures/engines_menu_ww.png', 'engines'),
-         ('.work/link/racetest_race.png', 'captures/race_play_ww.png', 'race')]
-out = []
+         ('.work/link/racetest_race.png', 'captures/race_play_ww.png', 'race'),
+         # the ORIGINAL draws one of two start grids (opponents and order), by timing: 1 run in 4 of
+         # WWORIG.EXE drew grid B. Each grid has its own reference and the closer one counts.
+         ('.work/link/racetest_race.png', 'captures/race_play_ww_b.png', 'race')]
+best = {}
 for shot, base, name in pairs:
     if not os.path.exists(base):
         continue                                   # no reference for this screen yet
     if not os.path.exists(shot):
         print('RACETEST FAIL %s mean 999.0 bad 100.0 (no screenshot)' % name); sys.exit(0)
-    out.append((name,) + diffs(shot, base))
+    d = diffs(shot, base)
+    if name not in best or d[1] < best[name][1]:
+        best[name] = d
+out = [(n,) + best[n] for n in ('overview', 'engines', 'race') if n in best]
 ok = all(m < 20 and bp < 3.0 for _, m, bp in out)
 # Whole-screen numbers hide a small wrong widget: the race place icon drawn from a NULL table
 # (QUESTIONS 25) moved the race screen only to mean 2.3 / 2.22% bad, under both limits. So count one

@@ -27,9 +27,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 1. Run `tools/link/fixcensus.py` after every `tools/link/build.sh` (must print `0 unexplained`):
    iter 73 found the race place icon (QUESTIONS 25, RESOLVED) was an unrelocated literal in
    `fn_17928`, and five more literal sites in `fn_173c4`, `fn_16f90` and main - bytes equal to the
-   game's, fixups missing (GOTCHAS, first trap). Those sites are fixed; their effects were never
-   observed on screen, so a racetest past the race start (lives, faces, end screen) is the next
-   check on them.
+   game's, fixups missing (GOTCHAS, first trap). Those sites are fixed. Iter 74: build + census
+   `0 unexplained`, 3 racetests of ours and 4 of `WWORIG.EXE` - the race-start HUD (place 8,
+   lives x3, faces x00, map, timer) is the original's, and the one grid that looked wrong is the
+   original's own grid B (findings/game-loop.md `## Traps`); racetest now compares the race shot
+   with both grids (0.00% / 1.23% floor). Still unseen: lives lost, faces taken, the end screen -
+   racetest stops 3 s into the race, so that needs a longer drive (a save state at the race start).
 2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
    `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
    .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/
