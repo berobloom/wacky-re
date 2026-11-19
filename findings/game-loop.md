@@ -239,6 +239,11 @@ merged).
 - `ents_project` 0x25a78 leaves `v7d7f4` at the last record it drew where the game stores the
   past-the-end pointer (0x25e5b). Do not "fix" that: the value is dead, see the `v7d7f4` section
   above (same shape as the `v7d874` bullet).
+- CONFIRMED (whole-module call-site scan; the next instruction at every site is a `cmp` of a global,
+  never a read of EAX): `shots_project` 0x2632c returns a shot pointer in EAX that no caller uses -
+  its six sites are 0x134ff, 0x13608, 0x289d7, 0x2f77d, 0x2fa18, 0x308d5 - and `players_ahead`
+  0x34208 has one call site, 0x35115, which discards EAX too. A different EAX at return from those
+  two is therefore not a behaviour difference (`tools/wc/difffn.py` prints an EAX note for both).
 - `v70720` is `short`, not `int`: every compare and store in `fn_1be3c` is 16-bit
   (`cmp $7,%dx`, `movw $0xffff`), and -1 is used as the "empty seat" sentinel.
 - A store can be at the right address with the wrong value and no comparison of *bytes* will see

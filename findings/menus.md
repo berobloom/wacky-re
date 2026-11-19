@@ -109,8 +109,10 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   is not proven.
 
 - CONFIRMED (0x15f98 `cmp word [esp+0xc8],0` and 0x15fad `movsx edx, word [esp+0xc8]` are the same
-  slot, the frame's spill of menu's 4th argument; the only one of the code module's 38 `msgbox`
-  0x2a414 call sites that passes a variable instead of 0 or a literal; experiment:
+  slot, the frame's spill of menu's 4th argument; of the C module's 53 `msgbox` 0x2a414 call sites
+  31 pass y = 0 (`xor edx,edx`), 4 pass a literal, and this is the only one that loads it
+  (census over a chunked whole-module dump - `tools/le/disasm.py` stops at the first undecodable
+  byte, so one long request silently undercounts); experiment:
   `tools/wc/difffn.py engines_menu` ends with `spr_y` 0x52 in the original and 0x40 in a build that
   passes the literal 0x3c there): `menu` 0x155c0's 4th argument does
   double duty - nonzero also draws 'LEE & JACKSON LAWNMOWERS' (when `netgame == 0`) at y = that same

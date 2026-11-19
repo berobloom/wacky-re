@@ -74,6 +74,10 @@ it can be copied back into DREA.
   0x1ce14 pointing at fade_in's local palette buffer (0x32d4c `mov dword [0x7d760],eax`), which sits
   4 bytes lower in our build because the frames are a different size, while the 0x800 bytes below it
   are byte-equal (iter 70: compare what the pointer points at before calling it a BUG).
+- **`tools/le/disasm.py` stops at the first undecodable byte**, so a whole-module census must be
+  restarted from the next address: `disasm.py ww 0x10000 0xbad9` ended at 0x1ffff after 15506 lines and
+  the file reads complete - it made iter 70 write "38 `msgbox` call sites" where the C module has 53
+  (chunk it: `disasm.py ww $a 5000`, resume at the last address + 1).
 
 Rules only: each entry is the rule plus one piece of evidence (an address). The per-function story
 (what was tried, row counts) lives in that function's `differs:` note in `src/ww.c` and in git

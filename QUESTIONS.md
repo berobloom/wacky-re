@@ -153,8 +153,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
 24. **RESOLVED** (iter 70, `tools/wc/difffn.py`, src/nearmiss.txt engines_menu + menu): running
     `engines_menu` 0x167d8 in the original and in the hybrid build left different memory - the game
     ended with `spr_y` (0x88b34) = 0x52, our build 0x40; stable from a 1M to a 6M instruction cap.
-    The writer was `menu` 0x155c0, not `engines_menu`: of the image's 38 `msgbox` 0x2a414 call sites
-    this one alone passes a variable - 0x15f98 `cmp word [esp+0xc8],0` tests menu's 4th argument
+    The writer was `menu` 0x155c0, not `engines_menu`: of the C module's 53 `msgbox` 0x2a414 call
+    sites (31 pass y = 0, 4 a literal) this one alone loads it - 0x15f98 `cmp word [esp+0xc8],0` tests menu's 4th argument
     (`c`, ECX by the calling convention of findings/executables.md) and 0x15fad `movsx edx, word
     [esp+0xc8]` passes that same slot as the y, so the 'LEE & JACKSON LAWNMOWERS' banner sits at the
     y the caller gave the menu (engines_menu passes 0x4e, 0x168cd). Our C passed the literal 0x3c.

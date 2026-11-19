@@ -24,22 +24,26 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `engines_menu` 0x167d8 is a known behaviour bug with no cause yet (QUESTIONS 24): `tools/wc/difffn.py
-   engines_menu` ends with `spr_y` 0x52 in the game and 0x40 in ours, stable from a 1M to a 6M
-   instruction cap, while `msgbox` (a MATCH) and `print_at` are each SAME run on their own. Find which
-   row's y differs - the two last spr_y writes are in those helpers, so read the value engines_menu
-   hands them (its `menu(2, 0x4e, 0, 0)` call site is byte-equal, so not the arguments). `scores_screen`
-   ends with 0x7d760 = 0xe8/0xe4 and may be the same cause one level down.
-2. Run the behaviour sweep after every C change (69 s for all 76 open lines, one process per function):
-   `awk '$2 ~ /^0x/ && $0 !~ /MATCH/ {print $3}' src/nearmiss.txt | while read n; do
-   .work/venv/bin/python tools/wc/difffn.py $n; done`. It found `players[].f14` (iter 69), a wrong
-   stored value that check.sh, fndiff rows, and nmrefs' address and constant censuses all pass.
-3. The f14 fix has not been seen on screen yet: the racetest overview is unchanged (RACETEST OK 0.0).
-   `cpu_drive` 0x28cac walks the karts into their slots with `dir = +-f14` over the first frames of the
-   race, so compare a capture taken *inside* the first race, not the overview.
-4. 22 of the 76 open lines still have no behaviour verdict (14 hit the instruction cap, 8 the call cap,
-   2 crash at the same instruction). Each needs its loop ended or its pointer globals seeded; try
-   `COUNT=`/`CALLS=` first, they are env knobs of difffn.py.
+1. Show the two fixes on screen: neither is in the racetest path (both ended RACETEST OK 0.0, the
+   overview unchanged). `menu` 0x155c0 now draws 'LEE & JACKSON LAWNMOWERS' at the caller's y (0x15fad,
+   `engines_menu` passes 0x4e at 0x168cd) and iter 69's `players[].f14` moves the karts in the first
+   frames of the race (`cpu_drive` 0x28cac). Smallest step: a second screenshot in
+   `tools/link/racetest.sh` on the Options -> Engines screen, and one taken inside the first race.
+2. Re-run the behaviour sweep after every C change (now 81 lines - the filter picks the status column,
+   not the whole line - about 90 s, one process per function): `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
+   {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`.
+   Every remaining DIFF is now adjudicated: `ents_project`/`shots_project`/`net_input` are the dead
+   `v7d7f4`/`v7d874` past-the-end pointers (findings/game-loop.md), `scores_screen` is a stack address.
+   A new DIFF is therefore news.
+3. 19 open lines still stop at the 3M-instruction cap and 11 at the 300-call cap: their waits spin with
+   no library call, so `COUNT=`/`CALLS=` cannot help. Give `difffn.py` a `SEED=addr=value[b|w|d],...`
+   knob (write the globals after the image load, then re-snapshot `init` so the watch re-run starts from
+   the same seeded state) and take the three that crash on a null pointer global - `net_input` 0x2f4a8,
+   `kart_draw` 0x24bcc, `fn_193a8` 0x193a8 - plus the menu spinners.
+4. `com_wait_byte` 0x2df70 has no call site in the C module (0x10260-0x36a4d), so its EAX
+   (0xffffffff/0x0) is unadjudicated: its caller is in the asm module above 0x36a4d, which difffn stubs.
+   A whole-module dump has to be chunked - `tools/le/disasm.py` stops at the first undecodable byte
+   (GOTCHAS).
 
 ## BLOCKED
 
