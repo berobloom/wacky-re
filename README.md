@@ -6,8 +6,6 @@ A study of the DOS kart racer **Wacky Wheels** (Beavis Soft, published by
 Apogee Software; version 1.1, registered), and a rebuild of its program in C
 that compiles back to the same machine code.
 
-![The original game: the start of a Bronze Wheels race, the pack pulls away from the line and Tigi climbs from eighth to sixth](docs/media/wacky-race.gif)
-
 The research half is notes on how the original works, worked out from
 `WW.EXE` (Watcom C 9.5b, DOS/4GW) and its data, and from experiments with it
 running under DOSBox-X. Each finding records the code addresses it rests on
