@@ -144,6 +144,22 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   *external* fixups through symmap, and our own literals hang off *segment* fixups, which it skips.
   nmrefs does resolve them (it votes a common base), so strings from nmrefs, data addresses from
   globrefs. [generic]
+- **A census tool that finds a function by `startswith` compares the wrong body, and a our-side scan
+  that ignores absolute `disp32`s invents one-sided addresses** (iter 65, `tools/wc/globrefs.py`, a
+  census of all 102 near misses): `nm.startswith(name)` resolved `fade_out` to the 20-byte
+  `fade_out_screen_` and `main` to `main_menu_names_` (Watcom OMF publics carry a trailing underscore)
+  - match `name` or `name + "_"` and print the public it picked; the last public in `_TEXT` has no
+  following public, so the range end must default to the segment length or the tool dies in
+  `StopIteration`, and a sweep that pipes each run through `sed -n '2,20p'` drops the traceback line,
+  so that function silently contributes nothing. It also collected only ext fixups and immediates on
+  our side while taking every memory displacement on the game's, so the game's
+  `mov [edx+0x6e6e0],eax` 0x17a3a, `mov [edx+0x6e6e4],eax` 0x17a45 and `mov edx,[eax+0x6508e]`
+  0x1828c printed as `game only` against our byte-identical operands (0x79ae, 0x79b9, 0x81f0: an
+  absolute `disp32` with no fixup on it). Fix: take our MEM displacements too unless a fixup covers
+  the four bytes at `ins.address + ins.disp_offset` (capstone 5 has `disp_offset`). After the three
+  fixes, one near miss of 102 still had a one-sided non-string address - showlines 0x2a268, the
+  relocated `&netstats[1]` addend (SAME). `tools/wc/test_globrefs.py` pins all three fixes. Fed to
+  DREA the same session (harness/TRAPS.md "Static analysis tools"). [generic]
 - **Our C can hold the game's expression and never use it, and then both counters move the WRONG way**
   (iter 60, cars_menu: `capx = (0x140 - 8*strlen(buf1))/2` was in the source but the print call passed
   `x2e`, so 9.5b deleted the division and the caption drew at x=46 instead of centred; the same

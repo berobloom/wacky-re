@@ -50,8 +50,12 @@ def main():
     (_, recs), = list(L.modules(open(obj, 'rb').read()))
     segs = L.code_of(recs)
     pubat = sorted((o, nm) for s, o, nm in M.publics(recs) if s in segs)
-    off = next(o for o, nm in pubat if nm.startswith(name))
-    nxt = next(o for o, _ in pubat if o > off)
+    # exact public name (OMF publics carry a trailing underscore); `startswith` picked
+    # fade_out_screen_ for `fade_out` and main_menu_names_ for `main` (iter 65)
+    off = next((o for o, nm in pubat if nm in (name, name + '_')), None)
+    if off is None:
+        off = next(o for o, nm in pubat if nm.startswith(name))
+    nxt = next((o for o, _ in pubat if o > off), len(segs['_TEXT'][0]))   # the last public in _TEXT (main_)
     ours = L.fixups_of(recs)
     data, _ = segs['_TEXT']
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
@@ -68,12 +72,27 @@ def main():
         v = base + int.from_bytes(data[at:at + w], 'little', signed=True)
         if LO <= v < HI:
             orefs.setdefault(v, []).append(hex(at))
+    fixat = bytearray(len(data))                  # a byte the linker fills in
+    for seg, at, loc, selfrel, kind, nm, _ in ours:
+        if seg == '_TEXT':
+            fixat[at] = 1
     for ins in md.disasm(data[off:nxt], off):     # our immediates (a literal record address)
         if ins.group(capstone.CS_GRP_CALL) or not ins.operands:
             continue
         for op in ins.operands:
-            if op.type == capstone.x86.X86_OP_IMM and LO <= (op.imm & 0xFFFFFFFF) < HI:
-                orefs.setdefault(op.imm & 0xFFFFFFFF, []).append(hex(ins.address))
+            if op.type == capstone.x86.X86_OP_IMM:
+                v = op.imm & 0xFFFFFFFF
+            elif op.type == capstone.x86.X86_OP_MEM:
+                v = op.mem.disp & 0xFFFFFFFF
+                # an absolute disp32 with no fixup on it (0x6e6e0, 0x6508e) is our own literal,
+                # the game's own operand form; a relocated one has a fixup on its four bytes.
+                d = ins.address + ins.disp_offset
+                if any(fixat[a] for a in range(d, d + 4)):
+                    continue
+            else:
+                continue
+            if LO <= v < HI:
+                orefs.setdefault(v, []).append(hex(ins.address))
     gend = next((a for a in sorted(M.names(prog).values()) if a > addr), addr + 4096)
     gins = list(md.disasm(code[addr - cbase:gend - cbase], addr))
     for ins in reversed(gins):                    # the next function's head is not part of this one
@@ -90,7 +109,8 @@ def main():
                 v = op.mem.disp
             if v and LO <= v < HI:
                 grefs.setdefault(v, []).append(hex(ins.address))
-    print('%s  ours our 0x%x-0x%x  game 0x%x-0x%x' % (name, off, nxt, addr, gins[-1].address))
+    offname = next(nm for o, nm in pubat if o == off)
+    print('%s  ours our 0x%x-0x%x (%s)  game 0x%x-0x%x' % (name, off, nxt, offname, addr, gins[-1].address))
     for side, a, b in (('ours only', orefs, grefs), ('game only', grefs, orefs)):
         for v in sorted(set(a) - set(b)):
             print('    %s 0x%x  x%d  %s' % (side, v, len(a[v]), ' '.join(a[v][:6])))
