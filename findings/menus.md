@@ -212,6 +212,31 @@ the wait for `ticks` > 6 (0x34cb4: no stubbed call in the body, so `TICK=` alone
 at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction on both sides
 (inconclusive; a null pointer global).
 
+- CONFIRMED (0x1efb0-0x1f43b executed under `tools/wc/difffn.py`, iter 77): `credits_screen` ends by
+  itself - it is six pages, the loop back edge is 0x1f428 `cmp dword [esp],5; jle 0x1f037` and the
+  return is 0x1f432, so a capped run is a wait, not a menu that needs the player. The wait is the
+  per-line frame delay 0x1f305 `cmp edi, dword [0x7e720]; jge 0x1f305`: `edi` is the `pal_a` 0x88b24
+  **word** loaded at 0x1f064 and 0x1f3d1 (0xbb80 / 0x7d00), and the page head 0x1f05a stores 0 to
+  `ticks`, so `SEED=0x7e720=` cannot help (it is wiped every page) and the loop body has no stubbed
+  call, so `TICK=` only pays at the next `f37de0` 0x1f2e0. `TICK=65536` (one add per stubbed call,
+  more than any word deadline) passes it at once; `TICK=8` needs > 2000 calls. The six pages take
+  between 2000 and 20000 stubbed calls, hence `CALLS=20000`: with that both sides of
+  `difffn.py credits_screen` reach the return and agree (control with the same env SAME, and SAME
+  again with `SEED=0x88cce=1:b`, which takes the early page tail 0x1f374 `cmp byte [0x88cce],0;
+  jne 0x1f3c3`).
+- CONFIRMED (0x2a268-0x2a410, iter 77): `showlines(n, mode, deadline)` has two tails and neither can
+  be reached with difffn's default zero arguments. The line loop ends at 0x2a382 `cmp edi,
+  [esp+0xc]; jle 0x2a363` (so n=0 prints nothing); 0x2a384 `cmp dword [esp+8],0` picks the tail.
+  `mode == 0` goes to 0x2a3ab `mov [0x7e720],0` then waits `cmp ebp, [0x7e720]` at 0x2a3b5/0x2a3bd
+  against **arg3** (EBX, 0x2a277 `mov ebp, ebx`) - the real call sites pass 0 (0x113f1, 0x18dd7,
+  0x19baa, 0x1a084, 0x1b4d3), 0x198 (0x20dd2) and 0x220 (0x2c89e), and since `ticks` is zeroed first
+  and the wait body has no call, no seed and no `TICK=` ends it. `mode != 0` goes to
+  `wait_release` 0x278c4, `wait_input` 0x27920 with EAX=1, and stores the answer into `v88b9e` 0x88b9e
+  (0x2a39c) - that path runs and returns with `ARGS=3,1,0 SEED=0x88cd0=1:b` (key88cd0==1 is
+  `wait_input`'s exit at 0x27984 -> 0x2798d `mov eax,1`), and both sides of `difffn.py showlines`
+  then agree through the return (control SAME). `ARGS=` takes the Watcom registers in order, so this
+  is eax=3, edx=1, ebx=0.
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands
