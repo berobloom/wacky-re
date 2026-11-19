@@ -349,9 +349,12 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    `main_menu` (0x1f824) and `rows_pad_` 6 -> `trial_book` (0x2e4a0) - 54 entries in all; the tables'
    each table lies in the code between the preceding named function and the switch function. The byte census cannot decide
    them: a near miss's blocks are laid out differently, so its intra-function offsets mean nothing
-   (`kart_frame` arm 0: our +0x853 against the game's +0x84b). One entry is stranger: the game's
-   0x1f844 holds 0x16978, which is 0x1a0 into `engines_menu` 0x167d8, where ours points inside
-   `main_menu` - either the game tail-merged that arm into `engines_menu`'s tail or 0x16978 is an
-   unnamed helper between `engines_menu` and the next name in analysis/ww_names.txt.
-   What would settle it: arm by arm against the disassembly, as iter 62 did for `kart_frame`'s 14
-   (same animation table per case, `findings/game-loop.md`); the other five are unchecked.
+   (`kart_frame` arm 0: our +0x853 against the game's +0x84b). The one entry that left its function is
+   resolved, not open: the game's 0x1f844 holds 0x16978 = `engines_menu`'s epilogue, which
+   `main_menu`'s case 9 shares (src/ww.c's main_menu header, GOTCHAS "copies in one probe share
+   their identical tail"); fixsites adds that our entry for the same case lands on `main_menu`'s own
+   copy of those nine bytes, `add esp,8` + `pop ebp/edi/esi/edx/ecx/ebx` + `ret` (our +0x1a74), so it
+   is same-shape.
+   What would settle the rest: arm by arm against the disassembly, as iter 62 did for `kart_frame`'s
+   14 (same animation table per case, `findings/game-loop.md`); `fn_19db8` (4), `cars_menu` (8),
+   `kart_fire` (9), `main_menu` (the other 12) and `trial_book` (6) are unchecked.
