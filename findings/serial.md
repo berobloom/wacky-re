@@ -79,6 +79,21 @@ The rings are 16 KB: `rxbuf` 0x84b00 with `rxhead`/`rxtail`/`rxcount`
   swapped signature `(port, irq, comnum, baud)`, which changes no call-site byte but opens the wrong
   port and divides by the wrong rate - `objmatch.py`'s `WRONG link_open_@0x1dc31` line is the check.
 
+- CONFIRMED (difffn seeds, iter 75): `com_wait_byte` 0x2df70 and `com_expect` 0x2e008 pop the ring
+  the same way in our C. `SEED=0x84afe=1:w,0x84afc=3:w` puts one byte in the ring with a non-zero read
+  index, so the pop path runs (0x2df8c-0x2dfc4 / 0x2e02d-0x2e065: `inc word [0x84afc]`, the `cwde` +
+  `movzx ax,byte [eax+0x84b00]` read, `dec word [0x84afe]`, the `cmp word [0x84afc],0x4000` wrap) and
+  both runs return; with `+0x84b00=0x41:b` EAX on return is 0x41 on both sides, which answers the
+  open EAX question for that path (a pop returns the byte, the timeout arms return 0). `com_expect`
+  also matches its control (the game against the relinked game); a control for `com_wait_byte` cannot
+  be run - it is not a public in `.work/link/WWORIG.MAP` (the nearest are `com_getc_` 1:0x5b0,
+  `com_waitfor_` 1:0xa94), the game's spelling of it is static.
+  Their timeout arms stay uncovered: com_wait_byte's 0x2dfd6 `cmp ecx,0x110` compares `ticks` with a
+  snapshot of `ticks` taken at entry (0x2df75 `mov ebx,[0x7e720]`), and com_expect's timeout arm is
+  gated on its own argument (0x2e08a `test edx,edx; je 0x2e01c`, `cmp ecx,edx` 0x2e096) which difffn
+  passes as 0. Neither wait loop makes a stubbed call, so difffn's `TICK` (findings/menus.md) cannot
+  advance it.
+
 ## Traps
 
 - Watcom's placement of the shared `done:` epilogue is not a function-local

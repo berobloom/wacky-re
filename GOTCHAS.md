@@ -105,7 +105,10 @@ it can be copied back into DREA.
   set an input flag but never release one - the release spin 0x16286 `cmp byte [0x88cd0],1; je 0x16286`
   is unseedable, so look for the branch that returns without waiting (0x16331). The control run needs
   the function to be a public in `.work/link/WWORIG.MAP`: a static original (`com_wait_byte` 0x2df70)
-  has no control. Recipe and its evidence: findings/menus.md, findings/serial.md.
+  has no control. To find the loop a capped run sits in, `FN=name .work/venv/bin/python
+  tools/wc/hotfn.py` counts executed addresses in the original image and marks the backward jump - it
+  named menu's frame wait 0x1604c and com_wait_byte's ring wait 0x2df7b in seconds. Recipe and its
+  evidence: findings/menus.md, findings/serial.md.
 - **`tools/le/disasm.py` stops at the first undecodable byte**, so a whole-module census must be
   restarted from the next address: `disasm.py ww 0x10000 0xbad9` ended at 0x1ffff after 15506 lines and
   the file reads complete - it made iter 70 write "38 `msgbox` call sites" where the C module has 53
