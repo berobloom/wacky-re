@@ -255,6 +255,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   sides of a store to one of them (`sub [spr_w],ax` then `mov [clipy],eax`, 0x34346/0x3435f) - the
   source had a local; writing the expression twice re-reads the stored value and changes behaviour
   (players_ahead's clipy was always 0, findings/video.md). [generic]
+- **Read a nmrefs count line as a store census first:** count that global's reads and writes on both
+  sides (decoded operands with an absolute address; the writes are the `mov`/`add`-style ones in the
+  destination). Equal write counts and a game-side `add [g],imm` (0x264f8 `add [p7d838],4`), a frame
+  slot (0x25694 `mov [esp],edx` for `sy`) or a folded base (0x2134f `movsx edx,[ebp+0x7299c]` =
+  `attrs[i].w`) mean shape, not behaviour; iter 58's three passes found only that. What is real: a
+  store that is missing, and a global left with a different value at the return - xref the global and
+  check who reads it without writing (shots_project's v7d874: the game stores the past-the-table
+  pointer 0x26697, and it is dead because every reader sits under a writer, findings/game-loop.md). [generic]
 - **An unsigned `cmp eax,1; jbe A` + `cmp eax,2; je B` + `jmp` chain is a `switch` with `case 0: case
   1:`**, not `if (v <= 1) ... else if (v == 2)` (signed `jg`, other block order). A block the game
   jumps BACK into from a later test is the same statements written twice in the source and

@@ -22,13 +22,24 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night (overnight/prompt.md step 2): 6 of the 15 nmrefs-flagged near misses now carry
-   `BEHAV:` in `src/nearmiss.txt` (iter 57: players_ahead's clipy was a real bug, findings/video.md;
-   engines_menu, kart_state, pic_at, scores_screen, menu are frame-size/slot/register shape only).
-   Next in nmrefs file order: ent_sprites_load 0x21310 (`game only 6x in sprattr`, the i*40 strength
-   reduction, QUESTIONS 2), fn_193a8 0x193a8 (`game only 1x pal_6bit` - we call the aux alias),
-   fn_173c4, fn_16f90, players_project (#0x8), ents_project, shots_project (+0x22), cars_menu 0x1a380,
-   fn_1832c 0x1832c.
+1. Behaviour night (overnight/prompt.md step 2): 9 of the 15 nmrefs-flagged near misses now carry
+   `BEHAV:` in `src/nearmiss.txt` (players_ahead's clipy was a real bug, findings/video.md; the other
+   8 are frame/slot/register/folded-base shape). Method: GOTCHAS "Read a nmrefs count line as a store
+   census first". Next in file order: fn_193a8 0x193a8 (`game only 1x pal_6bit` - we call the aux
+   alias), fn_173c4 0x173c4 (`game more 1x v7d868`; our `+0x14 +0x1c +0x24 +0x2c +0x4 +0xc` should
+   pair with its folded bases as ent_sprites_load's did), ents_project 0x25a78 (`ours only #0xa` vs
+   the game's `game more 1x nents` - check a loop bound first).
+2. Same shift, later in the file: fn_16f90 0x16f90 (`ours only #0x2d8`, a 728 we alone use),
+   cars_menu 0x1a380 (`#0x178 #0x54 +0x78` ours vs `#0x140 #0x17c #0x1f #0x24 #0xb4` game - menu
+   coordinates, the likeliest real bug of the rest) and fn_1832c 0x1832c (`#0xe6` vs `#0xe8`).
+3. Hybrid link (`tools/link/build.sh`): all our C + the game's library and data. Known state:
+   `tools/link/racetest.sh` = RACETEST OK (the first race's overview, identical to WW.EXE's). Next:
+   drive into the race itself and compare frames (the racetest stops at the overview) - a sprite
+   clipped at row 199 (`clipy`, findings/video.md) only shows inside a race.
+4. The clipy class, once more: a global read a second time *after* a store that used the same
+   expression changes meaning (players_ahead). The correct spelling keeps the value in a local -
+   `n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... v7d878 = n * 4;` (src/ww.c:11353, drawsprite_clip
+   0x11404); check the other sprite-draw sites against the game's `mov [g],reg` after its `sub`.
 2. Hybrid link (`tools/link/build.sh`): all our C + the game's library and data. Known state:
    `tools/link/racetest.sh` = RACETEST OK (the first race's overview, identical to WW.EXE's). Next:
    drive into the race itself and compare frames (the racetest stops at the overview) - a sprite
