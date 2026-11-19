@@ -241,6 +241,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   lie in a near miss is not decidable at all (54 entries in 6 tables - kart_frame, fn_19db8,
   cars_menu, kart_fire, main_menu, trial_book), because a near miss's blocks are laid out differently
   and its intra-function offsets mean nothing (QUESTIONS 22). `tools/wc/test_fixsites.py` pins both.
+  Its `--arms` pins are frame-slot sensitive: the C fix of iter 75 (`p7d838`'s bump, once per pass) moved
+  which locals `cars_menu` keeps in registers, so the game's `[esp+0x16c]` pair is now ours at
+  `[esp+0x144]` and our arm stores the 6 as an immediate where iter 74's went through DI - re-read the
+  pins from the tool's output after a C change, never hand-copy them.
   Fed to DREA the same session (harness/TRAPS.md "Old compilers", commit e28a7eb). [generic]
 - **The switch-table entries that census leaves over ARE decidable - compare the two arm blocks, not the
   entry addresses** (iter 67, `tools/wc/fixsites.py ww .work/src/WW.OBJ --arms NAME [-v]`). A pair is linked
