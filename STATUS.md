@@ -34,8 +34,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
    `0 unexplained`, 3 racetests of ours and 4 of `WWORIG.EXE` - the race-start HUD (place 8,
    lives x3, faces x00, map, timer) is the original's, and the one grid that looked wrong is the
    original's own grid B (findings/game-loop.md `## Traps`); racetest now compares the race shot
-   with both grids (0.00% / 1.23% floor). Still unseen: lives lost, faces taken, the end screen -
-   racetest stops 3 s into the race, so that needs a longer drive (a save state at the race start).
+   with both grids (0.00% / 1.23% floor). Then read in memory 3 s into the race, both builds
+   (data object located by pattern vote; `dosrun.py locate` found no window in the hybrid):
+   v7d884 -> 0x70660, v7d888 -> 0x6e728, v7d87c -> 0x70660, v7eb84 -> 0x7cbe8 as link addresses,
+   the same in WW.EXE and the hybrid - CONFIRMED relocated. The players[] +0x50/+0x58 zeroing
+   (fn_16f90) was not compared at runtime (race values move by then); fixcensus covers it statically.
+   No long drive needed for these sites. Open: `locate` misses the hybrid (QUESTIONS candidate).
 2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
    `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
    .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/
