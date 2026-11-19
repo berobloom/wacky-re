@@ -11,6 +11,10 @@
 # STATUS.md's next-open list has been doing) - scores_screen, fn_173c4 and fn_1832c are skipped that
 # way; `tools/wc/fndiff.py ww .work/src/WW.OBJ NAME 0xADDR | tail -1` gives the current row count
 # (the first column below is often stale: kart_bump read 86 here and 71 on the committed code).
+# Iter 68: the `tools/wc/nmrefs.py` classes are exhausted - of its 76 open lines every one of the 18
+# with a `DIFFER` or a `consts` line already has a `BEHAV:` verdict, and the 58 others are SKIP/LAYOUT
+# notes or show no one-sided address at all (kart_bump 0x22bf4: refs 211/211 same, no consts line). Re-running nmrefs before a new class is a wasted pass;
+# `tools/wc/datamatch.py ww .work/src/WW.OBJ` is the new one (data bytes, findings/executables.md).
 
 0    0x02e318 demo_rec               BEHAV: iter 65 globrefs census + jump scan - 0 bugs: no data address and no absolute disp32 one side lacks, and no branch leaves the function (its one call is fixup-borne), so the only bytes that ever differ are the call displacement; LAYOUT: call displacement only, our function sits elsewhere; not fixable in C
 0    0x032c98 pic_show               BEHAV: iter 65 globrefs census + jump scan - 0 bugs: no data address and no absolute disp32 one side lacks, and its own body has no branch at all; the only branches in its compared range are the fade_out tail's two jumps back, landing at our 0xbf16/0xbef3 = fade_out+0xa6/0x83 = the game's 0x1c03a/0x1c017 at the same intra-function offsets (fade_out line), so only the displacement differs; LAYOUT: iter 56c - 0x32cc1-0x32cf7 is fade_out's loop tail, which our build now emits here too (fade_out defined after pic_show); 0 rows, the only differing bytes are the two rel32 jumps back to fade_out's head, 0x2c4 short = what our build lacks between 0x1c068 and 0x32cc1

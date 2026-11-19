@@ -377,3 +377,18 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    14 (same animation table per case, `findings/game-loop.md`); `cars_menu` (8 entries, table 0x1a360),
    `kart_fire` (9, 0x24340), `main_menu` (the other 12, 0x1f824) and `trial_book` (6, 0x2e4a0) are
    unchecked - 35 entries.
+
+23. **OPEN** (iter 68, `tools/wc/datamatch.py`, findings/executables.md "Data layout (obj2)"): the
+    initialized data our build does not emit. CONFIRMED census: obj2 holds 7869 initialized bytes in 43
+    regions no group of ours covers, and our one group (0x60004-0x6235A) equals the game's at every byte
+    something reads. Most of the 43 are library data that comes in with the real libraries (the Apogee
+    Sound System's error strings 0x6235C-0x631D1, DOS/4GW's math strings 0x63004-0x63147, clib's `_iob`
+    0x6400C); two sets are the game's own C: the credits table (`extern char credits[][0x2c]`,
+    src/ww.c:8086, 0x632F0-0x63D5D) and the race-result praise strings at 0x63D44 / 0x63E0C / 0x63ED4
+    (check.sh's `unnamed arr63d44`, `arr63e0c`, `arr63ed4`). Nothing is wrong today: `tools/link/delink.py`
+    writes those bytes into BLOB.OBJ, whose data segment opens DGROUP at 0x60000 (tools/link/build.sh), so
+    the hybrid and racetest see the game's own values. What would settle it: for a link without BLOB.OBJ,
+    define them in their own object the way tools/link/extra.c does the two page-flip functions - not in
+    `ww.c`, where adding literals moves every later literal of its CONST group and breaks the
+    327-references base check. Unknown neighbour: the three `01` bytes at 0x60000-0x60002 (four dwords in
+    the image hold 0x60000: 0x35580, 0x47692, 0x476c6, 0x4d636; none of the other three addresses).

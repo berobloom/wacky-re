@@ -59,8 +59,9 @@ def modules(data):
             break
 
 
-def code_of(recs):
-    """the module's code segments as {segname: (bytearray, mask)}; mask 1 = a byte the linker fills"""
+def code_of(recs, only_code=True):
+    """the module's segments as {segname: (bytearray, mask)}; mask 1 = a byte the linker fills.
+    only_code=False keeps the data segments too (their group class is the second name of 0x98/0x99)."""
     lnames, segs, out = [None], [None], {}
     last = None
     for t, b in recs:
@@ -83,7 +84,7 @@ def code_of(recs):
             off = struct.unpack_from('<I' if t == 0xA1 else '<H', b, p)[0]
             p += 4 if t == 0xA1 else 2
             name, cls = segs[si]
-            if (cls or '').upper() != 'CODE':
+            if only_code and (cls or '').upper() != 'CODE':
                 last = None
                 continue
             buf, mask = out.setdefault(name, (bytearray(), bytearray()))

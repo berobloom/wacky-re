@@ -30,15 +30,19 @@ Short: where the project stands, and what is next. History is in git; no diary.
    compare the slide (the icon frame each row gets while sliding is what that store decides,
    findings/car_select.md), then the race frames (the 0x7b238 animation table, a `clipy` sprite clipped
    at row 199, findings/video.md).
-2. The switch-table census class is closed: all 54 table entries in the 6 tables that sit inside MATCHed
-   functions are decided (QUESTIONS 22), one of them a real BUG now fixed. `tools/wc/fixsites.py
-   --arms NAME [-v]` prints the two arm blocks side by side if a table is ever added; 16 pairs still
-   print DIFFER because a register or a stack slot differs - each one's verdict is in the function's
-   `BEHAV:` cell in src/nearmiss.txt, so re-reading them is wasted time.
+2. Behaviour classes the tools cover are worked out: iter 68 checked every open line of
+   `src/nearmiss.txt` against `tools/wc/nmrefs.py` and all 18 functions it flags with `DIFFER` or a
+   `consts` line already carry a `BEHAV:` verdict, so a behaviour night needs a new class. One exists
+   now: `tools/wc/datamatch.py ww .work/src/WW.OBJ` diffs our data groups with the game's byte for byte
+   (base voted, not typed). Clean: our CONST group 0x60004-0x6235A equals the game's at every byte
+   something reads; 25 differing bytes are dead pooled-literal space (findings/executables.md "Data
+   layout (obj2)"), and `test_datamatch.py` pins it with a flipped literal byte. Still open from it:
+   7869 initialized bytes of the game come from BLOB.OBJ rather than from our C - the credits table and
+   the praise strings are `extern` (QUESTIONS 23).
 3. `tools/wc/nearmiss.sh` (~5 min) is overdue and its first column drifts both ways (iter 67 corrected
    cars_menu 433 -> 431 by hand; fn_17928 read 7 in the file and 25 on the committed code, iter 65).
 4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept), so
-   iters 61-67 took the overnight prompt's step 2 again; the human should put a real item there.
+   iters 61-68 took the overnight prompt's step 2 again; the human should put a real item there.
 
 ## BLOCKED
 

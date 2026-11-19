@@ -465,6 +465,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### General rebuild facts
 
+- **Compare the data, not only the code, and expect dead bytes**: `tools/wc/datamatch.py ww
+  .work/src/WW.OBJ` (iter 68) puts our build's data groups on the game's image. Two traps, both found
+  getting a clean run: (a) the group's base must be voted over **every** occurrence of each anchor -
+  counting only the first hit of each anchor put the CONST group 4 bytes early and made 8225 of its 9046
+  bytes look wrong; (b) a differing byte is behaviour only if a dword somewhere in the image holds
+  its address, because the linker shares pooled literals and the game's pool keeps dead text where our
+  build has NUL padding (findings/executables.md "Data layout (obj2)"). `tools/wc/test_datamatch.py`
+  pins both, with a flipped literal byte as the mutation. [generic]
 - **`src/check.sh` after a compile error scores the PREVIOUS object** unless it deletes it first
   (fixed iter 36: `rm -f .work/src/WW.OBJ`); grep its output for `Error!` before reading a count.
   [generic]

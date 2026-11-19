@@ -27,6 +27,14 @@
 For the rebuild: one C file in address order (tables first), one asm file, then the libraries, which WLINK
 places by itself if the same libraries are given in the same order.
 
+## Data layout (obj2)
+
+| Range | What | Level, evidence |
+|---|---|---|
+| 0x60000-0x60002 | three bytes `01 01 01`, then a NUL: before the game module's CONST group | CONFIRMED the bytes, UNKNOWN what they are: no dword in either object holds 0x60001/0x60002/0x60003, four hold 0x60000 (0x35580, 0x47692, 0x476c6, 0x4d636), so a pointer to the byte at 0x60000 exists but nothing reads the other two |
+| 0x60004-0x6235A | **the game module's CONST group**: 9046 bytes of pooled string literals, ending with the `%d WWSW.BIN` / `WWREG.BIN` pair | CONFIRMED: `src/check.sh`'s fixup census puts all 327 of our references to it on one base, 0x60004, and `tools/wc/datamatch.py` derives the same base independently (1107 of its 16-byte anchors land there). **Byte-for-byte equal to our build's group at every byte something reads**: 25 of 9046 bytes differ and no dword in the image holds any of those 25 addresses, so they are dead space left by the linker's literal pooling - the game's pool runs `tlyMUSIC PAUSED` (0x60045), `nceCONNECTION TERMINATED` (0x60055), `CoWACK`/`ack` (0x600a2/0x600a9), `//BAD CRC  =` (0x6006e) where our build has NUL padding, the same sharing findings/menus.md saw for `""` at 0x600ac. Each shared literal's own bytes are identical at the same address, so this is not behaviour |
+| 0x6235C-0x64F7E | 7869 initialized bytes in 43 regions our build emits no group for (`datamatch.py`, `-v` lists them) | CONFIRMED the census. Two owners: **the libraries** - the Apogee Sound System's error strings 0x6235C-0x631D1, DOS/4GW's math library 0x63004-0x63147 (`GF1PATCH110`, `acos`, `RATIONAL DOS/4G`), clib's `_iob` at 0x6400C - which is right, the real libraries are linked in; and **the game's own C data**: the credits table (`credits[][0x2c]`, `src/ww.c:8086`: `PROGRAMMING AND DESIGN` 0x632F0, `ANDREW EDWARDSON` 0x6331C, ~20 regions out to 0x63D5D) and the race-result praise strings 0x63D44 / 0x63E0C / 0x63ED4 (check.sh's `unnamed arr63d44/arr63e0c/arr63ed4`). Our C declares those `extern` and nothing defines them: the hybrid link keeps the game's obj2 so they are there at run time, and a pure-C link has to supply them (QUESTIONS 23). LIKELY that those are the whole game-C part of obj2 - the census is checked, no source-level list is |
+
 ## Toolchain on disk (not committed)
 
 `.work/toolchains/inst/WC95`, `WC95A`, `WC95B`: Watcom C/C++ 9.5 from WinWorld's "Watcom CPP 9.5b (1993)"
@@ -91,3 +99,9 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   publics, one offset) and jumps into another function's identical tail, so variants in one file change each other.
 - `objmatch.py` without an address finds only functions with a run of 4 bytes no fixup touches; a 10-byte
   `mov eax,[x]; jmp f` needs its address given.
+- A data group's base has to be voted over **every** occurrence of each anchor: searching only the first hit
+  of every 16-byte anchor put our CONST group 4 bytes early and made 8225 of its 9046 bytes look wrong
+  (`datamatch.py`, and `test_datamatch.py` pins the base at 0x60004).
+- A data byte that differs is not behaviour until something reads it: the linker shares pooled literals, so
+  the game's pool keeps the text an earlier literal left behind where our build has NUL padding. Check that
+  some dword in the image holds the byte's address before calling it a bug (25 such bytes in the CONST group).
