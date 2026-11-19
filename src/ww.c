@@ -5919,12 +5919,12 @@ nameframe:
         v7d878 = 0;
         p7d838 = tab6e5b0[cd];
         p7d764 = p7d838 + 1;
+        v88c2e = p7d764[-1];                /* 0x1a8ea mov bx,[eax-2] */
+        v88c10 = p7d764[0];                 /* 0x1a8f3 mov ax,[eax] */
+        p7d838 += 2;                        /* 0x1a8f6 add dword [0x7d838],4: once per pass, not per row */
+        pname_desc(car);                    /* 0x1a90d: before the row loop, called once per pass */
         y = yrow134;
-        for (j = 1; j <= 2; j++) {              /* 0x1a912: the two name rows, 0xc apart; mrows[1..2] */
-            v88c2e = p7d764[-1];
-            v88c10 = p7d764[0];
-            p7d838 += 2;
-            pname_desc(car);
+        for (j = 1; j <= 2; j++) {              /* 0x1a912-0x1a932: the two name rows, 0xc apart; wtext only */
             wtext(col0x - 1, y, mrows_[j], 1);  /* index: the game's `mov esi,0x3c; add esi,mrows` 0x1a8c0 */
             y += 0xc;
         }

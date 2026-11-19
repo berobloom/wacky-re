@@ -157,6 +157,17 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   4 ticks 0x1afb4).
 - Each frame ends with `f37de0` (0x37de0, LIKELY the flip/present) and the
   `key88ccd` screenshot hook (0x1a724, 0x1a9ae, 0x1ae99, 0x1baf5).
+- The car-name block 0x1a8a7-0x1a932 (CONFIRMED; our C was wrong until iter 75):
+  `p7d838 = tab6e5b0[cd]` 0x1a8d1 and `p7d764 = p7d838 + 1` (stored twice, 0x1a8d6
+  and 0x1a8ee - the first is dead), then `add dword [0x7d838],4` 0x1a8f6: the
+  stream pointer moves **once per pass**, not once per name row. `pname_desc` is
+  called once at 0x1a90d and the row loop 0x1a912-0x1a932 (`add esi,0x3c; add
+  edi,0xc; cmp esi,ebp; jne`) touches only the row string and y, calling `wtext`
+  twice. Our C had `p7d838 += 2` and `pname_desc` inside that loop: difffn
+  (`TICK=8 SEED=0x88cce=1:b`, findings/menus.md) showed 0x7d838 ending 0x08 where
+  the game leaves 0x04. p7d838 is the `.SP` stream cursor the scaled blit
+  `f37487` steps (findings/formats.md), so what the block leaves behind is what
+  the next draw reads.
 - `ents_draw(9)` at 0x1a71a; `voice_play(0x12)` at 0x1a632 (LIKELY the
   "choose a car" voice), `voice_play(0x1a)` at 0x1b4a7 (with the ORDERING INFO
   lines) and `voice_play([esp+0x140])` at 0x1b987 - the car id, so LIKELY the
@@ -238,6 +249,10 @@ QUESTIONS.md.
 
 ## Traps
 
+- A loop that re-bumps a global stream pointer where the game bumps it once per
+  pass is invisible to the byte comparison (cars_menu 0x1a380: 416-row near miss,
+  `p7d838` left 2 shorts past the game's - iter 75 found it only by running the
+  function). Compare `p7d838` at the end, not the row count.
 - 0x1a360/0x1a370 are jump tables for the two switches, not padding: check
   `jmp dword ptr cs:[reg*4+disp]` before calling a gap dead space.
 - `ents[]` is the car-icon table here (8 records, `id == slot`), so reads of
