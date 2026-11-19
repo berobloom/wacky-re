@@ -18514,6 +18514,14 @@ void waitkey(void)
  * of the camera (no turn, no side offset: spr_x centred on 0xa0) with the 4th face frame
  * (img[4]) at the scale of its distance |v88b0e - y|; a player more than 1000 away gets f00 = 2.
  * A cut-down players_project; LIKELY the start-line view of the karts in front.
+ * BEHAV iter 57: `v7d878 = (short)(spr_w - 1 + spr_y - 0xc7) * 4` re-read spr_w *after* it was
+ * shortened by that same expression, so the clip offset came out 0; the game computes it once
+ * (0x34332-0x34340 `mov ax,[spr_w]; dec eax; add ax,[spr_y]; sub eax,0xc7`), uses that EAX for both
+ * `sub [spr_w],ax` and `cwde; lea eax,[eax*4]; mov [v7d878],eax` (0x3435f), so v7d878 = the rows cut
+ * off the bottom * 4. Now the local `n`, the house spelling (players_project 0x255d4, src/ww.c:11353).
+ * Same-shape (iter 57): the `+0x68` only the game has is the promoted loop pointer - 0x3425b
+ * `lea ecx,[eax+0x68]` before `jmp 0x3437f` and 0x3437c `add ecx,0x68` (struct player is 0x68
+ * bytes); we do the same on the global (`add [v7d800],0x68`), the ECX promotion below.
  * differs: the game keeps v7d800 in ECX (stored back each iteration, reloaded after the idiv and
  * the call), the same promotion players_project misses (QUESTIONS 2); 18 blocks follow from it.
  * Iter 36 (33 rows, 416 vs 408 bytes): `v7d800 = v7d800 + 1` in the for step (44 -> 33); not a
@@ -18523,7 +18531,7 @@ void waitkey(void)
  * (MATCH by computing in the global), the global here is already the working variable. */
 void players_ahead(void)
 {
-    short c, k, h;
+    short c, k, h, n;
     int d;
 
     for (v7d800 = players, v88b72 = 0; v88b72 <= 7; v7d800 = v7d800 + 1, v88b72++) {
@@ -18554,10 +18562,11 @@ void players_ahead(void)
         c -= spr_h >> 1;
         v7d878 = 0;
         if (spr_w - 1 + spr_y > 0xc7) {
-            spr_w -= (short)(spr_w - 1 + spr_y - 0xc7);
+            n = spr_w - 1 + spr_y - 0xc7;
+            spr_w -= n;
             if (spr_w <= 0)
                 continue;
-            v7d878 = (short)(spr_w - 1 + spr_y - 0xc7) * 4;
+            v7d878 = n * 4;   /* 0x3435f: the value computed before spr_w was shortened */
         }
         spr_x = c;
         f37487();

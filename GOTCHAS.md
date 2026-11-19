@@ -250,7 +250,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **A near miss can hide a behaviour bug the row count never shows:** a wrong field (cboxes[1].x2
   for .x), a swapped string, a store into the wrong table, or code made unreachable (no label after
   a `goto`, which 9.5b drops without a warning: fn_1832c lost its joystick path and trial_book
-  call). `tools/wc/nmrefs.py` compares what both sides reference; run it after every change. [generic]
+  call). `tools/wc/nmrefs.py` compares what both sides reference; run it after every change. One
+  shape to watch: the game computes an expression over globals once and reuses that register on both
+  sides of a store to one of them (`sub [spr_w],ax` then `mov [clipy],eax`, 0x34346/0x3435f) - the
+  source had a local; writing the expression twice re-reads the stored value and changes behaviour
+  (players_ahead's clipy was always 0, findings/video.md). [generic]
 - **An unsigned `cmp eax,1; jbe A` + `cmp eax,2; je B` + `jmp` chain is a `switch` with `case 0: case
   1:`**, not `if (v <= 1) ... else if (v == 2)` (signed `jg`, other block order). A block the game
   jumps BACK into from a later test is the same statements written twice in the source and

@@ -106,8 +106,31 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   holds the `<n>.PAR` blob, `src/ww.c:17259-17260`, `src/ww.c:17479-17480`): the image is
   blitted once at race start, not per frame.
 
+## `clipy` 0x7d878 is set from a value kept across the `spr_w` store — CONFIRMED (disasm)
+
+Every bottom-clip helper computes the overflow once and uses that one value for the shortened width
+AND for `clipy`; nothing recomputes it after the width store:
+
+- `players_ahead` 0x34208: `mov ax,[spr_w]; dec eax; add ax,[spr_y]; sub eax,0xc7` 0x34332-0x34340,
+  `sub word [spr_w],ax` 0x34346, `cmp word [spr_w],0 / jle` 0x3434d, then `cwde; lea eax,[eax*4];
+  mov [0x7d878],eax` 0x34357-0x3435f - the same EAX, so `clipy = (spr_w + spr_y - 1 - 199) * 4` with
+  the pre-clip `spr_w`. The scale factor feeds the asm blit `f37487` 0x37487 (names file: a scaled
+  Mode X sprite blit stepped by the `p7d838` delta table); why *4 there is not pinned.
+- `drawsprite_clip` 0x11404: same expression at 0x11434-0x1143e, but `mov [0x7d878],ebx` 0x11447
+  stores it **unmultiplied** for the asm drawer `drawsprite2` 0x3707e, and `spr_w` is restored from
+  a local after the call (0x11471).
+
+Port bug fixed iter 57: our `players_ahead` wrote the expression twice, so its second read of
+`spr_w` saw the shortened width and `clipy` was always 0 - no row of an over-tall sprite was ever
+skipped. Row count moved 30 -> 27 by itself, but only the racetest-style behaviour check would have
+caught the wrong value; a clipped sprite is one a player sees.
+
 ## Traps
 
+- A clip line written twice in C is not the game's: the game keeps the value in a register across
+  `sub [spr_w],ax` (0x34346) and reuses it for `clipy` (0x3435f). Re-reading `spr_w` after it was
+  shortened gives 0. Use the local (`n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... clipy = n * 4;`,
+  the house spelling at `src/ww.c:11353`).
 - A ternary is not the game's flip: `pal_a = pal_a ? 0 : 0x3e80;` selects the value in EAX and
   stores once, which no site in the game does. Write the two-branch `if`/`else` (see above);
   that is worth 71 aligned instructions in `cars_menu` alone.
