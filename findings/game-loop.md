@@ -234,6 +234,14 @@ merged).
   grid C (another kart in slot 6) came from our hybrid under a slower driver script with the same
   keys (iter 74, `.work/link/race_grid_c_new.png`, 2.04% bad against B); the original was not run
   on that script, so "the original draws C too" is LIKELY (same seed path), not observed.
+- `kart_draw` 0x24bcc reads its animation tables through two pointers that are zero until a race is
+  set up, so a bare difffn run faults: `v7d89c` 0x7d89c is reloaded from `curkart->f76` at 0x24e97 and
+  indexed `[v7d89c + track - 1]` at 0x24ef0 - with `curkart` 0x7d5b0 = 0 that is a read at 0xffffffff
+  (`write_prot at 0xffffffff`), while every other `curkart->fXX` read is silent because difffn maps
+  the null page. Seeding the null page's `f76` slot (`SEED=0x76=<ptr>:d`) plus `track` (0x7e728, an
+  index into `k1[]`/`k2[]`, a byte index: 0x24ee5 loads it and 0x24ef0 adds it to the pointer) takes
+  both builds to the return, SAME including the writes to the fake
+  record (iter 76). The seed block has to be zero in both images - see GOTCHAS.
 - The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`
   tile map, and its transparent/solid test byte lives 0x1b000 bytes past the tile pointer - the
   second half of `v7d75c` (`add esi,0x1b000` 0x37b8f). Tiles are 32x32 with the pixel at
