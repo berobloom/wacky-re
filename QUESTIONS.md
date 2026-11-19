@@ -355,6 +355,11 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    their identical tail"); fixsites adds that our entry for the same case lands on `main_menu`'s own
    copy of those nine bytes, `add esp,8` + `pop ebp/edi/esi/edx/ecx/ebx` + `ret` (our +0x1a74), so it
    is same-shape.
+   `ctl_label_`'s 4 entries into `fn_19db8` are resolved same-shape (iter 66, `fixsites.py --arms`:
+   the game's arms 0x19dde/0x19e02/0x19e37/0x19e6f open with `mov dword [v7ece0], 0x14/8/4/1` and ours
+   - our +0x26/+0x4b/+0x81/+0xb8 - set the same four constants in the same order; only the intra-block
+   offsets differ, by 0-2 bytes).
    What would settle the rest: arm by arm against the disassembly, as iter 62 did for `kart_frame`'s
-   14 (same animation table per case, `findings/game-loop.md`); `fn_19db8` (4), `cars_menu` (8),
-   `kart_fire` (9), `main_menu` (the other 12) and `trial_book` (6) are unchecked.
+   14 (same animation table per case, `findings/game-loop.md`); `cars_menu` (8 entries, table 0x1a360),
+   `kart_fire` (9, 0x24340), `main_menu` (the other 12, 0x1f824) and `trial_book` (6, 0x2e4a0) are
+   unchecked - 35 entries.

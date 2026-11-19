@@ -36,6 +36,7 @@ printed as `undecided` (their arms are checked against the disassembly by hand -
 Exit 0 prints the summary; a disagreeing site is printed and makes the exit 1.
 """
 import os
+from bisect import bisect_right
 import struct
 import sys
 
@@ -47,7 +48,9 @@ from lelib import Image                            # noqa: E402
 
 
 def main():
-    prog, obj = sys.argv[1], sys.argv[2]
+    prog, obj, args = sys.argv[1], sys.argv[2], sys.argv[3:]
+    if args and args[0] == '--arms':
+        args = args[1:]
     img = Image(prog)
     cbase = img.code_base
     (_, recs), = list(L.modules(open(obj, 'rb').read()))
@@ -72,6 +75,10 @@ def main():
         rng[name] = (off, end, bool(ok))
     funcs = sorted((o, n) for n, (o, e, k) in rng.items())
     enc = lambda o: next((x for x in reversed(funcs) if x[0] <= o), None)
+    ka = sorted(known.values())                     # game address -> nearest name below
+    byname = {v: k for k, v in known.items()}
+    addr = lambda a: ('%s+0x%x' % (byname[ka[i]], a - ka[i])
+                      if (i := bisect_right(ka, a) - 1) >= 0 else hex(a))
     nfun = sum(1 for v in rng.values() if v[2])
     counts, bad, tables, segbase = {}, [], {}, {}
     for seg, at, loc, selfrel, kind, nm, disp in L.fixups_of(recs):
@@ -119,6 +126,18 @@ def main():
     for (site, tgt), es in sorted(tables.items()):
         print('undecided: switch table in %s, %d entries -> arms of the near miss %s, e.g. '
               'our _TEXT+0x%x vs game 0x%06x' % (site, len(es), tgt, es[0][0], es[0][1]))
+    if args:                       # --arms: the entries of the tables aimed at these functions, in
+        for nm in args:            # table order, for the hand check the census cannot do
+            for (site, tgt), es in sorted(tables.items(), key=lambda kv: min(g for _, g in kv[1])):
+                if tgt != nm + '_':
+                    continue
+                print('\ntable in %s -> %s arms (game address of each entry, and where our entry '
+                      'points)' % (site, tgt))
+                for i, (a, g) in enumerate(sorted(es, key=lambda e: e[1])):
+                    t = enc(a)
+                    ours = known[M.plain(t[1])] + a - t[0] if t else a
+                    print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)'
+                          % (i, g, addr(g), ours, addr(ours)))
     n = sum(counts.values())
     print('%d sites in %d matched functions: %s | %d disagree'
           % (n, nfun, ', '.join('%s %d' % kv for kv in sorted(counts.items())), len(bad)))
