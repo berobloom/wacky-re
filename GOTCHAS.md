@@ -69,7 +69,11 @@ it can be copied back into DREA.
   compared, which turns a null-pointer crash into data that can be diffed; and its no-argument sweep
   selects the open lines with `'MATCH' not in line`, so a line whose note only *quotes* another
   function's status is skipped - iter 70's one real bug (menu 0x155c0's msgbox y) sat on the
-  `engines_menu` line the sweep never printed, and was found by naming that function explicitly.
+  `engines_menu` line the sweep never printed, and was found by naming that function explicitly; and
+  a DIFF byte that is a **stack address** is not behaviour - `palptr` 0x7d760 ends scores_screen
+  0x1ce14 pointing at fade_in's local palette buffer (0x32d4c `mov dword [0x7d760],eax`), which sits
+  4 bytes lower in our build because the frames are a different size, while the 0x800 bytes below it
+  are byte-equal (iter 70: compare what the pointer points at before calling it a BUG).
 
 Rules only: each entry is the rule plus one piece of evidence (an address). The per-function story
 (what was tried, row counts) lives in that function's `differs:` note in `src/ww.c` and in git

@@ -24,6 +24,12 @@ and prints the instruction that writes each, which is what the hand check needs.
 
 Note a helper is not held equal: a call below the limit runs the game's C on one side and ours on the
 other, so a DIFF can name a function whose own bytes match. Check the callee's row too.
+
+And a DIFF byte is only interesting if it is not an address: a global that caches a pointer into a
+stack frame (palptr 0x7d760 - fade_in 0x32d4c stores its local palette buffer there) reads as a
+difference because the two builds' frames are not the same size, while the memory it points at is
+equal. Compare what such a pointer points at before writing BUG (iter 70, scores_screen 0x1ce14:
+palptr 0xeffae8 vs 0xeffae4, 0x800 bytes below it equal but for the pointer itself).
 """
 import json
 import os
@@ -116,6 +122,10 @@ class Run:
         for r in ('eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'):
             self.e.reg(r, 0)
         self.events = []
+        # a re-run in the same Run inherits the first run's counters, and the CALLS cap then fires on
+        # the first stubbed call: the watch pass of a CALLCAP function stopped at once and printed no
+        # writers at all (iter 70)
+        self.stubs, self.crash, self.calls = [], None, False
         if self.watch:
             self.wh = self.e.uc.hook_add(UC_HOOK_MEM_WRITE, self._watch)
         try:
