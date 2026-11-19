@@ -203,9 +203,14 @@ the 300-call cap (the menu itself waits for the player) and printed **DIFF 1 byt
 was a real bug in our C, fixed and recorded in findings/car_select.md; the same run is now SAME at the
 same progress. `intro` 0x348f4, `credits_screen` 0x1efb0, `race_records_menu` 0x1d13c, `main_menu`
 0x1f858, `fn_1832c` 0x1832c moved from the 3M-instruction cap to the 300-call cap (their own outer
-loops). `com_open` 0x102f4, `showlines` 0x2a268, `volume_menu` 0x1e760, `chat` 0x14d00 still sit at
-the instruction cap - `kart_draw` 0x24bcc and `fn_193a8` 0x193a8 crash at the same instruction on both
-sides (inconclusive; a null pointer global).
+loops). Adjudicated iter 76: `com_open` 0x102f4 SAME with both sides returning, once difffn can pass
+register arguments (`ARGS=`) and execute `in`/`out` (findings/serial.md); `kart_draw` 0x24bcc SAME
+with both sides returning, once the null `curkart` is seeded (findings/game-loop.md); `intro` 0x348f4
+still capped but SAME at CALLS=300 and at CALLS=6000 - the 3M-instruction cap it used to report was
+the wait for `ticks` > 6 (0x34cb4: no stubbed call in the body, so `TICK=` alone cannot end it;
+`SEED=0x7e720=0x1000:d` does). `showlines` 0x2a268, `volume_menu` 0x1e760 and `chat` 0x14d00 still sit
+at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction on both sides
+(inconclusive; a null pointer global).
 
 ## Traps
 
