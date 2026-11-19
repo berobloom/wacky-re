@@ -12,7 +12,7 @@ python3 overnight/overnight.py --dry-run
 touch overnight/STOP                    # stop after the current pass; kill <pid> = stop now
 python3 overnight/watch.py              # live view of the newest run
 ```
-Morning: `overnight/runs/<stamp>/REPORT.md`, then review `git log --stat master..HEAD` and merge.
+Morning: `overnight/runs/<stamp>/REPORT.md`, then review `git log --stat main..HEAD` and merge.
 
 | File | Role |
 |---|---|
