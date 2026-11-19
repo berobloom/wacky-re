@@ -11966,7 +11966,23 @@ void shots_project(void)
  * 16-bit compare of two slot values) and `short a` (the game's `test di,di` 0x267e9 +
  * `movsx ebx,di` + `idiv ebx` 0x26803; `idiv dword [esp]` was ours), plus `spr_h = *p7d764++`
  * instead of an `h` local + store (gives the game's second load through the updated pointer,
- * `mov ax,word [eax]` 0x268c6). Same three spellings are open in the sibling projections players_project and shots_project. */
+ * `mov ax,word [eax]` 0x268c6). Same three spellings are open in the sibling projections players_project and shots_project.
+ *
+ * iter 64 BEHAV census (globrefs: `counts 0x7d838 ours x5 game x4`, `counts 0x88b36 spr_h ours x8 game
+ * x7`, every other address the same count): BOTH SAME, no store missing, the exit value of both globals
+ * is the same. (1) p7d838: the game advances the c<0 adjustment with one in-place read-modify-write
+ * `add dword [p7d838],eax` 0x2692e (one address), our build does `mov eax,[p7d838]` 0x16659 +
+ * `mov [p7d838],eax` 0x16660; the other four sites match one for one (store 0x268aa/0x165d0, `add
+ * [p7d838],4` 0x268ba/0x165e0 = `p7d838 += 2` on a short *, final read 0x26a00/0x16731 for CR->f08),
+ * and the game's 16-bit truncation `movsx eax,bx` 0x2692b is our `(short)(c * (spr_w + 1) * 4)`. (2)
+ * spr_h: the game keeps h in SI from `mov si,[eax]` 0x268b4 and reuses it for `c -= spr_h >> 1`
+ * (`movsx eax,si` 0x268ec + `sar esi,1` 0x268f4) and for the second arm's bound (`dec eax; add eax,esi`
+ * 0x2693b/0x2693c, EAX still = h); our build re-reads the word at 0x16613 and 0x16676. Between the
+ * store `mov [spr_h],si` 0x268c9 and those reads nothing writes [0x88b36] (the neighbours spr_w
+ * 0x88b26 / spr_y 0x88b34 are distinct words), so the value is identical. The one-sided verbose branch
+ * line (the range-check block 0x88b20/0x88b22/0x88c16/0x88c4a/0x88c4c) is a jmp-vs-conditional flag
+ * difference only - `jump-target blocks one side only: 0` means both sides jump to that same block. No
+ * BUG, no code change. */
 extern short v88c5e, v88c4a, v88c4c;
 extern int v7eba8;
 extern char *lights[];
