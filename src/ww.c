@@ -3829,7 +3829,9 @@ void zones_menu(int which, int bonus)
  * the zero hoisted above the early returns. `short edxv` DOES get EDX but then the ops are 16-bit
  * (`test dx,dx`) and t/u swap slots - 22 rows of a different shape, not taken. Kept: the arms
  * reassign the parameter (the game's `mov ebp,eax` is in the prologue 0x167e1, and `xor ebp,eax`
- * 0x16820 zeroes it with the still-live incoming value): 34 -> 32 rows. */
+ * 0x16820 zeroes it with the still-live incoming value): 34 -> 32 rows.
+ * BEHAV iter 57: nmrefs' `#0xc` ours / `#0x8` game is that frame size (`sub esp,0xc` 0x167de vs the
+ * game's `sub esp,8`) - same-shape, no behaviour item. */
 void engines_menu(int a)
 {
     int edxv, t, u;
