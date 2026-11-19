@@ -18595,7 +18595,13 @@ void players_ahead(void)
  * word [spr_w]`) 35 rows; a local copy of d takes the slot but turns the division into
  * `idiv dword [esp]` 31 rows of a worse shape. Also tried: int/short h, a w temp, a row pointer,
  * y declared first, `y -= spr_w; y -= lift;`, the two pointer statements in the other order (32,
- * but 180 bytes vs the game's 184). Nothing kept. */
+ * but 180 bytes vs the game's 184). Nothing kept.
+ * BEHAV iter 57: no behaviour bug, three same-shape items. `+0x2` (ours) vs `#0x2` (the game) is one
+ * pointer step over the frame header: we `lea edx,[eax+2]` 0x343f8 and read `[eax]`/`[edx]`, the game
+ * `mov dx,[eax]` 0x34410 then `add eax,2` 0x34413 and `mov ax,[eax]` 0x34425 - h and w, same two
+ * shorts. The extra spr_w / spr_y reads are our `spr_y = spr_y - spr_w - lift`: the game holds the
+ * row in EBX and w in EAX and stores spr_y once (0x34439), we store tb6bd00[d] early and re-read it;
+ * no call sits between the two stores, so no other code sees the intermediate value. */
 void pic_at(int d, int lift, short x)
 {
     short k, h;
