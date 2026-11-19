@@ -28,26 +28,25 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `menu` 0x155c0, `engines_menu` 0x167d8, `race_results` 0x2bff0: with `TICK=8 SEED=0x88cce=1:b`
-   each already returns and prints SAME (findings/menus.md) - run each control
+1. `volume_menu` 0x1e760 waits at 0x1e7af `cmp dword [0x7e720],0x12c`: `TICK=8 SEED=0x7e720=0x1000:d`
+   (the recipe in findings/menus.md), then the joystick arm `SEED=0x88cce=1:b` if it is still waiting;
+   write its `SEEDED:` line.
+2. `showlines` 0x2a268 sits in the loop that jumps back at 0x2a3c3 (`jge 0x2a3bd`) and `chat` 0x14d00
+   at 0x150ec (`cmp eax,0x18`): read what each tests and seed that global.
+3. `fn_193a8` 0x193a8 still crashes at 0x182fd `mov cl, [edx]` (write_prot 0xfffffffd): seed that
+   pointer the way `kart_draw`'s was seeded - the block must be zero in both images
+   (findings/game-loop.md Traps).
+4. `menu` 0x155c0, `engines_menu` 0x167d8, `race_results` 0x2bff0: each prints SAME at full return
+   with `TICK=8 SEED=0x88cce=1:b` (iter 75) - run each control
    (`NEW=wworig MAP=.work/link/WWORIG.MAP`, same seed) and write the `SEEDED:` line.
-2. `cars_menu` 0x1a380: iter 75 fixed the `p7d838` bump (game 0x1a8d1/0x1a8f6, once per pass) and the
-   double `pname_desc`; rows went 416 -> 445. Next: the row loop 0x1a912-0x1a932 now has only `wtext`
-   in the game - try the shapes that recover rows without moving the two stores (fixcensus + racetest
-   after any change).
-3. `intro` 0x348f4, `credits_screen` 0x1efb0, `race_records_menu` 0x1d13c, `main_menu` 0x1f858,
-   `fn_1832c` 0x1832c: now at the 300-call cap - try `CALLS=1200` with those two seeds.
-4. `com_open` 0x102f4, `showlines` 0x2a268, `volume_menu` 0x1e760, `chat` 0x14d00: still at the
-   instruction cap with the seeds - `FN=<name> .work/venv/bin/python tools/wc/hotfn.py` prints the
-   loop they burn in; seed what it polls. `kart_draw` 0x24bcc and `fn_193a8` 0x193a8 crash at the same
-   instruction on both sides (a null pointer global) - seed the pointer, do not call it a pass.
-5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
-   first trap). Iter 75 re-ran it over the fixed cars_menu build: 0 unexplained, RACETEST OK. After a
-   C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}'
-   src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`) and compare
-   the DIFFs against the recorded verdicts in `src/nearmiss.txt`; the known uncapped DIFFs are the dead
-   `v7d7f4`/`v7d874` pointers (findings/game-loop.md).
-5. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
+5. `fn_1832c` 0x1832c spins at 0x1889e `cmp byte [0x88cd0],1` (a key-release wait no static seed can
+   leave): look for the branch that returns without waiting, as `menu` 0x16331 does.
+6. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
+   first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
+   {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
+   and compare the DIFFs against the recorded verdicts in `src/nearmiss.txt`; the known uncapped DIFFs
+   are the dead `v7d7f4`/`v7d874` pointers (findings/game-loop.md).
+7. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
    slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
 
 ## BLOCKED
