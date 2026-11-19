@@ -341,3 +341,17 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    +0x18..+0x23 (zero) - no read of those offsets exists in 0x10260-0x36a60. Test: read the `kind`
    branches per function offline and state, per kind, what the player notices (shootable? score?
    blocks the kart?).
+22. **OPEN** (six switch tables that sit inside MATCHed functions; `tools/wc/fixsites.py`, iter 66):
+   Watcom emits a switch's table *in front of* its function, so those dwords are inside the preceding
+   function's bytes and MATCH there while their targets are arms of a near miss: `cpu_drive_` 14 ->
+   `kart_frame` (the table at 0x29068), `ctl_label_` 4 -> `fn_19db8` (0x19da8), `fn_1a2f8_` 8 ->
+   `cars_menu` (0x1a360), `kart_boost_` 9 -> `kart_fire` (0x24340), `main_menu_names_` 13 ->
+   `main_menu` (0x1f824) and `rows_pad_` 6 -> `trial_book` (0x2e4a0) - 54 entries in all; the tables'
+   each table lies in the code between the preceding named function and the switch function. The byte census cannot decide
+   them: a near miss's blocks are laid out differently, so its intra-function offsets mean nothing
+   (`kart_frame` arm 0: our +0x853 against the game's +0x84b). One entry is stranger: the game's
+   0x1f844 holds 0x16978, which is 0x1a0 into `engines_menu` 0x167d8, where ours points inside
+   `main_menu` - either the game tail-merged that arm into `engines_menu`'s tail or 0x16978 is an
+   unnamed helper between `engines_menu` and the next name in analysis/ww_names.txt.
+   What would settle it: arm by arm against the disassembly, as iter 62 did for `kart_frame`'s 14
+   (same animation table per case, `findings/game-loop.md`); the other five are unchecked.

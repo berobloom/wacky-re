@@ -160,6 +160,26 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   fixes, one near miss of 102 still had a one-sided non-string address - showlines 0x2a268, the
   relocated `&netstats[1]` addend (SAME). `tools/wc/test_globrefs.py` pins all three fixes. Fed to
   DREA the same session (harness/TRAPS.md "Static analysis tools"). [generic]
+- **A `check.sh` MATCH means the bytes agree, not the operands - 4556 of them are masked inside the
+  202 MATCHed functions** (iter 66, `tools/wc/fixsites.py`). objmatch checks only the *named*
+  externals site by site (`WRONG sym@addr`, 3116 agree) plus one base per segment, so an internal
+  `call`, a switch-table dword, an unnamed global and a string literal inside a MATCHed function are
+  masked and unchecked - the very class the hybrid link's two bugs came from. Inside a MATCHed
+  function the mirror address is exact (the unmasked bytes are equal), so compare site by site:
+  `ext` = its symmap address + the fixup disp + the addend in our bytes; `seg _TEXT` = the target
+  offset held in our bytes (the fixup disp is 0), mapped through the public containing it to that
+  function's game address + intra-function offset; a `_TEXT` target below the first public is a string
+  literal WCC put in the code segment (our `_TEXT+0/0x144/0x1ec/0x228` are the game's
+  0x10010/0x10154/0x101fc/0x10238, "UNO", "JAN FEB MAR...", "MAINMENU", "SHAUN"); every other segment
+  = one base by vote. Result 0 disagreements (ext 4133, `seg _TEXT` 94, CONST 327, `_BSS` 2): no
+  MATCHed function reads another global, calls another function or passes another literal. Two traps
+  on the way: a `.OBJ` data segment is a *list of offset/data records* (51 for CONST), so "its bytes
+  at offset X" from the concatenated records is not what the link puts there - that version called 325
+  of 327 literals different while the same 327 agree on base 0x60004; and a switch table whose targets
+  lie in a near miss is not decidable at all (54 entries in 6 tables - kart_frame, fn_19db8,
+  cars_menu, kart_fire, main_menu, trial_book), because a near miss's blocks are laid out differently
+  and its intra-function offsets mean nothing (QUESTIONS 22). `tools/wc/test_fixsites.py` pins both.
+  Fed to DREA the same session (harness/TRAPS.md "Old compilers", commit e28a7eb). [generic]
 - **Our C can hold the game's expression and never use it, and then both counters move the WRONG way**
   (iter 60, cars_menu: `capx = (0x140 - 8*strlen(buf1))/2` was in the source but the print call passed
   `x2e`, so 9.5b deleted the division and the caption drew at x=46 instead of centred; the same
