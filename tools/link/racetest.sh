@@ -10,6 +10,8 @@
 #                           of its pixels differing by more than 40). Noise floor measured over two
 #                           runs of the ORIGINAL: engines 0.45%, race grid 1.2-2.1% (the karts bob on
 #                           the start line), overview 0.00%. menu 0x155c0's wrong banner y reads 10.8%
+#                           Plus per-widget colour counts (regions[] below), shot/reference,
+#                           which must be within 5%: `place 1112/1112`
 #   RACETEST FAIL <diff>    it is not (screenshot in .work/link/racetest.png)
 #   RACETEST NOBUILD        the hybrid did not link (see tools/link/build.sh's output)
 #   RACETEST NOHARNESS      DOSBox-X did not come up twice
@@ -73,5 +75,19 @@ for shot, base, name in pairs:
         print('RACETEST FAIL %s mean 999.0 bad 100.0 (no screenshot)' % name); sys.exit(0)
     out.append((name,) + diffs(shot, base))
 ok = all(m < 20 and bp < 3.0 for _, m, bp in out)
+# Whole-screen numbers hide a small wrong widget: the race place icon drawn from a NULL table
+# (QUESTIONS 25) moved the race screen only to mean 2.3 / 2.22% bad, under both limits. So count one
+# exact colour inside a known widget, shot against reference, and fail past 5% apart.
+# (name, shot, reference, crop box in shot px, RGB)
+regions = [('place', '.work/link/racetest_race.png', 'captures/race_play_ww.png',
+            (50, 24, 94, 88), (255, 255, 0))]     # the 22x29 LAP.SP place icon at game px 25,12
+reg = []
+for name, shot, base, box, rgb in regions:
+    if not (os.path.exists(base) and os.path.exists(shot)):
+        continue
+    n = [sum(1 for p in Image.open(f).convert('RGB').crop(box).getdata() if p == rgb)
+         for f in (shot, base)]
+    reg.append('%s %d/%d' % (name, n[0], n[1]))
+    ok = ok and abs(n[0] - n[1]) <= 0.05 * max(n[1], 20)
 print('RACETEST %s %s' % ('OK' if ok else 'FAIL',
-                          ' '.join('%s mean %.1f bad %.2f%%' % t for t in out)))"
+                          ' '.join(['%s mean %.1f bad %.2f%%' % t for t in out] + reg)))"
