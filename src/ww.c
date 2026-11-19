@@ -13797,6 +13797,14 @@ void hud_draw(void)
  * buy a MATCH: 2 rows are 9.5b folding `&netstats[1]` into one relocated immediate where the game
  * has `mov esi,0x3c` + `add esi,0x7c818` (0x2a359/0x2a35d), 2 are our `mov ax,word[spr_x]`/
  * `mov ax,word[spr_y]` (0x2a331/0x2a340) vs the game's `movsx eax`, 2 the tail filler.
+ * Iter 65 behaviour pass (globrefs census): 0 bugs, 1 same-shape - that fold is confirmed at linked
+ * level, our two fixups resolve to 0x7c854, exactly the game's `mov edi,0x7c854` 0x2a297, and both
+ * sides step the record table with `add esi,0x3c` (0x19f70 / 0x2a37b), so netstats[0..n] are read in
+ * the same order; nothing else in the function touches an address one side lacks. The other 2 rows,
+ * our `mov ax,[spr_y]` 0x19f29 / `mov ax,[spr_x]` 0x19f38 against the game's `movsx eax`
+ * 0x2a332/0x2a340, are also same-shape behaviourally: both sides re-read those slots with
+ * `movsx word` on the way into print_at (ours 0x19f57/0x19f5c, the game 0x2a363/0x2a368), so the
+ * high half our 16-bit store leaves dirty is never read.
  * Iter 47 (.work/probe_cl, control 16 there): an `int tv` temp (`tv = spr_y + 4; y = tv;`) scored
  * 15 in the probe but 18 -> 20 in src/ww.c (rejected, GOTCHAS "Rank in a probe, decide in
  * src/ww.c"); `(int)` casts on the two sums, `p = netstats[1];` before the for, and
