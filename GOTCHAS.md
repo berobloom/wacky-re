@@ -518,8 +518,16 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   order EDX, EBX, ECX, ESI, EDI/EBP, the spilled ones sit by use count, more uses = higher slot, and
   declaration order, assignment order and the names change nothing. A use inside a loop outweighs
   16 uses outside it. BUT real functions break (b): credits_screen's `dir` (6 references, inner-loop
-  ones) sits below `first`/`y` (3 each) on both sides, so live-range splitting and slot reuse decide
-  there - do not "fix" a slot by adding references. (c) Of two operands the LARGER subtree is
+  ones) sits below `first`/`y` (3 each) on both sides. The mechanism (OW `generate.c` Generate:
+  MakeConflicts -> SplitVars -> MakeConflicts -> RegAlloc -> AssignTemps): slots go out top-down in
+  the temp list's order after a size sort, and that order is the savings sort (`RoughSortTemps`,
+  weighted IR reference counts, unstable ShellSort) of the LAST MakeConflicts plus temps created
+  after it (SplitVars gives every later disconnected live range of a reused variable a new temp).
+  IR counts are not C counts, and ties are reordered by the ShellSort's gaps, so the result is
+  chaotic: in a credits_screen probe one extra read of `first` moved `page` to the top slot, extra
+  reads of `y` moved `first` to the bottom (iter 73, 6 probes). Declaration order acts only through
+  ties - which is why a shuffle (`declorder`) sometimes wins and hand-picked orders do not. Not
+  solvable by rules; it needs a simulation of the compiler, or search. (c) Of two operands the LARGER subtree is
   evaluated first whatever the written order (`g(a) + g(b) * c` == `g(b) * c + g(a)`); written
   order decides only between equal subtrees, and no-op wrappers (`(int)`, `+x`, `| 0`, `-(-x)`) are
   folded, so they cannot steer it: a game that evaluates the smaller side first had a different

@@ -237,6 +237,10 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    appears as an argument, a `short` vs `int`, an extra unused local); a match is 21 diffs gone
    and `enter_name` byte-identical at 0x1cb44.
 
+   Iter 73 (GOTCHAS "9.5b frame and evaluation-order rules"): the slot order is the Open Watcom cg's
+   temp-list order at AssignTemps (savings sort of the last MakeConflicts, unstable ShellSort, plus
+   SplitVars' new temps), measured chaotic in credits_screen probes; no source-level rule exists.
+   Remaining routes: simulate the allocator, or keep searching (permute.py; --sweep found depth 1 flat).
 10. **OPEN** (src/ww.c `scores_screen`, findings/scores.md): which C shape puts the two spilled
     scalars in the game's slots - the game has `j` at esp+0x50 and `which` at esp+0x54, ours the
     other way round (6 sites of the 97 diffs)? Evidence: the frame (0x58), all three array slots,
