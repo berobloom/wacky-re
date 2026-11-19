@@ -250,15 +250,14 @@ def locate(d, prog):
         raw = le.object_image(o)[:o['page_count'] * le.page_size]  # no BSS
         n, votes = 64, {}
         # windows spread over the object; a delta must win most of them
-        # (a single window can hit a stale copy of the file in memory)
-        for k in range(1, 9):
-            off = (len(raw) * k // 10) & ~15
-            for off in range(off, min(off + 0x400, len(raw) - n), 16):
-                w = fixed[off:off + n]
-                if w == raw[off:off + n] and len(set(w)) > 12:
-                    for h in d.find(bytes(w), 0, 0x1000000):
-                        votes[h - off] = votes.get(h - off, 0) + 1
-                    break
+        # (a single window can hit a stale copy of the file in memory). Spread over the windows that
+        # qualify, not over the object: a linker that writes zero-filled data pages into the file
+        # (WLINK's hybrid, wacky-re iter 74) puts every fixed sample point in a run of zeros.
+        ok = [off for off in range(0, len(raw) - n, 16)
+              if fixed[off:off + n] == raw[off:off + n] and len(set(fixed[off:off + n])) > 12]
+        for off in [ok[len(ok) * k // 10] for k in range(1, 9)] if ok else []:
+            for h in d.find(bytes(fixed[off:off + n]), 0, 0x1000000):
+                votes[h - off] = votes.get(h - off, 0) + 1
         best = max(votes, key=votes.get) if votes else None
         out.append((base, best))
     return out

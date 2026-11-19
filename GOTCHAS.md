@@ -63,6 +63,12 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **`overnight/cleanup.sh` kills the shell that called it when that shell's command line names the
+  harness driver** [generic]. Its pattern `[d]osrun\.py` keeps pgrep off its own line but matches any
+  `bash -c` whose text contains the driver's file name - a heredoc body, a `find -name`, a loop that
+  runs the driver: exit 144, no output (iter 74, three times). Put such steps in a script file
+  written beforehand and run that; never name the driver in the same command as a cleanup.
+
 - **An absolute operand with no fixup is a bug, however identical its bytes.** Our
   `WI(0x6e6e0 + edx)` in `fn_17928` was byte-for-byte the game's `mov [edx+0x6e6e0],eax` 0x17a3a,
   and iter 65's globrefs pass read exactly that ("an absolute disp32 with no fixup on it") as SAME.

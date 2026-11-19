@@ -39,7 +39,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
    v7d884 -> 0x70660, v7d888 -> 0x6e728, v7d87c -> 0x70660, v7eb84 -> 0x7cbe8 as link addresses,
    the same in WW.EXE and the hybrid - CONFIRMED relocated. The players[] +0x50/+0x58 zeroing
    (fn_16f90) was not compared at runtime (race values move by then); fixcensus covers it statically.
-   No long drive needed for these sites. Open: `locate` misses the hybrid (QUESTIONS candidate).
+   No long drive needed for these sites. `dosrun.py locate` now finds the hybrid too (iter 74: its
+   sample points all fell in zero-filled data pages; data 0x60000 -> 0x22f000 live).
 2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
    `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
    .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/
