@@ -5068,6 +5068,18 @@ joyretry:
    Exits set p7d718 = the worked palette and v88b9e = 1, except the joy88b40 entry
    path, which returns without them. The wait at 0x199c7 is wait_or_key's body, which
    the game has inline here (no call to 0x14c7c anywhere in this function).
+   behaviour pass (iter 59, nmrefs items): every item is SAME-shape, no bug. (i) the `game more`
+   set ctl_setup, f377ae, v7d8ac, v7d8a4, v7b6dc x2, v7b6dd and one joy88b40 store: the game
+   duplicates that whole prologue-of-the-input-block in both arms (netgame == 0 at 0x19686, after
+   `cmp netgame,0; jne 0x19733`, and netgame != 0 at 0x19733), we hoisted it to one copy above the
+   `if (netgame == 0)` (src/ww.c:5180-5184), so each arm still runs it once; the arms' bodies agree line by line
+   (0x196c0-0x1972e vs 0x1976d-0x197e5, incl. `if (netgame && v7ec9c == 1 && v88c96 > 7)` =
+   0x197eb-0x19808). (ii) v88b9e `game more 1x`: our three identical exit tails (the pal -> p7d718
+   copy, v88b9e = 1, return) merge into one block at our 0x19bd8 - the two early ones jump there
+   (0x1962c, 0x198cc) - where the game has two copies (0x1991c, 0x19c44). (iii) pal7d848 `ours more
+   1x`: the game loads it once into EBX (0x194b1) and passes it to readdat from EBX (0x194d9) and to
+   pal_6bit (0x194e0); we read the global twice. (iv) `game only 1x pal_6bit` 0x194e7: -oe inlines
+   pal_6bit for us (below). (v) the v7ebc0 deltas are cause (a).
    differs (near-miss): (a) the game's build caches the global v7ebc0 (connected) in EBP
    across the menu's loops - 10 loads at loop entries and 5 stores at loop exits, ~90
    bytes, none of which our 9.5b build emits for this function (it does the same dance
