@@ -52,6 +52,14 @@ it can be copied back into DREA.
     METHOD.md, "Finding assets from the screen"). [dave]
 17. **The same call failed twice with the same message: stop repeating it.**
     Change the approach, or mark the item BLOCKED and work offline.
+18. **A whole-screen mean RGB difference cannot see a moved widget**
+    [generic]. `tools/link/racetest.sh` compared one screen with the
+    original's mean (threshold 20): the `menu` 0x155c0 sponsor-banner bug (y
+    from a literal, not the caller's c, 0x15fad) read 9.5 with the bug and
+    0.7 fixed. Count the pixels that differ by more than 40 as well (10.8%
+    with the bug, 0.73% fixed) and FAIL on either, and check the screenshot
+    actually shows the changed widget: the driver script's comment said the
+    engines menu appears before the 7th Enter, the image said class.
 
 ## This project's traps
 

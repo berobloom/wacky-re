@@ -16,6 +16,7 @@ deltas of that boot, the scene), and what reads it.
 |---|---|---|---|
 | `.work/dos/states/bonus22.sav` | BONUS BRONZE WHEELS overview of track 22, before the race: made from `trackpick.sav` (boot `WW`, then load) by poking `v7ecb4` (lin 0x257cb4) = 3 and pressing Enter (iter 56c) | LE code 0x10000 -> 0x1ec000 (delta 0x1dc000), data 0x60000 -> 0x239000 (delta 0x1d9000) | QUESTIONS 19/20: `track` = 22, the `.PAR` plane dump at A000:7d00 and the window check |
 | `captures/race_overview_ww.png` (local only: game screen, git-ignored; regenerate with `tools/dosrun.py shot` after the run below) | BRONZE WHEELS overview of track 1 (640x400 QMP shot): `WW` - or `.work/link/WWORIG.EXE`, byte-identical objects, diff 0.0 - from the DOS prompt, Enter x 10, 6 s, Enter, 8 s (2026-11-19) | fresh boot, no state | `tools/link/racetest.sh` reference |
+| `captures/engines_menu_ww.png` (local only: game screen, git-ignored; regenerate with `tools/link/racetest.sh --nobuild .work/link/WWORIG.EXE`, then `cp .work/link/racetest_menu8.png captures/engines_menu_ww.png`) | the ENGINES menu with its 'LEE & JACKSON LAWNMOWERS' sponsor banner (iter 71: the 8th Enter's screen, not the 6th - the shot after Enter 6 is the class menu), same keyboard path as the row above (2026-11-19) | fresh boot, no state | `tools/link/racetest.sh` reference; catches a wrong msgbox banner y (`menu` 0x15fad): our fixed C 0.7 mean / 0.73% bad pixels, the pre-fix 0x3c literal 9.5 / 10.82% |
 
 ## Dumps
 
