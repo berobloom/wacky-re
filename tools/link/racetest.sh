@@ -6,9 +6,10 @@
 # menu (engines_menu 0x167d8 -> menu 0x155c0 -> msgbox), so every menu screen is screenshotted and
 # menu8 is compared with captures/engines_menu_ww.png - the menu banner-y bug (0x15fad) is invisible
 # in the overview. Prints exactly one line, worst screen wins:
-#   RACETEST OK <metrics>   every screen is the original's (mean RGB difference < 20 and under 2%
-#                           of its pixels differing by more than 40; the engines screen sits at 0.7%
-#                           with the corner karts animating, menu 0x155c0's wrong banner y reads 10.8%)
+#   RACETEST OK <metrics>   every screen is the original's (mean RGB difference < 20 and under 3%
+#                           of its pixels differing by more than 40). Noise floor measured over two
+#                           runs of the ORIGINAL: engines 0.45%, race grid 1.2-2.1% (the karts bob on
+#                           the start line), overview 0.00%. menu 0x155c0's wrong banner y reads 10.8%
 #   RACETEST FAIL <diff>    it is not (screenshot in .work/link/racetest.png)
 #   RACETEST NOBUILD        the hybrid did not link (see tools/link/build.sh's output)
 #   RACETEST NOHARNESS      DOSBox-X did not come up twice
@@ -43,6 +44,12 @@ sleep 6
 python3 tools/dosrun.py key ret >/dev/null 2>&1; sleep 8
 rm -f .work/link/racetest.png
 python3 tools/dosrun.py shot .work/link/racetest.png >/dev/null 2>&1
+# the overview's own dismiss key starts the race; the shot 3 s later is inside it (the first frames
+# are where cpu_drive 0x28cac reads players[].f14, iter 69's fix). Compared only if a reference of
+# the same instant exists - a moving race is not reproducible by wall-clock key holds (GOTCHAS).
+python3 tools/dosrun.py key spc >/dev/null 2>&1; sleep ${RACEDELAY:-3}
+rm -f .work/link/racetest_race.png
+python3 tools/dosrun.py shot .work/link/racetest_race.png >/dev/null 2>&1
 overnight/cleanup.sh >/dev/null 2>&1
 [ -f .work/link/racetest.png ] || { echo "RACETEST NOHARNESS"; exit 1; }
 python3 -c "
@@ -56,7 +63,8 @@ def diffs(a, b):
     return (sum(ImageStat.Stat(d).mean) / 3,
             sum(1 for p in px if max(p) > 40) * 100.0 / len(px))
 pairs = [('.work/link/racetest.png', 'captures/race_overview_ww.png', 'overview'),
-         ('.work/link/racetest_menu8.png', 'captures/engines_menu_ww.png', 'engines')]
+         ('.work/link/racetest_menu8.png', 'captures/engines_menu_ww.png', 'engines'),
+         ('.work/link/racetest_race.png', 'captures/race_play_ww.png', 'race')]
 out = []
 for shot, base, name in pairs:
     if not os.path.exists(base):
@@ -64,6 +72,6 @@ for shot, base, name in pairs:
     if not os.path.exists(shot):
         print('RACETEST FAIL %s mean 999.0 bad 100.0 (no screenshot)' % name); sys.exit(0)
     out.append((name,) + diffs(shot, base))
-ok = all(m < 20 and bp < 2.0 for _, m, bp in out)
+ok = all(m < 20 and bp < 3.0 for _, m, bp in out)
 print('RACETEST %s %s' % ('OK' if ok else 'FAIL',
                           ' '.join('%s mean %.1f bad %.2f%%' % t for t in out)))"

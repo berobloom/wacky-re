@@ -125,8 +125,46 @@ Port bug fixed iter 57: our `players_ahead` wrote the expression twice, so its s
 skipped. Row count moved 30 -> 27 by itself, but only the racetest-style behaviour check would have
 caught the wrong value; a clipped sprite is one a player sees.
 
+## The race HUD box loses its bright-yellow figure in the rebuild — LIKELY (screen diff, iter 71)
+
+`tools/link/racetest.sh` now screenshots every menu Enter and, 3 s after the overview's dismiss key
+(`spc`), the pre-race grid; that screen is compared with `captures/race_play_ww.png` (made from
+`.work/link/WWORIG.EXE`). Our grid reads 2.22% bad pixels against the original's own run-to-run
+floor of 1.2-2.1% (two WWORIG runs; the karts on the start line bob, rows 320-367).
+
+The excess is one block: shot px x 50-95, y 26-82 (game px 25-47, 13-41), inside the HUD box drawn
+by `draw_status` 0x12f80 as `img7d83c` (41x38 at `spr_x` 0x11, `spr_y` 6; stores 0x1313a-0x13168,
+`call drawsprite` 0x13168). Colour census of the box region (shot px x14-116, y8-96):
+
+| | pure yellow (255,255,0) | (239,195,0) | black |
+|---|---|---|---|
+| the game | 1380 px | 536 px | 1072 px |
+| our build | 0 px | 540 px | 2272 px |
+
+so the box frame matches and the figure the game paints inside it - about 1380 shot px, i.e. some
+345 game px of full-bright yellow, one big digit at most - is never drawn by us; we paint black
+there instead. Census: `/tmp`-free one-liner, slice `[8:96,14:116]` of the two shots and count the
+colour triples - `from PIL import Image; import numpy; a=numpy.asarray(Image.open(P).convert('RGB'))[8:96,14:116]; import collections; print(collections.Counter(map(tuple,a.reshape(-1,3))).most_common(6))`. LIKELY a draw the game makes and we dropped, not a palette or fade difference:
+
+- Stable in both builds at 3 s and at 9 s after the start key (identical pixel counts), so it is a
+  state, not an animation or fade phase.
+- The same screen region on the track-overview screen is pixel-identical (the overview pair reads
+  0.00%), so the sprite, its coordinates and the palette are right in the C; what is missing belongs
+  to the race-time state.
+- `draw_status`'s own reference census shows no one-sided address (nmrefs 107/108 `counts`, all
+  adjudicated in iter 70) and `race_run` 0x2fd8c / `overlay_draw` 0x2a92c read `same`, so the
+  missing draw either lives in another function or reaches its sprite through an index-folded table
+  address, which cancels in a refs census.
+
+QUESTIONS 25. Owners to try first: `race_run` 0x2fd8c, `overlay_draw` 0x2a92c, `lights_project`
+0x266a8.
+
 ## Traps
 
+- A QMP screenshot is 2x the game's screen: the shots are 640x400 and the game runs 320x200, so a
+  `drawsprite` at `spr_x` 0x11, `spr_y` 6 with `spr_w` 0x29, `spr_h` 0x26 lands at shot px
+  34-116 x 12-88. Compare a sprite and a screenshot block with that factor or the box you crop
+  holds a different widget (iter 71: three crops read before the 2x factor was applied).
 - A clip line written twice in C is not the game's: the game keeps the value in a register across
   `sub [spr_w],ax` (0x34346) and reuses it for `clipy` (0x3435f). Re-reading `spr_w` after it was
   shortened gives 0. Use the local (`n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... clipy = n * 4;`,

@@ -24,17 +24,19 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Show the two fixes on screen: neither is in the racetest path (both ended RACETEST OK 0.0, the
-   overview unchanged). `menu` 0x155c0 now draws 'LEE & JACKSON LAWNMOWERS' at the caller's y (0x15fad,
-   `engines_menu` passes 0x4e at 0x168cd) and iter 69's `players[].f14` moves the karts in the first
-   frames of the race (`cpu_drive` 0x28cac). Smallest step: a second screenshot in
-   `tools/link/racetest.sh` on the Options -> Engines screen, and one taken inside the first race.
-2. Re-run the behaviour sweep after every C change (now 81 lines - the filter picks the status column,
-   not the whole line - about 90 s, one process per function): `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
-   {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`.
-   Every remaining DIFF is now adjudicated: `ents_project`/`shots_project`/`net_input` are the dead
-   `v7d7f4`/`v7d874` past-the-end pointers (findings/game-loop.md), `scores_screen` is a stack address.
-   A new DIFF is therefore news.
+1. QUESTIONS 25: the race HUD box's bright-yellow figure. `tools/link/racetest.sh` now compares three
+   screens - the overview (0.00%), the engines menu (0.7-0.83%, own floor 0.45%) and the pre-race grid
+   taken `RACEDELAY=3` after the overview's dismiss key (2.22%, the original's floor 1.2-2.1%): the
+   excess is a full-bright-yellow figure the game paints inside the HUD box and we never draw
+   (findings/video.md). Smallest step: read `race_run` 0x2fd8c's drawsprite/pic calls in chunks
+   (`tools/le/disasm.py ww 0x2fd8c 200` stops at the first undecodable byte - GOTCHAS) for one whose
+   sprite is about 345 game px, and compare with the race-time HUD calls in `src/ww.c`.
+2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
+   `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
+   .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/
+   `shots_project`/`net_input` = the dead `v7d7f4`/`v7d874` pointers, findings/game-loop.md;
+   `scores_screen` = a stack address), so a new DIFF is news. So are nmrefs' classes: every
+   `DIFFER`/`consts`/`jumps` line now carries a `BEHAV:` verdict.
 3. 19 open lines still stop at the 3M-instruction cap and 11 at the 300-call cap: their waits spin with
    no library call, so `COUNT=`/`CALLS=` cannot help. Give `difffn.py` a `SEED=addr=value[b|w|d],...`
    knob (write the globals after the image load, then re-snapshot `init` so the watch re-run starts from

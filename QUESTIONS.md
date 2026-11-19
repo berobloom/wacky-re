@@ -405,3 +405,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `ww.c`, where adding literals moves every later literal of its CONST group and breaks the
     327-references base check. Unknown neighbour: the three `01` bytes at 0x60000-0x60002 (four dwords in
     the image hold 0x60000: 0x35580, 0x47692, 0x476c6, 0x4d636; none of the other three addresses).
+25. **OPEN** (iter 71, `tools/link/racetest.sh` race-grid screen, findings/video.md "The race HUD box
+    loses its bright-yellow figure"): inside the race HUD box (`img7d83c`, drawn by `draw_status`
+    0x12f80 at 0x1313a-0x13168, 41x38 at `spr_x` 0x11 / `spr_y` 6) the game paints a figure of
+    ~1380 shot px of full-bright yellow (255,255,0) at shot px x50-95, y26-82 and our build paints
+    black there - the box frame itself matches ((239,195,0): 536 px vs 540 px). Not a fade or
+    animation phase: the block is identical at 3 s and at 9 s after the start key in both builds, and
+    the same region on the track overview is pixel-identical. No refs census sees it (`draw_status`
+    107/108 `counts`, `race_run`/`overlay_draw` `same`), so the draw is either in another function or
+    reaches its sprite through an index-folded table address. Owners to try first: `race_run` 0x2fd8c,
+    `overlay_draw` 0x2a92c, `lights_project` 0x266a8; the screen check is
+    `RACEDELAY=3 tools/link/racetest.sh` and the box census command is in the findings file.
