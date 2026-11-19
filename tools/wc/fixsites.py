@@ -2,7 +2,11 @@
 """fixsites.py: in the functions that MATCH, does the operand the linker fills in point where the
 game's operand points?
 
-usage: fixsites.py PROG FILE.OBJ
+usage: fixsites.py PROG FILE.OBJ [--arms NAME...]
+
+`--arms NAME` prints, for each switch table aimed at NAME, the game's entry value and where our entry
+points, in table order: the arm-by-arm hand check the census cannot do (read each arm with
+`tools/le/disasm.py PROG <address> 5` and compare it with our bytes at our entry).
 
 check.sh masks every byte a fixup fills, so a function can MATCH while reading another global,
 calling another function or passing another string literal: that is the class of the bugs the byte
