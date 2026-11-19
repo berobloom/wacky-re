@@ -4,9 +4,13 @@ game's operand points?
 
 usage: fixsites.py PROG FILE.OBJ [--arms NAME...]
 
-`--arms NAME` prints, for each switch table aimed at NAME, the game's entry value and where our entry
-points, in table order: the arm-by-arm hand check the census cannot do (read each arm with
-`tools/le/disasm.py PROG <address> 5` and compare it with our bytes at our entry).
+`--arms NAME` prints, for each switch table aimed at NAME, the game's block and our block for every
+entry of the table, in table slot order: the arm-by-arm hand check the census cannot do. A pair is
+linked by the slot (both sides' table sits in the same MATCHed function at the same mirrored offset,
+so slot i of ours is slot i of the game's), so what matters is what the two blocks DO: their
+instructions with the 4-byte fields resolved to the absolute address each side means, numbers in the
+op_str masked (the game folds a base into a displacement) and a field pointing into a near-miss body
+masked (its intra-function layout says nothing). Read an arm with `tools/le/disasm.py PROG <address> 5`.
 
 check.sh masks every byte a fixup fills, so a function can MATCH while reading another global,
 calling another function or passing another string literal: that is the class of the bugs the byte
@@ -40,6 +44,7 @@ printed as `undecided` (their arms are checked against the disassembly by hand -
 Exit 0 prints the summary; a disagreeing site is printed and makes the exit 1.
 """
 import os
+import re
 from bisect import bisect_right
 import struct
 import sys
@@ -130,18 +135,98 @@ def main():
     for (site, tgt), es in sorted(tables.items()):
         print('undecided: switch table in %s, %d entries -> arms of the near miss %s, e.g. '
               'our _TEXT+0x%x vs game 0x%06x' % (site, len(es), tgt, es[0][0], es[0][1]))
-    if args:                       # --arms: the entries of the tables aimed at these functions, in
-        for nm in args:            # table order, for the hand check the census cannot do
-            for (site, tgt), es in sorted(tables.items(), key=lambda kv: min(g for _, g in kv[1])):
-                if tgt != nm + '_':
-                    continue
-                print('\ntable in %s -> %s arms (game address of each entry, and where our entry '
-                      'points)' % (site, tgt))
-                for i, (a, g) in enumerate(sorted(es, key=lambda e: e[1])):
-                    t = enc(a)
-                    ours = known[M.plain(t[1])] + a - t[0] if t else a
-                    print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)'
-                          % (i, g, addr(g), ours, addr(ours)))
+    # ---- --arms: compare the arm BLOCKS of the switch tables that point into a near miss. Both
+    # sides' 4-byte fields are resolved to the absolute address that side means; a field landing
+    # inside a near-miss body is masked ('@'), because its intra-function layout says nothing (that
+    # is what made the plain entry-address comparison useless). Registers ARE kept: same C under the
+    # same Watcom options keeps the same registers, so a different register is worth a hand look.
+    import capstone
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+    md.detail = True
+    fx = {(at): (sr, kd, nm, dp) for seg, at, loc, sr, kd, nm, dp in L.fixups_of(recs)
+          if seg == '_TEXT'}
+    tbase = {nm: max(set(b), key=b.count) for nm, b in segbase.items()}
+    near = [(g, g + e - o) for n, (o, e, ok) in rng.items()            # publics that do not MATCH
+            if not ok and (g := known.get(M.plain(n)))]
+    inside = lambda v: any(s <= v < e for s, e in near)
+
+    def our_at(at0):
+        """the absolute address our _TEXT bytes at offset at0 mean"""
+        raw = struct.unpack_from('<I', bytes(buf), at0)[0]
+        r = fx.get(at0)
+        if not r:
+            return raw
+        sr, kd, nm, dp = r
+        add = 0 if sr else struct.unpack_from('<i', bytes(buf), at0)[0]
+        if kd == 'ext':
+            b = syms.get(nm, syms.get('_' + M.plain(nm)))
+            return b + dp + add if b else raw
+        if kd == 'seg' and nm == '_TEXT':
+            t = enc(add)
+            return known[M.plain(t[1])] + add - t[0] if t else raw
+        b = tbase.get(nm)
+        return b + dp + add if b else raw
+
+    def show(at0, val, game_side):
+        v = val if game_side else our_at(at0)
+        return '@' if inside(v) else '%x' % v
+
+    def sig(data, off, va, game_side):
+        """the block at file offset off (virtual address va: the game's is off + 0x10000, and capstone
+        needs the real one to print a branch target) up to and including its first branch or ret.
+        The numbers in op_str are masked: the game folds a base into a displacement (`[eax+0x6aaa2]`
+        for our `[eax+0x12]` + fixup) and that is the folded-constant dead end, not news; the real
+        values are compared through the resolved fields in [...] instead."""
+        out = []
+        for ins in md.disasm(bytes(data)[off:off + 600], va):
+            vals = []
+            if ins.disp_size == 4:
+                for op in ins.operands:
+                    if op.type == capstone.x86.X86_OP_MEM:
+                        vals.append(show(ins.address + ins.disp_offset - va + off,
+                                         op.mem.disp & 0xFFFFFFFF, game_side))
+            if ins.imm_size == 4:
+                for op in ins.operands:
+                    if op.type == capstone.x86.X86_OP_IMM:
+                        vals.append('@' if ins.group(capstone.CS_GRP_JUMP) else
+                                    show(ins.address + ins.imm_offset - va + off,
+                                         op.imm & 0xFFFFFFFF, game_side))
+            out.append('%s %s%s' % (ins.mnemonic, re.sub(r'0x[0-9a-f]+|\d+', '#', ins.op_str),
+                                    ('  [' + ','.join(vals) + ']') if vals else ''))
+            if ins.mnemonic == 'ret' or ins.group(capstone.CS_GRP_JUMP) or len(out) > 40:
+                break
+        return tuple(out)
+
+    armok = armtot = armbad = 0
+
+    def arm(nm):
+        nonlocal armok, armtot, armbad
+        for (site, tgt), es in sorted(tables.items(), key=lambda kv: min(g for _, g in kv[1])):
+            if tgt != nm + '_':
+                continue
+            print('\ntable in %s -> %s arms (game block vs our block, in table slot order)'
+                  % (site, tgt))
+            for i, (a, g) in enumerate(sorted(es, key=lambda e: e[1])):
+                t = enc(a)
+                ours = known[M.plain(t[1])] + a - t[0] if t else a
+                so, sg = sig(buf, a, a, False), sig(img.code, g - cbase, g, True)
+                armtot += 1
+                if so == sg:
+                    armok += 1
+                    print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)  %d insns SAME'
+                          % (i, g, addr(g), ours, addr(ours), len(so)))
+                else:
+                    armbad += 1
+                    print('  [%d] game 0x%06x (%s)  ours 0x%06x (%s)  DIFFER game %d / ours %d insns'
+                          % (i, g, addr(g), ours, addr(ours), len(sg), len(so)))
+                    for k in range(max(len(sg), len(so))):
+                        print('      game %-42s | ours %s'
+                              % (sg[k] if k < len(sg) else '', so[k] if k < len(so) else ''))
+
+    if args:                       # --arms NAME: compare the two blocks an entry points at, the
+        for nm in args:            # hand check the byte census cannot do. A pair is already linked:
+            arm(nm)                # both entries sit in the same slot of the same mirrored table.
+        print('%d/%d arm blocks equal, %d differ' % (armok, armtot, armbad))
     n = sum(counts.values())
     print('%d sites in %d matched functions: %s | %d disagree'
           % (n, nfun, ', '.join('%s %d' % kv for kv in sorted(counts.items())), len(bad)))

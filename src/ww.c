@@ -5700,7 +5700,7 @@ extern short cfg7712c;            /* 0x7712c = cfg77128 + 4 */
 extern char *v7d854;              /* 0x7d854 (v7d85c is declared at 3095) */
 void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a caller buffer */
 
-/* differs (476 rows, was 499: `cd15c` and `slide_up`/`slide_dn` are shorts - the game compares them
+/* differs (431 rows, was 499: `cd15c` and `slide_up`/`slide_dn` are shorts - the game compares them
  * `cmp word ptr [esp+0x15c],9` / `cmp word ptr [esp+0x130],8`; `short slide_up, slide_dn` on their own is
  * 521, with cd15c 476). Near miss at +8 (6684 vs 6861). The statements are in the game's order - with the
  * `disp(%esp)` and the relocation bytes masked, 72 % of the disassembly rows agree - but Watcom
@@ -5725,7 +5725,17 @@ void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a c
  * after its `inc` (0x1aa59) where 9.5b reuses the flags of its own add; the two extra joy88b46 are the
  * dead zero store 0x1ab34 (f377ae 0x377e0 writes it, then 0x1ab55 overwrites it) and the store->load
  * re-read 0x1ad23; our extra v88b7e/twoplayer touches and the missing v88cef touches are the
- * documented byte-mask block (0x1ac8c-0x1ad1d). */
+ * documented byte-mask block (0x1ac8c-0x1ad1d).
+ * iter 67 hand-checked the 8 switch-table arms of jt_1a360 (0x1a360, arms at 0x1b7d7..0x1bc55) with
+ * `tools/wc/fixsites.py ww .work/src/WW.OBJ --arms cars_menu`, which now prints the two blocks side by
+ * side: ONE BUG - `case 0` of the carstat slide switch must store `ents[i].frame = 2` at the arm head
+ * (0x1b7de, unconditional: the arm's only entry is that table slot, and cx = 2 is loaded once at
+ * 0x1b7b5 and reused for the arm's `carstat[i] = 2` at 0x1b80f; `case 1`'s `frame = 6` was already
+ * there). The other 7 arms are same-shape: every one differs only in the `[disp(%esp)]` number, and the
+ * slots pair on the same variable (col0x game 0x16c / ours 0x168 written 0x2e at 0x1a46d / 0x1a46b and
+ * 0xec at 0x1a605 / 0x1a90c; curgx 0x174 / 0x160 written 0x1a574 / 0x1a572; curgy 0x170 / 0x15c written
+ * 0x72 at 0x1a513 / 0x1a511; row0y 0x12c / 0x148 written 0x3a at 0x1a478 / 0x1a476), the documented
+ * slot-permutation dead end. Rows 433 -> 431; RACETEST OK. */
 void cars_menu(void)
 {
     char buf0[0x50], buf1[0x50], buf2[0x50];   /* esp+0x00, esp+0x50, esp+0xa0 */
@@ -6292,6 +6302,9 @@ input:
                 continue;
             switch (carstat[i]) {
             case 0:                             /* 0x1b7d7: sliding left out of the cursor column */
+                ents[i].frame = 2;              /* 0x1b7de, unconditional at the arm head (cx = 2,
+                                                   loaded once at 0x1b7b5; the arm's only entry is
+                                                   table slot 0 of jt_1a360, nothing jumps to it) */
                 if (ents[i].x == col0x) {
                     if (ents[i].y == curgy)
                         carstat[i] = 3;

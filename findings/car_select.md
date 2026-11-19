@@ -83,6 +83,19 @@ dword locals 0x110-0x178: 0xf0 + 0x20 + 0x6c = 0x17c = the `sub esp` size
   `add`/`sub` of a step in the state machine 0x1b7d7-0x1b8fd
   (0x1b81c, 0x1b862, 0x1b8b8, 0x1b8f6); `ents[i].f2` latches `frame == 2`
   and `frame == 6` at 0x1b946-0x1b96c.
+- Each arm of that switch (table 0x1a360, dispatch `cmp si,3 / ja 0x1b8fd /
+  jmp [esi*4+0x1a360]` 0x1b7c2-0x1b7cf) also sets the icon's picture frame at
+  its arm head: state 0 stores `ents[i].frame = 2` (0x1b7de) and state 1 stores
+  `= 6` (0x1b82f), both unconditional; states 2 and 3 store 2 or 6 only in the
+  branch that re-tags the record (0x1b89a, 0x1b8ed and the shared 0x1b8a3 block
+  both arms jump to - `jne 0x1b8a3` 0x1b8e1). The 2 and the 6 are the
+  registers CX/SI set up before the loop (0x1b7b5 `mov ecx,2`, 0x1b7b0
+  `mov edi,8` = the step) and CX is reused for the arm's `carstat = 2` store
+  (0x1b80f), so the value is not an immediate at the store. CONFIRMED by
+  `tools/wc/fixsites.py --arms cars_menu` (the arm's only entry is its table
+  slot: no `jmp` to 0x1b7d7 exists in the function), and by the f2 latch above
+  only ever seeing 2 and 6. Our rebuild had lost the state-0 store entirely
+  (iter 67): a row that slides left kept its old picture.
 
 ## There are nine `struct ent` records here, not eight (CONFIRMED)
 
