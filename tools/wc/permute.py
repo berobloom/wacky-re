@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """permute.py: random-mode source permuter for one near miss (after decomp-permuter's random mode).
 
-usage: permute.py [--weighted] [--slack N] [--hill] NAME 0xADDR 0xEND [ROUNDS [COPIES [SEED]]]
+usage: permute.py [--weighted] [--slack N] [--hill] [--sweep] NAME 0xADDR 0xEND [ROUNDS [COPIES [SEED]]]
 
 Each round writes src/ww.c plus COPIES mutated copies of NAME (renamed pmNNN) into
 .work/perm/NAME/PERM.C, compiles it once with the game's options and scores every copy against the
@@ -39,7 +39,8 @@ slack = None
 if '--slack' in args:
     slack = int(args[args.index('--slack') + 1])
     del args[args.index('--slack'):args.index('--slack') + 2]
-args = [a for a in args if a not in ('--weighted', '--hill')]
+sweep = '--sweep' in args
+args = [a for a in args if a not in ('--weighted', '--hill', '--sweep')]
 name, addr, endg = args[0], int(args[1], 16), int(args[2], 16)
 rounds = int(args[3]) if len(args) > 3 else 10
 copies = int(args[4]) if len(args) > 4 else 30
@@ -419,6 +420,40 @@ rows0 = sc['pm000'][0]
 print('control %s: %d rows, weight %d (original in the same object: %s)'
       % (name, rows0, sc['pm000'][1], sc.get(name, (None,))[0]), flush=True)
 cache = {func: sc['pm000']}
+if sweep:
+    # --sweep (iter 73, after the Daggerfall decomp's systematic choice search): every distinct
+    # SINGLE mutation of the function (each mutator drawn until 200 draws in a row bring nothing new),
+    # all scored, best first. Exhaustive at depth 1 where the random walk samples.
+    seen, cands = {func}, []
+    for mu in MUTS:
+        dry = 0
+        while dry < 200:
+            r = mu(func)
+            if not r or r[0] in seen:
+                dry += 1
+                continue
+            dry = 0
+            seen.add(r[0])
+            cands.append((r[0], [r[1]]))
+    print('sweep: %d single mutations' % len(cands), flush=True)
+    res = []
+    for i in range(0, len(cands), copies):
+        chunk = [(func, [])] + cands[i:i + copies]
+        sc = compile_round(chunk)
+        if not sc:
+            print('sweep: chunk %d failed to compile' % (i // copies), flush=True)
+            continue
+        for k, (t, labs) in enumerate(chunk[1:], 1):
+            v = sc.get('pm%03d' % k)
+            if v is not None:
+                res.append((key(v), v[0], labs[0], t))
+    res.sort(key=lambda x: (x[0], x[1]))
+    for kv, rows, lab, t in res[:25]:
+        print('%4d rows  %s' % (rows, lab))
+    if res and res[0][1] < rows0:
+        open(os.path.join(work, 'sweep_best_%s_%d.c' % (name, res[0][1])), 'w').write('/* %s */\n' % res[0][2] + res[0][3])
+    print('sweep: %d scored, %d better than control %d' % (len(res), sum(1 for x in res if x[1] < rows0), rows0))
+    sys.exit(0)
 best_rows = rows0                               # what best_<NAME>_<rows>.c and the report use
 best, best_t, best_l = sc['pm000'], func, []    # by key(): rows, or weight with --weighted
 cur, cur_t, cur_l = best, func, []

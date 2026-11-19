@@ -509,6 +509,22 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### General rebuild facts
 
+- **9.5b frame and evaluation-order rules, measured (iter 73 probes, Open Watcom cg source as the
+  map: `temps.c` AssignOtherLocals, `x86temps.c` TempAllocBefore, `dataflo.c` RoughSortTemps):**
+  (a) address-taken locals and arrays are sorted by SIZE, smallest highest in the frame (char, short,
+  int, arrays), ties in declaration order with the first declared highest; first use does not
+  matter. So `short` vs `int` moves a local across the whole frame. (b) Spilled scalars in a clean
+  probe (10 ints live across calls, straight-line or one loop): the most-used get registers in the
+  order EDX, EBX, ECX, ESI, EDI/EBP, the spilled ones sit by use count, more uses = higher slot, and
+  declaration order, assignment order and the names change nothing. A use inside a loop outweighs
+  16 uses outside it. BUT real functions break (b): credits_screen's `dir` (6 references, inner-loop
+  ones) sits below `first`/`y` (3 each) on both sides, so live-range splitting and slot reuse decide
+  there - do not "fix" a slot by adding references. (c) Of two operands the LARGER subtree is
+  evaluated first whatever the written order (`g(a) + g(b) * c` == `g(b) * c + g(a)`); written
+  order decides only between equal subtrees, and no-op wrappers (`(int)`, `+x`, `| 0`, `-(-x)`) are
+  folded, so they cannot steer it: a game that evaluates the smaller side first had a different
+  tree (grouping, or a temp in its own statement). permute.py's `comm` can only help on equal
+  subtrees. [generic]
 - **Compare the data, not only the code, and expect dead bytes**: `tools/wc/datamatch.py ww
   .work/src/WW.OBJ` (iter 68) puts our build's data groups on the game's image. Two traps, both found
   getting a clean run: (a) the group's base must be voted over **every** occurrence of each anchor -

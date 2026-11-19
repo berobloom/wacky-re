@@ -5764,6 +5764,8 @@ void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a c
  * 0xec at 0x1a605 / 0x1a90c; curgx 0x174 / 0x160 written 0x1a574 / 0x1a572; curgy 0x170 / 0x15c written
  * 0x72 at 0x1a513 / 0x1a511; row0y 0x12c / 0x148 written 0x3a at 0x1a478 / 0x1a476), the documented
  * slot-permutation dead end. Rows 433 -> 431; RACETEST OK. */
+extern char mrows_[][0x3c];
+#pragma aux mrows_ "_mrows"
 void cars_menu(void)
 {
     char buf0[0x50], buf1[0x50], buf2[0x50];   /* esp+0x00, esp+0x50, esp+0xa0 */
@@ -5918,12 +5920,12 @@ nameframe:
         p7d838 = tab6e5b0[cd];
         p7d764 = p7d838 + 1;
         y = yrow134;
-        for (j = 0; j < 2; j++) {               /* 0x1a912: the two name rows, 0xc apart */
+        for (j = 1; j <= 2; j++) {              /* 0x1a912: the two name rows, 0xc apart; mrows[1..2] */
             v88c2e = p7d764[-1];
             v88c10 = p7d764[0];
             p7d838 += 2;
             pname_desc(car);
-            wtext(col0x - 1, y, &mnames[0x3c * j], 1);
+            wtext(col0x - 1, y, mrows_[j], 1);  /* index: the game's `mov esi,0x3c; add esi,mrows` 0x1a8c0 */
             y += 0xc;
         }
         cd--;
@@ -9681,7 +9683,10 @@ void line_plot(void)
  * sits at 0x21fad *before* the dx/dy rotation and takes the major half. Whole file: direct form in
  * both branches routes through EAX (13 rows); `err = dy >> 1` before the swaps in the else branch
  * alone (if branch untouched) moves the whole else block (58 rows). err stays a short local (the
- * game's `cmp dx,bx` at 0x21f87). */
+ * game's `cmp dx,bx` at 0x21f87).
+ * Iter 73 shape scan (an int `>> 1` of a short): `err = dx >> 1` in both arms, the else one AFTER the
+ * swaps (dx is then the old dy, the same value) 4 -> 2; the row left is the movsx scheduled before
+ * the swap moves in the game, after the first in ours (8 placements and swap orders probed). */
 /* ---- 0x21f04, 303 bytes: draws the Bresenham line (lx0, ly0) -> (lx1, ly1) point by point with
  * f37bf0, the far end included (callers 0x22182, 0x221b2 in 0x22034). kart_line's walk with
  * line_plot's body written out. */
@@ -9702,8 +9707,7 @@ void line_draw(void)
     } else
         sy = 1;
     if (dy < dx) {
-        err = dx;
-        err >>= 1;
+        err = dx >> 1;
         while (lx0 != lx1) {
             spr_x = lx0;
             spr_y = ly0;
@@ -9716,14 +9720,13 @@ void line_draw(void)
             lx0 += sx;
         }
     } else {
-        err = dy;
-        err >>= 1;
         t = dx;
         dx = dy;
         dy = t;
         t = sx;
         sx = sy;
         sy = t;
+        err = dx >> 1;                /* the old dy: the game's movsx edx,cx 0x21fad before the swaps */
         while (ly0 != ly1) {
             spr_x = lx0;
             spr_y = ly0;
