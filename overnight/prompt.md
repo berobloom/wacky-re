@@ -11,54 +11,62 @@ Do exactly this, in order:
    Obey the context-budget rules in `AGENTS.md`: grep before reading, read line ranges, never read
    whole: `.work/ghidra/*.c`, `src/ww.c` (~19k lines, grep it), `harness/TRAPS.md`.
 
-2. BEHAVIOUR NIGHT. The C rebuild covers every function and every near miss is MATCH, SKIP or
-   LAYOUT; do NOT add functions and do NOT chase row counts tonight. A near miss can still do the
-   wrong thing: the hybrid link (tools/link, findings/executables.md) crashed in fn_1832c, which
-   read 0x300 bytes into a 20-byte stack array and loaded 4 cards where the game loads 3, and
-   fn_16eac read field +0x20 where the game reads +2. Row counts hid both. Your job: find and fix
-   such behaviour differences. Do up to 3 functions this iteration, one at a time, each with its
-   own commit.
-
-   The work list: `.work/venv/bin/python tools/wc/nmrefs.py ww .work/src/WW.OBJ > /tmp/nmrefs.txt`
-   (after `src/check.sh >/dev/null 2>&1`), then every function with `DIFFER` or a `consts` line, in
-   file order. Skip a function whose `src/nearmiss.txt` status already has `BEHAV:` (done by an
-   earlier pass). For one function:
-   a. `.work/venv/bin/python tools/wc/nmrefs.py ww .work/src/WW.OBJ -v NAME=0xADDR` lists what only
-      one side uses: `game only` addresses (a global, a call, a string the game uses and we do
-      not), `consts ... game only` (a loop bound, a size, an enum value, a struct field `+0x..`).
-   b. For each item, find the game's instruction: `python3 tools/le/disasm.py ww 0xADDR N | grep`
-      for the value, and read 10-20 lines around it. Find the matching place in our C (grep the
-      function, read a line range) and decide, writing one line per item in the function's
-      `differs:` note:
-      - BUG: our C computes something else (another bound, another field, another buffer, a call
-        or a branch the game has and we dropped). Fix the C to do what the game does, citing the
-        game's address in a comment (`/* 0x18664 cmp card_n,3 */`).
-      - SAME: the same behaviour in another shape (the game keeps the value in a register, the
-        `sub esp` frame size, an inlined helper, a jump table). Say which.
-   c. After the fix: `src/check.sh 2>&1 | grep -c " MATCH"` must be >= `src/matched.baseline`
-      (never lower; if a fix makes another function stop matching, inline effects, undo it and
-      write the BUG down as unfixed). The function's own row count MAY go up: correctness first.
-      Re-run nmrefs for the function: the fixed items must be gone.
-   d. Write `BEHAV: <n> bugs fixed (<what>), <m> same-shape` at the start of its status column in
-      `src/nearmiss.txt` (keep the old status text after it, and update the row count in column 1
-      from fndiff), commit. A bug you could not fix: `BEHAV: OPEN <what, game address>` and add it
-      to QUESTIONS.md.
-   e. Budget: about 25 minutes per function. A bug fix is worth more than any row gain.
+2. BEHAVIOUR NIGHT: THE CAPPED FUNCTIONS. The C rebuild covers every function (207 of 285
+   byte-identical); do NOT add functions and do NOT chase row counts tonight. `tools/wc/difffn.py`
+   runs one function in WW.EXE and in the hybrid build under Unicorn and compares the data segment,
+   EAX and the library calls. It says SAME for 74 of the 78 open near misses, but 28 of those runs
+   stop at a cap before the function finishes, so their SAME covers only part of the code:
+   - 3M-instruction cap ("both stopped at the 3000000-instruction cap"): classes_menu com_wait_byte
+     com_expect com_open kart_draw intro credits_screen showlines race_records_menu engines_menu
+     volume_menu main_menu fn_193a8 chat race_results menu cars_menu fn_1832c
+   - 300-call cap ("CALLCAP 300/300"): screenshot fn_17928 demo_mode fn_1be3c fn_1c0f4 enter_name
+     fn_1d704 main trial_book race_run
+   Take them in this order, up to 3 per iteration. Skip one whose `src/nearmiss.txt` line already has
+   `SEEDED:` (an earlier pass did it). For one function:
+   a. Prepare once per iteration: `src/check.sh >/dev/null 2>&1; tools/link/build.sh >/dev/null 2>&1;
+      .work/venv/bin/python tools/le/leparse.py .work/link/WWNEW.EXE .work/le/wwnew >/dev/null`.
+   b. Find the loop it never leaves: `timeout 300 .work/venv/bin/python tools/wc/difffn.py NAME` and
+      `python3 tools/le/disasm.py ww 0xADDR 400 | grep -n -E 'cmp|test|j[a-z]+ '` (chunk it: the
+      tool stops at the first undecodable byte). A wait loop jumps back to an earlier address and
+      tests a global (`cmp byte ptr [0x88ccd], 0`, a key flag, a timer, a menu result) that only an
+      interrupt or a stubbed call would change. Note that global and the value that exits the loop.
+   c. Seed it: `SEED=0xADDR=VALUE[:b|:w|:d] timeout 300 .work/venv/bin/python tools/wc/difffn.py NAME`
+      (several: comma-separated; width after a colon, default a dword). Raise `COUNT=`/`CALLS=` only
+      if the run is still making progress. First run the control with the same SEED:
+      `NEW=wworig MAP=.work/link/WWORIG.MAP SEED=... difffn.py NAME` must print SAME; if the control
+      is not SAME, the seed is wrong, not our C.
+   d. Verdict. Both sides return (no cap, no CRASH) and SAME: done. A DIFF: read the watch lines
+      (the instruction that writes each differing byte, both sides), find that place in our C, and
+      decide BUG (our C computes something else: fix it, citing the game's address in a comment) or
+      SAME-shape (a stack address cached in a global, a dead pointer: findings/game-loop.md lists the
+      known ones; say which). If no seed gets both sides out of the loop within the budget, that is
+      the verdict too: `SEEDED: still capped (<global tried>, <why>)`.
+   e. Write `SEEDED: <seed used> -> <SAME | n bugs fixed (what) | DIFF same-shape (what) | still
+      capped (why)>` at the start of the status column in `src/nearmiss.txt` (keep the old text after
+      it). A bug you could not fix: `SEEDED: OPEN <what, game address>` and add it to QUESTIONS.md.
+   f. After a C change: `src/check.sh 2>&1 | grep -c " MATCH"` must be >= `src/matched.baseline`
+      (if a fix makes another function stop matching, undo it and write the BUG down as unfixed), then
+      `.work/venv/bin/python tools/link/fixcensus.py` must print `0 unexplained`, then the behaviour
+      check below.
+   g. Budget: about 25 minutes per function. A bug fix is worth more than any verdict.
    ALWAYS end a function with a commit. A pass without a commit counts as stuck.
    Never commit a src/ww.c that lowers the MATCH count; overnight/check.sh rejects it.
-   Do not guess: an item you cannot place in our C with the game's instruction in front of you is
-   SAME-unknown, written down as such, not "fixed".
-   f. Behaviour check, once per function after a BUG fix (not for SAME-only functions):
+   Do not guess: a DIFF you cannot place in our C with the game's instruction in front of you is
+   `DIFF unknown`, written down as such, not "fixed".
+   Behaviour check, once per function after a BUG fix (not for SAME-only functions):
       `tools/link/racetest.sh` (~4 minutes; builds the hybrid WW.EXE from our C and the game's
-      library and data, boots it in the harness, drives the menus to the first race's overview and
-      compares the screen with the original's). It prints one line: `RACETEST OK`, `RACETEST FAIL`,
+      library and data, boots it in the harness, drives the menus to the first race and compares the
+      screens with the original's). It prints one line: `RACETEST OK`, `RACETEST FAIL`,
       `RACETEST NOBUILD` or `RACETEST NOHARNESS`. Put that line in the function's commit message.
-      Read STATUS.md `## Next` for the known state: a FAIL that STATUS already explains is not
-      caused by your fix; an OK where STATUS says FAIL is news - write it into STATUS.md. NOBUILD
-      after your change means your C broke the link: read `.work/link/racetest.build` and fix it.
-      NOHARNESS: note it in the commit and do not retry this iteration.
+      The first race's start grid is drawn at random (findings/game-loop.md `## Traps`): a race
+      line under 3% bad is OK; a FAIL on the race screen alone: look at `.work/link/racetest_race.png`
+      before blaming your fix. NOBUILD after your change means your C broke the link: read
+      `.work/link/racetest.build` and fix it. NOHARNESS: note it in the commit and do not retry this
+      iteration.
    The emulator is used ONLY through `tools/link/racetest.sh`: no `tools/dosrun.py`, no MCP dosre
-   tools, no DOSBox commands of your own, never two racetests at once.
+   tools, no DOSBox commands of your own, never two racetests at once. Never name `dosrun.py` in a
+   shell command at all: `overnight/cleanup.sh` kills any process whose command line contains it,
+   your own shell included (GOTCHAS).
 
 3. Mark every claim CONFIRMED / STRONGLY SUPPORTED / LIKELY / SPECULATIVE with its evidence
    (addresses, capture files, the experiment). Facts go to `findings/<subsystem>.md` (+ INDEX row

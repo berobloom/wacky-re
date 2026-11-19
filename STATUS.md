@@ -27,35 +27,23 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Run `tools/link/fixcensus.py` after every `tools/link/build.sh` (must print `0 unexplained`):
-   iter 73 found the race place icon (QUESTIONS 25, RESOLVED) was an unrelocated literal in
-   `fn_17928`, and five more literal sites in `fn_173c4`, `fn_16f90` and main - bytes equal to the
-   game's, fixups missing (GOTCHAS, first trap). Those sites are fixed. Iter 74: build + census
-   `0 unexplained`, 3 racetests of ours and 4 of `WWORIG.EXE` - the race-start HUD (place 8,
-   lives x3, faces x00, map, timer) is the original's, and the one grid that looked wrong is the
-   original's own grid B (findings/game-loop.md `## Traps`); racetest now compares the race shot
-   with both grids (0.00% / 1.23% floor). Then read in memory 3 s into the race, both builds
-   (data object located by pattern vote; `dosrun.py locate` found no window in the hybrid):
-   v7d884 -> 0x70660, v7d888 -> 0x6e728, v7d87c -> 0x70660, v7eb84 -> 0x7cbe8 as link addresses,
-   the same in WW.EXE and the hybrid - CONFIRMED relocated. The players[] +0x50/+0x58 zeroing
-   (fn_16f90) was not compared at runtime (race values move by then); fixcensus covers it statically.
-   No long drive needed for these sites. `dosrun.py locate` now finds the hybrid too (iter 74: its
-   sample points all fell in zero-filled data pages; data 0x60000 -> 0x22f000 live).
-2. Re-run the behaviour sweep after every C change (81 lines, about 90 s, one process per function):
+1. Overnight (prompt step 2): the 28 near misses whose `difffn.py` run stops at the 3M-instruction or
+   300-call cap. Seed the global each wait loop polls (`SEED=0xADDR=VALUE[:b|:w|:d]`, iter 74; the
+   control `NEW=wworig MAP=.work/link/WWORIG.MAP` must stay SAME), get both sides to return, then
+   SAME / BUG / DIFF same-shape, recorded as `SEEDED:` in `src/nearmiss.txt`.
+2. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
+   first trap). Iter 74 checked iter 73's repaired sites at runtime in both builds (v7d884, v7d888,
+   v7d87c, v7eb84 relocated the same; findings/game-loop.md has the start-grid trap).
+3. Re-run the behaviour sweep after every C change (78 lines, about 90 s, one process per function):
    `awk '$2 ~ /^0x/ && $4 !~ /^MATCH/ {print $3}' src/nearmiss.txt | while read n; do
-   .work/venv/bin/python tools/wc/difffn.py $n; done`. Every DIFF is adjudicated (`ents_project`/
-   `shots_project`/`net_input` = the dead `v7d7f4`/`v7d874` pointers, findings/game-loop.md;
-   `scores_screen` = a stack address), so a new DIFF is news. So are nmrefs' classes: every
-   `DIFFER`/`consts`/`jumps` line now carries a `BEHAV:` verdict.
-3. 19 open lines still stop at the 3M-instruction cap and 11 at the 300-call cap: their waits spin with
-   no library call, so `COUNT=`/`CALLS=` cannot help. Give `difffn.py` a `SEED=addr=value[b|w|d],...`
-   knob (write the globals after the image load, then re-snapshot `init` so the watch re-run starts from
-   the same seeded state) and take the three that crash on a null pointer global - `net_input` 0x2f4a8,
-   `kart_draw` 0x24bcc, `fn_193a8` 0x193a8 - plus the menu spinners.
+   .work/venv/bin/python tools/wc/difffn.py $n; done`. Every uncapped DIFF is adjudicated
+   (`ents_project`/`shots_project` = the dead `v7d7f4`/`v7d874` pointers, findings/game-loop.md), so
+   a new DIFF is news.
 4. `com_wait_byte` 0x2df70 has no call site in the C module (0x10260-0x36a4d), so its EAX
    (0xffffffff/0x0) is unadjudicated: its caller is in the asm module above 0x36a4d, which difffn stubs.
-   A whole-module dump has to be chunked - `tools/le/disasm.py` stops at the first undecodable byte
-   (GOTCHAS).
+   A whole-module dump has to be chunked - `tools/le/disasm.py` stops at the first undecodable byte.
+5. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
+   slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
 
 ## BLOCKED
 
