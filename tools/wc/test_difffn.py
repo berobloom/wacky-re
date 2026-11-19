@@ -11,9 +11,14 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'tools', 'le'))
-from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_INSN                      # noqa: E402
-from unicorn.x86_const import UC_X86_REG_EDX, UC_X86_REG_EAX, UC_X86_INS_IN, UC_X86_INS_OUT  # noqa: E402
-import difffn as D                                                                 # noqa: E402
+try:
+    from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_INSN                  # noqa: E402
+    from unicorn.x86_const import (UC_X86_REG_EDX, UC_X86_REG_EAX, UC_X86_INS_IN,  # noqa: E402
+                                   UC_X86_INS_OUT)
+    import difffn as D                                                             # noqa: E402
+except ImportError as err:                        # overnight/check.sh runs the tests with plain
+    print('SKIP: %s (run: .work/venv/bin/python tools/wc/test_difffn.py)' % err)
+    sys.exit(0)                                   # python3, which has no unicorn
 
 
 class Fake:

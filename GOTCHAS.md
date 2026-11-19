@@ -121,6 +121,10 @@ it can be copied back into DREA.
   0x92000 is zero in the game but `+++.OK` at 0x92126 in ours, which invented a 5-byte `kart_draw`
   DIFF (iter 76).
   Recipe and its evidence: findings/menus.md, findings/serial.md, findings/game-loop.md.
+- **`overnight/check.sh` runs `tools/*/test_*.py` with plain `python3`, not `.work/venv/bin/python`**,
+  so a test that imports unicorn/capstone fails the check in a tree that compiles fine (`test_difffn.py`
+  iter 76). Such a test catches ImportError and
+  prints `SKIP:` with exit 0, and is run by hand under the venv. [generic]
 - **`grep -rn` in this repository must exclude `overnight/runs`**: those session transcripts quote
   `src/ww.c`, `findings/*` and the queue verbatim, so one unrestricted grep returns the same text
   hundreds of times (iter 76: `grep -rn comports .` looking for one definition). Scope the search to
