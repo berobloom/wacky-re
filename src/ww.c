@@ -2509,13 +2509,42 @@ void fn_17888(char *s, short y)
    test at the bottom with the global re-read (0x175d9-0x175e2), where a `while` keeps a top test.
    Left: q homes ECX, the game EBP (14 rows); in the img[] fan blocks `myplayer * 0x98` and
    `v88b7e` hold EAX/EDX the other way round (24 rows); the sp7b374b loop keeps its descending
-   cursor in EAX and 0x10 in EDX (the game ESI/EDX, 0x175ed-0x17623). */
+   cursor in EAX and 0x10 in EDX (the game ESI/EDX, 0x175ed-0x17623).
+   behaviour pass (iter 59), 3 BUGs, all of one class - a data address of ours that is wrong, which
+   fndiff and nmrefs cannot see (nmrefs labels an indexed access by the array it lands in, and our
+   disp32 data operands are linker fixups): the eight-write fan ending the function used `sp7b230b`,
+   which links to 0x7b230 (.work/link/symmap.txt:387), where the game writes 0x7b238..0x7b270: 0x177ac
+   `mov [eax*4+0x7b238],ebx` (bytes 89 1c 95 38 b2 07 00) through 0x17810 `mov [eax*4+0x7b270],edx`,
+   in the same img[8],9,8,4,10,11,10,4 order we use. No instruction in the image mentions 0x7b230
+   (tools/le/xref.py 0x7b230 finds nothing), while 0x7b238 is the base stored into curkart+0x4e at
+   0x3174a and walked by 0x2bff0 (xref 0x7b238) - every pair was one slot low and 0x7b270 was never
+   written. Now `lit7b238` = 0x7b238 (.work/link/symmap.txt:1024), the same symbol 0x3174a's copy
+   uses. The two record fans read the face record 8 bytes high: the sp7b324b loop read
+   faces+eax+0x44 where the game reads faces+eax+0x3c (`mov edx,[ebx+eax+0x73c44]` 0x17594, faces =
+   0x73c08) and the sp7b2d0b loop +0x60 where the game reads +0x58 (`mov ebx,[ebx+eax+0x73c60]`
+   0x175cb) - eight dwords each, so every entry was the wrong field. fndiff rows (100) and the MATCH
+   count (202) did not move for any of the three: that disp32 is a linker fixup, and libmatch reports
+   its addend as 0 while the addend (0,8,..,0x38) lives in the .OBJ bytes at the fixup location
+   (GOTCHAS). tools/wc/globrefs.py (new this iter) found all three: it resolves our ext fixups to
+   linear addresses (symmap address + the addend in the .OBJ bytes) and prints the data addresses only
+   one side touches plus equal-address count gaps; after the fixes its only line here is
+   `counts 0x7d868 ours x1 game x2`, which is the SAME below.
+   SAME: the `game more 1x v7d868` is the game's dead entry load 0x173d1 (EBP is untouched until
+   `mov ebp,[0x7d87c]` 0x17500); our 9.5b folds the `q = (int *)(size_t)v7d868` assignment away, and
+   the write-back 0x1784f `mov [0x7d868],ebp` (EBP = v7d87c+0x28) is our last statement
+   `v7d868 = (int)q`. The `consts ours only #0x28` is our one `add 0x28` for the game's five
+   `add ebp,8` 0x17551-0x1755d; `+0x4 +0xc +0x14 +0x1c +0x24 +0x2c` are our `faces` field offsets
+   (img[1],img[3],img[5],img[7],img[9],img[11] reads), the game reaching the same six addresses with
+   folded absolute operands (`mov edx,[eax+0x73c0c]` 0x17506 .. `[eax+0x73c24]` 0x17542) plus
+   `[eax+0x74190]`/`[esi+0x73c38]` 0x1782f-0x17835 in the arr7418c block, which nmrefs masks as
+   absolute. `#0x2` is our `add esi,2`
+   cursor in the sp7b374b loop against the game's `mov ebx,1` 0x17625 - the loop shape above. */
 
 extern short v88b7e;
 extern short v88c4e, v88c50, v88c52;
 extern int v7d6c8, v7d868, v7d87c, v7d884, v7d888;
 extern char arr7bba0[];               /* per-player 12-byte DAT file names */
-extern char sp7b230b[], sp7b2d0b[], sp7b324b[], sp7b374b[];
+extern char sp7b2d0b[], sp7b324b[], sp7b374b[];
 extern char sp7b418b[], sp7b448b[], sp7b4d8b[], sp7b518b[];
 extern char arr7418c[];
 void fn_173c4(void);
@@ -2577,12 +2606,14 @@ void fn_173c4(void)
     eax = 0;
     do {
         eax += 4;
-        *(int *)(sp7b324b + eax) = *(int *)((char *)&faces[myplayer] + eax + 0x44);
+        /* faces + eax + 0x3c: the game's `mov edx,[ebx+eax+0x73c44]` 0x17594 (faces = 0x73c08) */
+        *(int *)(sp7b324b + eax) = *(int *)((char *)&faces[myplayer] + eax + 0x3c);
     } while (eax != 0x20);
     v88c4e = faces[myplayer].f90;
     for (i = 1, eax = 4; i <= v88c4e; i++) {
         eax += 4;
-        *(int *)(sp7b2d0b + eax) = *(int *)((char *)&faces[myplayer] + eax + 0x60);
+        /* faces + eax + 0x58: the game's `mov ebx,[ebx+eax+0x73c60]` 0x175cb */
+        *(int *)(sp7b2d0b + eax) = *(int *)((char *)&faces[myplayer] + eax + 0x58);
     }
     v88c52 = faces[myplayer].f92;
     esi = 0x10;
@@ -2624,14 +2655,18 @@ void fn_173c4(void)
     *(int *)(sp7b418b + 0x10 + v88b7e * 4) = faces[myplayer].img[4];
     *(int *)(sp7b418b + 0x18 + v88b7e * 4) = faces[myplayer].img[10];
     *(int *)(sp7b418b + 0x20 + v88b7e * 4) = faces[myplayer].img[11];
-    *(int *)(sp7b230b + v88b7e * 4) = faces[myplayer].img[8];
-    *(int *)(sp7b230b + 8 + v88b7e * 4) = faces[myplayer].img[9];
-    *(int *)(sp7b230b + 0x10 + v88b7e * 4) = faces[myplayer].img[8];
-    *(int *)(sp7b230b + 0x18 + v88b7e * 4) = faces[myplayer].img[4];
-    *(int *)(sp7b230b + 0x20 + v88b7e * 4) = faces[myplayer].img[10];
-    *(int *)(sp7b230b + 0x28 + v88b7e * 4) = faces[myplayer].img[11];
-    *(int *)(sp7b230b + 0x30 + v88b7e * 4) = faces[myplayer].img[10];
-    *(int *)(sp7b230b + 0x38 + v88b7e * 4) = faces[myplayer].img[4];
+    /* the 0x7b238 animation table, NOT 0x7b230: the game's writes carry the absolute base
+       0x7b238..0x7b270 (0x177ac `mov [eax*4+0x7b238],ebx` .. 0x17810 `mov [eax*4+0x7b270],edx`,
+       bytes 38 b2 07 00 at 0x177ac) and no code in the image mentions 0x7b230; 0x7b238 is the
+       base stored into curkart+0x4e at 0x3174a and walked by 0x2bff0 (xref 0x7b238). */
+    *(int *)(lit7b238 + v88b7e * 4) = faces[myplayer].img[8];
+    *(int *)(lit7b238 + 8 + v88b7e * 4) = faces[myplayer].img[9];
+    *(int *)(lit7b238 + 0x10 + v88b7e * 4) = faces[myplayer].img[8];
+    *(int *)(lit7b238 + 0x18 + v88b7e * 4) = faces[myplayer].img[4];
+    *(int *)(lit7b238 + 0x20 + v88b7e * 4) = faces[myplayer].img[10];
+    *(int *)(lit7b238 + 0x28 + v88b7e * 4) = faces[myplayer].img[11];
+    *(int *)(lit7b238 + 0x30 + v88b7e * 4) = faces[myplayer].img[10];
+    *(int *)(lit7b238 + 0x38 + v88b7e * 4) = faces[myplayer].img[4];
     v88c50 = 8;
     if (v88b7e != 0) {
         eax = 0;
