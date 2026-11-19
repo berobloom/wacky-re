@@ -4650,7 +4650,15 @@ void fn_182d0(char *dst, short a2, long a3, short a4, int a5)
    its own liveness, declaration order and touch order probes (P15-P24) did not
    pin the rule; (b) [the wrapper calls are now made through aliases, QUESTIONS 6]; (c) loop counters use
    different scratch registers in the 0x1839c init loop. Strings, palette and
-   net blocks reproduce the game's bytes. */
+   net blocks reproduce the game's bytes.
+   iter 60 nmrefs pass - both flagged items SAME, no bug: (i) `game only 1x 0x26ec4(pal_6bit)` is the
+   -oe inline, our copy sits at 0x1853c-0x18554 (`movzbw (%eax),%dx; sar 1; sar 1; cmp 0x300,cx`) right
+   where the game calls it at 0x18537; (ii) `#0xe6` (ours) vs `#0xe8` (game) is one expression, the game
+   builds it as edx = v88bb6-1, eax = v88bb6 + 0xe8, eax += 2*edx (0x18710-0x1872f) = 3*v88bb6 + 0xe6.
+   No reference count differs at all (every global, call and string appears equally often on both
+   sides), and the 25 one-sided jump blocks are boundary grouping: each one references addresses the
+   other side uses equally often (the game's `v88b9e` store + RET tail 0x19390 and its `v7e574` test
+   0x18db5 are our tail store and our `if (v7e574 && v88bb6 > 1)`). Same-shape only, no racetest. */
 
 extern int v7c658, v7ecf0, v7ec80, v7ec9c, v7e574;
 extern short w88b1e, w88b10, v88b88, v88c58;
@@ -5673,13 +5681,27 @@ void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a c
  * 521, with cd15c 476). Near miss at +8 (6684 vs 6861). The statements are in the game's order - with the
  * `disp(%esp)` and the relocation bytes masked, 72 % of the disassembly rows agree - but Watcom
  * gave our 26 spilled scalars a permutation of the game's 27 slots and kept one local the game
- * spills in a register, so the frame is 4 bytes short. Probe recipe: QUESTIONS.md 5.
+ * spills in a register, so the frame was 4 bytes short. Probe recipe: QUESTIONS.md 5.
  * Frame: 3 char[0x50] at esp+0/0x50/0xa0, short[8] iconx/carstat at 0xf0/0x100, scalars 0x110-.
  * Not reachable: the byte-mask block 0x1aca4-0x1ad1d (the game masks v88cef's bits in AH/BH/DH/BL/DL and
  * stores bytes - our declarations of v88cef/key88cd5/v88cec are already char, so it is the register coin
  * flip), the game's `test ax,ax` after its own word store (store->load forwarding), and `short stage` for
- * the `switch (stage - 1)` subject (game `cmp ax,3` 0x1bba6): 476 -> 483. nmrefs' six game-only
- * 0x7bc00(mrows) references are the 177-byte length gap (same on the committed code). */
+ * the `switch (stage - 1)` subject (game `cmp ax,3` 0x1bba6): 476 -> 483.
+ * iter 60 nmrefs pass - two BUGs, both invisible to every row count: (1) the block at 0x1adf0-0x1ae5d
+ * draws the selection box - `spr_w = 0x1c` (0x1ae4f) and `call drawsprite` (0x1ae5d) after the sprptr
+ * store, which our C never had (nmrefs' `game more drawsprite / spr_w`); (2) the caption goes to
+ * print_at(capx, capy, buf1, 0): 0x1a5c6 `movsx eax,cx`, cx = the centred (0x140 - 8*strlen(buf1))/2
+ * computed at 0x1a456-0x1a46b and kept live by `mov ecx,eax` 0x1a4a9 - our C passed x2e, so WCC
+ * dropped the whole division. Rows 476 -> 433 (6732 vs the game's 6861), and our frame is now the
+ * game's 0x17c because capx is spilled. Same-shape items: the six `game only mrows` against our three
+ * mnames are the game's row-pointer base (`mov esi,0x3c; add esi,0x7bc00` 0x1a8de, `add ebp,0xb4`
+ * 0x1a8e4 = mnames + 2 rows, findings/scores.md; `#0xb4` is that end); `#0x24` (game) and `#0x54`
+ * (ours) are the ents byte-offset bounds of the same 4- and 7-iteration loops (0x1aa70 `cmp eax,0x24`
+ * jg -> 4 records, 0x1af8a `cmp eax,0x60` jne -> 7); the one extra `in ents` is the game's `cmp`
+ * after its `inc` (0x1aa59) where 9.5b reuses the flags of its own add; the two extra joy88b46 are the
+ * dead zero store 0x1ab34 (f377ae 0x377e0 writes it, then 0x1ab55 overwrites it) and the store->load
+ * re-read 0x1ad23; our extra v88b7e/twoplayer touches and the missing v88cef touches are the
+ * documented byte-mask block (0x1ac8c-0x1ad1d). */
 void cars_menu(void)
 {
     char buf0[0x50], buf1[0x50], buf2[0x50];   /* esp+0x00, esp+0x50, esp+0xa0 */
@@ -5708,7 +5730,7 @@ void cars_menu(void)
     }
     ctl_label(buf0, buf2);
     capy = 0x60;
-    capx = (0x140 - (short) (8 * strlen(buf1))) / 2;   /* centred caption x, kept live in ECX (0x1a4a9) */
+    capx = (0x140 - (short) (8 * strlen(buf1))) / 2;   /* centred caption x: 0x1a456-0x1a46b, kept live in ECX 0x1a4a9 */
     col0x = 0x2e;
     row0y = 0x3a;
     myplayer = -1;
@@ -5743,7 +5765,7 @@ void cars_menu(void)
     ents[8].frame = 0;
     ents[8].f8 = 0;
     pal_a = 0x7d00;
-    print_at(x2e, capy, buf1, 0);
+    print_at(capx, capy, buf1, 0);          /* 0x1a5c6 movsx eax,cx = the centred capx, not x2e (iter 60) */
     boxy = 0x8e;
     print_at(x2e, 0xaf, buf0, 0);
     boxx = 0xec;
@@ -5969,9 +5991,11 @@ input:
     setpalette();
     ents_show(-1, 8, 0, 0, 0);
     spr_x = boxx;
-    spr_h = 0x26;
-    sprptr = sp6a878[pbase + flip];
+    spr_h = 0x26;                 /* 0x1ae3f */
+    spr_w = 0x1c;                 /* 0x1ae4f */
     spr_y = boxy;
+    sprptr = sp6a878[pbase + flip];
+    drawsprite();                 /* 0x1ae5d: the selection box (iter 60, found by nmrefs' drawsprite/spr_w count) */
     pname_desc(car);
     y = yrow138;
     for (j = 0; j < 2; j++) {                   /* the same two rows, unscaled (0x1ae75) */

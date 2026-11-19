@@ -129,6 +129,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   ww .work/src/WW.OBJ NAME 0xADDR` prints the data addresses only one side touches plus count gaps;
   run it on every near miss that touches a table (`counts 0x7d868 ours x1 game x2` = the game's dead
   load, a typical SAME line - read the game's instruction before believing one).
+- **Our C can hold the game's expression and never use it, and then both counters move the WRONG way**
+  (iter 60, cars_menu: `capx = (0x140 - 8*strlen(buf1))/2` was in the source but the print call passed
+  `x2e`, so 9.5b deleted the division and the caption drew at x=46 instead of centred; the same
+  function was also missing one of the game's three `drawsprite` calls for the selection box, 0x1ae5d).
+  Both made our function shorter and its fndiff count SMALLER (476 -> 433 while getting two things
+  right), so a shrinking row count is no evidence of a fix. nmrefs named them: `game more 1x
+  0x36fd0(drawsprite)` and `game only #0x140 #0x1f` (`mov eax,0x140` + `sar edx,0x1f` 0x1a456/0x1a466
+  = the game's divide by the 320 px screen width). Read a length gap as missing calls, not padding.
 
 ### Probes (`tools/wc/variants.py`)
 

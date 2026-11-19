@@ -132,6 +132,10 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
 - Caption is centred: `x = (0x140 - 8*strlen(buf1)) / 2` 0x1a43c-0x1a46b, kept
   in ECX (0x1a4a9) across both setup loops, then `movsx eax, cx` 0x1a5c8 as
   print_at's arg1.
+- The selection box (`sp6a878[id0 + id1]`, `spr_w = 0x1c`, `spr_h = 0x26`) is drawn in
+  three places: 0x1a983-0x1a996, 0x1ae3f-0x1ae5d (right after the `ents_show` 0x1adfe)
+  and 0x1ba13-0x1ba31. CONFIRMED by the three `call drawsprite`; our C had only two of
+  them until iter 60 - the middle one was missing, and fndiff hid it.
 - Info lines: buf0 at (0x2e, 0xaf) 0x1a5da, buf2 at (0x2e, 0xbc) 0x1a605.
 - `pal_a` is set to 0x7d00 at 0x1a5b3, restored from 0x11c at 0x1a61e, then
   blinked 0 / 0x3e80 once per frame (0x1a744, 0x1a9ce, 0x1aec3, 0x1bb0c), with
