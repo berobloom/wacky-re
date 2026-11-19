@@ -18800,7 +18800,7 @@ void waitkey(void)
  * (MATCH by computing in the global), the global here is already the working variable. */
 void players_ahead(void)
 {
-    short c, k, h, n;
+    short n, h, k, c;      /* this order and `4 * n`: iter 74 permute.py, 27 -> 26 rows */
     int d;
 
     for (v7d800 = players, v88b72 = 0; v88b72 <= 7; v7d800 = v7d800 + 1, v88b72++) {
@@ -18835,7 +18835,7 @@ void players_ahead(void)
             spr_w -= n;
             if (spr_w <= 0)
                 continue;
-            v7d878 = n * 4;   /* 0x3435f: the value computed before spr_w was shortened */
+            v7d878 = 4 * n;   /* 0x3435f: the value computed before spr_w was shortened */
         }
         spr_x = c;
         f37487();
