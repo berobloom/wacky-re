@@ -83,6 +83,17 @@ block inside both arms of the test, our build merges them — see the `differs:`
   inverted sense at 0x21ab9 is source-level, not a compiler choice). There the follow-up
   `voice_play(0x11)` is gated on `v7ec74 == 0` (0x21af7).
 
+- **`v7d874` (0x7d874) is the "current shot" pointer, and every read of it sits under a writer**
+  (CONFIRMED, `tools/le/xref.py ww 0x7d874` over all 29 references): the only readers are
+  `shot_step` 0x25e6c (8 reads) and `shot_hit` 0x218a4 (3 reads); `shot_hit` is called only from
+  `shot_line` 0x22230 (0x22296, 0x222f3, 0x22328), `shot_line` only from `shot_step` 0x25fd6, and
+  `shot_step` only from `shots_move` 0x2602c (call 0x26090 right after its `mov [v7d874],ecx`
+  0x2608a) and from `shot_fire` 0x2d548 (call 0x2d5d3, store 0x2d5ad before it). So the value
+  `shots_project` 0x2632c leaves behind is dead: the game steps its loop pointer past the table
+  (`add ecx,0x22` 0x26684, `mov [v7d874],ecx` 0x26697 - the record after `shots[]` 0x7f2b0, i.e.
+  shots + 61*0x22) while the rebuild leaves the last live shot. `shots[]` records are 0x22 bytes
+  (`add ecx,0x22` 0x26684 in the loop tail of `shots_project`).
+
 ## Pickups, weapons and shot kinds: `SPRITE.ATR` kind -> `kart.f16` -> shot kind
 
 STRONGLY SUPPORTED: read from the rebuilt C of three near misses whose addresses agree with the
@@ -130,5 +141,9 @@ What the sprites look like and what the player sees are not checked live.
 - `fn_1bf00` starts at index **1**, not 0: `players[0]` is left alone (0x1bf1e `mov $1,%edx`).
 - The clamp is on `v7eca4 + 1`, not on `v7eca4`: `cmp $0x15` after `inc ebx` (0x1bf12-0x1bf13),
   so at most 0x15 rows take `v7ec6c`.
+- `shots_project` 0x2632c leaves `v7d874` pointing one record past `shots[]` (0x26697) - that is
+  not an off-by-one to copy back: the pointer is only read under `shots_move`/`shot_fire`, which
+  both store it before the call (see the `v7d874` bullet above). Adding `v7d874 = p;` after the
+  loop to match costs rows for nothing (tried: 117 -> 120, `src/nearmiss.txt`).
 - `v70720` is `short`, not `int`: every compare and store in `fn_1be3c` is 16-bit
   (`cmp $7,%dx`, `movw $0xffff`), and -1 is used as the "empty seat" sentinel.

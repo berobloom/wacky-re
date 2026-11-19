@@ -11715,7 +11715,16 @@ void anim_tick(void)
  * `short i` 146, a volatile alias pinning the store 136, `v7d874 = p;` after the loop 120 and a
  * nmrefs DIFFER - the game leaves the global past the table (0x26697), ours the last live shot; no
  * reader uses it unset (shot_step, shot_hit, shot_fire and shots_clear all set it). Byte-identical:
- * both product orders in the f0c load, `if (!p->f04)`, dropping the unused h. */
+ * both product orders in the f0c load, `if (!p->f04)`, dropping the unused h. iter 58 nmrefs: the
+ * global-access census (absolute operands only, ours 52 / game 55) finds no behaviour difference -
+ * the game's six extra v7d874 touches are its loop-pointer resyncs (0x26403, 0x2643e, 0x26491,
+ * 0x26675, 0x2667e, 0x26697) around calls and branch joins; only the value the global holds after
+ * the return differs, and it is dead (findings/game-loop.md: the readers shot_step 0x25e6c and
+ * shot_hit 0x218a4 are always called after shots_move 0x2608a or shot_fire 0x2d5ad stored it), so
+ * the past-the-table store 0x26697 is not copied back; the game-only `+0x22` is its precomputed
+ * next-pointer `lea eax,[ecx+0x22]` 0x2651b (`sizeof struct shot`) fed to the continue paths
+ * 0x26529/0x2655e, our step is the same immediate 0x22; p7d838's extra read is the game's
+ * `add dword [0x7d838],4` 0x264f8 and the two v88b20/v88b22 reads are its sy/dy frame slots. */
 extern short *tab6e600[];
 
 void shots_project(void)
