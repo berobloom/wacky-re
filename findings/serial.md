@@ -79,6 +79,21 @@ The rings are 16 KB: `rxbuf` 0x84b00 with `rxhead`/`rxtail`/`rxcount`
   swapped signature `(port, irq, comnum, baud)`, which changes no call-site byte but opens the wrong
   port and divides by the wrong rate - `objmatch.py`'s `WRONG link_open_@0x1dc31` line is the check.
 
+- CONFIRMED (com_open run under difffn, iter 76): the whole function agrees with our C once it is
+  called the way its caller calls it. `ARGS=0x3f8,4,0x3840,1` (port, irq, baud, comnum in eax/edx/
+  ebx/ecx - experiment inputs, not values read off the disc: the `comports` table 0x77240 is all
+  zeros in the image, `imul eax,[0x7ec50],0xc` 0x1db4b shows the 0xc-byte record stride) makes both
+  builds run to the return with the data segment, EAX and the call sequence identical; the control
+  (`NEW=wworig MAP=.work/link/WWORIG.MAP`) is SAME too. Zero arguments are not a legal call: `rate =
+  baud = 0` makes 0x103b1 `div ecx` a divide error (int 0), so both runs stop there and difffn used
+  to print that as the instruction cap. `IN=0x3fa=0xc0` (difffn's new IN= knob, the value an `in`
+  from that port returns) exercises the other arm of 0x10403 `cmp ax,0xc0` (after 0x103fe `in al,dx`
+  and 0x103ff `and al,0xf8`): with the default IN = 0 only the no-FIFO arm 0x1041b runs (`uarttype`
+  0x88cbc = 2, `hasfifo` 0x88cf7 = 0), seeded it takes 0x10409/0x10412 (1 and 1) and the run is STILL
+  SAME - read off both runs, not inferred. The `out`/
+  `in` instructions themselves (Watcom inlines `outp`/`inp`: 0x103c1, 0x10436, 0x1044e) are now
+  recorded as `$out`/`$in` calls, so the UART init sequence is compared, not skipped.
+
 - CONFIRMED (difffn seeds, iter 75): `com_wait_byte` 0x2df70 and `com_expect` 0x2e008 pop the ring
   the same way in our C. `SEED=0x84afe=1:w,0x84afc=3:w` puts one byte in the ring with a non-zero read
   index, so the pop path runs (0x2df8c-0x2dfc4 / 0x2e02d-0x2e065: `inc word [0x84afc]`, the `cwde` +
