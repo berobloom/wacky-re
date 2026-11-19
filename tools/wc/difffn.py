@@ -42,8 +42,9 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'wc'))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'le'))
-from unicorn import UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_UNMAPPED  # noqa: E402
-from unicorn.x86_const import UC_X86_REG_EIP, UC_X86_REG_ESP
+from unicorn import (UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_UNMAPPED,
+                     UC_HOOK_INSN)                                                                        # noqa: E402
+from unicorn.x86_const import (UC_X86_REG_EIP, UC_X86_REG_ESP, UC_X86_INS_IN, UC_X86_INS_OUT)
 import capstone                                                                          # noqa: E402
 from emu import Emu, REGS, STACK_TOP, SENTINEL                                           # noqa: E402
 import objmatch as M                                                                     # noqa: E402
@@ -74,6 +75,16 @@ def parse_seed(text):
 
 
 SEED = parse_seed(os.environ.get('SEED', ''))
+# ARGS=0x3f8,4,0x3840,1 -> the Watcom argument registers (eax, edx, ebx, ecx, ...). Zero arguments are
+# not always a legal call: com_open's `div ecx` at 0x103b1 is a divide error when baud is 0, and both
+# runs then die at the same instruction, which is inconclusive (iter 76).
+ARGREGS = os.environ.get('ARGS', '').split(',')
+# IN=0x3fa=0xc0: the value IN reads from one port (default 0). com_open's `iir = inp(comport + 2) &
+# 0xf8 == 0xc0` test at 0x1044e picks the 16550 FIFO branch, so a zero IN only ever runs the other one
+# (iter 76).
+INVALS = dict((int(k, 16), int(v, 0)) for k, v in
+              (item.split('=') for item in filter(None, (t.strip() for t in
+                                                        os.environ.get('IN', '').split(',')))))
 ACC = {16: 'read', 17: 'write', 18: 'fetch', 19: 'write_prot', 20: 'read_prot', 21: 'fetch_prot'}
 
 
@@ -84,6 +95,7 @@ class Run:
         self.e, self.img = Emu(img), img
         self.lo, self.hi = lo, max(hi, lo)              # the stub range (asm module + clib)
         self.stubs, self.crash, self.watch, self.calls = [], None, set(), False
+        self.ncalls = 0        # stubbed calls and interrupts only - not the port traffic below
         o = self.e.img.meta['objects']
         self.cend = o[0]['base'] + o[0]['vsize']
         # the DPMI zero page: half these functions run with a pointer global still 0, so give the
@@ -100,11 +112,19 @@ class Run:
         self.e.uc.hook_add(UC_HOOK_CODE, self._stub, begin=self.lo, end=self.hi)
         self.e.uc.hook_add(UC_HOOK_INTR, self._intr)
         self.e.uc.hook_add(UC_HOOK_MEM_UNMAPPED, self._unmapped)
+        # `in`/`out` (Watcom's inline outp/inp, e.g. com_open's UART init at 0x10436) are not
+        # emulated: without these hooks emu_start returns at the first one, no crash, no cap, and
+        # main() prints the run as if it had burned the whole instruction budget (iter 76: com_open
+        # 0x102f4 stopped at 0x103b1 `in al, dx` after 27k insns, 0.2 s). They become recorded
+        # calls, so the port traffic is compared too; IN reads 0 (no hardware here).
+        self.e.uc.hook_add(UC_HOOK_INSN, self._pio_in, None, 0, 0, UC_X86_INS_IN, 0)
+        self.e.uc.hook_add(UC_HOOK_INSN, self._pio_out, None, 0, 0, UC_X86_INS_OUT, 0)
 
     def _stub(self, uc, addr, size, _):
         esp = uc.reg_read(UC_X86_REG_ESP)
         self.stubs.append((addr, self.e.reg('eax'), self.e.reg('ecx'), self.e.reg('edx'),
                            [self.e.u32(esp + 4 * i) for i in range(3)]))
+        self.ncalls += 1
         self.e.reg('eax', 0)
         if TICK:                                  # the timer ISR that drives ticks lives above the C
             self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)   # module (0x10a15 et al only zero it),
@@ -112,16 +132,25 @@ class Run:
         # (menu's tail call 0x37de0), so this is the one place both sides can advance it, identically.
         uc.reg_write(UC_X86_REG_EIP, self.e.u32(esp))   # pretend the stub returned
         uc.reg_write(UC_X86_REG_ESP, esp + 4)
-        if len(self.stubs) >= CALLS:
+        if self.ncalls >= CALLS:
             self.calls = True
             uc.emu_stop()
+
+    def _pio_in(self, uc, port, size, _):
+        val = INVALS.get(port, 0) & ((1 << (8 * size)) - 1)
+        self.stubs.append(('$in %#x' % port, val, size, 0, []))
+        return val                                # the value IN leaves in the register
+
+    def _pio_out(self, uc, port, size, value, _):
+        self.stubs.append(('$out %#x' % port, value, size, 0, []))
 
     def _intr(self, uc, num, _):
         self.stubs.append(('int%d' % num, self.e.reg('eax'), 0, 0, []))
         self.e.reg('eax', 0)
+        self.ncalls += 1
         if TICK:
             self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)
-        if len(self.stubs) >= CALLS:
+        if self.ncalls >= CALLS:
             self.calls = True
             uc.emu_stop()
 
@@ -152,11 +181,14 @@ class Run:
         self.e.uc.reg_write(UC_X86_REG_ESP, esp)
         for r in ('eax', 'ebx', 'ecx', 'edx', 'esi', 'edi', 'ebp'):
             self.e.reg(r, 0)
+        for r, v in zip(('eax', 'edx', 'ebx', 'ecx'), ARGREGS):
+            if v.strip():
+                self.e.reg(r, int(v, 0))
         self.events = []
         # a re-run in the same Run inherits the first run's counters, and the CALLS cap then fires on
         # the first stubbed call: the watch pass of a CALLCAP function stopped at once and printed no
         # writers at all (iter 70)
-        self.stubs, self.crash, self.calls = [], None, False
+        self.stubs, self.crash, self.calls, self.ncalls = [], None, False, 0
         if self.watch:
             self.wh = self.e.uc.hook_add(UC_HOOK_MEM_WRITE, self._watch)
         try:

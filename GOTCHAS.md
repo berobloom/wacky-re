@@ -111,7 +111,20 @@ it can be copied back into DREA.
   `difffn.Run` for the **hybrid** must use `main`'s stub range (BLOBTEXT below `_TEXT`), not the
   original's `(0x36a4e, inf)`: the wrong one leaves a different build's library live and invents
   behaviour (iter 75: com_wait_byte 0x2df70 looked like EAX 0 plus one phantom stubbed call).
-  Recipe and its evidence: findings/menus.md, findings/serial.md.
+  A run whose `not done` and `not calls` is **not necessarily at the instruction cap**: `emu_start`
+  also returns quietly at an instruction Unicorn cannot execute (`in`/`out`, i.e. Watcom's inline
+  `outp`/`inp`) or at an unhandled CPU exception (`div ecx` 0x103b1 with `baud` = 0), and difffn
+  printed both as "the 3000000-instruction cap" - com_open 0x102f4 reported that after 27k
+  instructions in 0.2 s (iter 76: `UC_HOOK_INSN` on IN/OUT plus the new `ARGS=` register arguments
+  fixed it). A `SEED=` **pointer** has to point at a block that is zero in BOTH images: the hybrid's
+  data object is 0x35464 bytes against the game's 0x33100 and carries its own initialised data, so
+  0x92000 is zero in the game but `+++.OK` at 0x92126 in ours, which invented a 5-byte `kart_draw`
+  DIFF (iter 76).
+  Recipe and its evidence: findings/menus.md, findings/serial.md, findings/game-loop.md.
+- **`grep -rn` in this repository must exclude `overnight/runs`**: those session transcripts quote
+  `src/ww.c`, `findings/*` and the queue verbatim, so one unrestricted grep returns the same text
+  hundreds of times (iter 76: `grep -rn comports .` looking for one definition). Scope the search to
+  `src tools findings analysis`, or use `--exclude-dir=runs`. [generic]
 - **`tools/le/disasm.py` stops at the first undecodable byte**, so a whole-module census must be
   restarted from the next address: `disasm.py ww 0x10000 0xbad9` ended at 0x1ffff after 15506 lines and
   the file reads complete - it made iter 70 write "38 `msgbox` call sites" where the C module has 53

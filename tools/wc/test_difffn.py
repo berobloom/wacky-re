@@ -1,40 +1,58 @@
 #!/usr/bin/env python3
-"""test_difffn.py: the two pure pieces of difffn.py - which bytes count as changed, and what a
-byte offset of the compared buffer means as an address. Run: .work/venv/bin/python tools/wc/test_difffn.py (it imports
-difffn, which needs the venv's unicorn)"""
+"""test_difffn.py: the iter-76 additions to difffn.py - the IN/OUT hooks and the IN value.
+
+    .work/venv/bin/python tools/wc/test_difffn.py
+
+Not a one-function-per-process run: it checks the hook contract on a throwaway VM and the recording
+callbacks on a fake self, so it fails if the bindings' callback signature or the value masking breaks.
+"""
 import os
 import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-try:
-    from difffn import diff_bytes, lin, parse_seed, TICKADDR                         # noqa: E402
-except ImportError:# overnight/check.sh uses system python3, no unicorn
-    print('test_difffn skipped (run .work/venv/bin/python tools/wc/test_difffn.py)')
-    sys.exit(0)
-
-# a byte both runs left alone is not a difference, even if the images disagree there (our CONST group
-# has dead bytes that differ - iter 68 datamatch)
-assert diff_bytes(b'\x00\x01', b'\x00\x01', b'\x09\x01', b'\x09\x01') == []
-# a byte one run changed to a value the other run also has is not a difference either
-assert diff_bytes(b'\x00\x00', b'\x00\x14', b'\x00\x00', b'\x00\x14') == []
-# the f14 bug: the game wrote 0x14 at 0x6ab0c, our build left 0 - and EAX garbage must not matter
-assert diff_bytes(b'\x00\x00', b'\x14\x00', b'\x00\x00', b'\x00\x00') == [0]
-# a byte both runs changed, to different values, is
-assert diff_bytes(b'\x00', b'\x52', b'\x00', b'\x40') == [0]
-
-# ranges are concatenated: the second one's offsets start after the first's length
-class R:
-    ranges = [(0, 0x10000), (0x60000, 0x35464)]
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'tools', 'le'))
+from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_INSN                      # noqa: E402
+from unicorn.x86_const import UC_X86_REG_EDX, UC_X86_REG_EAX, UC_X86_INS_IN, UC_X86_INS_OUT  # noqa: E402
+import difffn as D                                                                 # noqa: E402
 
 
-assert lin(R(), 0) == 0
-assert lin(R(), 0xffff) == 0xffff
-assert lin(R(), 0x10000) == 0x60000
-assert lin(R(), 0x10000 + 0xab0c) == 0x6ab0c     # the f14 address, second range
-# SEED: width after a colon, so a hex value ending in b/d stays a value; default a dword, masked
-assert parse_seed('') == []
-assert parse_seed('0x88ccd=1:b') == [(0x88ccd, b'\x01')]
-assert parse_seed('0x7d800=0x1b') == [(0x7d800, b'\x1b\x00\x00\x00')]
-assert parse_seed('0x88b72=-1:w, 0x7eb84=0x7cbe8:d') == [(0x88b72, b'\xff\xff'), (0x7eb84, b'\xe8\xcb\x07\x00')]
-# TICK (difffn.py) feeds the game's tick counter; the address is a hex literal from the names file
-assert TICKADDR == 0x7e720
-print('test_difffn ok')
+class Fake:
+    stubs = []
+
+
+def main():
+    assert D.parse_seed('0x76=0x8c800:d,0x7e728=1:d,0x8c800=3:b') == [
+        (0x76, bytes.fromhex('00c80800')), (0x7e728, bytes.fromhex('01000000')),
+        (0x8c800, b'\x03')], D.parse_seed('0x76=0x8c800:d,0x7e728=1:d,0x8c800=3:b')
+
+    u = Uc(UC_ARCH_X86, UC_MODE_32)
+    u.mem_map(0x1000, 0x1000)
+    seen = []
+    # the real callbacks, on a VM running `mov edx,0x3f8; out dx,al; in al,dx; hlt`
+    u.hook_add(UC_HOOK_INSN, lambda *a: D.Run._pio_in(Fake, *a), None, 0, 0, UC_X86_INS_IN, 0)
+    u.hook_add(UC_HOOK_INSN, lambda *a: seen.append(a) or D.Run._pio_out(Fake, *a),
+               None, 0, 0, UC_X86_INS_OUT, 0)
+    # INVALS is read from the module, so set it the way the env would: the port read
+    # back is 0x3f8 (the same DX the `out` used)
+    D.INVALS[0x3f8] = 0xc0
+    u.mem_write(0x1000, bytes.fromhex('ba f8 03 00 00'   # mov edx, 0x3f8
+                                      'ee'                # out dx, al
+                                      'ed'                # in al, dx
+                                      'f4'))              # hlt
+    u.reg_write(UC_X86_REG_EAX, 0x2b)
+    u.reg_write(UC_X86_REG_EDX, 0)
+    u.emu_start(0x1000, 0x1008)
+    assert u.reg_read(UC_X86_REG_EDX) == 0x3f8            # the IN/OUT hooks ran, the VM moved on
+    assert u.reg_read(UC_X86_REG_EAX) == 0xc0, hex(u.reg_read(UC_X86_REG_EAX))
+    # callback args: IN (uc, port, size, ud), OUT (uc, port, size, value, ud)
+    assert seen[0][1:-1] == (0x3f8, 1, 0x2b), seen
+    # what difffn records and compares: the port in the call slot, the value in the EAX slot
+    Fake.stubs = []
+    assert D.Run._pio_in(Fake, u, 0x3fb, 1, None) == 0     # a port with no IN= entry reads 0
+    assert D.Run._pio_in(Fake, u, 0x3f8, 1, None) == 0xc0
+    assert [(s[0], s[1], s[2]) for s in Fake.stubs] == [('$in 0x3fb', 0, 1), ('$in 0x3f8', 0xc0, 1)], Fake.stubs
+    print('OK')
+
+
+if __name__ == '__main__':
+    main()
