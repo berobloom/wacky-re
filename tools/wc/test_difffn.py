@@ -5,7 +5,11 @@ difffn, which needs the venv's unicorn)"""
 import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from difffn import diff_bytes, lin                                        # noqa: E402
+try:
+    from difffn import diff_bytes, lin                                    # noqa: E402
+except ImportError:                        # overnight/check.sh uses system python3, no unicorn
+    print('test_difffn skipped (run .work/venv/bin/python tools/wc/test_difffn.py)')
+    sys.exit(0)
 
 # a byte both runs left alone is not a difference, even if the images disagree there (our CONST group
 # has dead bytes that differ - iter 68 datamatch)
