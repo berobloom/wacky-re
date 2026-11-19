@@ -154,6 +154,38 @@ What the sprites look like and what the player sees are not checked live.
   not touch it. Method: prove a global's exit value dead by write-before-read in every reader, not
   by finding no reader.
 
+## The kart animation state `kart.f18`: which table each `kart_frame` case reads (CONFIRMED)
+
+`kart_frame` 0x290a0 ends in `switch (curkart->f18)`; its jump table sits in the gap in front of the
+function at **0x29068** (14 entries) and is indexed **f18-1**: `mov bx,[edx+0x18]` 0x298cf,
+`dec ebx` 0x298d3, `cmp bx,0xd; ja 0x29e01` 0x298d6. Every arm sets `kart.f4e` to
+`&table[kart.f1a][v88b7e]` - row stride 8 (`lea ebx,[eax*8]`), index scale 4 - and which of the four
+int tables an arm picks is what the animation *is* (the choice per case CONFIRMED from the
+addresses, the meaning still LIKELY):
+
+| f18 | arm | table (base load) | guard, from src |
+|---|---|---|---|
+| 1 | 0x298eb | `tb7b448` via the block 0x2993f, shared with case 2 | `f20` set = return; `--f1a > 6` 0x298ff, else reset |
+| 2 | 0x2996e | `tb7b448` 0x29943 (same shared block) | `f20`; `++f1a < 6` 0x29982, else reset |
+| 3 | 0x299ca | `tb7b4d8` 0x29a2a | `f3c`; `++f1a < 3` 0x299de, else reset |
+| 4 | 0x29a55 | `tb7b4d8` 0x29ab5 | `f3c`; `--f1a > 3` 0x29a69, else reset |
+| 5 | 0x29c59 | `tb7b518` 0x29c85 | `f1a` walked toward `f1c` 0x29c5d/0x29c69, `f18 = 0` when equal |
+| 6 | 0x29ae0 | `tb7b418` 0x29b12 | `f1a == 0`: `ticks2 - f02 >= 3` 0x29b06 -> `f18 = 8` 0x29b08; else `--f1a == 0` -> `f02 = ticks2` |
+| 7 | 0x29b43 | `tb7b418` 0x29b7a | `f1a == 4` -> `f18 = 9` 0x29b70; else `++f1a == 4` -> `f02 = ticks2` 0x29b5b |
+| 8 | 0x29bab | `tb7b418` 0x29bff (index block shared with 9, its tail is the case-14 one at 0x29de5 - `jmp 0x29c04`) or reset -> `tb7b518` 0x29be0 | `++f1a < 2` |
+| 9 | 0x29c09 | `tb7b418` via 0x29bfb (`jg` 0x29c12) or reset -> `tb7b518` 0x29c3e | `--f1a > 2` |
+| 10 | 0x29cb6 | `tb7b378`, one int by `v88c5c` | voice pair + `++v88c5c == v88c52` |
+| 11, 12 | 0x29e01 | none (default, the epilogue) | |
+| 13 | 0x29d3d | `tb7b238`, one int by `v88c5a` | `++v88c5a == v88c50` |
+| 14 | 0x29d8b | `tb7b448` 0x29de0 | `++f1a < 8` 0x29d94, else reset |
+
+"reset" is one statement, `f00 = 0; f18 = 0; f1a = 2; f1c = 2; f4e = &tb7b518[2][v88b7e]`
+(`ANIM_RESET()` in `src/ww.c`, 6 uses + 3 explicit sites = 9 sites): the game keeps **9 copies** of
+its base load - 0x29265, 0x29912, 0x2998e, 0x299ea, 0x29a75, 0x29be0, 0x29c3e, 0x29c85, 0x29da0 -
+where our build emits 5, so nmrefs' `game more 4x 0x7b518` and `5x v88b7e` are Watcom block merging,
+not a missing reset (same for `anitimer`: 7 stores/reads in the game, 6 in ours, 0x294bc and 0x29543
+merged).
+
 ## Traps
 
 - The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`

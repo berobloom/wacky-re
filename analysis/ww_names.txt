@@ -799,7 +799,7 @@
 0x0218a4 shot_hit     # CONFIRMED (rebuild src/ww.c): what the shot v7d874 at (lx0,ly0) hits - map class 3, entity <14, player <18 (v88bae 1/2/3); callers in 0x22230
 0x068410 karts        # STRONGLY SUPPORTED: struct kart[], 0x104 bytes = cars[] seen 0x10 earlier; shot_hit sets curkart = &karts[i] (0x21cde) and tests karts[i].f0a/.f7e/.fd4 (=cars[i].sndhandle)
 0x07d874 v7d874       # LIKELY: struct shot *, the projectile being moved (owner, kind, +8 armed, +0xa x, +0xc y)
-0x07b448 tb7b448      # SPECULATIVE: int[][2], kart animation table; shot_hit stores &tb7b448[f1a][player] in kart +0x4e
+0x07b448 tb7b448      # STRONGLY SUPPORTED: int[][2], kart animation table; shot_hit stores &tb7b448[f1a][player] in kart +0x4e; kart_frame's f18 cases 1 and 2 share its index block 0x2993f and case 14 uses 0x29de0 (findings/game-loop.md)
 0x07d5ac v7d5ac       # STRONGLY SUPPORTED: struct kart *, curkart saved across shot_hit's hit animation
 0x088b02 v88b02       # STRONGLY SUPPORTED: short, v88b7e saved across the same
 0x021de0 kart_line    # CONFIRMED (rebuild src/ww.c): kart_hit at each point of the line (lx0,ly0)-(lx1,ly1) until v88bae; caller 0x238ac
@@ -811,11 +811,11 @@
 0x022390 kart_anim2r  # CONFIRMED (rebuild src/ww.c): kart_anim2 after clearing v88b90/v88b92 and kart f1e-f24/f42; no caller found
 0x02241c kart_anim79  # CONFIRMED (rebuild src/ww.c): animation 7 or 9 of tb7b448 by its short argument; no caller found
 0x022494 kart_anim0   # CONFIRMED (rebuild src/ww.c): animation 0 of tb7b448, f18 = 0xe; no caller found
-0x07b518 tb7b518      # SPECULATIVE: int[][2], second kart animation table (kart_anim2)
+0x07b518 tb7b518      # STRONGLY SUPPORTED: int[][2], second kart animation table (kart_anim2); also kart_frame's f18 case 5 (0x29c85) and the table of every animation reset - 9 base loads in the game (0x29265, 0x29912, 0x2998e, 0x299ea, 0x29a75, 0x29be0, 0x29c3e, 0x29c85, 0x29da0), 5 in our build
 0x088b90 v88b90       # SPECULATIVE: short, cleared by kart_anim2r
 0x088b92 v88b92       # SPECULATIVE: short, cleared by kart_anim2r
 0x0224ec kart_state   # CONFIRMED (rebuild src/ww.c): per-frame kart state - spin (f06), animation 7/9 (f20), charge phase (f3c), speed decay (f26 by f36); caller 0x297c9
-0x07b4d8 tb7b4d8      # SPECULATIVE: int[] by player, charge animation 1 frames (kart_state)
+0x07b4d8 tb7b4d8      # STRONGLY SUPPORTED: int[] by player, charge animation 1 frames (kart_state 0x224ec); kart_frame's f18 cases 3 (0x29a2a) and 4 (0x29ab5) read it as [f1a][player], 8-byte rows
 0x07b508 tb7b508      # SPECULATIVE: int[] by player, charge animation 2 frames (kart_state)
 0x088c44 v88c44       # SPECULATIVE: short, kart_state runs only when 2 (race phase?)
 0x088b8c v88b8c       # SPECULATIVE: short, side flag selecting v88b92 (kart_state)
@@ -823,7 +823,7 @@
 0x022bf4 kart_bump    # CONFIRMED (rebuild src/ww.c): the viewing kart against the other arr79a28 records - side/lane, horn, entity pickups, knock-outs, sparks; caller 0x25486
 0x07a9dc s7a9dc       # SPECULATIVE: 0x18-byte sound records by face, int count first (kart_bump)
 0x07b100 s7b100       # SPECULATIVE: 0x10-byte sound records by face, int count first (kart_bump)
-0x07b418 tb7b418      # SPECULATIVE: int[][2], bump animation table (kart_bump)
+0x07b418 tb7b418      # STRONGLY SUPPORTED: int[][2], bump animation table (kart_bump); kart_frame's f18 cases 6 (0x29b12), 7 (0x29b7a) and 8/9 through the shared index block 0x29bfb (its tail is case 14's, `jmp 0x29c04` -> 0x29de5)
 0x080ae8 tb80ae8      # SPECULATIVE: short[3], three y values 11 apart set on a kind-1 pickup (kart_bump)
 0x088c12 v88c12       # STRONGLY SUPPORTED: short, index of the viewing kart's own arr79a28 record (kart_bump)
 0x01f858 main_menu    # CONFIRMED (rebuild src/ww.c): the main menu dispatcher, cases 1-9 of menu(9); 9 returns through engines_menu's epilogue

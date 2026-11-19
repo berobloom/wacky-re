@@ -428,6 +428,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   source-label order, and case bodies are emitted in source order: sort the cases by jump-table
   target before writing the switch (main_menu case 7 before case 6; 0x19da8 for fn_19db8).
   [generic]
+- A Watcom switch table may be indexed by the switch value **minus one**: `mov bx,[obj+0x18]` +
+  `dec ebx` + `cmp bx,0xd; ja default` (kart_frame 0x298cf, table 0x29068 - entry 0 is `case 1`,
+  entry 13 is `case 14`). Read the index computation before mapping entries to cases: otherwise a
+  nmrefs gap like `game more 4x <table>` / `ours more 1x <other table>` reads as the wrong table in
+  an arm, when it is plain block merging (kart_frame's 9 ANIM_RESET base loads vs our 5). [generic]
 - Read esp offsets per instruction: a 5-argument call pushes one dword, so displacements after a
   `push` are 4 lower (cars_menu 0x1adf7). [generic]
 - A call target can be an interior label of a library module (0x430f7 inside `__stos` 0x430be):

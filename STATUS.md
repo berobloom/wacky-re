@@ -22,28 +22,26 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Behaviour night (overnight/prompt.md step 2): nmrefs' `DIFFER` / `consts` list is now fully
-   `BEHAV:` (18 near misses; iter 61 took enter_name 0x1cb44, main 0x35ca4, chat 0x14d00 - their only
-   one-sided refs were our unnamed clib externals, now named, and chat's extra `spr_y` read is the
-   game's `mov edx,0xa` 0x14eb9 - and ents_project 0x25a78, 0 bugs: its `#0xa` clamp equals the game's
-   `cmp si,9` 0x25c2a, and the 6 game-more `v7d7f4` touches are the global it walks the array with,
-   whose exit value is dead, findings/game-loop.md). Next candidates are the six near misses flagged
-   only by a one-sided jump-target block: kart_frame 0x290a0 (42 blocks), kart_fire 0x24364 (10),
-   main_menu 0x1f858 (4), shot_step 0x25e6c (`jumps game -> 0x88ba6(lx1) 0x88bc4(ly1) RET`),
-   ents_show 0x014380 (`jumps ours -> 0x88be2(twoplayer)`), fn_1be3c 0x01be3c
-   (`jumps ours -> 0x43088(rand)`) - read the game's branch first, a Watcom-dropped block is a bug,
-   a merged tail is not.
+1. Behaviour night (overnight/prompt.md step 2): iter 62 took kart_fire 0x24364, main_menu
+   0x1f858 and kart_frame 0x290a0 - 0 bugs; their one-sided items were cached globals (v7eb9c in
+   ECX, curkart in EDX, write-backs only), our tail merges (src's 9 ANIM_RESET copies compile to 5
+   base loads where the game has 9) and kart_frame's switch table 0x29068, indexed by f18-1
+   (`mov bx,[edx+0x18]`; `dec ebx` 0x298d3). Near misses still without `BEHAV:`: shot_step 0x25e6c
+   (`jumps game -> 0x88ba6(lx1) 0x88bc4(ly1) RET`), ents_show 0x014380 (`jumps ours ->
+   0x88be2(twoplayer)`), fn_1be3c 0x01be3c (`jumps ours -> 0x43088(rand)`), then the counts-only
+   three draw_status 0x12f80, lights_project 0x266a8, race_results 0x2bff0 (`ours more 1x
+   joy88b40`). Read the game's branch first: a Watcom-dropped block is a bug, a merged tail is not.
 2. Run globrefs (`tools/wc/globrefs.py ww .work/src/WW.OBJ NAME 0xADDR`) over the whole near-miss
    list in one loop and triage the hits - it finds this bug class in MATCHed functions too, where
    fndiff has 0 rows. Ignore its `game only <string>` lines (our own literals are segment fixups it
    skips, GOTCHAS); expect address-shape noise otherwise too: the line is a question, not a finding.
-3. Hybrid link (`tools/link/racetest.sh`): still RACETEST OK (the first race's overview) - iter 61
-   changed no C code, so no racetest was run. Next: drive into the CHOOSE VEHICLE screen and compare
-   it - iter 60's two cars_menu fixes (the centred caption, the selection box drawn a third time)
-   show there and nowhere near the overview; the race frames need the same (the 0x7b238 animation
-   table, a `clipy` sprite clipped at row 199).
+3. Hybrid link (`tools/link/racetest.sh`): still RACETEST OK (the first race's overview) - iters 61
+   and 62 changed no C code, so no racetest was run. Next: drive into the CHOOSE VEHICLE screen and
+   compare it - iter 60's two cars_menu fixes (the centred caption, the selection box drawn a third
+   time) show there and nowhere near the overview; the race frames need the same (the 0x7b238
+   animation table, a `clipy` sprite clipped at row 199).
 4. QUEUE.md still holds only the unfilled template item (`Q1 <short title>`, empty Report/Accept),
-   so iter 61 took the overnight prompt's step 2 again; the human should put a real item there.
+   so iters 61-62 took the overnight prompt's step 2 again; the human should put a real item there.
 
 ## BLOCKED
 
