@@ -4077,7 +4077,16 @@ void fn_1bf00(void);
  * and stores it 9x while -oneatx emits movw $0 per store (no C form found keeps a zero register);
  * its zeroing do-while keeps a byte counter, unreduced; the order_a/order_b loads interleave
  * between stores. New this iter: `#pragma loopopt OFF` before the definition is INERT under
- * WCC386 - a WPP pragma, and the pipeline has no preprocessor. */
+ * WCC386 - a WPP pragma, and the pipeline has no preprocessor.
+ * iter 60 nmrefs (all SAME, checked at the instruction): `#0x2d8` is our strength-reduced byte
+ * offset of the f08/f0a loop - the game recomputes it (`movsx eax,si; imul eax,eax,0x68` 0x17319)
+ * and counts the value down instead (`add edx,0x3c` 0x1730b, `sub edx,0xa` 0x1732e), which is the
+ * same f08 = v88b84 / f0a = v88b84 + 10j - 10 (0x6aa98 / 0x6aa9a = f08/f0a, players base 0x6aa90);
+ * the same holds for the f0c loop (0x1738a `sub edx,4` + 0x173b0 `sub edx,0xa`). The one extra
+ * v88b72 load is that loop's global counter (the game stores it twice per pass, 0x1738d/0x173a2).
+ * The 5-vs-3 jump-target blocks are block-boundary grouping, not missing loads: nmrefs' ref counts
+ * for 0x72350, 0x72354 and 0x88c04 agree on both sides (only v88b72 differs) and the game re-reads
+ * 0x88c04 twice too (0x17218, 0x17237; 0x72354 loaded once at 0x171ed, 0x72350 at 0x17203). */
 void fn_16f90(void)
 {
     int ax, dx, absy;
