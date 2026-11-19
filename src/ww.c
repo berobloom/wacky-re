@@ -4191,7 +4191,13 @@ void fn_16f90(void)
             players[k].cell = 0;
             players[k].place = 0;
             players[k].lap = 0;
-            players[k].f14 = 0;
+            players[k].f14 = dx;   /* BUG fixed iter 69 (difffn.py): the game stores CX here
+                                    * (0x1727b), CX = abs(v88c04 - x) computed 0x171d0-0x171e5 and
+                                    * live to that store; our C had the same abs() in dx and stored
+                                    * 0. The run leaves 20/40/60/80/60/40/20 at 0x6ab0c stride 0x68
+                                    * for the game and 0 for us. Read back in the race: f00 3/4
+                                    * (set here from v88c04 vs x) picks dir = +-f14 and `f14 -= 4`
+                                    * until it runs out (src/ww.c:13274-13281). */
             players[k].face = v70720[k];
         }
         arr16[0x173] = 60;

@@ -61,6 +61,37 @@ count. SPECULATIVE: a net/handicap rule for who gets the chosen car graphic.
 Rebuild: `src/ww.c` `fn_1bf00`, near miss (97 of 125 bytes; the game keeps the store/continue
 block inside both arms of the test, our build merges them — see the `differs:` mark).
 
+## `fn_16f90` 0x16f90 sets `players[].f14` to the kart's offset from the start line (CONFIRMED)
+
+The pre-race reset walks the 8 `players` rows (`si` = 0..7, record base 0x6aa90, stride 0x68) and
+for each row stores
+
+```
+x        = order_a[si]                    ; 0x1716a -> +0x16
+y        = order_b[si]                    ; 0x17179 -> +0x18
+f10      = *0x72354 - abs(v88c06 - y)      ; 0x171ed-0x171f6, +0x10
+f5e      = *0x72350 + abs(v88c06 - y) * 4  ; 0x17203-0x1720b, the `.POS` path cursor, +0x5e
+f00      = x < v88c04 ? 3 : x > v88c04 ? 4 ; 0x17211-0x17240
+f14      = abs(v88c04 - x)                 ; 0x171d0-0x171e5 (cdq/xor/sub abs) then 0x1727b
+face     = v70720[si]                     ; 0x17273/0x17283, the seat `fn_1be3c` picked
+```
+
+CONFIRMED as the instruction sequence above; the values are CONFIRMED by running it: `tools/wc/difffn.py
+fn_16f90` executes the game's 0x16f90 and our build's copy on their own images and the game leaves
+20, 40, 60, 80, 60, 40, 20 at 0x6ab0c (stride 0x68, i.e. `players[1..7].f14`), a symmetric pyramid
+around the middle seat.
+
+What it is for: `cpu_drive` 0x28cac walks a kart along the `.POS` path through the `f5e` cursor and,
+while `f00` is 3 or 4, adds `dir = -f14` (3, behind the line) or `+f14` (4, ahead) to `x` every step,
+then `f14 -= 4` and `f00 = 0` when it runs out (src/ww.c:13272-13283) - so `f14` is the **remaining
+offset from the start line**, and the karts slide into their slots over the first frames of the race.
+SPECULATIVE: 4 pixels per frame at the pre-race tick rate.
+
+Our build stored 0 there: `players[k].f14 = 0`, with the same `abs(v88c04 - x)` computed into `dx`
+and thrown away - so `dir` was always 0 and every kart started exactly on the path. Fixed iter 69
+(`players[k].f14 = dx`, src/ww.c:4194). Neither the row count nor `nmrefs.py` saw it: both sides
+store to the same address with the same instruction, only the value differs.
+
 ## Hit tests: `kart_hit` 0x216a0 and `shot_hit` 0x218a4; `karts[]` 0x68410
 
 - **`karts[]` at 0x68410 (0x104-byte records) is `cars[]` (0x68420) seen 0x10 bytes earlier**:
@@ -210,3 +241,8 @@ merged).
   above (same shape as the `v7d874` bullet).
 - `v70720` is `short`, not `int`: every compare and store in `fn_1be3c` is 16-bit
   (`cmp $7,%dx`, `movw $0xffff`), and -1 is used as the "empty seat" sentinel.
+- A store can be at the right address with the wrong value and no comparison of *bytes* will see
+  it: `players[].f14` was stored as 0 where the game stores `abs(v88c04 - x)` (0x1727b), one
+  instruction both sides emit identically apart from the operand. `tools/wc/difffn.py` runs one
+  function in the original and in the hybrid build and compares the memory they leave - it found
+  this one; `nmrefs.py`'s address and constant censuses did not (iter 69).

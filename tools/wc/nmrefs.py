@@ -16,6 +16,10 @@ consts    small immediates and [reg+disp] field offsets (not stack slots) only o
             wrong loop bound, size or struct field (fn_1832c's 4 cards vs 3, fn_16eac's +0x20 vs +2)
             shows here; a constant one build keeps in a register shows too. Reported, not counted
             as DIFFER.
+writes    the subset of those addresses the side STORES to (a memory operand capstone marks as
+            written: mov dest, pop, xchg, add/sub/inc/... in place). An address the refs census sees
+            on both sides can still be read-only in one build - the players_ahead bug (v7d878 never
+            set) and fn_173c4's wrong field are of that class, and neither census caught them.
 DIFFER (an address only one side uses: `ours only` / `game only`) is a behaviour difference until
 shown otherwise; `counts` (the same addresses, used a different number of times: a cached global, a
 shared address computation) usually is not. Small numeric
@@ -49,7 +53,8 @@ def norm(s):
 def fields(ins):
     """(offset in the instruction, value, kind) of its 32-bit disp / imm fields; kind 'br' a branch
     target, 'idx' a displacement used with a register (array base + folded index), 'tab' a jump
-    table, '' a plain address or constant"""
+    table, 'imm' an immediate (a constant or the address constant a fixup fills), '' a plain
+    memory displacement"""
     out = []
     br = ins.group(capstone.CS_GRP_JUMP) or ins.group(capstone.CS_GRP_CALL)
     if ins.disp_size == 4:
@@ -61,9 +66,18 @@ def fields(ins):
     if ins.imm_size == 4 or (br and ins.imm_offset):
         for op in ins.operands:
             if op.type == capstone.x86.X86_OP_IMM:
-                out.append((ins.imm_offset, op.imm & 0xFFFFFFFF, 'br' if br else ''))
+                out.append((ins.imm_offset, op.imm & 0xFFFFFFFF, 'br' if br else 'imm'))
                 break
     return out
+
+
+def written(ins):
+    """does the operand carrying the disp/imm that fields() picked get written? (capstone's access
+    flags: mov dest, pop dest, xchg, and add/sub/or/inc/... on memory are READ|WRITE or WRITE)"""
+    for op in ins.operands:
+        if op.type == capstone.x86.X86_OP_MEM:
+            return bool(op.access & capstone.CS_AC_WRITE)
+    return False
 
 
 def blocks_sig(ins_refs, idx, ends):
@@ -201,6 +215,7 @@ def main():
 
     flagged = 0
     nconst = [0]
+    nwrite = [0]
     for name, addr in todo:
         hit = [p for p in pubs if p[2] == name or M.plain(p[2]) == name]
         if not hit or not addr:
@@ -220,6 +235,7 @@ def main():
             insl = list(md.disasm(buf, addr))
             lim = addr + len(buf)
             ir = []
+            wr = collections.Counter()
             consts = collections.Counter()
             for ins in insl:
                 # small constants: immediates (loop bounds, sizes, enum values) and the displacement
@@ -256,6 +272,20 @@ def main():
                         refs.append(t if t is not None else '?call')
                     elif LO <= v < HI:
                         refs.append(v)
+                for fo, v, kind in fields(ins):
+                    # an immediate is a value, never a written address: `mov [v7d800], @players`
+                    # writes v7d800 and only READS the players address (the iter-69 false positive)
+                    if kind not in ('br', 'tab', 'imm') and written(ins):
+                        at = off + ins.address - addr + fo
+                        if which == 'ours' and (seg, at) in fix:
+                            t = resolve(seg, at)
+                            if t is not None and kind == 'idx':
+                                t = array_of(t)
+                            wr[t if t is not None else '?' + fix[(seg, at)][2]] += 1
+                        elif kind == 'idx' and LO <= v < HI:
+                            wr[array_of(v)] += 1
+                        elif LO <= v < HI:
+                            wr[v] += 1
                 ir.append((ins, refs))
             start = {ins.address: k for k, (ins, _) in enumerate(ir)}
             refs = collections.Counter(r for _, rs in ir for r in rs)
@@ -266,8 +296,8 @@ def main():
                     t = ins.operands[0].imm
                     if addr <= t < lim and t in start:
                         brs[(ins.mnemonic in ('jmp',), blocks_sig(ir, start[t], len(ir)))] += 1
-            sides.append((refs, brs, consts))
-        (ro, bo, co), (rg, bg, cg) = sides
+            sides.append((refs, brs, consts, wr))
+        (ro, bo, co, wo), (rg, bg, cg, wg) = sides
         c_ours, c_game = set(co) - set(cg), set(cg) - set(co)
         r_ours, r_game = ro - rg, rg - ro
         b_ours, b_game = bo - bg, bg - bo
@@ -296,6 +326,13 @@ def main():
             if bad and (r in ro or r in libg) and not verbose:
                 continue
             print('    game %s %dx %s' % ('only ' if r not in ro else 'more ', c, label(r)))
+        w_ours, w_game = set(wo) - set(wg), set(wg) - set(wo)
+        if w_ours or w_game:
+            nwrite[0] += 1
+            print('    writes ours only: %s | game only: %s   (a store the other build never makes)'
+                  % (' '.join(sorted(('?' if isinstance(x, str) and x.startswith('?') else label(x)
+                                      for x in w_ours))) or '-',
+                     ' '.join(sorted(label(x) for x in w_game)) or '-'))
         if c_ours or c_game:
             nconst[0] += 1
             print('    consts ours only: %s | game only: %s   (#imm, +field; a register-held constant shows too)'
@@ -310,8 +347,9 @@ def main():
                 print('    branch ours %s-> %s' % ('jmp ' if j else '', ' '.join(label(x) for x in s) or '(no addresses)'))
             for (j, s), c in sorted(b_game.items(), key=str):
                 print('    branch game %s-> %s' % ('jmp ' if j else '', ' '.join(label(x) for x in s) or '(no addresses)'))
-    print('%d of %d functions reference different addresses; %d use constants only one side has'
-          % (flagged, len(todo), nconst[0]))
+    print('%d of %d functions reference different addresses; %d use constants only one side has; '
+          '%d store to an address the other never stores to'
+          % (flagged, len(todo), nconst[0], nwrite[0]))
 
 
 if __name__ == '__main__':
