@@ -39,7 +39,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
    `page_draw`/`page_shown`/`page_from`/`page_to` were pal_a/d/b/c, `tilemap`, `view_x`/`view_y`,
    `detail_lvl`, `rowtab`, ...: names file "was"); `kbd_isr` + key map read (findings/input.md).
    Joystick poll + calibration read too (iter 91e). Next: item 2.
-2. `L_xxxxx` -> nasm local labels (`.loop`) per routine; check that every target stays in its routine.
+2. Done iter 91f: branch targets are nasm locals `.Lxxxxx`; next, names for the loops worth naming.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3

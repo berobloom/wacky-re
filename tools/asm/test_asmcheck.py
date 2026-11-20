@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """test_asmcheck.py: asmcheck.py passes src/wwasm.asm and fails each mutation that should fail it.
 
-  1. one immediate changed (`cmp word [_v88b30], 1` -> 2 in kbd_isr): BIN differs at 0x40919;
+  1. one immediate changed (`cmp word [_kbd_busy], 1` -> 2 in kbd_isr): BIN differs at 0x40919;
   2. one data name replaced by its literal address: same bytes, but the fixup at 0x40915 is gone."""
 import os
 import subprocess
@@ -24,7 +24,7 @@ def main():
     src = open(os.path.join(ROOT, 'src', 'wwasm.asm')).read()
     rc, out = run(os.path.join(ROOT, 'src', 'wwasm.asm'))
     assert rc == 0 and out.startswith('OK'), out
-    line = 'cmp word [_v88b30], 1'
+    line = 'cmp word [_kbd_busy], 1'
     assert src.count(line) == 1
     tmp = tempfile.mkdtemp()
     for new, want in ((line[:-1] + '2', 'BIN: 40865 bytes, game 40865; 1 differ, first at 0x40919'),
