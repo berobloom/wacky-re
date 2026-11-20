@@ -431,6 +431,25 @@ what `SEED=` left them, so:
   and its three call-free ticks waits 0x2f1fe/0x2f25e/0x2f2b8 measured x0 - `TICKREAD=` is the knob for a
   wait whose body calls nothing) and the laptimes block 0x2e681-0x2e960, which the game's own call skips
   (`arg3` = 0, 0x2e689 `je 0x2e973`).
+- CONFIRMED (iter 89: `ARGS=3,1000,1 SEED=0x88cd0=1:b,0x88c46=4:w RESEED=0x88cd0=0:b TICKREAD=8
+  CALLS=20000 tools/wc/difffn.py trial_book` prints **SAME** at CALLCAP 20000/20000; control
+  `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same env SAME; `ARGS=3,1000,2` and `4` the same): the
+  third argument is `show` (`void trial_book(int a, int b, int show)`, src/ww.c 16128) and it is stored
+  into the local that gates five arms - `mov dword [esp+0x124], ebx` 0x2e4c6, tested at 0x2e681, 0x2e9ca,
+  0x2ec06, 0x2edcd and 0x2ef4a - so `ARGS=<a>,<b>,1` (Watcom EAX, EDX, EBX) opens the lap-record arms the
+  0x1911f call skips; the game does use 1 (src/ww.c 17626), so those arms are live code, not dead.
+- LIKELY (iter 89, the new blocker with `show` != 0): the arms print strings the harness has not seeded -
+  the text loop 0x149df-0x14af3 (`cmp byte [edx],0; jne 0x149df`, `add [0x88b32],8` per character) walked
+  35649 characters in one pass, and 1500001 executed instructions bought only 113 of the function's own
+  instruction starts. The un-terminated strings are the 0x78-byte records at 0x70730 (trial_book's record
+  rows, names included) rather than anything the game drew; the game's own `show` = 1 call has real rows
+  there.
+- CONFIRMED (`tools/wc/fncov.py FN=trial_book LO=0x2e4b8 HI=0x2f408`, iter 89): the two SAME runs of iter
+  83 (`3,1000,0|0x88cd0=1:b` returned, `3,1000,5|0x88cd0=1:b` capped) cover **561 of 1034 instruction
+  starts** in 0x2e4b8-0x2f408, 473 never executed; adding the `show` != 0 run leaves the union at 561. The
+  record block's gate local `[esp+0x144]` is `newlap` (stored only at 0x2f076), so that block needs the
+  lap minimum of 0x2e68f-0x2e6b2 (`laptimes` 0x7d358, `cmp edx,5` 0x2e6b2) to beat the record table: seed
+  `laptimes` and give 0x70730 NUL-terminated names.
 - CONFIRMED (iter 83): the wrong-flag trap again, by a new route - `SEED=0x88cce=1:b` instead of
   `key88cd0` puts the seeded 1 into `wait_release`'s test 0x278e7 **before** the pump's own read of it:
   0x278ef runs and its `joy88b40 = 1` store is never undone by the injected 0, so the hot loop becomes
