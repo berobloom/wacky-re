@@ -187,6 +187,30 @@ it can be copied back into DREA.
   seeded 1 into `wait_release`'s test 0x278e7 first - 0x278ef's `joy88b40 = 1` store survives the
   injected 0 and the pump is never entered (2844 passes of 0x278ca-0x278ff). Check the hot-address list
   for who reads the global before picking it.
+- **A capped menu is often spinning in `fade_out`'s palette pass, not waiting for the player: seed
+  the fade step** (iter 84): the hot loop of that class is 0x1c03a <-> 0x32cc5-0x32cd7 (`movsx
+  eax,bx; cmp byte [esp+eax],0; jle` / `inc edx; cmp dx,2` / `inc ebx; cmp bx, word [esp+0x300]`),
+  which is `fade_out` 0x1bf94 walking 768 palette entries and re-marking them changed. The step
+  `v88c46` 0x88c46 is 0 in an image that never ran `main` (the game stores 4 at 0x36334), so nothing
+  ever converges. `SEED=0x88c46=4:w` ends it, and it is what `intro` 0x348f4, `demo_mode` 0x1e2e4,
+  `race_records_menu` 0x1d13c, `volume_menu` 0x1e760 and `main_menu` 0x1f858 were stuck on (three of
+  those five then return: findings/menus.md iter 84).
+- **The `NEW=wworig` control is not SAME in a region that writes through a 0 pointer** (iter 84):
+  `main`'s `malloc` is stubbed, so the palette pointers it stores (`v7d858` 0x7d858, `v7d85c`
+  0x7d85c, `pal7d848/4c/50`, ...) are 0 and `pal_6bit` 0x26ec4 / `fade_in` 0x32cf8 scribble on the
+  harness's 0x0-0x10000 zero page; the original and the relinked image leave different garbage there,
+  so an unseeded `intro` run reported `DIFF 63 byte(s)` with `calls 1212/1187` **for the control**.
+  Two rules: a DIFF whose addresses are all inside that scratch page is the dead-pointer class, not
+  a bug (the loop counts it changes - a fade's step count, here 19 vs 6 - are consequences of garbage);
+  and to make the control mean anything, move the pointer into the scratch page with
+  `SEED=0x7d858=0x8000:d`, or give a register-argument function a real buffer with `ARGS=0x8000`
+  (`difffn.py fade_in SEED=0x88c46=4:w ARGS=0x8000` -> SAME, both sides return).
+- **Name a stub-call target exactly or invent a difference** (iter 84): `difffn.py CALLSEQ=1` (new)
+  prints both stub-call sequences so a `calls 370/345` says which call our build skipped. Naming each
+  address by the nearest symbol at or below it counted 22 unnamed 0x37xxx entries as `f37cf1` and
+  made a 25-call gap out of an 11-call one, and our clib symbols carry a trailing underscore the
+  game's hand names do not (`fopen` vs `fopen_`), so an exact hit prints the name and anything else
+  prints `?nearest`.
 - **A stub cannot fake a return from a noreturn clib entry: `exit_` ends the run** (iter 82): `main`
   0x35ca4 tail-jumps to clib `exit_` (game 0x42c11, hybrid 0x1c1d3) at 0x35e10, and the call stub's
   "return" pops the slot at ESP - inside main's live frame one of its own locals - so the game jumped to

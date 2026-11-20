@@ -15,6 +15,8 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     TICKREAD=8 ...   # ticks += 8 per READ of the clock, for a wait loop whose body has no call
     RESEED=0x88cce=1:b ...   # value written after every READ of that global (press+release waits)
     KEY=0x61,0x62,0x0d ...   # the characters the clib `getch` stub returns, in order (last repeats)
+    CALLSEQ=1 ...   # on a DIFF: both stub-call sequences, named, so a `calls 370/345` shows which
+                     # call our build skipped (the two images' raw call addresses do not say)
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
         control: the game against itself, which must print SAME
 
@@ -370,6 +372,37 @@ def exit_addr(img):
     return lib_addr(img, ('exit_', 'exit', '_exit'))
 
 
+def seq_table(sa, sb, names, pubs, cls, cbase):
+    """the two stub-call sequences side by side, both sides named in the game's spelling: a DIFF with
+    `calls 370/345` needs to know which call our build skipped, and the raw addresses of the two
+    images do not say. `CALLSEQ=1`."""
+    inv = sorted((v, k) for k, v in names.items())
+    nnames = sorted((cbase + off, s) for s, (sg, off) in pubs.items() if cls.get(sg) == 'CODE')
+
+    def near(tab, ad):
+        """exact address if the image has a symbol there, else `?nearest`: nearest-below alone made an
+        unnamed clib routine read as the previous named one, which fakes a call-count difference
+        (iter 84, intro: `f37cf1` x34/x12 was 22 unnamed 0x37xxx entries counted as one name)."""
+        best = None
+        for a, s in tab:
+            if a == ad:
+                return s
+            if a < ad:
+                best = s
+            else:
+                break
+        return '?' + (best or hex(ad))
+    out = []
+    for k in range(max(len(sa), len(sb))):
+        x = sa[k] if k < len(sa) else None
+        y = sb[k] if k < len(sb) else None
+        cx = (near(inv, x[0]) if isinstance(x[0], int) else str(x[0])) if x else '-'
+        cy = (near(nnames, y[0]) if isinstance(y[0], int) else str(y[0])) if y else '-'
+        out.append('    %-4d %-20s %-20s%s' % (k, cx, cy,
+                   '' if cx.strip('_?') == cy.strip('_?') else '  <'))
+    return '\n'.join(out)
+
+
 def one(eip, r):
     try:
         buf = bytes(r.e.uc.mem_read(eip, 12))
@@ -468,6 +501,8 @@ def main():
                           % (k, hex(sa[0]) if isinstance(sa[0], int) else sa[0], sa[1:],
                              hex(sb[0]) if isinstance(sb[0], int) else sb[0], sb[1:]))
                     break
+        if os.environ.get('CALLSEQ'):      # why do the two call counts differ? name both sequences
+            print(seq_table(a.stubs, b.stubs, names, pubs, cls, nb[0]))
 
 
 if __name__ == '__main__':

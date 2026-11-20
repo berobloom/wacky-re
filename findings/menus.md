@@ -428,6 +428,26 @@ what `SEED=` left them, so:
   and the only reported DIFF byte is the injected clock `ticks` 0x7e720 itself (game 08, ours 10):
   the end value of a counter the harness drives is the cap's position, not a behaviour difference.
 
+- CONFIRMED (iter 84: `TICK=8 SEED=0x88cd0=1:b,0x88c46=4:w RESEED=0x88cd0=0:b` plus that line's own
+  flag seeds makes `difffn.py` print **SAME with both sides returning** for the three menu lines that
+  said `still capped` - `volume_menu` 0x1e760 (`SEED=0x7ed4c=1:d`, hotfn 2185 insns at 379 addrs),
+  `main_menu` 0x1f858 (`SEED=0x88cce=1:b`, 5939 at 675) and `race_records_menu` 0x1d13c
+  (`SEED=0x88cce=1:b,0x7ecc0=1:d`, 2892 at 616); control `NEW=wworig MAP=.work/link/WWORIG.MAP` with
+  the same env SAME for all three): the missing half was again one flag being both press and release
+  (iter 82) - `volume_menu`'s release wait 0x1eea2 and `menu`'s 0x16286 read `key88cd0` after the
+  press read that sets `v7ecc0` 0x16273 - and one global the runs had never set: **`v88c46` 0x88c46,
+  the fade step `main` stores at 0x36334** (findings/formats.md). Without it `fade_out` 0x1bf94 marks
+  every one of the 768 entries changed (`xor edi,edi` 0x1c04d, `test di,di; je` 0x32ce2) and the menu
+  spins in the palette pass instead of walking: that is the wall `intro` 0x348f4 and `demo_mode`
+  0x1e2e4 sit on, and with `SEED=0x88c46=4:w` **intro returns on both sides** for the first time.
+  `intro`'s verdict is `DIFF same-shape`, not a bug: all 123 DIFF bytes are inside the harness's
+  0x0-0x10000 zero page, written through the palette pointers `main` takes from `malloc` (stubbed, so
+  0): `v7d858` 0x7d858 (APOG1/BEAVIS, pal_6bit 0x26ecc) and `v7d85c` 0x7d85c (WINTRO). Pointing one
+  of them at the scratch page (`SEED=0x7d858=0x8000:d`) makes the control SAME and leaves the rest as
+  page-0 scribble; the 11-call gap is that same palette, `fade_in` 0x32cf8 stepping 19 times in the
+  game and 6 in our build over garbage, because `fade_in` itself is SAME run on its own
+  (`SEED=0x88c46=4:w ARGS=0x8000`, both sides return, control SAME).
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands

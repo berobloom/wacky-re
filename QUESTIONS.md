@@ -409,6 +409,16 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `ww.c`, where adding literals moves every later literal of its CONST group and breaks the
     327-references base check. Unknown neighbour: the three `01` bytes at 0x60000-0x60002 (four dwords in
     the image hold 0x60000: 0x35580, 0x47692, 0x476c6, 0x4d636; none of the other three addresses).
+26. **OPEN** (iter 84, `intro` 0x348f4): is intro clean? Its run now returns on both sides with
+    `TICK=8 TICKREAD=8 SEED=0x88cce=1:b,0x88cd0=1:b,0x88c46=4:w,0x7d858=0x8000:d RESEED=0x88cd0=0:b`
+    and the control is SAME, but 123 DIFF bytes remain and **all of them are inside the harness's
+    0x0-0x10000 scratch page**, written through the palette/picture pointers `main` takes from
+    `malloc` (src/ww.c 18540-18700) and the stub allocator leaves 0. Close it: seed every one of those
+    pointer globals at a distinct scratch-page block (`SEED=0x7d85c=0x8400:d,...`) and re-run
+    `difffn.py intro`. If the DIFF disappears, the fade-step wall was the whole story; if it survives,
+    the writes that remain name a real bug. (The 11-call gap in between was `fade_in` stepping a
+    garbage palette 19 vs 6 times - `difffn.py fade_in SEED=0x88c46=4:w ARGS=0x8000` is SAME.)
+
 25. **RESOLVED** iter 73 (unrelocated literals in `fn_17928`; see the end of this entry) (iter 71, `tools/link/racetest.sh` race-grid screen, findings/video.md "The race HUD box
     loses its bright-yellow figure"): inside the race HUD box (`img7d83c`, drawn by `draw_status`
     0x12f80 at 0x1313a-0x13168, 41x38 at `spr_x` 0x11 / `spr_y` 6) the game paints a figure of
