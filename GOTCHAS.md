@@ -186,7 +186,10 @@ it can be copied back into DREA.
   direction (iter 83, `trial_book` 0x2e4b8): seeding `v88cce` to free that function's pump puts the
   seeded 1 into `wait_release`'s test 0x278e7 first - 0x278ef's `joy88b40 = 1` store survives the
   injected 0 and the pump is never entered (2844 passes of 0x278ca-0x278ff). Check the hot-address list
-  for who reads the global before picking it.
+  for who reads the global before picking it. And the pair is wrong where a later test wants the press
+  value again: `demo_mode` 0x1e2e4's race abort arm 0x31eae `cmp byte [key88cd0],1` is read thousands of
+  times after the press, so `RESEED=0x88cd0=0:b` keeps the race running to the cap (iter 84b: SAME but
+  `CALLCAP 6000/6000`, neither side returns, while the plain `SEED=0x88cd0=1:b` run returns).
 - **A capped menu is often spinning in `fade_out`'s palette pass, not waiting for the player: seed
   the fade step** (iter 84): the hot loop of that class is 0x1c03a <-> 0x32cc5-0x32cd7 (`movsx
   eax,bx; cmp byte [esp+eax],0; jle` / `inc edx; cmp dx,2` / `inc ebx; cmp bx, word [esp+0x300]`),
