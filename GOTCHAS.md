@@ -165,6 +165,24 @@ it can be copied back into DREA.
   edx,[eax],0x41c64e6d`, 0x43098 `add edx,0x3039`) shifted and taken mod n - `RAND=8` draws exactly
   what that loop wants. `hotfn.py` names the class: the hot address is a `call` executed tens of
   thousands of times whose successor is a conditional jump back to itself, not a wait on a global.
+- **A keyboard read is a return value too, so a name-entry loop needs `KEY=`, not a seed** (iter 82):
+  `enter_name` 0x1cb44's input pump 0x1ccca-0x1cdff leaves only when the clib `getch` (game 0x42c4d) hands
+  back 0xd or 0x1b (0x1cd8f/0x1cd97), and its body reads no global at all, so `SEED=`/`TICK=`/`RESEED=`
+  cannot move it and the stub's constant 0 loops forever. The knob is `KEY=c1,c2,...` in `difffn.py`: the
+  `getch` stub returns them in call order, the last one repeating, so the run always ends (and the
+  character list walks the accept ranges - upcase fold, digits, space, backspace). Same trap on the tool
+  side: `hotfn.py` ignores `KEY=`/`FREAD=`/`RAND=` unless that image's address is wired into its `Run`
+  too - `fread`/`rand`/`getch` are looked up in `difffn.main()`, which `hotfn.py` does not call, so a new
+  stub knob needs its `r.<name> = D.<name>_addr('ww')` line added there or the env var silently does
+  nothing and the "capped" verdict means nothing.
+- **One flag can be both the press and the release, and `RESEED=` on it is what ends the pair**
+  (iter 82): `fn_1d704` calls `wait_input` with mode 1 at 0x1da77 (returns EAX=1 only while `key88cd0` 1,
+  0x27984 -> 0x2798d) and then waits for that same byte to be 0 at 0x1daaa `cmp byte [0x88cd0],1;
+  je 0x1daaa`, whose body calls nothing - `SEED=0x88cd0=1:b` alone burned 749369 passes there inside the
+  3M-instruction cap. `SEED=0x88cd0=1:b,RESEED=0x88cd0=0:b` (first read sees the seeded 1, every read
+  after it the injected 0) makes both sides return. Picking the wrong flag is its own trap:
+  `RESEED=0x88cce=1:b`, which frees `fn_1c0f4`'s mode-0 pair, parks `fn_1d704` in `wait_release`'s pump
+  because 0x278ef then stores `joy88b40 = 1` (19963 passes of 0x278ca-0x278ff).
 - **A `SEED=` cannot reach a stack buffer, and a read stub that returns nothing makes a byte-wise
   parser loop forever** (iter 80): `read_line` 0x26ff0 stops on the byte it read, so with the clib
   `fread` stub delivering nothing it walks off `gam_load` 0x2717c's frame into unmapped memory; the

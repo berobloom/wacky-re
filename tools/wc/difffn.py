@@ -14,6 +14,7 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     TICK=8 .work/venv/bin/python tools/wc/difffn.py NAME   # ticks (0x7e720) += 8 per stubbed call
     TICKREAD=8 ...   # ticks += 8 per READ of the clock, for a wait loop whose body has no call
     RESEED=0x88cce=1:b ...   # value written after every READ of that global (press+release waits)
+    KEY=0x61,0x62,0x0d ...   # the characters the clib `getch` stub returns, in order (last repeats)
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
         control: the game against itself, which must print SAME
 
@@ -81,6 +82,13 @@ FREAD = int(os.environ.get('FREAD', '0'), 0)
 # DIFF shows it. fn_1be3c's other arm skips rand when splitscreen != 0 (0x1beb6), which demo_mode
 # zeroes at 0x1e51e.
 RAND = int(os.environ.get('RAND', '0'), 0)
+# KEY=0x61,0x62,0x08,0x43,0x0d: the characters the clib `getch` stub returns, in order; after the list
+# runs out its LAST value repeats, so a run always ends rather than sitting at the cap. enter_name
+# 0x1cb44's input loop 0x1ccca-0x1cdff exits only on `al == 0xd` or `al == 0x1b` (0x1cd8f/0x1cd97, the
+# value of the stubbed `getch` at 0x1cd88), so the stub's constant 0 loops forever and no SEED= reaches
+# it - the loop tests no global. One list index per getch call, so both builds must call getch the same
+# number of times; that is what the call log and the byte DIFF check.
+KEY = [int(t, 0) for t in os.environ.get('KEY', '').split(',') if t.strip()]
 
 
 def parse_seed(text):
@@ -136,6 +144,8 @@ class Run:
         self.ncalls = 0        # stubbed calls and interrupts only - not the port traffic below
         self.fread = None      # this image's clib fread, set by main() (map offset + code base)
         self.rand = None       # ditto for clib rand (RAND=)
+        self.getch = None      # ditto for clib getch (KEY=)
+        self.nkey = 0          # getch calls so far: which KEY= entry to return
         self.rseed = 0x1234    # the rand stub's own seed; the clib's slot is never written
         self.reseed = dict(RESEED)   # RESEED= address -> bytes (written after every READ but the first)
         o = self.e.img.meta['objects']
@@ -178,13 +188,17 @@ class Run:
         self.stubs.append((addr, self.e.reg('eax'), self.e.reg('ecx'), self.e.reg('edx'),
                            [self.e.u32(esp + 4 * i) for i in range(3)]))
         self.ncalls += 1
+        ret = 0
+        if KEY and addr == self.getch:
+            ret = KEY[min(self.nkey, len(KEY) - 1)]
+            self.nkey += 1
         if FREAD and addr == self.fread and self.e.reg('edx') == 1:
             self.e.uc.mem_write(self.e.reg('eax'), bytes([FREAD]))   # before EAX is zeroed
         if RAND and addr == self.rand:
             self.rseed = (self.rseed * 0x41c64e6d + 0x3039) & 0xffffffff   # the game's clib LCG
             self.e.reg('eax', (self.rseed >> 16) % RAND)                   # RAND=n -> a draw of 0..n-1
         else:
-            self.e.reg('eax', 0)
+            self.e.reg('eax', ret)
         if TICK:                                  # the timer ISR that drives ticks lives above the C
             self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)   # module (0x10a15 et al only zero it),
         # so `while (ticks - snapshot < 8)` at 0x1604c can never end. A stubbed call is the frame pump
@@ -259,6 +273,7 @@ class Run:
         # writers at all (iter 70)
         self.stubs, self.crash, self.calls, self.ncalls = [], None, False, 0
         self.rseed = 0x1234                      # so the watch re-run draws the same sequence
+        self.nkey = 0                             # ... and types the same KEY= characters
         self.reseed_seen = set()                 # ... and arms its RESEED globals the same way
         if self.watch:
             self.wh = self.e.uc.hook_add(UC_HOOK_MEM_WRITE, self._watch)
@@ -337,6 +352,10 @@ def rand_addr(img):
     return lib_addr(img, ('rand', 'rand_', '_rand'))
 
 
+def getch_addr(img):
+    return lib_addr(img, ('getch_', 'getch', '_getch'))
+
+
 def one(eip, r):
     try:
         buf = bytes(r.e.uc.mem_read(eip, 12))
@@ -364,8 +383,8 @@ def main():
                 return (nb[0] if cls[s] == 'CODE' else nb[1]) + off
         return None
 
-    ofread, orand = fread_addr(orig), rand_addr(orig)
-    nfread, nrand = fread_addr(new), rand_addr(new)
+    ofread, orand, ogetch = fread_addr(orig), rand_addr(orig), getch_addr(orig)
+    nfread, nrand, ngetch = fread_addr(new), rand_addr(new), getch_addr(new)
     names = M.names(orig)
     todo = []
     for a in sys.argv[1:]:
@@ -382,11 +401,11 @@ def main():
             print('%-20s not in %s names or not a hybrid public' % (name, orig))
             continue
         a = Run(orig, CMOD_END, 1 << 32)
-        a.fread, a.rand = ofread, orand
+        a.fread, a.rand, a.getch = ofread, orand, ogetch
         a = a.go(addr)
         b = Run(new, CMOD_END, 1 << 32) if text is None \
             else Run(new, nb[0], text)               # BLOBTEXT below our code is asm + clib
-        b.fread, b.rand = nfread, nrand
+        b.fread, b.rand, b.getch = nfread, nrand, ngetch
         b = b.go(naddr)
         dif = diff_bytes(a.init, a.fin, b.init, b.fin)
         notes = []

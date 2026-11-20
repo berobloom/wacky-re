@@ -359,6 +359,29 @@ what `SEED=` left them, so:
   word [0x88c0c],0`; with netgame 0 the `jmp 0x1c833` at 0x1c7ef skips it. Nothing in that body calls
   the stub, so `TICK=` never advances it: another wait no seed ends (its difference is always 0).
 
+- CONFIRMED (iter 82): a third input primitive, the clib `getch` (game 0x42c4d, hybrid public `getch_`:
+  WWORIG.MAP `0001:00032c4d`, the hybrid map `0001:0000c20f`), is called from five C-module functions -
+  `enter_name` 0x1cb44 (0x1cd88), `kbd_on` 0x32b14, `waitkey` 0x341d8 (twice), fn_35bb0 0x35bb0 (four) and
+  `main` 0x35ca4 (three) - the Ghidra `FUN_00042c4d` call sites at ww.c lines 9444, 24156, 25444, 25448,
+  26893, 26911, 26919, 26923, 27138, 27233, 27236. `enter_name`'s input pump 0x1ccca-0x1cdff tests **no
+  global**: it leaves only when the character is 0xd or 0x1b (0x1cd8f / 0x1cd97 `cmp al,..; je 0x1ce04`),
+  so `SEED=`/`TICK=`/`RESEED=` cannot end it - what is capped is the stub's constant 0. `KEY=` in
+  `tools/wc/difffn.py` (iter 82) returns the list's characters, one per `getch` call, the last one
+  repeating; `KEY=0x61,0x62,0x63,0x30,0x20,0x08,0x08,0x43,0x0d` walks the upcase fold 0x1cda3
+  `sub bl,0x20`, the accept ranges 0x41-0x5a / 0x20 / 0x30-0x39 (0x1cdc2-0x1cdd8) and the backspace arm
+  (0x1cda6 `cmp bl,8` with `test di,di` 0x1cdab, `dec edi` 0x1cdb0 and the 0x20 store 0x1cdb9), and the
+  trailing 0x0d returns through 0x1ce04 `call kbd_on` + `add esp,0x74`. `difffn.py enter_name` prints SAME
+  with both sides returning (control SAME; hotfn 24680 insns at 435 addrs, `returned`).
+- CONFIRMED (iter 82, `SEED=0x88cd0=1:b,RESEED=0x88cd0=0:b` -> `difffn.py fn_1d704` SAME with both sides
+  returning, control SAME, hotfn 1270 insns at 396 addrs): `fn_1d704` is the input pair in its press-then-
+  release shape - `wait_input` with mode 1 at 0x1da77 returns EAX=1 only while `key88cd0` == 1 (0x27984 ->
+  0x2798d), and the loop right after it, 0x1daaa `cmp byte [0x88cd0],1; je 0x1daaa`, waits for the same
+  byte to be 0 and calls nothing. One static seed gives one or the other (measured: 749369 passes of
+  0x1daaa inside the 3M-instruction cap). `RESEED=` on the same address ends both: the mode-1 test reads
+  the seeded 1, the release wait reads the injected 0. The other flag, `RESEED=0x88cce=1:b`, is wrong for
+  this function - it parks the run in `wait_release`'s pump, because 0x278ef then stores joy88b40 = 1
+  (19963 passes of 0x278ca-0x278ff).
+
 - CONFIRMED (iter 80: `SEED=0x88cd0=1:b,0x7ebc0=1:d tools/wc/difffn.py fn_1832c` prints **SAME with
   both sides returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same seeds SAME;
   `hotfn.py` with those seeds reports 45646 insns at 617 addrs and `returned`): the races menu's wait

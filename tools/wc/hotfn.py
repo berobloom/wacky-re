@@ -4,6 +4,7 @@ it runs ONE function in the ORIGINAL image under Unicorn, counts executed addres
 hottest ones with the backward jump marked - the loop head and the global it tests are the seed.
 
     FN=com_wait_byte .work/venv/bin/python tools/wc/hotfn.py
+    FN=enter_name KEY=0x61,0x0d N=2000000 ...
     FN=classes_menu N=200000 SEED=0x7e720=0x1000 TICK=8 ...      # difffn's env vars apply
     FN=classes_menu MAP=.work/link/WWORIG.MAP NEW=wworig         # the other image
 
@@ -29,6 +30,7 @@ if FN not in names:
 r = D.Run('ww', D.CMOD_END, 1 << 32)
 r.fread = D.fread_addr('ww')          # so FREAD= works here too (difffn.py sets this in main())
 r.rand = D.rand_addr('ww')            # ... and RAND=
+r.getch = D.getch_addr('ww')          # ... and KEY= (iter 82)
 cnt = collections.Counter()
 
 

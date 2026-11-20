@@ -74,6 +74,7 @@ def main():
         def __init__(self, uc):
             self.e, self.stubs, self.ncalls, self.calls, self.fread = FE(uc), [], 0, False, 0x2000
             self.rand, self.rseed = None, 0x1234    # RAND= needs these too (iter 81)
+            self.getch, self.nkey = None, 0         # KEY= needs these too (iter 82)
 
     u.mem_map(0x2000, 0x2000)                       # the fread stub, its frame and the buffer
     u.mem_write(0x2000, bytes(8))                   # the "fread" entry and the return address
@@ -107,6 +108,21 @@ def main():
         draws.append(u.reg_read(UC_X86_REG_EAX))
     assert all(0 <= d < 8 for d in draws), [hex(d) for d in draws]
     assert len(set(draws)) > 1, [hex(d) for d in draws]
+
+    # ---- KEY= (iter 82): the getch stub returns the list in order and repeats its LAST value, so
+    # enter_name's input loop (0x1cd8f `cmp al,0xd; je`) leaves instead of sitting at the cap.
+    D.RAND = 0
+    D.KEY = [0x61, 0x08, 0x0d]
+    fs = FS(u)
+    fs.getch = 0x2000
+    got = []
+    for _ in range(4):
+        u.reg_write(UC_X86_REG_ESP, 0x2100)
+        u.reg_write(UC_X86_REG_EAX, 0)
+        D.Run._stub(fs, u, 0x2000, 5, None)
+        got.append(u.reg_read(UC_X86_REG_EAX))
+    assert got == [0x61, 0x08, 0x0d, 0x0d], [hex(g) for g in got]
+    assert fs.nkey == 4, fs.nkey            # one index per getch call, repeats included
 
     # ---- RESEED= (iter 81): the read that arms the flag still sees the old byte, the next one sees
     # the new value (unicorn 2.1.4 has no READ_AFTER and the READ hook fires before the load). A value
