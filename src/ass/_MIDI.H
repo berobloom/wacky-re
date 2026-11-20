@@ -144,6 +144,10 @@ typedef struct
 
 typedef struct
    {
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   void          *next;
+   void          *prev;
+#endif
    // *** VERSIONS RESTORATION ***
 #if (LIBVER_ASSREV < 19950821L)
    long           delay;
@@ -153,7 +157,9 @@ typedef struct
    unsigned char *start;
    unsigned char *pos;
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    songcontext    context[ 1 ]; // FIXME (RESTORATION) TEMP HACK
+#endif
 #else
    unsigned char *start;
    unsigned char *pos;

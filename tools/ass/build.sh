@@ -15,7 +15,7 @@
 set -eu
 cd "$(dirname "$0")/../.."
 rev=${1:-19941101}
-WW100P="USER GUS PITCH"
+WW100P="USER GUS PITCH MIDI"
 inst=$PWD/.work/toolchains/inst
 out=.work/ass/$rev${ASSWC:+-$ASSWC}
 mkdir -p "$out"
@@ -33,7 +33,9 @@ for m in $mods; do
     case $m in
         GUS|GUSMIDI)          f="/zq /w4 /d2" ;;
         MULTIVOC)             f="/zq /w4 /d1 /omaxne /zp4 /5r /zu" ;;
-        MIDI|AL_MIDI)         f="$std /zu" ;;
+        MIDI|AL_MIDI)         f="$std /zu"
+                              # Wacky Wheels' MIDI: no /zu (its functions use ebp as a register)
+                              [ "$rev" -lt 19950518 ] && [ "$m" = MIDI ] && f="$std" ;;
         *)                    f="$std" ;;
     esac
     if [ -n "${ASSWC:-}" ]; then w=$ASSWC

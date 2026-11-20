@@ -192,6 +192,16 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   delay, 0xFF = end (restart when looping), else high nibble = command 0-4 (3 with an 11-byte
   instrument index), low nibble = channel. The names 0x8B904 GUS_MemConfig / 0x8B908
   GUS_TotalMemory were wrong: they are this player's (task rate, song start).
+  MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four
+  functions' register choices): the Watcom 10.0 prerelease, **without `/zu`** (CONFIRMED: with it
+  `_MIDI_SendControlChange` gets a frame the game's lacks), and `#pragma aux _MIDI_ServiceRoutine
+  frame` (1.04 still has it, commented out). An older MIDI.C: the tracks (28 bytes: next, prev,
+  delay, active, RunningStatus, start, pos) are an LL_MAN list (`_MIDI_TrackList` 0x8B958), tempo
+  meta events call `TS_SetTaskRate( Task, tempo * division / 60 )`, no SysEx, no user channel
+  volumes, no MIDI_PatchMap (program changes go out unmapped), no position functions, no EMIDI;
+  MIDI_AllNotesOff sends only controller 0x7B and stops at the first failure, MIDI_Reset has no
+  delay loop; song memory comes from USRHOOKS_GetMem without a DPMI lock; MIDI_SetMidiFuncs
+  returns MIDI_Ok. Names in analysis/ww_names.txt (iter 93i).
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate

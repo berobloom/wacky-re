@@ -1029,7 +1029,30 @@
 0x04a2f1 GUS_Init                 # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x04a3d7 GUS_Shutdown             # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x04a420 GUSWAVE_Shutdown         # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
-0x04af6c MIDI_SetLoopFlag         # STRONGLY SUPPORTED: MUSIC_SetLoopFlag (CONFIRMED, whole MUSIC module) calls it for the MIDI cards; stores its argument, as 1.04 midi.c MIDI_SetLoopFlag (was MIDI_GetPosition, a 0.75 near match)
+0x04a890 _MIDI_CommandLengths     # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04a8d0 _MIDI_ReadNumber         # STRONGLY SUPPORTED: src/ass MIDI.C builds it with the same length and calls, register allocation differs (MIDI near miss)
+0x04a8f8 _MIDI_ReadDelta          # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04a934 _MIDI_ResetTracks        # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04a998 _MIDI_ServiceRoutine     # STRONGLY SUPPORTED: src/ass MIDI.C builds it with the same length and calls, register allocation differs (MIDI near miss)
+0x04acd0 _MIDI_SendControlChange  # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04ad38 MIDI_RerouteMidiChannel  # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04ad4c MIDI_AllNotesOff         # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04ad70 _MIDI_SetChannelVolume   # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04ae04 _MIDI_SendChannelVolumes # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04ae28 MIDI_Reset               # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04aec0 MIDI_SetVolume           # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04af40 MIDI_GetVolume           # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04af6c MIDI_SetLoopFlag         # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04af74 MIDI_ContinueSong        # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04af88 MIDI_PauseSong           # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04afa4 MIDI_SongPlaying         # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04afac MIDI_SetMidiFuncs        # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04afb4 MIDI_StopSong            # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04b014 MIDI_PlaySong            # STRONGLY SUPPORTED: src/ass MIDI.C builds it with the same length and calls, register allocation differs (MIDI near miss)
+0x04b278 MIDI_LoadTimbres         # STRONGLY SUPPORTED: src/ass MIDI.C builds it with the same length and calls, register allocation differs (MIDI near miss)
+0x04b394 MIDI_LockEnd             # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04b398 MIDI_UnlockMemory        # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04b460 MIDI_LockMemory          # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
 0x04bc20 MPU_SendMidi             # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
 0x04bc58 MPU_NoteOff              # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
 0x04bc6c MPU_NoteOn               # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
@@ -1095,6 +1118,14 @@
 0x064374 SS_TransferLength        # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x064378 SS_CurrentLength         # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x06437c SS_ErrorCode             # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
+0x0643f0 _MIDI_RerouteFunctions   # CONFIRMED: read by _MIDI_SendControlChange/_MIDI_SetChannelVolume (identical), 16 cdecl pointers
+0x064430 _MIDI_TrackPtr           # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x064434 _MIDI_SongActive         # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x064438 _MIDI_SongLoaded         # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x06443c _MIDI_Loop               # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x064440 _MIDI_PlayRoutine        # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x064444 _MIDI_TotalVolume        # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x064448 _MIDI_Funcs              # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
 0x0644b0 GUS_AuxError             # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x0644b4 GUS_ErrorCode            # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x0644b8 MPU_BaseAddr             # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
@@ -1117,6 +1148,10 @@
 0x08949c SS_CurrentBuffer         # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x0894a0 SS_BufferEnd             # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x08b8fc GUS_HoldBuffer           # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
+0x08b918 _MIDI_ChannelVolume      # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x08b958 _MIDI_TrackList          # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order (list: start, end)
+0x08b960 _MIDI_ActiveTracks       # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
+0x08b964 _MIDI_Division           # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
 # ---- ASS port end
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
@@ -1178,14 +1213,6 @@
 0x049ac2 MV_SetVolume             # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 54 bytes
 0x049e9b MV_UnlockMemory          # LIKELY: ASS 104 multivoc.c near match 0.75 (593 bytes), anchored by its module's exact hits
 0x04a065 MV_LockMemory            # LIKELY: ASS 104 multivoc.c near match 0.71 (702 bytes), anchored by its module's exact hits
-0x04a890 MIDI_CommandLengths      # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 64 bytes
-0x04a8d0 MIDI_ReadNumber          # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 40 bytes
-0x04ad38 MIDI_RerouteMidiChannel  # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 20 bytes
-0x04ae04 MIDI_SendChannelVolumes  # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 36 bytes
-0x04aec0 MIDI_SetVolume           # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 128 bytes
-0x04af40 MIDI_GetVolume           # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 44 bytes
-0x04af74 MIDI_ContinueSong        # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 20 bytes
-0x04b398 MIDI_UnlockMemory        # LIKELY: ASS 104 midi.c near match 0.87 (216 bytes), anchored by its module's exact hits
 0x04dd30 dig_init                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 232 bytes
 0x04de18 set_addr_regs            # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 84 bytes
 0x04de6c dig_change_voice         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 340 bytes
