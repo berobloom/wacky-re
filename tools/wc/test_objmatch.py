@@ -40,9 +40,9 @@ def check(name, patch=None):
     return M.rel32_by_target(b, m, code, addr[name] - cbase, cbase, seg, off, pubs, addr.get)
 
 
-# the three functions whose only differing bytes are rel32 displacements (iter 65 checked by hand)
+# the functions whose only differing bytes are rel32 displacements (iter 65 checked by hand)
 assert check('fade_out_') == 4
-assert check('demo_rec_') == 1
+assert check('demo_rec_') == 0      # iter 93s: its one moved target was netkeys_*, now at the game's address
 assert check('pic_show_') == 2
 
 
