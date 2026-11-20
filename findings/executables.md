@@ -202,6 +202,14 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   MIDI_AllNotesOff sends only controller 0x7B and stops at the first failure, MIDI_Reset has no
   delay loop; song memory comes from USRHOOKS_GetMem without a DPMI lock; MIDI_SetMidiFuncs
   returns MIDI_Ok. Names in analysis/ww_names.txt (iter 93i).
+  GUSMIDI (iter 93j, 0x4B560-0x4BC12, ours 4 bytes longer, 140 bytes differ in UnloadPatch's and
+  Init's register choices): Watcom 10.0 prerelease, **optimised and without `/zp4`** (1.04 builds it
+  with `/d2`, unoptimised): CONFIRMED by the 1-byte-packed GF1 structs, `struct patch` 28 bytes,
+  `struct patchinfo` 0xC0, `wave_forms` at +0x55, 73-byte `wave_struct`. It holds GUS_ErrorString
+  (0x4B58C; "Can't find ULTRASND.INI file."), reads the patch map from `ULTRADIR\midi\ULTRASND.INI`
+  (ConfigFileName 0x6444C), sizes GUS memory itself (GUS_TotalMemory 0x8F3BC, GUS_MemConfig 0x8F3B8,
+  not in GUS.C), has no GUSMIDI_Installed, and GUSMIDI_Init stops at the first patch that fails to
+  load.
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate

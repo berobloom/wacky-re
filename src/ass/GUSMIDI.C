@@ -74,7 +74,9 @@ static char  ProgramName[ NUM_PATCHES ][ BIGGEST_NAME ];
 static char  PatchLoaded[ NUM_PATCHES ];
 
 // *** VERSIONS RESTORATION ***
-#if (LIBVER_ASSREV < 19950821L)
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static char  ConfigFileName[] = "ULTRASND.INI";
+#elif (LIBVER_ASSREV < 19950821L)
 static char  ConfigFileName[] = "GUSMIDI.INI";
 #else
 static char  ConfigFileName[] = "ULTRAMID.INI";
@@ -86,18 +88,89 @@ static char  InstrumentDirectory[ 80 ];
 
 extern struct gf1_dma_buff GUS_HoldBuffer;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static unsigned long GUS_TotalMemory;
+static int           GUS_MemConfig;
+#else
 extern unsigned long GUS_TotalMemory;
 extern int           GUS_MemConfig;
+#endif
 
 static int GUSMIDI_Volume = 255;
 
 extern int GUS_AuxError;
 extern int GUS_ErrorCode;
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 int GUSMIDI_Installed = FALSE;
+#endif
 
 #define GUS_SetErrorCode( status ) \
    GUS_ErrorCode   = ( status );
+
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+/*---------------------------------------------------------------------
+   Function: GUS_ErrorString
+
+   Returns a pointer to the error message associated with an error
+   number.  A -1 returns a pointer the current error.
+---------------------------------------------------------------------*/
+
+char *GUS_ErrorString
+   (
+   int ErrorNumber
+   )
+
+   {
+   char *ErrorString;
+
+   switch( ErrorNumber )
+      {
+      case GUS_Warning :
+      case GUS_Error :
+         ErrorString = GUS_ErrorString( GUS_ErrorCode );
+         break;
+
+      case GUS_Ok :
+         ErrorString = "Ultrasound music ok.";
+         break;
+
+      case GUS_OutOfMemory :
+         ErrorString = "Out of memory in GusMidi.";
+         break;
+
+      case GUS_OutOfDosMemory :
+         ErrorString = "Out of conventional (640K) memory in GusMidi.";
+         break;
+
+      case GUS_GF1Error :
+         ErrorString = gf1_error_str( GUS_AuxError );
+         break;
+
+      case GUS_InvalidIrq :
+         ErrorString = "Ultrasound IRQ must be 7 or less.";
+         break;
+
+      case GUS_ULTRADIRNotSet :
+         ErrorString = "ULTRADIR environment variable not set.";
+         break;
+
+      case GUS_MissingConfig :
+         ErrorString = "Can't find ULTRASND.INI file.";
+         break;
+
+      case GUS_FileError :
+         ErrorString = strerror( GUS_AuxError );
+         break;
+
+      default :
+         ErrorString = "Unknown Ultrasound error code.";
+         break;
+      }
+
+   return( ErrorString );
+   }
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -138,7 +211,12 @@ int GUS_GetPatchMap
    strcat( InstrumentDirectory, "\\midi\\" );
    strcpy( ConfigDirectory, ud );
    strcat( ConfigDirectory, "\\midi\\" );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   strcpy( text, InstrumentDirectory );
+   strcat( text, name );
+#else
    strcpy( text, name );
+#endif
 
    fp = fopen( text, "r" );
    if ( fp == NULL )
@@ -490,16 +568,23 @@ int GUSMIDI_Init
 //   unsigned long mem;
    extern int GUSWAVE_Installed;
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    if ( GUSMIDI_Installed )
       {
       GUSMIDI_Shutdown();
       }
 
+#endif
    ret = GUS_Init();
    if ( ret != GUS_Ok )
       {
       return( ret );
       }
+
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   GUS_TotalMemory = gf1_mem_avail();
+   GUS_MemConfig   = ( GUS_TotalMemory - 1 ) >> 18;
+#endif
 
    if ( GUS_MemConfig < 0 )
       {
@@ -520,6 +605,13 @@ int GUSMIDI_Init
 
    GUSMIDI_SetVolume( 255 );
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   ret = GUS_GetPatchMap( ConfigFileName );
+   if ( ret != GUS_Ok )
+      {
+      return( ret );
+      }
+#else
    GUSMIDI_Installed = TRUE;
 
    ret = GUS_GetPatchMap( ConfigFileName );
@@ -528,6 +620,7 @@ int GUSMIDI_Init
       GUSMIDI_Shutdown();
       return( ret );
       }
+#endif
 
 //   if ( !GUSWAVE_Installed )
 //      {
@@ -538,9 +631,16 @@ int GUSMIDI_Init
    for( i = 0; i < NUM_PATCHES; i++ )
       {
       ret = GUSMIDI_LoadPatch( i );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+      if ( ret != GUS_Ok )
+         {
+         return( ret );
+         }
+#else
       if ( ret != GUS_Ok )
          {
          }
+#endif
 //      if ( ret != GUS_Ok )
 //         {
 //         return( ret );
@@ -552,8 +652,10 @@ int GUSMIDI_Init
 //      gf1_free( mem );
 //      }
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    GUSMIDI_Installed = TRUE;
 
+#endif
    return( GUS_Ok );
    }
 
@@ -572,5 +674,7 @@ void GUSMIDI_Shutdown
    {
    GUSMIDI_ReleasePatches();
    GUS_Shutdown();
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    GUSMIDI_Installed = FALSE;
+#endif
    }

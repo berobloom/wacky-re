@@ -15,7 +15,7 @@
 set -eu
 cd "$(dirname "$0")/../.."
 rev=${1:-19941101}
-WW100P="USER GUS PITCH MIDI"
+WW100P="USER GUS PITCH MIDI GUSMIDI"
 inst=$PWD/.work/toolchains/inst
 out=.work/ass/$rev${ASSWC:+-$ASSWC}
 mkdir -p "$out"
@@ -31,7 +31,9 @@ all="ADLIBFX AL_MIDI AWE32 BLASTOLD DEBUGIO DMA DPMI FX_MAN GMTIMBRE GUS GUSMIDI
 mods=${ASSMODS:-$all}
 for m in $mods; do
     case $m in
-        GUS|GUSMIDI)          f="/zq /w4 /d2" ;;
+        GUS|GUSMIDI)          f="/zq /w4 /d2"
+                              # Wacky Wheels' GUSMIDI: optimised, but packed (no /zp4: its GF1 patch structs are 1-byte aligned)
+                              [ "$rev" -lt 19950518 ] && [ "$m" = GUSMIDI ] && f="/zq /w4 /d1 /omaxnet /5r" ;;
         MULTIVOC)             f="/zq /w4 /d1 /omaxne /zp4 /5r /zu" ;;
         MIDI|AL_MIDI)         f="$std /zu"
                               # Wacky Wheels' MIDI: no /zu (its functions use ebp as a register)

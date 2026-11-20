@@ -1053,6 +1053,20 @@
 0x04b394 MIDI_LockEnd             # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
 0x04b398 MIDI_UnlockMemory        # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
 0x04b460 MIDI_LockMemory          # CONFIRMED: src/ass MIDI.C (Wacky Wheels block) builds this function byte-identical; the module 0x4A890-0x4B553 has 324 bytes differing elsewhere
+0x04b58c GUS_ErrorString          # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04b5f0 GUS_GetPatchMap          # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04b7ec GUSMIDI_UnloadPatch      # STRONGLY SUPPORTED: src/ass GUSMIDI.C builds it with the same calls, register allocation differs (GUSMIDI near miss)
+0x04b870 GUSMIDI_LoadPatch        # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04ba40 GUSMIDI_ProgramChange    # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04ba7c GUSMIDI_NoteOn           # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04bad4 GUSMIDI_NoteOff          # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04bae4 GUSMIDI_ControlChange    # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04baec GUSMIDI_PitchBend        # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04baf4 GUSMIDI_ReleasePatches   # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04bb0c GUSMIDI_SetVolume        # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04bb38 GUSMIDI_GetVolume        # CONFIRMED: src/ass GUSMIDI.C builds this function byte-identical; the module 0x4B560-0x4BC12 differs elsewhere (140 bytes)
+0x04bb40 GUSMIDI_Init             # STRONGLY SUPPORTED: src/ass GUSMIDI.C builds it with the same calls, 4 bytes longer (GUSMIDI near miss)
+0x04bbf8 GUSMIDI_Shutdown         # CONFIRMED: MUSIC_Shutdown (identical) calls it; src/ass GUSMIDI.C builds it byte-identical
 0x04bc20 MPU_SendMidi             # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
 0x04bc58 MPU_NoteOff              # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
 0x04bc6c MPU_NoteOn               # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
