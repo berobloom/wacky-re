@@ -49,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // *** VERSIONS RESTORATION ***
 // Uncomment seemingly older values for earlier versions
-#if (LIBVER_ASSREV >= 19950821L)
+#if (LIBVER_ASSREV >= 19950821L) || (LIBVER_ASSREV < 19950518L)
 #define GF1BSIZE   896L   /* size of buffer per wav on GUS */
 #else
 #define GF1BSIZE   512L   /* size of buffer per wav on GUS */
@@ -80,6 +80,41 @@ typedef enum
    } playbackstatus;
 
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+typedef volatile struct VoiceNode
+   {
+   struct VoiceNode *next;
+   struct VoiceNode *prev;
+
+   int num;
+
+   unsigned long  mem;           /* location in ultrasound memory */
+   int            Active;        /* this instance in use */
+   int            GF1voice;      /* handle to active voice */
+
+   char          *NextBlock;
+   char          *LoopStart;
+   unsigned       LoopCount;
+   unsigned long  BlockLength;
+
+   unsigned long  PitchScale;
+
+   unsigned char *sound;
+   unsigned long  length;
+   unsigned long  SamplingRate;
+   unsigned long  RateScale;
+   int            Playing;
+
+   int    handle;
+   int    priority;
+
+   unsigned long callbackval;
+
+   int    Volume;
+   int    Pan;
+   }
+VoiceNode;
+#else
 typedef volatile struct VoiceNode
    {
    struct VoiceNode *next;
@@ -124,6 +159,7 @@ typedef volatile struct VoiceNode
    int    Pan;
    }
 VoiceNode;
+#endif
 
 typedef struct
    {
@@ -164,7 +200,11 @@ typedef struct
    unsigned long size;
    } data_header;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+void GUSWAVE_GetNextVOCBlock( VoiceNode *voice );
+#else
 playbackstatus GUSWAVE_GetNextVOCBlock( VoiceNode *voice );
+#endif
 VoiceNode *GUSWAVE_GetVoice( int handle );
 
 // *** VERSIONS RESTORATION ***

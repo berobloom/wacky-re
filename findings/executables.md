@@ -142,8 +142,18 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   auto-init read (mode 0x58; 1.04 takes a mode), and `DMA_EndTransfer` does not exist yet. GUS:
   its object is 9.5b's like USER's (GUS_Init's stack slots only come out right with 9.5b), it has no
   `GUS_ErrorString`, and `GUS_Init` neither checks the IRQ nor sizes GUS memory; `GUSWAVE_Shutdown`
-  frees every voice unconditionally from a 0x54-byte VoiceNode (1.04's GUS.C, built without /zp4,
-  sees 0x65 bytes): left until GUSWAVE pins the struct. That project
+  frees every voice's GUS memory without checking it (whole module identical since iter 93e).
+  GUSWAVE (iter 93e, whole module, 0x47650-0x47FD2) is an older GUSWAVE than any LIB:
+  VOC playback only (no `PlayWAV`, demand feed, `VoiceAvailable`, `DEBUGGUS` output or reverse
+  stereo); `GUSWAVE_Play` does not exist, `GUSWAVE_PlayVOC` calls `gf1_play_digital` itself and
+  never checks the "Creative Voice File" header nor stores the priority (so `GUSWAVE_AllocVoice`,
+  which steals the first playing voice whose priority is not above the request, compares stale
+  values); 8 voices, each with 896 bytes of GUS memory, all of which must allocate; the VoiceNode
+  is 0x54 bytes (no wavetype, GetSound, LoopEnd, LoopSize or DemandFeed); the VOC parser returns
+  nothing, has no NULL-pointer stop, skips block 8 and does not take block 9's 12 header bytes off
+  the length; the error enum ends at `GUSWAVE_VoiceNotFound` = 5; `GUSWAVE_Init` calls `PITCH_Init`.
+  Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
+  in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,

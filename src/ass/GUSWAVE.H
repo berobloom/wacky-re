@@ -42,10 +42,14 @@ enum GUSWAVE_Errors
    GUSWAVE_NotInstalled,
    GUSWAVE_NoVoices,
    GUSWAVE_UltraNoMem,
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   GUSWAVE_VoiceNotFound
+#else
    GUSWAVE_UltraNoMemMIDI,
    GUSWAVE_VoiceNotFound,
    GUSWAVE_InvalidVOCFile,
    GUSWAVE_InvalidWAVFile
+#endif
    };
 
 char *GUSWAVE_ErrorString( int ErrorNumber );

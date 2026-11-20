@@ -37,8 +37,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), built with
-   Watcom 10.0a/9.5b, `tools/ass/asscheck.py` 99 of 145 named functions, 9 modules whole (TASK_MAN, PCFX, SNDSRC, DMA
-   rewritten: findings/executables.md). Next: the near misses, module by module (MUSIC, FX_MAN, PAS16).
+   Watcom 10.0a/9.5b, `tools/ass/asscheck.py` 126 of 169 named functions, 11 modules whole (TASK_MAN, PCFX, SNDSRC, DMA, GUS, GUSWAVE
+   rewritten: findings/executables.md; `tools/ass/portnames.py` names their symbols). Next: MUSIC, FX_MAN, PAS16.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3

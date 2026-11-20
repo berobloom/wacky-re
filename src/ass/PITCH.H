@@ -38,7 +38,11 @@ enum PITCH_ERRORS
    PITCH_Ok = 0,
    };
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+void          PITCH_Init( void );
+#else
 //void          PITCH_Init( void );
+#endif
 unsigned long PITCH_GetScale( int pitchoffset );
 void          PITCH_UnlockMemory( void );
 int           PITCH_LockMemory( void );

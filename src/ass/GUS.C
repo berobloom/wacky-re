@@ -292,11 +292,15 @@ void GUSWAVE_Shutdown
       // free memory
       for ( i = 0; i < VOICES; i++ )
          {
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+         gf1_free( GUSWAVE_Voices[ i ].mem );
+#else
          if ( GUSWAVE_Voices[ i ].mem != NULL )
             {
             gf1_free( GUSWAVE_Voices[ i ].mem );
             GUSWAVE_Voices[ i ].mem = NULL;
             }
+#endif
          }
 
       GUS_Shutdown();
