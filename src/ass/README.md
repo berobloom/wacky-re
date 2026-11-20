@@ -21,6 +21,8 @@ Wacky Wheels links a revision of the Apogee Sound System (ASS) older than any re
   analysis/ww_names.txt (`tools/wc/objmatch.py`): `ASS: N of M named functions byte-identical`.
 - GUSWAVE.C, FX_MAN.C, MUSIC.C, MIDI.C and MULTIVOC.C hold Wacky Wheels' module as one alternative
   block (they differ almost everywhere); MULTIVOC's is the GPL release's older `MV1.C`, adapted.
+- FMSONG.C and FMCHIP.C are not ASS sources: Wacky Wheels' KLM song player and its OPL2 layer, rebuilt
+  from WW.EXE (no source is known; names are this reconstruction's own). The 1.04 check skips them.
 - `tools/ass/portnames.py MODULE` names a whole-identical module's functions and data in
   analysis/ww_names.txt (the "ASS port" block).
 - Not built: the assembler mixers (`MV_MIX*.ASM`, need TASM) and the GF1 library (`gf1_osf.lib`,

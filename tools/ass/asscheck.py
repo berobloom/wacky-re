@@ -9,7 +9,8 @@ analysis/ww_names.txt (the ASSMATCH block and the other sound-library names): pe
 the near misses (named, differing) and the functions with no address; -v prints objmatch's diffs.
 Exit 0 always; the last line is the total, `ASS: N of M named functions byte-identical`.
 
---lib: the regression check. Builds at ASS 1.04 (19950518) and compares each module's code bytes, fixups
+--lib: the regression check (FMCHIP and FMSONG, Wacky Wheels' FM song player, have no 1.04 counterpart
+and are skipped). Builds at ASS 1.04 (19950518) and compares each module's code bytes, fixups
 masked, with the same module of the original 1.04 AUDIO_WF.LIB (.work/ext/audiolib/origlibs/104): every
 module must be identical, so a change meant for Wacky Wheels' revision (under `#if LIBVER_ASSREV <
 19950518L`) cannot have broken the 1.04 code. Exit 1 on a difference."""
@@ -45,7 +46,12 @@ def code(path_or_recs):
     return L.code_of(recs)
 
 
+# Wacky Wheels' own modules: no released LIB has them, so --lib skips them
+WW_ONLY = ('FMCHIP', 'FMSONG')
+
+
 def check_lib(mods):
+    mods = [m for m in mods if m not in WW_ONLY]
     out = build(LIB_REV)
     lib = {n.replace('\\', '/').split('/')[-1].lower(): r for n, r in
            L.modules(open(os.path.join(ROOT, '.work', 'ext', 'audiolib', 'origlibs', '104', 'AUDIO_WF.LIB'), 'rb').read())}
@@ -108,7 +114,8 @@ def segment(obj, lines):
 def main(argv):
     mods = [a.upper() for a in argv if not a.startswith('-')]
     if not mods:
-        mods = ['ADLIBFX', 'AL_MIDI', 'AWE32', 'BLASTOLD', 'DEBUGIO', 'DMA', 'DPMI', 'FX_MAN', 'GMTIMBRE', 'GUS', 'GUSMIDI',
+        mods = ['ADLIBFX', 'AL_MIDI', 'AWE32', 'BLASTOLD', 'DEBUGIO', 'DMA', 'DPMI', 'FMCHIP', 'FMSONG', 'FX_MAN', 'GMTIMBRE',
+             'GUS', 'GUSMIDI',
              'GUSWAVE', 'IRQ', 'LL_MAN', 'MIDI', 'MPU401', 'MULTIVOC', 'MUSIC', 'PAS16', 'PCFX', 'PITCH', 'SNDSCAPE',
              'SNDSRC', 'TASK_MAN', 'USER']
     if '--lib' in argv:

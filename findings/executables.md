@@ -195,14 +195,25 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   instrument index), low nibble = channel. The names 0x8B904 GUS_MemConfig / 0x8B908
   GUS_TotalMemory were wrong: they are this player's (task rate, song start).
   The format is **KLM** (ModdingWiki "KLM Format", reverse engineered by Malvineous; Camoto loads
-  it): header tempo (ticks/s), a byte, offset of the events, 11-byte OPL instruments; commands
-  0x0n note off, 0x1n note on with A0/B0 bytes (0x16-0x1A rhythm: bass drum..hi-hat via 0xBD),
-  0x2n volume ((127 - v) / 2 into the carrier level), 0x3n instrument, 0x4n key on. No source for
-  the player is known (searched iter 93m: not in the GPL ASS release, its leftovers or the fan
-  sites; Wacky Kart's leaked source is not public). The chip layer at 0x50280 is AL_MIDI-like
-  (LIKELY: 0x502C8 = AL_SendOutputToPort inlined for port 0x388 with AL_MIDI's `in` delay loops,
-  0x50280 a voice-volume setter over an operator-offset table at 0x645E0), so AL_MIDI.C is the
-  nearest source to start the chip layer from.
+  it). No source for the player is known (searched iter 93m: not in the GPL ASS release, its
+  leftovers or the fan sites; Wacky Kart's leaked source is not public), so iter 93n rebuilt it from
+  the binary as two modules, names SPECULATIVE (the reconstruction's own):
+  **FMSONG.C** (0x4A490-0x4A886, whole module byte-identical, 10.0a, AUDIO.MAK flags): the song task
+  `FMSONG_ServiceRoutine` (volatile song pointer, delay, active and loop flags), PlaySong (header word 0
+  = task rate, word at +3 = event offset, timbres at +5; `TS_ScheduleTask( ..., rate, 1, NULL )`),
+  StopSong, Continue (reprograms the timbres), Pause, SetLoopFlag, SongPlaying, Set/GetVolume, Init,
+  Shutdown (unlocks only, does not stop the song). **FMCHIP.C** (0x50280-0x50A43, 13 of 14 functions
+  byte-identical; FM_SetChannelTimbre is 4 bytes shorter: the game spills two temporaries): an OPL2
+  layer in AL_MIDI's style but its own code. Port 0x388 written with interrupts off, 6 `inp`s after
+  the register byte and **35 written-out `inp`s** after the data (1.04's AL_MIDI loops 27); OPL rhythm
+  mode; 11 channels: 0-5 melodic, 6 bass drum (two operators), 7 snare, 8 tom tom, 9 top cymbal, 10
+  hi-hat. Corrections to ModdingWiki (CONFIRMED by the identical code): note-on (0x1n) takes **two**
+  frequency bytes for channels 0-5 and 6, **four** for channel 8 (0xA8/0xB8, then 0xA7/0xB7 for the
+  snare), none for 7, 9, 10; 0x4n re-keys the last frequency; volume (0x2n, 0-127) is scaled by the
+  global 0-255 volume into the carrier level, and into the modulator too when the timbre's connection
+  bit (byte 10 bit 0) is set; FM_Reset puts the rhythm instruments at fixed pitches (0xA8 0x57, 0xB8 9,
+  0xA7 3, 0xB7 0x0A) and 0xBD = 0x20. **Bug** in both Inits (CONFIRMED, 0x4A7B0 and 0x50950): after
+  `DPMI_LockMemoryRegion` they call `DPMI_UnlockMemory` on every variable instead of locking it.
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four
   functions' register choices): the Watcom 10.0 prerelease, **without `/zu`** (CONFIRMED: with it
   `_MIDI_SendControlChange` gets a frame the game's lacks), and `#pragma aux _MIDI_ServiceRoutine
