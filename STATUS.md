@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 88 still 207 -
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 89 still 207 -
   no C change, `difffn.py`/`fncov.py` behaviour work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
@@ -28,27 +28,21 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `kart_bump` 0x22bf4: 55 of 606 instruction starts still unwalked after iter 88's fourteen SAME
-   seed sets (strings in src/nearmiss.txt); biggest gaps 0x2374c-0x2376c, 0x231b8-0x231cf,
-   0x22d2d-0x22d4a, 0x22c6a-0x22c7a, 0x234f0-0x23505, 0x22ef5-0x22f10.
-2. 0x23746 `cmp bx,4; jb 0x23756` reads the **live** pickup record's `f20` and the function rewrites
-   `p7d86c` itself: print `[0x7d86c]` at the gate (`.work/kbprobe.py`) before seeding. The f38 arm
-   0x234f0-0x23505 wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be).
-3. QUESTIONS 26: seed the palette/picture pointers `main` mallocs (src/ww.c 18540-18700) into
-   scratch-page blocks and re-run `difffn.py intro` - it returns on both sides now, and its 123
-   remaining DIFF bytes are all in the harness's zero page.
-4. Wider walks of three functions closed earlier, each with a `fncov.py` count now that the tool is
-   committed: `demo_mode` 0x1e2e4 (raise `CALLS=`/`COUNT=`; do NOT add
-   `RESEED=0x88cd0=0:b`, the abort arm 0x31eae needs the press value on every read), `trial_book`
-   0x2e4b8 with `TICKREAD=8` past 0x2f193, `race_run` 0x2fd8c with `SEED=0x7d998=2:d` alone.
-5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
-   first trap); after a C change also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
-   {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
-   and compare its DIFFs with the verdicts in `src/nearmiss.txt` - the known uncapped classes are the
-   dead `v7d7f4`/`v7d874` pointers, the page-0 scribble and a global holding a stack address
-   (`palptr` 0x7d760, findings/menus.md); `CALLSEQ=1` names both stub-call sequences for a `calls n/m`.
-6. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
-   slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
+1. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
+   `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
+   record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3
+   stops eating the instruction budget.
+2. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
+   wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be); 0x23746 reads the
+   **live** pickup record's `f20`, so print `[0x7d86c]` at the gate before seeding (`.work/kbprobe.py`).
+3. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
+   CALLS=6000), plus `fncov.py` for its coverage number. Do NOT add `RESEED=0x88cd0=0:b` - the abort arm
+   0x31eae needs the press value on every read.
+4. `race_run` 0x2fd8c: the seeds reach 784 of 2028 instruction starts (iter 89). Try frame count rather
+   than seeds: `KEY=`/`IN=`/`TICKREAD=` to keep the frame loop alive, or accept it and say so on the line.
+5. A DIFF whose addresses look like garbage: bucket the differing bytes by 0x1000 block and print the last
+   write of each byte on both sides (this pass' one-off `/tmp/introdiff.py`, described in
+   findings/game-loop.md) before touching our C - `intro`'s 123 bytes were three stubbed reads, not code.
 
 ## BLOCKED
 

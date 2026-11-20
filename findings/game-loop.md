@@ -282,6 +282,12 @@ merged).
   pair is what ends the run. `EAX` on return is 1 in the game and 0 in our build, which carries nothing:
   `void FUN_0002fd8c(void)` and all four call sites in the decompile (lines 10774, 12023, 12119, 12183)
   call it as a statement.
+- CONFIRMED (iter 89: `SEED=0x7d998=2:d tools/wc/difffn.py race_run` -> SAME at CALLCAP 20000/20000,
+  neither side returns; control `NEW=wworig MAP=.work/link/WWORIG.MAP` SAME): with the key flag left at 0
+  the abort test 0x31eae never fires and the frame loop keeps running, so the returning run needs both
+  seeds. `tools/wc/fncov.py` over 0x2fd8c-0x327b4 (CALLS=20000, 1.5M insns): that deeper run executes 773
+  of the function's own instruction starts, the iter-83 returning pair 723, union **784 of 2028** - the
+  seed knobs walk the setup and a handful of frames, not a race.
 
 ## `kartsets_load` 0x280e2 fills the frameset table from two 2-byte `fread`s per row (CONFIRMED, iter 89)
 
