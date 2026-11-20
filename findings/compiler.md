@@ -29,6 +29,10 @@ real 9.5b compiler binary. Tools: `tools/wcc95/` (setup.sh, sweep.py, ratrace.py
 | 0x444AA | `GiveRegister` | calls `GiveBestReg` 0x440B4; its result (EAX) at 0x444DD | CONFIRMED |
 | 0x46208, 0x3E716, 0x57A28 | other SortList users (temps by id; temps by flags/+8/+0x24/+0x10; a list at 0x7072C) | | LIKELY |
 
+| 0x440B4 | `GiveBestReg` | candidate loop 0x44169: for each register in the type's list (int: EAX, EDX, EBX, ECX, ESI, EDI, EBP; 16-bit: AX, DX, BX, CX, SI, DI) not in the conflict's interference set (+0x20) nor the except set: `TooGreedy` 0x4478A (result 0x441A3), then `CountRegMoves` 0x44277 (score at 0x441BB); best = higher score, on a tie a register already handed out (set 0x6FF14) beats one not; else the first in list order | CONFIRMED by disasm, traced |
+| 0x2C3D5 | (`AddConflictNode`'s end) | a new conflict goes to the FRONT of `ConfList` | CONFIRMED |
+| 0x32A28 | (unnamed) | moves the conflicts whose name has +0x18 bit 1 set to the front of `ConfList`, keeping their order | CONFIRMED by disasm |
+
 ## Data structures (9.5b offsets)
 
 - **conflict node**: +0 next, +4 next for name, +8 name, +0xC start block, +0x10 reg tree,
@@ -54,6 +58,28 @@ real 9.5b compiler binary. Tools: `tools/wcc95/` (setup.sh, sweep.py, ratrace.py
   savings, the outcome is computed, not random.
 - A conflict's savings is a weighted use count (uses in loops weigh much more): `net_recv`'s
   nodes run from 168 to 10,408.
+
+## The allocation order is computed, not chosen (iter 93s)
+
+`tools/wcc95/shellsort.py` simulates 9.5b's sort over a trace's pre-sort list: in all 15 passes
+of the ten traced near misses (net_recv, pcx_load, netkeys_out/pack/in, shots_clear,
+drawsprite_clip, self_project, voices_reset, fn_1bf00) the simulated order equals the traced
+allocation order. CONFIRMED. So a "coin flip" between two locals is: equal savings, and the
+Shell sort over their pre-sort positions puts one first; the first takes the first free register
+in list order when every candidate scores 0.
+
+**pcx_load 0x27060** (n and size swap ESI/EDI): `size` (handle 0x8BB) and `n` (0x8B8) both have
+savings 24 and score 0 everywhere; `size` (pre-sort position 9 of 15) is sorted before `n` (13)
+and takes ESI. The game's order needs one of: n's savings >= 25, size's <= 23, or n at a
+pre-sort position 0-6, 8, 10 or 12 (simulated). The probe `.work/wcc/probe/PL.C` (pcx_load alone)
+gives the same 5 rows and the same trace in 8 s; ten more spellings (`tools/wcc95/vbatch.py`)
+changed nothing. Open: what in the source sets the pre-sort position (the order conflicts are
+created) and the savings (IR references, weighted by loop depth).
+
+**net_recv 0x2DB00**: not a tie. `crc` (temp id6) scores AX 8, CX 0 (DX, BX interfere), so AX
+wins; our build also keeps a second 16-bit temp (id25, DX) as crc's copy for the compare after
+the loop, which the game does not have (its crc is CX from the zeroing to the compare). The
+difference is the split, so the source shape around the loop, not the register order.
 
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
