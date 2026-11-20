@@ -247,14 +247,14 @@ it can be copied back into DREA.
   (`difffn.py fade_in SEED=0x88c46=4:w ARGS=0x8000` -> SAME, both sides return).
 - **Name a stub-call target exactly or invent a difference** (iter 84): `difffn.py CALLSEQ=1` (new)
   prints both stub-call sequences so a `calls 370/345` says which call our build skipped. Naming each
-  address by the nearest symbol at or below it counted 22 unnamed 0x37xxx entries as `f37cf1` and
+  address by the nearest symbol at or below it counted 22 unnamed 0x37xxx entries as `dac_load` and
   made a 25-call gap out of an 11-call one, and our clib symbols carry a trailing underscore the
   game's hand names do not (`fopen` vs `fopen_`), so an exact hit prints the name and anything else
   prints `?nearest`.
 - **The `call N:` pair `difffn.py` prints compares its own register snapshot, not the callee's
   arguments** (iter 85): every thick `ARGS=` run of `menu` 0x155c0 printed
   `call 0: game 0x375cd(0,0,0,[88464,0,0]) ours 0x10b8f(0,0,0,[242267,0,0])`, which reads like a real
-  argument difference and is not one: `f375cd` 0x375cd takes **no** arguments (`pushal`..`popal`
+  argument difference and is not one: `pcx_blit` 0x375cd takes **no** arguments (`pushal`..`popal`
   0x376d5, findings/video.md CONFIRMED), so the four recorded values are whatever the caller's code
   left in the registers and a Watcom recompile leaves different ones - the pair can never cancel. Read
   the callee's arity before adjudicating a call pair (loads from `[esp+..]` in its first instructions,
@@ -483,10 +483,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **Our C can hold the game's expression and never use it, and then both counters move the WRONG way**
   (iter 60, cars_menu: `capx = (0x140 - 8*strlen(buf1))/2` was in the source but the print call passed
   `x2e`, so 9.5b deleted the division and the caption drew at x=46 instead of centred; the same
-  function was also missing one of the game's three `drawsprite` calls for the selection box, 0x1ae5d).
+  function was also missing one of the game's three `spr_draw` calls for the selection box, 0x1ae5d).
   Both made our function shorter and its fndiff count SMALLER (476 -> 433 while getting two things
   right), so a shrinking row count is no evidence of a fix. nmrefs named them: `game more 1x
-  0x36fd0(drawsprite)` and `game only #0x140 #0x1f` (`mov eax,0x140` + `sar edx,0x1f` 0x1a456/0x1a466
+  0x36fd0(spr_draw)` and `game only #0x140 #0x1f` (`mov eax,0x140` + `sar edx,0x1f` 0x1a456/0x1a466
   = the game's divide by the 320 px screen width). Read a length gap as missing calls, not padding.
   Fed to DREA the same session (harness/TRAPS.md, iter 60 - the wacky commit for it is the DREA commit
   "Traps: the port's own dead code deletes a computation the original performs"). [generic]
@@ -597,10 +597,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   an early `return` duplicates; repeated `store; ret` tails are one shared `store; return;`
   (shot_hit 0x218a4); a compare `movsx r,[m]; cmp r,N` is `k = m; if (k >= N)`, a direct `cmp word
   [m],N` is the field compared in place (ents_flags 0x213f0). [generic]
-- **An asm routine's prototype comes from its own prologue, not from what callers load:** f375cd
-  0x375cd is `pushal ... popal; ret` (0x376d5) and reads p7d714, so it is `void f375cd(void)` (all
+- **An asm routine's prototype comes from its own prologue, not from what callers load:** pcx_blit
+  0x375cd is `pushal ... popal; ret` (0x376d5) and reads p7d714, so it is `void pcx_blit(void)` (all
   registers survive). The "EAX/EDX arguments, result in DX" were the caller's `p7d714 = p` value and a
-  `short` save of pal_a held in DX across the call: `p7d714 = p; fs = pal_a; f375cd(); pal_a = fs;`
+  `short` save of pal_a held in DX across the call: `p7d714 = p; fs = pal_a; pcx_blit(); pal_a = fs;`
   (0x1ce57/0x1ce6c). Retired the old "16-bit EDX argument" dead end; credits_screen 44 -> 32. [generic]
 - **A ternary as a call argument blocks 9.5b's strength reduction of the loop index**; the same
   call in an `if`/`else` lets it replace `k` by stepped pointers/offsets like the game
@@ -852,7 +852,7 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   writes to linear 0x80ace, not to the relocated variable (DOS/4GW loads the data object elsewhere).
   It hung the hybrid's race load (fn_17928, music ISR starved). Use an extern symbol (`litNNNNN`,
   src/ww.c line 18). [generic]
-- `drawsprite` 0x36fd0 / `f373ee` 0x373ee are column-major: `spr_w` = bytes per column = the height,
+- `spr_draw` 0x36fd0 / `spr_draw_opaque` 0x373ee are column-major: `spr_w` = bytes per column = the height,
   `spr_h` = the number of columns = the width, cell byte = col*spr_w+row (findings/video.md Traps).
 - Wrong screen block but the reader, the filler and the index writers are all byte-identical? Bisect
   the *state*: `ORIG=<fn> tools/link/racetest.sh` builds that C function from the game's bytes; census

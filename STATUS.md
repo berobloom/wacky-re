@@ -19,8 +19,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
   `tools/asm/genasm.py`) assembles to the game's 40,865 bytes exactly; `tools/asm/asmcheck.py` (in
   `src/check.sh`; mutations in `test_asmcheck.py`) checks the bytes with -DBIN and the 1567 fixup sites
   of the OMF build. `tools/link/build.sh` links it instead of the game's bytes (`DELINK_ASM=0` = old
-  way); RACETEST OK, and the linked asm in WWNEW.EXE is the game's bytes. Raw disassembly so far
-  (39 entry names, the rest `L_xxxxx`); facts in findings/executables.md "Open".
+  way); RACETEST OK, and the linked asm in WWNEW.EXE is the game's bytes. Every routine named and
+  commented (iter 91, findings/video.md); branch targets still `L_xxxxx`.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
   column MATCH / SKIP: cause / LAYOUT / empty = open). Each function's causes and tried spellings
   are in its `differs:` note in `src/ww.c`.
@@ -34,12 +34,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Read `src/wwasm.asm` routine by routine, smallest C-called entry first: name it (C name `name_`
-   kept as an alias while ww.c uses it), comment what it does, record it in findings/video.md (or
-   input/serial); `tools/asm/asmcheck.py` after every edit (GOTCHAS: what can change a byte).
-2. The routine boundaries inside 0x36A4E-0x409EE: 35 entries are called from C, 211 labels in all;
-   which labels are separate routines (a `ret`/`iret` before them) and which are local branches. Then
-   `L_xxxxx` -> routine-local names (`.loop`), so the file reads as functions.
+1. The asm is named (iter 91: 36 routines + 2 helpers + 6 unreferenced, findings/video.md). Next in it:
+   what differs between `floor_draw`'s three detail bodies (v88c20 1/2/3, ~2,070 insns each), then
+   name the data the asm reads (`v7d6a4` tile map, `v88b0a`/`v88b0e` camera, `pal_a`-`pal_d` pages).
+2. `L_xxxxx` -> nasm local labels (`.loop`) inside each routine; the floor bodies jump between
+   pieces (0x37e94 -> 0x395dd), so check every target stays in its routine. `asmcheck.py` after.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3

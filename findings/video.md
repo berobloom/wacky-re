@@ -1,9 +1,10 @@
 # Video: mode, palette, the page offsets `pal_a`-`pal_d`
 
 INDEX question: "Video: mode, palette, blitter, back buffer, present". Status: **OPEN**
-(only the `setpalette` asm and what it moves are pinned).
+(every routine of the assembler module is read and named, below; the C side's frame and
+page logic is not all pinned).
 
-## `setpalette` (0x36f14-0x36f54) is a screen copy, not a palette load — CONFIRMED
+## `page_copy` (0x36f14-0x36f54) is a screen copy, not a palette load — CONFIRMED
 
 The asm, read in full:
 
@@ -29,9 +30,9 @@ and `fn_17888` sets it to 0 and 0x3e80 (names line 546) — LIKELY the offset th
 Two helpers wrap the copy and are called at 11 sites each (menus, `cars_menu`, `modem`):
 
 - `fn_1c068` (0x1c068): saves `pal_a/b/c` into `save_a/b/c`, sets `pal_c = 48000` and
-  `pal_a = pal_b = pal_d`, then a tail `jmp setpalette` (0x1c0a7). CONFIRMED (bytes).
+  `pal_a = pal_b = pal_d`, then a tail `jmp page_copy` (0x1c0a7). CONFIRMED (bytes).
 - `fn_1c0ac` (0x1c0ac): the reverse — `pal_b = 48000`, `pal_a = pal_c = pal_d`, `call
-  setpalette` (0x1c0c7), then `pal_b/c/a = save_b/c/a`. CONFIRMED (bytes).
+  page_copy` (0x1c0c7), then `pal_b/c/a = save_b/c/a`. CONFIRMED (bytes).
 
 Both were rebuilt byte-identical, then taken out of `src/ww.c` again: defining them there lets
 `-oe` inline them into every caller and `net_end` (0x110d4, byte-identical) stops matching —
@@ -72,7 +73,7 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   dword 0x114a8 in either (scan of `.work/le/ww.obj1.bin` and `.work/le/ww.obj2.bin`), so it is
   dead code, or reached through a computed address — QUESTIONS 15.
 
-## `f375cd` 0x375cd takes no arguments and preserves every register — CONFIRMED
+## `pcx_blit` 0x375cd takes no arguments and preserves every register — CONFIRMED
 
 - Bytes: `pushal` at 0x375cd, `popal; ret` at 0x376d5. It reads its source from `p7d714` (0x375f5
   `mov esi,[0x7d714]`) and the page offset from `pal_a` (0x375ee `add di,[0x88b24]`), writes planar
@@ -80,13 +81,13 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   0x37659) with `v88b4a` added per row (0x3764b). Data bytes with the top two bits set are runs
   (0x3760a, count in the low six bits, 0x3766b): a PCX-style RLE decode straight to the screen.
   LIKELY: it is the PCX picture blit; `p6a978`/`p6a980` hold the encoded pictures.
-- So the C prototype is `void f375cd(void)`. The callers' `mov eax,[p6a9xx]` before the call is the
+- So the C prototype is `void pcx_blit(void)`. The callers' `mov eax,[p6a9xx]` before the call is the
   `p7d714 = p6a9xx` store, and `mov dx,[pal_a]` ... `mov [pal_a],dx` is a `short` save of pal_a that
   DX keeps across the call (0x1ce57/0x1ce6c, 0x1d73e/0x1d758, 0x1e816/0x1e829). CONFIRMED by
   rebuild: switching `src/ww.c` to this prototype removed those rows in credits_screen, demo_mode,
   main_menu and 6 other functions (iter 36).
 
-## `fn_36f55` 0x36f55 - the second map-mask writer: 0x6400 bytes to A000:7d00 — CONFIRMED (disasm)
+## `horizon_upload` 0x36f55 - the second map-mask writer: 0x6400 bytes to A000:7d00 — CONFIRMED (disasm)
 
 - `pushal`/`popal`, no arguments, source `[0x7eb54]`: `mov edi,0xa0000` + `add di,0x7d00`
   (0x36f5e-0x36f63), `mov cx,0x6400` (0x36f68), then per source byte a write of `[edi]` plus
@@ -94,7 +95,7 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   (0x36f79-0x36f86), with the sequencer map mask (port 0x3c4 index 2) re-programmed to `ah` at
   each iteration. So the mask runs 1, 2, 4, 8 and 25600 writes cover 6400 video
   addresses (A000:7d00..0xe0ff), each written once per plane: the source holds 4
-  bytes per video address (CONFIRMED by the loop shape). `setpalette` programs
+  bytes per video address (CONFIRMED by the loop shape). `page_copy` programs
   `0x3ce ax=0x4105` (chain-4 write, line 12 above) and the game sets INT 10h
   `0x13` (`setvmode_keep(0x13)`, `src/ww.c:19453`), and the four map-mask writes
   go to planes 0..3 of one Mode X address (CONFIRMED live, findings/formats.md ".PAR").
@@ -114,10 +115,10 @@ AND for `clipy`; nothing recomputes it after the width store:
 - `players_ahead` 0x34208: `mov ax,[spr_w]; dec eax; add ax,[spr_y]; sub eax,0xc7` 0x34332-0x34340,
   `sub word [spr_w],ax` 0x34346, `cmp word [spr_w],0 / jle` 0x3434d, then `cwde; lea eax,[eax*4];
   mov [0x7d878],eax` 0x34357-0x3435f - the same EAX, so `clipy = (spr_w + spr_y - 1 - 199) * 4` with
-  the pre-clip `spr_w`. The scale factor feeds the asm blit `f37487` 0x37487 (names file: a scaled
+  the pre-clip `spr_w`. The scale factor feeds the asm blit `spr_draw_scaled` 0x37487 (names file: a scaled
   Mode X sprite blit stepped by the `p7d838` delta table); why *4 there is not pinned.
 - `drawsprite_clip` 0x11404: same expression at 0x11434-0x1143e, but `mov [0x7d878],ebx` 0x11447
-  stores it **unmultiplied** for the asm drawer `drawsprite2` 0x3707e, and `spr_w` is restored from
+  stores it **unmultiplied** for the asm drawer `spr_draw_clip` 0x3707e, and `spr_w` is restored from
   a local after the call (0x11471).
 
 Port bug fixed iter 57: our `players_ahead` wrote the expression twice, so its second read of
@@ -134,7 +135,7 @@ floor of 1.2-2.1% (two WWORIG runs; the karts on the start line bob, rows 320-36
 
 The excess is one block: shot px x 50-95, y 26-82 (game px 25-47, 13-41), inside the HUD box drawn
 by `draw_status` 0x12f80 as `img7d83c` (41x38 at `spr_x` 0x11, `spr_y` 6; stores 0x1313a-0x13168,
-`call drawsprite` 0x13168). Colour census of the box region (shot px x14-116, y8-96):
+`call spr_draw` 0x13168). Colour census of the box region (shot px x14-116, y8-96):
 
 | | pure yellow (255,255,0) | (239,195,0) | black |
 |---|---|---|---|
@@ -167,7 +168,7 @@ Draw site (CONFIRMED, `overlay_draw`): 0x2aec8-0x2af50 — when the `one` local 
 word `viewer7eb80[i]` (0x2af07 `cmp word [ecx+0x7eb80],0`, ecx steps 2, `ebx` steps 0x104) it reads
 the index 0x2af11 `movsx eax, word [ebx+0x684bc]` = `cars[i].place` (= `karts[i].fac`, 0x684bc /
 0x685c0) and 0x2af18 `mov eax, dword [eax*4 + 0x6e6ec]` -> `sprptr`; single viewer draws through
-`f373ee` 0x373ee (no colour-0 test), splitscreen through `drawsprite` 0x36fd0 with `spr_x = 4`
+`spr_draw_opaque` 0x373ee (no colour-0 test), splitscreen through `spr_draw` 0x36fd0 with `spr_x = 4`
 (0x2af40). So the box figure is 22x29 at game px (25,12), i.e. exactly the bad block of
 QUESTIONS 25 (shot px x50-93, y24-87).
 
@@ -225,9 +226,56 @@ whatever sits at linear 0, hence the black-and-speckle block. The frameset hypot
 `kartsets_load`'s highest index is 5*20+9 = 109. Fixed through linker symbols (src/ww.c, `placeic_c`);
 `tools/link/fixcensus.py` finds every such literal by comparing per-target fixup counts.
 
+## The assembler module's routines, read and named — iter 91
+
+Every routine of 0x36A4E-0x409EE (`src/wwasm.asm`) was read in the asm. One line each, with level and
+evidence, is in `analysis/ww_names.txt` (the block at the end) and above each routine in the asm.
+The C side was renamed in the same commit: only names changed, so `src/check.sh` still gives 207 and
+the link still resolves (1174 externals).
+
+| Address | Name | Was | Level | What |
+|---|---|---|---|---|
+| 0x36a4e | `textscreen_show` | f36a4e | CONFIRMED | 4000-byte text screen from [p7d714] to B800 (exit screen) |
+| 0x36cca | `getpalette` | | CONFIRMED | 256 DAC entries to [palptr] |
+| 0x36d42 | `rowtab_init` | f36d42 | CONFIRMED | [v7eb84][y] = y*80, 320 rows |
+| 0x36e36 / 0x36e53 | `vga_latch_on` / `vga_latch_off` | L_ | CONFIRMED | write mode 1 + all planes / write mode 0 |
+| 0x36e66 | `rows_restore` | f36e66 | LIKELY | latch copy of spr_w rows from VRAM 0xcc60 to row spr_y |
+| 0x36ec2 | `band_mirror` | f36ec2 | CONFIRMED | 90-row band at spr_y mirrored vertically |
+| 0x36f14 | `page_copy` | setpalette | CONFIRMED | page pal_b -> page pal_c (above) |
+| 0x36f55 | `horizon_upload` | fn_36f55 | STRONGLY SUPPORTED | linear [v7eb54] -> planar 0x7d00 (below) |
+| 0x36f8c | `rec_swap` | f36f8c | CONFIRMED | swap two records (the sorts) |
+| 0x36fd0 / 0x3707e / 0x37132 / 0x373ee | `spr_draw` / `_clip` / `_key` / `_opaque` | drawsprite, drawsprite2, f37132, f373ee | CONFIRMED | column-major sprite: colour 0 transparent / skip clipy per column / v88ce9 transparent / opaque |
+| 0x371e4 | `box_draw` | f371e4 | CONFIRMED | border v88ce8, fill v88ce9 |
+| 0x372c7 / 0x3735c | `spr_grab` / `grab32` | getline+blit372c7 / f3735c | CONFIRMED | VRAM -> [sprptr], column-major / 32x32 row-major |
+| 0x37487 | `spr_draw_scaled` | f37487 | STRONGLY SUPPORTED | scaled sprite (formats.md .SP) |
+| 0x375cd | `pcx_blit` | f375cd | LIKELY | PCX RLE to the page (above) |
+| 0x376d7 | `pcx_tiles` | f376d7 | CONFIRMED | PCX 320x200 -> 54 tiles of 32x32 at [v7eb58] |
+| 0x377ae / 0x3784b | `buttons_poll` / `joy_poll` | f377ae / joy_detect | CONFIRMED | buttons; game-port axes -> direction keys (`joyfound` 1 = no stick) |
+| 0x37a06 | `tilemap_fill` | f37a06 | CONFIRMED | [v7d6a4] = v7d64c, 64 KB |
+| 0x37a21 / 0x37bb1 | `path_pt_scale` / `vec_scale` | f37a21 / f37bb1 | LIKELY / CONFIRMED | 16.16 rounded scaling |
+| 0x37b04 | `surface_at` | f37b04 | CONFIRMED | surface probe (formats.md, game-loop.md) |
+| 0x37bf0 | `pixel_plot` | f37bf0 | CONFIRMED | one pixel, colour v88ce9 |
+| 0x37c43 / 0x37c84 / 0x37cf1 | `dac_put5` / `dac_put8` / `dac_load` | f37c43 / f37c84 / f37cf1 | CONFIRMED | palette animation entries / a range from [palptr] |
+| 0x37de0 | `page_show` | waitretrace+f37de0 | CONFIRMED | the page flip: CRTC start = pal_a, pal_d = pal_a |
+| 0x37e23 / 0x37e41 | `vram_clear` / `modex_init` | f37e23 / f37e41 | CONFIRMED | clear 256 KB / unchain to Mode X |
+| 0x37e94 / 0x3c3e9 | `floor_draw` / `floor_draw_upper` | f37e94 / f3c3e9 | STRONGLY SUPPORTED | horizon + perspective floor from row 110 / row 10 |
+| 0x40907 | `kbd_isr` | | LIKELY | keyboard IRQ handler |
+
+- **The perspective floor is three unrolled copies per entry, ~2,070 instructions each.** `floor_draw`
+  and `floor_draw_upper` pick one by `v88c20`, the detail setting (1/2/3 = the High/Medium/Low detail
+  menu, formats.md +0x3c). Six bodies, 33 KB of the module's 40 KB. Per pixel: a precomputed point
+  `[ebx]` times the scale `[esi]`, plus the camera `v88b0a`/`v88b0e`, gives a tile of the map
+  `v7d6a4` (32x32 tiles, 128 per map row) and one byte from it. CONFIRMED that shape (instruction
+  census); the exact per-detail difference is not read yet.
+- **Six routines nothing reaches** (no call, jump or LE fixup; CONFIRMED by the census in
+  findings/executables.md "Open"): `strips_restore` 0x36a69, `rect_overlap` 0x36d69, `pt_load` 0x379ec,
+  `surface_at_7c` 0x37a6c, `tile_show` 0x37d96, `vretrace_wait` 0x37dc7. They are labelled in the asm
+  and kept, because the bytes are the game's. A port can drop them.
+- `pal_a`-`pal_d` keep their old names (page offsets, above). Renaming the data is a separate step.
+
 ## Traps
 
-- The drawer is column-major: `drawsprite`/`f373ee` put `spr_w` bytes in a *column* and iterate
+- The drawer is column-major: `spr_draw`/`spr_draw_opaque` put `spr_w` bytes in a *column* and iterate
   `spr_h` columns (`add di,0x4f` per byte), so a sprite declared `spr_w = 0x1d, spr_h = 0x16` is 22
   px wide and 29 px tall, and its cell is `byte = col*spr_w + row`. Reading `spr_w` as the width
   makes the LAP place icons look impossible (iter 72: three readings of the box geometry were wrong
@@ -235,7 +283,7 @@ whatever sits at linear 0, hence the black-and-speckle block. The frameset hypot
 - A `MATCH` reader plus a `MATCH` filler still draws the wrong thing when the table between them is
   written by a *third* function: check the drawn bytes against the data file, not the code.
 - A QMP screenshot is 2x the game's screen: the shots are 640x400 and the game runs 320x200, so a
-  `drawsprite` at `spr_x` 0x11, `spr_y` 6 with `spr_w` 0x29, `spr_h` 0x26 lands at shot px
+  `spr_draw` at `spr_x` 0x11, `spr_y` 6 with `spr_w` 0x29, `spr_h` 0x26 lands at shot px
   34-116 x 12-88. Compare a sprite and a screenshot block with that factor or the box you crop
   holds a different widget (iter 71: three crops read before the 2x factor was applied).
 - A clip line written twice in C is not the game's: the game keeps the value in a register across
@@ -245,11 +293,11 @@ whatever sits at linear 0, hence the black-and-speckle block. The frameset hypot
 - A ternary is not the game's flip: `pal_a = pal_a ? 0 : 0x3e80;` selects the value in EAX and
   stores once, which no site in the game does. Write the two-branch `if`/`else` (see above);
   that is worth 71 aligned instructions in `cars_menu` alone.
-- `setpalette` clobbers nothing the C sees (`pushal`/`popal`) but its `rep movsb` runs with all
+- `page_copy` clobbers nothing the C sees (`pushal`/`popal`) but its `rep movsb` runs with all
   four write planes enabled: it is a whole-page copy, so calling it is never cheap (0x3e80
   bytes) — it does not belong inside a per-frame loop.
-- The two helpers are *tail-call* / *call* variants: 0x1c068 ends `jmp setpalette` (no frame,
+- The two helpers are *tail-call* / *call* variants: 0x1c068 ends `jmp page_copy` (no frame,
   nothing to restore), 0x1c0ac uses `call` because three stores follow. Watcom only emits the
   `jmp` when the callee follows immediately in the caller's tail — a port that writes
-  `setpalette(); return;` in a frameless void function must produce `e9 ...`, and a
+  `page_copy(); return;` in a frameless void function must produce `e9 ...`, and a
   near-miss `e8 ... c3` there is that difference, not a bug.

@@ -546,7 +546,7 @@ extern short playing[2];
 extern char *faceimgs[];
 extern char *sprptr;
 extern int p2offset;        /* dword stores at 0x1799c/0x179ba */
-void drawsprite(void);
+void spr_draw(void);
 
 void draw_faces(void)
 {
@@ -561,7 +561,7 @@ void draw_faces(void)
             sprptr = faceimgs[cars[i].face];
             if (i == 1)
                 spr_y -= p2offset;
-            drawsprite();
+            spr_draw();
         }
     }
 }
@@ -572,7 +572,7 @@ extern int connected;
 extern int ticks2;
 extern char modeminit[];
 extern char modemhangup[];
-void setpalette(void);
+void page_copy(void);
 void msgbox(char *s, int wait);
 void fn_1c068(void);
 void fn_1c0ac(void);
@@ -589,7 +589,7 @@ int modem(int hangup)
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
     if (hangup == 0)
         strcpy(msg, "INITIALIZING MODEM");
     else
@@ -641,7 +641,7 @@ int modem(int hangup)
     pal_b = 48000;
     pal_a = pal_d;
     pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;
@@ -738,8 +738,8 @@ void net_end(int ok)
 
 extern int clipy;
 extern volatile char shotkey;
-void drawsprite2(void);
-void waitretrace(void);
+void spr_draw_clip(void);
+void page_show(void);
 void screenshot(void);
 
 /* differs: 3 rows - the slot reload lands in EAX and the spr_y load in EBX, the game the other way
@@ -764,14 +764,14 @@ void drawsprite_clip(void)
         spr_w = h - c;
     }
     if (spr_w > 0)
-        drawsprite2();
+        spr_draw_clip();
     clipy = 0;
     spr_w = h;
 }
 
 void frame_wait(void)
 {
-    waitretrace();
+    page_show();
     if (shotkey) {
         screenshot();
         while (shotkey)
@@ -811,7 +811,7 @@ struct pcxhdr {
 
 extern unsigned char *palptr;
 void getpalette(void);
-void getline(void);
+void spr_grab(void);
 
 /* differs (6 rows, all the pal/lineptr stack-slot pair: game pal [esp+0x50c], lineptr [esp+0x508];
    ours the reverse - the slot-permutation dead end; declaration order (3), assignment order (3) and
@@ -894,7 +894,7 @@ void screenshot(void)
         spr_w = 1;
         spr_y = y;
         sprptr = lineptr;
-        getline();
+        spr_grab();
         x = 0;
         do {
             run = 0;
@@ -1148,7 +1148,7 @@ int FX_SetupCard(int card, void *device);
 int FX_Init(int card, int voices, int channels, int bits, unsigned rate);
 char *FX_ErrorString(int err);
 void FX_SetVolume(int vol);
-void joy_detect(void);
+void joy_poll(void);
 
 int sound_init(void)
 {
@@ -1211,7 +1211,7 @@ int sound_init(void)
     input_clear1();
     joyfound = 0;
     v88c8a = 0;
-    joy_detect();
+    joy_poll();
     input_clear1();
     if (joyfound) {
         v7ee4a = 0;
@@ -1640,9 +1640,9 @@ void show_place(short n)
     spr_y = 4 + (players[n].place - 1) * 0x1C;
     spr_h = 0x26;
     spr_w = 0x1C;
-    drawsprite();
+    spr_draw();
     pal_a = 16000;
-    drawsprite();
+    spr_draw();
     print_at(0xF0, spr_y, buf, 0);
     pal_a = save;
 }
@@ -1887,7 +1887,7 @@ extern char pnames[][12];
 extern short v88ca0, v88bde, v7eb80, netgame;
 extern int v7ec7c;
 extern char *img7eb5c, *img7eb3c, *img7d83c, *img7eb60, *img7d814, *img7d810;
-void blit372c7(void);
+void spr_grab(void);
 
 /* differs (17 rows, 1100 bytes vs the game's 1080, 243 insns vs 246): (int) casts on both arms of the
    v7eb80 ternary give the game's per-arm movsx (no cwde) and, as a side effect, the esi form (movsx
@@ -1927,10 +1927,10 @@ void draw_status(void)
         spr_h = 0x4E;
         spr_w = 0x32;
         sprptr = img7eb5c;
-        drawsprite();
+        spr_draw();
         if (v88ca0 == 1) {
             sprptr = img7eb3c;
-            blit372c7();
+            spr_grab();
             v88ca0 = 2;
         }
     }
@@ -1954,14 +1954,14 @@ void draw_status(void)
             spr_h = 0x26;
             spr_w = 0x29;
             sprptr = img7d83c;
-            drawsprite();
+            spr_draw();
             if (netvoices) {
                 spr_x = 0x1A;
                 spr_y = 0xE;
                 spr_h = 0x13;
                 spr_w = 0xE;
                 sprptr = img7eb60;
-                drawsprite();
+                spr_draw();
             }
         }
         if (!splitscreen && !netvoices) {
@@ -1971,7 +1971,7 @@ void draw_status(void)
                 spr_h = 0x41;
                 spr_w = 0x13;
                 sprptr = img7d814;
-                drawsprite();
+                spr_draw();
             } else {
                 spr_x = 4;
                 spr_y = 0xB;
@@ -1999,7 +1999,7 @@ void draw_status(void)
         spr_h = 0x3D;
         spr_w = 0x13;
         sprptr = img7d810;
-        drawsprite();
+        spr_draw();
     }
     if (v7d998 == 3)
         print_at(0xE8, 6, "DEMO MODE ", 0);
@@ -2018,12 +2018,12 @@ extern char arr79a28[];
 extern char *p7d86c;
 extern char *palptr;
 void getpalette(void);
-void setpalette(void);
+void page_copy(void);
 void pcx_load(char *name, int n);
 void fade_out(char *p);
-void f375cd(void);                  /* asm 0x375cd: pushal..popal, no arguments, reads p7d714; every register survives */
+void pcx_blit(void);                  /* asm 0x375cd: pushal..popal, no arguments, reads p7d714; every register survives */
 void view_box(void);
-void f37e94(void);
+void floor_draw(void);
 void players_frames(void);
 void players_project(void);
 void ents_project(void);
@@ -2031,11 +2031,11 @@ void self_project(void);
 void lights_project(void);
 void shots_project(void);
 void sprites_draw(void);
-void f3c3e9(void);
+void floor_draw_upper(void);
 void overlay_draw(void);
 void hud_draw(void);
 void anim_tick(void);
-void f37de0(void);
+void page_show(void);
 void fade_in(unsigned char *target);
 
 void frame_draw(void)
@@ -2055,16 +2055,16 @@ void frame_draw(void)
     v88b4a = 0;
     pal_a = 16000;
     p7d714 = p6a97c;
-    f375cd();
+    pcx_blit();
     pal_a = 16000;
     if (v7d998 != 0 && v7d998 != 3) {
         pal_b = 16000;
         pal_c = 32000;
-        setpalette();
+        page_copy();
     }
     view_box();
     if (v7eb80)
-        f37e94();
+        floor_draw();
     v88bf4 = 0;
     v88b78 = 0;
     p7d86c = arr79a28;
@@ -2082,9 +2082,9 @@ void frame_draw(void)
         view_box();
         if (v7eb82) {
             if (v88bde)
-                f3c3e9();
+                floor_draw_upper();
             else
-                f37e94();
+                floor_draw();
         }
         v88bf4 = 0;
         v88b78 = 0;
@@ -2107,7 +2107,7 @@ void frame_draw(void)
     hud_draw();
     anim_tick();
     draw_faces();
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -2118,7 +2118,7 @@ void frame_draw(void)
     pal_a = 0;
     pal_b = 16000;
     pal_c = 0;
-    setpalette();
+    page_copy();
 }
 
 /* ---- the giggles / dope animations */
@@ -2739,7 +2739,7 @@ void ents_draw(int n)
         spr_y = ents[i].y;
         spr_h = 0x26;
         spr_w = 0x1C;
-        drawsprite();
+        spr_draw();
     }
 }
 
@@ -2763,7 +2763,7 @@ extern int v7d878;
 extern short *tab6e470[], *tab6e560[];
 extern int v7d338[];
 extern short v88c68;
-void f37487(void);
+void spr_draw_scaled(void);
 
 /* differs (36 rows, 29 of them the masked-fixup artefact [reg - @]/[reg + @]): a three-way stack-slot
    permutation of n, animate and the w*h temporary (game n [esp+4], animate [esp+8], temp [esp]; ours
@@ -2772,7 +2772,7 @@ void f37487(void);
    gave the game's `mov ebx,1`/`xor ebx,ebx` AND its loop shape (jmp to the bottom test, one
    epilogue): 49 -> 36. An explicit int wh for the temp (3 declaration positions x 2 forms) moves
    nothing. Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the
-   game's `jmp 0x146bd` 0x145c3 (right after `call f37487` 0x145be, the end of the `if (sel != -1)`
+   game's `jmp 0x146bd` 0x145c3 (right after `call spr_draw_scaled` 0x145be, the end of the `if (sel != -1)`
    arm) leaves the loop body at the loop tail 0x146bd `inc edx; cmp eax,[esp+4]; jl 0x14398`, because
    sel != -1 is known on that path and the two blocks it skips are both `sel == -1 && ...`
    (0x14623-0x1462b and 0x1468d-0x14695, the second testing sel before EBX, so the stale EBX is never
@@ -2832,7 +2832,7 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
             }
             spr_y -= spr_w >> 1;
             spr_x -= spr_h >> 1;
-            f37487();
+            spr_draw_scaled();
         } else {
             if (!custom) {
                 spr_h = 0x26;
@@ -2841,7 +2841,7 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
                 spr_h = ((struct attr *)sprattr)[id].w;
                 spr_w = ((struct attr *)sprattr)[id].h;
             }
-            drawsprite();
+            spr_draw();
         }
         if (twoplayer || splitscreen) {
             two = 1;
@@ -2854,7 +2854,7 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
             sprptr = lp7d804;
             spr_x -= 0xB;
             spr_y += 0x12;
-            drawsprite();
+            spr_draw();
             spr_h = 0x26;
             spr_w = 0x1C;
             spr_x += 0xB;
@@ -2862,7 +2862,7 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
         }
         if (sel == -1 && two && v88b7e == 1 && i == v88c68) {
             sprptr = gn7eae8;
-            drawsprite();
+            spr_draw();
         }
     }
 }
@@ -2938,11 +2938,11 @@ void wtext(int x, int y, char *s, int scaled)
             spr_y += 6;
             spr_x -= sl[2];
             spr_y -= sl[3];
-            f37487();
+            spr_draw_scaled();
             spr_x = sx;
             spr_y = sy;
         } else {
-            drawsprite();
+            spr_draw();
         }
         spr_x += 0xB;
     }
@@ -2950,8 +2950,8 @@ void wtext(int x, int y, char *s, int scaled)
 
 extern char *sfont[];
 extern char v88ce8, v88ce9;
-void f373ee(void);
-void f371e4(void);
+void spr_draw_opaque(void);
+void box_draw(void);
 
 void stext(int x, int y, char *s)
 {
@@ -2964,7 +2964,7 @@ void stext(int x, int y, char *s)
     n = strlen(s);
     for (i = 1; i <= n; i++) {
         sprptr = sfont[(unsigned char)s[i - 1]];
-        f373ee();
+        spr_draw_opaque();
         spr_x += 8;
     }
 }
@@ -2992,7 +2992,7 @@ void print_at(short x, int y, char *s, short mode)
             spr_h = strlen(s) * 8;
             spr_w = 8;
         }
-        f371e4();
+        box_draw();
     }
     spr_x = x;
     spr_h = 8;
@@ -3057,7 +3057,7 @@ void print_at(short x, int y, char *s, short mode)
         }
         if (ok) {
             sprptr = sp6a778[c];
-            drawsprite();
+            spr_draw();
         }
         spr_x += 8;
     }
@@ -3097,7 +3097,7 @@ void ctl_setup(short which)
         keymap2 = 8;
         keymap3 = 12;
     }
-    joy_detect();
+    joy_poll();
 }
 
 int center_x(int w)
@@ -3148,7 +3148,7 @@ void joy_reset(void)
 {
     joyfound = 0;
     v88c8a = 0;
-    joy_detect();
+    joy_poll();
 }
 
 extern char v7b6dc, v7b6dd;
@@ -3192,7 +3192,7 @@ void chat(void)
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
     s34 = v7ed34;
     s20 = v7ed20;
     s1c = v7ed1c;
@@ -3208,7 +3208,7 @@ void chat(void)
     spr_x = 0;
     sy = spr_y;
     spr_y = 0;
-    f371e4();
+    box_draw();
     while (key88cd0 == 0x2E)
         ;
     r.x.eax = 0x2509;
@@ -3305,10 +3305,10 @@ void chat(void)
         spr_h = 8;
         spr_x = x1 + n1 * 8;
         spr_y = y1;
-        f371e4();
+        box_draw();
         spr_x = x2 + n2 * 8;
         spr_y = y2;
-        f371e4();
+        box_draw();
     }
     spr_h = sh;
     spr_w = sw;
@@ -3327,7 +3327,7 @@ void chat(void)
     pal_b = 48000;
     pal_a = pal_d;
     pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;
@@ -3352,7 +3352,7 @@ extern int v7ed08, v7ea5c;
 extern short v7ea58s;                     /* v7ea58 seen as short in another game source file */
 extern short v7ecb0, v88c04, v88c06, v88b7a, v88b72, v7ec14;
 extern int v7eca4;extern char *menu_buf6a518;              /* sp6a518 declared above */
-void f377ae(void);
+void buttons_poll(void);
 void fn_1c068(void);
 void fn_1c0ac(void);
 
@@ -3450,14 +3450,14 @@ short menu(short n, short d, short mode, short c)
         spr_h = v88c00;
         sprptr += 0x6400;
         spr_w = v88bee;
-        blit372c7();
+        spr_grab();
         pal_a = savepal;
     }
     if (mode == 0) {
         v88b4a = 0;
         p7d714 = p6a978;
         savepal = pal_a;
-        f375cd();
+        pcx_blit();
         pal_a = savepal;
     }
     spr_x = 0;
@@ -3481,17 +3481,17 @@ short menu(short n, short d, short mode, short c)
     }
     pal_c = 0x7d00;
     pal_b = pal_a;
-    setpalette();
+    page_copy();
     spr_x = bx1;
     spr_h = 0x14;
     spr_y = sy;
     sprptr = sp6a518[sel];
     spr_w = 0x17;
-    drawsprite();
+    spr_draw();
     spr_x += w11;
     sprptr = sp6a528[sel];
-    drawsprite();
-    f37de0();
+    spr_draw();
+    page_show();
     if (key88ccd)
         screenshot();
     while (key88ccd)
@@ -3512,7 +3512,7 @@ short menu(short n, short d, short mode, short c)
             if (netgame == 1) {
                 v7d8a4 = v7d8ac;
                 ctl_setup(0);
-                f377ae();
+                buttons_poll();
                 if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
                     joy88b40 = 0;
                 if (v88cce)
@@ -3589,7 +3589,7 @@ short menu(short n, short d, short mode, short c)
         if (anim == 0)
             sy = ybase + (cursor - 1) * 12;
         pal_c = pal_a;
-        setpalette();
+        page_copy();
         if (mode == 0)
             ents_show(bounce, 4, 1, mode, show13);
         spr_x = bx1;
@@ -3597,10 +3597,10 @@ short menu(short n, short d, short mode, short c)
         spr_y = sy;
         sprptr = sp6a518[sel];
         spr_w = 0x17;
-        drawsprite();
+        spr_draw();
         spr_x += w11;
         sprptr = sp6a528[sel];
-        drawsprite();
+        spr_draw();
         if (v88bb0 == 0xe) {
             if (cursor == 1)
                 strcpy(pbuf, " PLAYER ONE ");
@@ -3616,7 +3616,7 @@ short menu(short n, short d, short mode, short c)
             msgbox("REMOTE IS CONTROLLING MENU", 0x3a);
         if (v7ecac)
             msgbox("BOTH SIDES MUST USE SAME RATE", 0x3a);
-        f37de0();
+        page_show();
         if (key88ccd)
             screenshot();
         while (key88ccd)
@@ -3684,7 +3684,7 @@ short menu(short n, short d, short mode, short c)
         if (net7ed78 == 0) {
             v7d8a4 = v7d8ac;
             ctl_setup(0);
-            f377ae();
+            buttons_poll();
             if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
                 joy88b40 = 0;
             if (v88cce)
@@ -4375,7 +4375,7 @@ void fn_2754c(void);
 short fn_27920(int n);
 void duck_screen(int after);
 void fn_32e60(void);
-void fn_36f55(void);              /* asm 0x36f55: 0x6400 bytes from v7eb54 to A000:7D00, four
+void horizon_upload(void);              /* asm 0x36f55: 0x6400 bytes from v7eb54 to A000:7D00, four
                                    * writes per video byte with the map mask rotated 1,2,4,8
                                    * (0x36f6c-0x36f88, findings/video.md) */
 
@@ -4488,7 +4488,7 @@ setdone:;
         }
     } else
         strcpy(msg, "LOADING ZONE");
-    waitretrace();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -4518,7 +4518,7 @@ setdone:;
             v88b4a = 0;
             p7d714 = p6a980;
             pal_a = 0;
-            f375cd();
+            pcx_blit();
             pal_a = 0;
         }
         if (netvoices)
@@ -4527,13 +4527,13 @@ setdone:;
         fread(p6a980, 0x6400, 1, datfile);
         if (v7d998 == 0 || v7d998 == 3) {
             v7eb54 = p6a980;
-            fn_36f55();
+            horizon_upload();
         }
         pal_b = 0;
         pal_c = 0x3e80;
-        setpalette();
+        page_copy();
         pal_a = 0;
-        waitretrace();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -4561,7 +4561,7 @@ setdone:;
     pal_c = 0xbb80;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
     if (netgame == 1) {
         msgbox("PRESS FIRE", 0);
         r = fn_27920(1);
@@ -4589,7 +4589,7 @@ setdone:;
             pal_b = 0xbb80;
             pal_a = pal_d;
             pal_c = pal_d;
-            setpalette();
+            page_copy();
             pal_b = save_b;
             pal_c = save_c;
             pal_a = save_a;
@@ -4607,7 +4607,7 @@ setdone:;
     pal_b = 0xbb80;
     pal_a = pal_d;
     pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;
@@ -4722,7 +4722,7 @@ extern int v684e0, v685e4;
 extern char str7c854[], str7c890[], str7c8cc[];
 void pal_6bit(unsigned char *p);
 void wait_release(short flag);
-void f37cf1(void);
+void dac_load(void);
 void trial_book(int a, int b, int show);
 
 void fn_1832c(void)
@@ -4797,7 +4797,7 @@ retry:
             int fs;
             p7d714 = p6a980;
             fs = pal_a;
-            f375cd();
+            pcx_blit();
             pal_a = fs;
         }
         pal_a = pal_a + 16000;
@@ -4822,7 +4822,7 @@ retry:
         fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
         s354 = 1;
         w88b10 = 1;
-        f37cf1();
+        dac_load();
     }
     if (netgame && net88c14) {
         for (i = 0; i <= 0x2ff; i++)
@@ -4853,7 +4853,7 @@ mainloop:
     nav = 0;
     v7d8a4 = v7d8ac;
     ctl_setup(0);
-    f377ae();
+    buttons_poll();
     joy_clear_y();
     if (netgame == 0) {
         if (v88cce)
@@ -4983,7 +4983,7 @@ merged:
         s354 = 0;
         w88b10 = 1;
         palptr = pal;
-        f37cf1();
+        dac_load();
     }
     if (s350 != 0) {
         joy88b40 = 1;
@@ -5007,7 +5007,7 @@ merged:
         w88b1e = v88bb6 * 3 + 0xe6;
         w88b10 = 1;
         fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 0, (int)gp);
-        f37cf1();
+        dac_load();
         goto navevaluate;
     }
     if (nav == 0) {
@@ -5023,7 +5023,7 @@ merged:
     s354 = 0;
     w88b10 = 1;
     fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 0, (int)gp);
-    f37cf1();
+    dac_load();
 navevaluate:
     if (up) {
         v88bb6++;
@@ -5038,7 +5038,7 @@ navevaluate:
     if (nav != 0) {
         w88b1e = v88bb6 * 3 + 0xe6;
         fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 1, (int)gp);
-        f37cf1();
+        dac_load();
     }
     if (v88cec == 0)
         goto mainloop;
@@ -5053,11 +5053,11 @@ joyopen:
     fn_182d0(pal, v88bb6 * 3 + 0xe6, 1, 1, (int)gp);
     s364 = 0;
     w88b10 = 1;
-    f37cf1();
+    dac_load();
     w88b1e = v88b88 + 4;
     fn_182d0(pal, v88b88 + 4, 1, 1, (int)gp);
     w88b10 = 1;
-    f37cf1();
+    dac_load();
     wait_release(0);
 joyloop:
     ticks = 0;
@@ -5066,7 +5066,7 @@ joyloop:
     v7d8a4 = v7d8ac;
     ticks2 = 0;
     ctl_setup(0);
-    f377ae();
+    buttons_poll();
     joy_clear_y();
     if (v88cce)
         joy88b40 = 1;
@@ -5083,7 +5083,7 @@ joyloop:
     w88b1e = v88b88 + 4;
     fn_182d0(pal, 4 + v88b88, 1, 0, (int)gp);
     w88b10 = 1;
-    f37cf1();
+    dac_load();
     goto mainloop;
 
 joynav:                               /* 0x18f8a, reached only from the wait above (it was
@@ -5101,7 +5101,7 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
         s354 = 0;
         w88b10 = 1;
         palptr = pal;
-        f37cf1();
+        dac_load();
     }
     up = 0;
     down = 0;
@@ -5124,7 +5124,7 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
     w88b1e = v88b88 + 4;
     fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
     w88b10 = 1;
-    f37cf1();
+    dac_load();
     if (down) {
         v88b88--;
         if (v88b88 < 1)
@@ -5132,7 +5132,7 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
         w88b1e = v88b88 + 4;
         fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
         w88b10 = 1;
-        f37cf1();
+        dac_load();
     }
     if (up) {
         ++v88b88;
@@ -5141,7 +5141,7 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
         w88b1e = v88b88 + 4;
         fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
         w88b10 = 1;
-        f37cf1();
+        dac_load();
     }
     goto joyloop;
 
@@ -5157,7 +5157,7 @@ joyretry:
     palptr = pal;
     fn_182d0(pal, v88b88 + 4, 1, 0, (int)gp);
     w88b10 = 1;
-    f37cf1();
+    dac_load();
     goto retry;
 }
 
@@ -5173,7 +5173,7 @@ joyretry:
    path, which returns without them. The wait at 0x199c7 is wait_or_key's body, which
    the game has inline here (no call to 0x14c7c anywhere in this function).
    behaviour pass (iter 59, nmrefs items): every item is SAME-shape, no bug. (i) the `game more`
-   set ctl_setup, f377ae, v7d8ac, v7d8a4, v7b6dc x2, v7b6dd and one joy88b40 store: the game
+   set ctl_setup, buttons_poll, v7d8ac, v7d8a4, v7b6dc x2, v7b6dd and one joy88b40 store: the game
    duplicates that whole prologue-of-the-input-block in both arms (netgame == 0 at 0x19686, after
    `cmp netgame,0; jne 0x19733`, and netgame != 0 at 0x19733), we hoisted it to one copy above the
    `if (netgame == 0)` (src/ww.c:5180-5184), so each arm still runs it once; the arms' bodies agree line by line
@@ -5193,7 +5193,7 @@ joyretry:
    (c) i lands in
    EDI and idx in a stack slot for us (SI/DI in the game), so the flash-toggle slot
    encodings at 0x19a19 differ; (d) the telldat/datsize/seekdat/readdat expression at
-   0x194bc accumulates in EAX in the game and in EDX for us; (e) gone since iter 36 (`void f375cd(void)`,
+   0x194bc accumulates in EAX in the game and in EDX for us; (e) gone since iter 36 (`void pcx_blit(void)`,
    the DX save of pal_a). Blocks that do reproduce the game's bytes: the three message
    copies, the palette copy loops, the fn_182d0 flash loops, the input blocks for
    netgame 0/1/2, the net_key/v7ecc4 block, the two error/escape blocks and the two
@@ -5205,8 +5205,8 @@ extern char *pal7d848;
 extern short v88c96;
 extern char key88cd2, key88cdb;
 void netkeys_pack(void);
-void f377ae(void);
-void f37cf1(void);
+void buttons_poll(void);
+void dac_load(void);
 
 void fn_193a8(void)
 {
@@ -5242,10 +5242,10 @@ void fn_193a8(void)
         short fs;
         p7d714 = p6a980;
         fs = pal_a;
-        f375cd();
+        pcx_blit();
         pal_a = fs;
     }
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -5283,7 +5283,7 @@ mainloop:
     }
     v7d8a4 = v7d8ac;
     ctl_setup(0);
-    f377ae();
+    buttons_poll();
     if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
         joy88b40 = 0;
     if (netgame == 0) {
@@ -5377,32 +5377,32 @@ joined:
             fn_182d0(pal, idx, 1, 0, (int)pal7d848);
             flash = 1;
         }
-        f37cf1();
+        dac_load();
         i = 0;
     }
     if (key88cd5) {
         fn_182d0(pal, idx, 1, 0, (int)pal7d848);
         flash = 0;
-        f37cf1();
+        dac_load();
         v88c96--;
         i = 0;
         if (v88c96 < 6)
             v88c96 = 0xb;
         fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
         w88b1e = v88c96 - 1;
-        f37cf1();
+        dac_load();
     }
     if (key88cdd) {
         fn_182d0(pal, idx, 1, 0, (int)pal7d848);
         flash = 0;
-        f37cf1();
+        dac_load();
         v88c96++;
         i = 0;
         if (v88c96 > 0xb)
             v88c96 = 6;
         fn_182d0(pal, v88c96 - 1, 1, 1, (int)pal7d848);
         w88b1e = v88c96 - 1;
-        f37cf1();
+        dac_load();
     }
     if (joy88b40) {
         voice_play(0x12);
@@ -5740,8 +5740,8 @@ void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a c
  * flip), the game's `test ax,ax` after its own word store (store->load forwarding), and `short stage` for
  * the `switch (stage - 1)` subject (game `cmp ax,3` 0x1bba6): 476 -> 483.
  * iter 60 nmrefs pass - two BUGs, both invisible to every row count: (1) the block at 0x1adf0-0x1ae5d
- * draws the selection box - `spr_w = 0x1c` (0x1ae4f) and `call drawsprite` (0x1ae5d) after the sprptr
- * store, which our C never had (nmrefs' `game more drawsprite / spr_w`); (2) the caption goes to
+ * draws the selection box - `spr_w = 0x1c` (0x1ae4f) and `call spr_draw` (0x1ae5d) after the sprptr
+ * store, which our C never had (nmrefs' `game more spr_draw / spr_w`); (2) the caption goes to
  * print_at(capx, capy, buf1, 0): 0x1a5c6 `movsx eax,cx`, cx = the centred (0x140 - 8*strlen(buf1))/2
  * computed at 0x1a456-0x1a46b and kept live by `mov ecx,eax` 0x1a4a9 - our C passed x2e, so WCC
  * dropped the whole division. Rows 476 -> 433 (6732 vs the game's 6861), and our frame is now the
@@ -5751,7 +5751,7 @@ void fn_1c0f4(char *buf);         /* 0x1c0f4: the F1 controls screen, arg1 = a c
  * (ours) are the ents byte-offset bounds of the same 4- and 7-iteration loops (0x1aa70 `cmp eax,0x24`
  * jg -> 4 records, 0x1af8a `cmp eax,0x60` jne -> 7); the one extra `in ents` is the game's `cmp`
  * after its `inc` (0x1aa59) where 9.5b reuses the flags of its own add; the two extra joy88b46 are the
- * dead zero store 0x1ab34 (f377ae 0x377e0 writes it, then 0x1ab55 overwrites it) and the store->load
+ * dead zero store 0x1ab34 (buttons_poll 0x377e0 writes it, then 0x1ab55 overwrites it) and the store->load
  * re-read 0x1ad23; our extra v88b7e/twoplayer touches and the missing v88cef touches are the
  * documented byte-mask block (0x1ac8c-0x1ad1d).
  * iter 67 hand-checked the 8 switch-table arms of jt_1a360 (0x1a360, arms at 0x1b7d7..0x1bc55) with
@@ -5844,7 +5844,7 @@ void cars_menu(void)
 blink:
     v7ea70 = ticks;
     pal_c = pal_a;
-    setpalette();
+    page_copy();
     if (ents[0].frame >= 2) {                   /* 0x1a657: nothing is drawn before frame 2 */
         for (i = 0; i < 8; i++) {
             spr_x = ents[i].x;
@@ -5854,17 +5854,17 @@ blink:
             sprptr = faces[ents[i].id].img[0];
             if (carstat[i] != 1)
                 sprptr += 0x10a0;               /* the frame-10 variant (0x1a6b8) */
-            drawsprite();
+            spr_draw();
         }
         spr_x = ents[8].x;
         spr_y = ents[8].y;
         spr_h = 0x26;
         spr_w = 0x1c;
         sprptr = sp6a878[pbase];
-        drawsprite();
+        spr_draw();
     }
     ents_draw(9);
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -5914,7 +5914,7 @@ nameframe:
     v7ea70 = ticks;
     car = find12(curgx, curgy);
     pal_c = pal_a;
-    setpalette();
+    page_copy();
     if (longwait == 0) {
         v7d878 = 0;
         p7d838 = tab6e5b0[cd];
@@ -5937,9 +5937,9 @@ nameframe:
     spr_w = 0x1c;
     spr_y = ents[8].y;
     sprptr = sp6a878[pbase];
-    drawsprite();
+    spr_draw();
     ents_show(-1, 8, 0, 0, 0);
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -5993,7 +5993,7 @@ input:
         v7d8a4 = v7d8ac;
         n = 0;
         ctl_setup(n);
-        f377ae();
+        buttons_poll();
         joy88b46 = (key88cd0 == 0x3b);          /* F1 on the local keyboard (0x1ab47) */
         if (joy88b46 != 0) {
             if (v88b7e == 0 && netgame != 1)
@@ -6052,21 +6052,21 @@ input:
     if (move == 0 && slide_up == 0 && slide_dn == 0)    /* 0x1ad99 */
         car = find12(curgx, curgy);
     pal_c = pal_a;
-    setpalette();
+    page_copy();
     ents_show(-1, 8, 0, 0, 0);
     spr_x = boxx;
     spr_h = 0x26;                 /* 0x1ae3f */
     spr_w = 0x1c;                 /* 0x1ae4f */
     spr_y = boxy;
     sprptr = sp6a878[pbase + flip];
-    drawsprite();                 /* 0x1ae5d: the selection box (iter 60, found by nmrefs' drawsprite/spr_w count) */
+    spr_draw();                 /* 0x1ae5d: the selection box (iter 60, found by nmrefs' spr_draw/spr_w count) */
     pname_desc(car);
     y = yrow138;
     for (j = 0; j < 2; j++) {                   /* the same two rows, unscaled (0x1ae75) */
         wtext(col0x - 1, y, &mnames[0x3c * j], 0);
         y += 0xc;
     }
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -6136,7 +6136,7 @@ input:
             pal_c = 0xbb80;
             pal_a = pal_d;
             pal_b = pal_d;
-            setpalette();
+            page_copy();
             msgbox("REMOTE IS VIEWING HELP", 0);
             v88cec = 0;
             key88cc3 = 0;
@@ -6188,7 +6188,7 @@ input:
             pal_b = 0xbb80;
             pal_a = pal_d;
             pal_c = pal_d;
-            setpalette();
+            page_copy();
             pal_b = save_b;
             pal_c = save_c;
             pal_a = save_a;
@@ -6220,7 +6220,7 @@ input:
         v7d8a4 = v7d8ac;
         n = v88b7e;
         ctl_setup(n);
-        f377ae();
+        buttons_poll();
         if ((twoplayer != 0 || splitscreen != 0) && v88b7e == 1) {
             if (cfg7712c == 0)
                 joy88b40 = joy88b44;
@@ -6401,13 +6401,13 @@ confirm:                                    /* 0x1b939: the choice is locked in 
 animframe:
     v7ea70 = ticks;
     pal_c = pal_a;
-    setpalette();
+    page_copy();
     spr_x = boxx;
     spr_h = 0x26;
     spr_w = 0x1c;
     spr_y = boxy;
     sprptr = sp6a878[pbase + add158];
-    drawsprite();
+    spr_draw();
     pname_desc(car);
     y = yrow13c;
     for (j = 0; j < 2; j++) {
@@ -6421,8 +6421,8 @@ animframe:
     spr_h = 0x26;
     spr_w = 0x1c;
     sprptr = faces[ents[car].id].img[ents[car].frame];
-    drawsprite();
-    f37de0();
+    spr_draw();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -6775,7 +6775,7 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
     v88ce8 = 0x26;
     vals[2] = pal_d;                                    /* 0x1c167 */
     pal_a = 0xbb80;
-    f371e4();                                           /* 0x1c17e */
+    box_draw();                                           /* 0x1c17e */
     if (v7ee4a != 0) {                                  /* 0x1c183 */
         if (cfg77128w != 0)
             vals[0] = 2;                                /* 0x1c197 */
@@ -6873,7 +6873,7 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
     x = (0x140 - (int)strlen(rows[10]) * 8) / 2;        /* 0x1c76c-0x1c78b */
     spr_x = x;
     print_at(x, spr_y, rows[10], 0);                    /* 0x1c7a4 */
-    waitretrace();                                      /* 0x1c7a9 */
+    page_show();                                      /* 0x1c7a9 */
     if (key88ccd) {                                     /* 0x1c7ae */
         screenshot();                                   /* 0x1c7b7 */
         if (key88ccd)
@@ -6896,7 +6896,7 @@ void fn_1c0f4(char *buf)                /* arg1 = eax (0x1c100: mov ebp,eax) */
             ;
     }
     pal_a = vals[2];                                    /* 0x1c833-0x1c83c */
-    waitretrace();                                      /* 0x1c840 */
+    page_show();                                      /* 0x1c840 */
     if (key88ccd) {                                     /* 0x1c845 */
         screenshot();                                   /* 0x1c84e */
         if (key88ccd)
@@ -6921,7 +6921,7 @@ void fn_1c88c(char *s, int flag)        /* arg1 = eax, arg2 = edx */
         pal_c = 0xbb80;
         pal_a = pal_d;                                  /* 0x1c8c9 */
         pal_b = pal_d;
-        setpalette();                                   /* 0x1c8d5 */
+        page_copy();                                   /* 0x1c8d5 */
     }
     msgbox(s, 0);                                       /* 0x1c8de */
     if (flag) {                                         /* 0x1c8e3 */
@@ -6932,7 +6932,7 @@ void fn_1c88c(char *s, int flag)        /* arg1 = eax, arg2 = edx */
         pal_b = 0xbb80;                                 /* 0x1c917-0x1c92e */
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();                                   /* 0x1c935 */
+        page_copy();                                   /* 0x1c935 */
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -6979,14 +6979,14 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
 
     pal_c = 0x7d00;                                 /* 0x1cb55 */
     pal_b = pal_a;
-    setpalette();                                   /* 0x1cb6c */
+    page_copy();                                   /* 0x1cb6c */
     xc = center_x(strlen(heading) * 11);            /* 0x1cb74-0x1cb8c (both inlined) */
     wtext(xc, 0xa, heading, 0);                     /* 0x1cba5 */
     strcpy(prompt, "PLEASE ENTER NAME..");          /* 0x1cbbf, the literal 0x60d8c */
     y = 0x60;
     x = 0xa;
     print_at(x, y, prompt, 0);                      /* 0x1cbce */
-    f37de0();                                       /* 0x1cbd3 */
+    page_show();                                       /* 0x1cbd3 */
     if (key88ccd) {                                 /* 0x1cbd8 */
         screenshot();                               /* 0x1cbe1 */
         if (key88ccd)
@@ -7017,17 +7017,17 @@ void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, a
     i = 0;                                          /* EDI (0x1ccb8) */
     for (;;) {
         pal_c = pal_a;                              /* 0x1ccd5 */
-        setpalette();                               /* 0x1ccdf */
+        page_copy();                               /* 0x1ccdf */
         sprptr = gn7eb2c;                           /* 0x1cce4 */
         spr_h = 0xf;
         spr_x = cx;
         spr_w = 0xd;
         spr_y = cy;
-        drawsprite();                               /* 0x1cd16 */
+        spr_draw();                               /* 0x1cd16 */
         wtext(xc, 0xa, heading, 0);                 /* 0x1cd20 */
         print_at(x, y, prompt, 0);                  /* 0x1cd30 */
         print_at(nx, y, name, 0);                   /* 0x1cd40 */
-        f37de0();                                   /* 0x1cd45 */
+        page_show();                                   /* 0x1cd45 */
         if (key88ccd) {                             /* 0x1cd4a */
             screenshot();                           /* 0x1cd53 */
             if (key88ccd)
@@ -7100,7 +7100,7 @@ struct score {                        /* 0x2e = 46 bytes, 24 per row of 0x450 */
  *    bound is recomputed with movsx+inc (0x1d01e-0x1d024); ours falls into the body and compares
  *    against a live register. The do/while form costs 157 diffs and the `for (;;)` + break form 113,
  *    this plain `for (k = 3; k > j; k--)` 97.
- * 5. (fixed iter 36: the 0x1ce57 `mov dx` is a short save of pal_a around `void f375cd(void)`; the
+ * 5. (fixed iter 36: the 0x1ce57 `mov dx` is a short save of pal_a around `void pcx_blit(void)`; the
  *    switch cases at 0x1cea6-0x1cf2d re-colour with it, 98 -> 118 rows.) */
 
 void scores_screen(void)
@@ -7131,7 +7131,7 @@ void scores_screen(void)
         short fs;
         p7d714 = p6a980;              /* 0x1ce52-0x1ce5e */
         fs = pal_a;                   /* 0x1ce57 mov dx */
-        f375cd();
+        pcx_blit();
         pal_a = fs;                   /* 0x1ce6c */
     }
     enter_name(name, "", 0xb);        /* 0x1ce68-0x1ce78: the empty heading is 0x600ac */
@@ -7335,7 +7335,7 @@ void trial_records_menu(void)
  *    (`cmp word [esp+0x94],N`, 0x1d875-0x1d88f); ours keeps it in BX (frame 0x98, `cmp bx,N`). The
  *    23 bytes are those encodings. A K&R definition (short or int), a short local copy, an int
  *    copy, casts and moving the declarations do not spill it.
- * 2. (fixed iter 36: 0x1d73e is a short save of pal_a around `void f375cd(void)`; now 29 rows, the
+ * 2. (fixed iter 36: 0x1d73e is a short save of pal_a around `void pcx_blit(void)`; now 29 rows, the
  *    rest is cause 1 and the registers of the stamp row at 0x1d7f7.)
  * Cause 1 was probed again (iter 32, 11 spellings in two probe compiles, control 17 rows): a separate
  * local copy of `which` assigned at that statement and used for the msgbox row and the switch - short,
@@ -7359,13 +7359,13 @@ void fn_1d704(short which, int row)
         short fs;
         p7d714 = p6a980;
         fs = pal_a;
-        f375cd();            /* 0x1d739-0x1d758 */
+        pcx_blit();            /* 0x1d739-0x1d758 */
         pal_a = fs;
     }
     pal_c = 0x7d00;
     pal_b = pal_a;
-    setpalette();                             /* 0x1d766 */
-    f37de0();
+    page_copy();                             /* 0x1d766 */
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -7378,7 +7378,7 @@ void fn_1d704(short which, int row)
     wait_release(0);                                /* 0x1d7b0 */
     pal_b = 0x7d00;
     pal_c = pal_a;
-    setpalette();                             /* 0x1d7d1 */
+    page_copy();                             /* 0x1d7d1 */
     if (v7ecb8 == 1)                          /* 0x1d7d6 */
         strcat(cls[which - 1], " 12 HP");
     else
@@ -7400,7 +7400,7 @@ void fn_1d704(short which, int row)
         spr_w = 0x1c;
         spr_x = 0x7a;
         spr_y = y - 0xc;
-        drawsprite();                         /* 0x1d92f */
+        spr_draw();                         /* 0x1d92f */
         spr_x += 0x30;
         print_at(spr_x, ystamp, v7d8a8 + 6, 0);   /* the stamp, 0x1d94c */
         sprptr = sp7c800[(row - (v7ecb4 + 1)) * 2];
@@ -7408,7 +7408,7 @@ void fn_1d704(short which, int row)
         spr_w = 0x17;
         spr_x += 8;
         spr_y = y - 7;
-        drawsprite();                         /* 0x1d98e */
+        spr_draw();                         /* 0x1d98e */
         if (i == 1) {
             sx = spr_x;
             print_at(sx, ypts, "POINTS", 0);  /* 0x1d9b6 */
@@ -7428,7 +7428,7 @@ void fn_1d704(short which, int row)
         y += 0x1a;
         v7d8a8 += 0x2e;                       /* 0x1da3c */
     }
-    f37de0();                                 /* 0x1da4d */
+    page_show();                                 /* 0x1da4d */
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -7521,14 +7521,14 @@ int wait_connect(void)
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
     msgbox("WAITING FOR CONNECT", 0);
     ok = com_waitfor("CONNECT");      /* 0x1dcf6 */
     if (ok) {
         pal_b = 48000;                /* fn_1c0ac, inline */
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();
+        page_copy();
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -7538,7 +7538,7 @@ int wait_connect(void)
         pal_c = 48000;
         pal_a = pal_d;
         pal_b = pal_d;
-        setpalette();
+        page_copy();
         msgbox("CONNECTED", 0);       /* 0x1dd86 */
         ticks = 0;
         ticks2 = 0;
@@ -7551,7 +7551,7 @@ int wait_connect(void)
         pal_b = 48000;                /* fn_1c0ac, inline */
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();
+        page_copy();
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -7561,7 +7561,7 @@ int wait_connect(void)
         pal_b = 48000;                /* fn_1c0ac, inline */
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();
+        page_copy();
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -7609,7 +7609,7 @@ int dial(void)
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
     msgbox(msg, 0);                   /* 0x1dfbd */
     while (com_getc_x() != -1)
         ;
@@ -7619,7 +7619,7 @@ int dial(void)
     pal_b = 48000;                    /* fn_1c0ac, inline */
     pal_a = pal_d;
     pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;
@@ -7647,14 +7647,14 @@ int answer_call(void)
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
     msgbox("WAITING FOR CALL....", 0);
     while (1) {                       /* `for (;;)` + `if (x)` costs one instruction */
         if (com_waitfor("RING") != 0) {   /* 0x1e14a; the failed wait goes to 0x1e234, after the return */
         pal_b = 48000;                    /* fn_1c0ac, inline */
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();
+        page_copy();
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -7664,13 +7664,13 @@ int answer_call(void)
         pal_c = 48000;
         pal_a = pal_d;
         pal_b = pal_d;
-        setpalette();
+        page_copy();
         msgbox("ANSWERING CALL...", 0);   /* 0x1e1da */
         sendstr("ATA");
         pal_b = 48000;                    /* fn_1c0ac, inline */
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();
+        page_copy();
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -7682,7 +7682,7 @@ int answer_call(void)
     pal_b = 48000;                    /* fn_1c0ac, inline (0x1e241) */
     pal_a = pal_d;
     pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;
@@ -7708,7 +7708,7 @@ void fn_1e2cc(void)
  * 1. the loop top (0x1e4d2): the game loads v7ec60 and stores netvoices/v7ec90/net88c22/myplayer/
  *    w88bce before `nlaps = 10; v88b84 = 0x59`; ours emits those two constant stores first. All 28
  *    source positions of the pair, in both orders, give the same code (.work/p14/gdemo.py).
- * 2./3. (fixed iter 36: f375cd is pushal..popal with no arguments; `void f375cd(void)` and a
+ * 2./3. (fixed iter 36: pcx_blit is pushal..popal with no arguments; `void pcx_blit(void)` and a
  *    short save of pal_a give the game's `mov dx,[pal_a]` 0x1e472 and drop the `mov edx,ebx`.)
  *    14 rows left, all cause 1. */
 /* ---- 0x1e2e4, 1013 bytes: the demo races. mode 3 when the menus sit idle (v7ed0c >= 500, callers
@@ -7768,7 +7768,7 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
         short fs;
         p7d714 = p6a978;
         fs = pal_a;
-        f375cd();    /* 0x1e49d */
+        pcx_blit();    /* 0x1e49d */
         pal_a = fs;
     }
     v7ecb4 = 0;
@@ -7825,12 +7825,12 @@ void demo_mode(int mode)              /* arg1 = eax, kept in esp+0x28 */
         v88b4a = 0;
         pal_a = 0;
         p7d714 = p6a978;
-        f375cd();                     /* 0x1e64d */
+        pcx_blit();                     /* 0x1e64d */
         pal_c = 0x3e80;
         pal_a = 0;
         pal_b = 0;
-        setpalette();
-        f37de0();
+        page_copy();
+        page_show();
         if (key88ccd) {
             screenshot();
             while (key88ccd)
@@ -7884,14 +7884,14 @@ void fn_1e6dc(void)
  *    `ticks - v7ea70` loop (0x1a9f7) matches, but there no call sits in the loop. Tried: volatile
  *    v7e724 (6 blocks), `for (;;)` + break, `0xe > ...`, `ticks < v7e724 + 0xe` and a leading
  *    `while` (all worse or equal).
- * 2. (fixed iter 36: 0x1e816 is a short save of pal_a around `void f375cd(void)`; the slot
+ * 2. (fixed iter 36: 0x1e816 is a short save of pal_a around `void pcx_blit(void)`; the slot
  *    permutation re-shuffled with it, 53 -> 64 rows; `int fs` at function level 57 but `movzx`.)
  * The levers that did matter: `k = kind[i]` read first and compared as a register, `spr_h = vol * 4`
  * before the other three sprite stores, `ys[i]` before `spr_x = 10`, `vol < 0` (not < 1) and
  * `spr_x + (spr_h - 2)`. */
 /* ---- 0x1e760, 1922 bytes: the SOUND VOLUMES screen (caller 0x21198 in fn_1f858). Rows are indexed
  * from 1 like mrows: MUSIC when musicready, SOUND FX and ENGINE FX when sfxsoft, kind[] 1/2/3.
- * Each row's volume is a bar of (vol / 5) clamped to 1..0x33, times 4 pixels (f371e4); a blinking
+ * Each row's volume is a bar of (vol / 5) clamped to 1..0x33, times 4 pixels (box_draw); a blinking
  * cursor (gn7eae4) marks the selected row while fn_1e6dc keeps the test sample looping. Left and
  * right change the volume by 5 within 5..255 and apply it at once; up and down move the row; ESC
  * (key88cd0) saves the config. */
@@ -7932,7 +7932,7 @@ void volume_menu(void)
         short fs;
         p7d714 = p6a978;
         fs = pal_a;
-        f375cd();    /* 0x1e824 */
+        pcx_blit();    /* 0x1e824 */
         pal_a = fs;
     }
     n = 0;
@@ -7971,7 +7971,7 @@ void volume_menu(void)
     }
     pal_c = 0xbb80;                   /* 0x1ea65 */
     pal_b = pal_a;
-    setpalette();
+    page_copy();
     sel = 1;
     ticks2 = 0;
     v7eaf8 = -1;
@@ -7986,7 +7986,7 @@ void volume_menu(void)
     for (;;) {
         v7e724 = ticks;               /* 0x1eada */
         pal_c = pal_a;
-        setpalette();
+        page_copy();
         for (i = 1; i <= n; i++) {    /* 0x1eafa-0x1ebeb */
             k = kind[i];
             spr_x = textx;
@@ -8006,7 +8006,7 @@ void volume_menu(void)
             spr_w = 5;
             v88ce9 = 0x2c;
             v88ce8 = 0x26;
-            f371e4();                 /* 0x1ebc2: the bar */
+            box_draw();                 /* 0x1ebc2: the bar */
             if (i == sel)
                 barx = (spr_h - 2) + spr_x;
         }
@@ -8021,8 +8021,8 @@ void volume_menu(void)
         spr_h = 0xc;
         spr_w = 0xd;
         sprptr = gn7eae4;
-        drawsprite();                 /* 0x1ec64 */
-        f37de0();
+        spr_draw();                 /* 0x1ec64 */
+        page_show();
         if (key88ccd) {
             screenshot();
             while (key88ccd)
@@ -8041,7 +8041,7 @@ void volume_menu(void)
             break;
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();                     /* 0x1ecf0 */
+        buttons_poll();                     /* 0x1ecf0 */
         changed = 0;
         switch (kind[sel]) {          /* 0x1ecfe */
         case 1: vol = musicvol; break;
@@ -8140,8 +8140,8 @@ void credits_page(int n, int first)
 /* differs: near miss, 1164 bytes like the game since iter 36, 32 rows, two causes:
  * 1. slots: the game has dir at esp+0x08 and y at esp+0x10, ours the other way round (QUESTIONS 9/10
  *    class); 48 declaration orders tried, `dir, page, first, y` is the closest (52 -> 47 scored).
- *    (The `mov edx,1` at 0x1f01f and the reload at 0x1f414 went with `void f375cd(void)`, iter 36.)
- * 2. scheduling around setpalette: the game computes `imul edi,esi,0x98` (face) into the dead save
+ *    (The `mov edx,1` at 0x1f01f and the reload at 0x1f414 went with `void pcx_blit(void)`, iter 36.)
+ * 2. scheduling around page_copy: the game computes `imul edi,esi,0x98` (face) into the dead save
  *    register before the call and stores pal_b last (0x1f0d0-0x1f10e). Tried iter 36: all 6 orders of
  *    the pal_a/pal_c/pal_b stores (no change), `char **img = faces[face].img` before the call (44),
  *    `struct face *fp` (44), save reused as `face * 0x98` (75).
@@ -8165,11 +8165,11 @@ void credits_screen(void)
     v88b4a = 0;
     pal_a = 0x7d00;
     p7d714 = p6a980;
-    f375cd();
+    pcx_blit();
     pal_a = 0xbb80;
     pal_b = 0x7d00;
     pal_c = 0xbb80;
-    setpalette();
+    page_copy();
     face = 0;
     credits_page(12, first);          /* 0x1f02b */
     pal_a = save;
@@ -8191,20 +8191,20 @@ void credits_screen(void)
             spr_y = cboxes[k].y;
             spr_w = 8;
             sprptr = p6a97c;
-            blit372c7();              /* 0x1f0bd */
+            spr_grab();              /* 0x1f0bd */
             pal_a = 0x7d00;
-            f373ee();
+            spr_draw_opaque();
             pal_a = save;
             pal_c = save;
             pal_b = 0x7d00;
-            setpalette();
+            page_copy();
             spr_h = 0x26;
             spr_w = 0x1c;
             spr_y = y;
             sprptr = faces[face].img[frame];
             spr_x = x;
-            drawsprite();             /* 0x1f121 */
-            f37de0();
+            spr_draw();             /* 0x1f121 */
+            page_show();
             if (key88ccd) {
                 screenshot();
                 while (key88ccd)
@@ -8261,14 +8261,14 @@ void credits_screen(void)
             ticks = 0;                /* 0x1f288 */
             pal_b = 0xbb80;
             pal_c = pal_a;
-            setpalette();
+            page_copy();
             spr_h = 0x26;
             spr_w = 0x1c;
             spr_y = y;
             sprptr = faces[face].img[frame];
             spr_x = x;
-            drawsprite();
-            f37de0();
+            spr_draw();
+            page_show();
             if (key88ccd) {
                 screenshot();
                 while (key88ccd)
@@ -8288,7 +8288,7 @@ void credits_screen(void)
             joy88b44 = 0;
             v7d8a4 = v7d8ac;
             joy88b46 = 0;
-            f377ae();
+            buttons_poll();
             if (v88cce || joy88b40 || joy88b42 || joy88b44 || joy88b46)
                 break;
             if (key88cd0 == 1)
@@ -8301,11 +8301,11 @@ void credits_screen(void)
         save = pal_a;
         pal_a = 0x7d00;
         p7d714 = p6a980;
-        f375cd();
+        pcx_blit();
         pal_a = 0xbb80;
         pal_b = 0x7d00;
         pal_c = 0xbb80;
-        setpalette();
+        page_copy();
         page++;
         credits_page(12, first);      /* 0x1f41c */
         pal_a = save;
@@ -8441,7 +8441,7 @@ void main_menu_names(void)
  * differs (near-miss, 1265 vs 1265 insns, 58 diff blocks; variants.py 360 instrdiffs, most of them
  * one shifted alignment): (a) the game keeps the item count 9 in a short local in EDX (`mov edx,9`
  * before ents_init, `movsx eax,dx` at the three menu(9) calls) and saves pal_a in the same DX around
- * every f375cd fade; our build folds the 9 into `mov eax,9` and saves pal_a in BX (8 fade sites). One
+ * every pcx_blit fade; our build folds the 9 into `mov eax,9` and saves pal_a in BX (8 fade sites). One
  * shared local m, separate locals, and six declaration orders (M00-M05) all fold it; (b) case 9's
  * `return` is engines_menu's epilogue in the game (jump table entry 0x16978), our build emits its own
  * (also with `goto leave` and with main_menu moved to its address position in the file);
@@ -8479,10 +8479,10 @@ void faces_reset(void);
 void duckfame_write(void);
 short net_sync(void);
 
-#define FADE() { m = pal_a; pal_a = 0x7d00; p7d714 = p6a978; f375cd(); pal_a = m; }
+#define FADE() { m = pal_a; pal_a = 0x7d00; p7d714 = p6a978; pcx_blit(); pal_a = m; }
 #define WAIT300() { ticks = 0; ticks2 = 0; while (ticks <= 0x12c) ; }
-#define PALSAVE() { save_a = pal_a; save_b = pal_b; save_c = pal_c; pal_c = 48000; pal_a = pal_d; pal_b = pal_d; setpalette(); }
-#define PALREST() { pal_b = 48000; pal_a = pal_d; pal_c = pal_d; setpalette(); pal_b = save_b; pal_c = save_c; pal_a = save_a; }
+#define PALSAVE() { save_a = pal_a; save_b = pal_b; save_c = pal_c; pal_c = 48000; pal_a = pal_d; pal_b = pal_d; page_copy(); }
+#define PALREST() { pal_b = 48000; pal_a = pal_d; pal_c = pal_d; page_copy(); pal_b = save_b; pal_c = save_c; pal_a = save_a; }
 
 void main_menu(void)
 {
@@ -9352,7 +9352,7 @@ int line_points(void)
 }
 
 /* ---- 0x216a0, 516 bytes: what the kart at (lx0 + v88b68, ly0 + v88b6a) hits (callers in 0x21de0).
- * f37b04 classifies the map point into v7e568: 10 on a kart whose f0a is clear sets f0a, clears f44
+ * surface_at classifies the map point into v7e568: 10 on a kart whose f0a is clear sets f0a, clears f44
  * (and the player's f5c and the kart's f5a when f44 was set), plays voice 12 and sets f0c/f10 = 8,
  * f0e = 0x28, v88bae = 4; 3 sets v88bae = 1. Otherwise a kart with f0a clear touches the first live
  * entity (f2 != -1) within Manhattan distance 13 (v88bae 2), else any other player whose f02 is not
@@ -9361,7 +9361,7 @@ int line_points(void)
 extern short v88b68, v88b6a, v88bae, nplayers;
 extern int v7d7a4, v7d7a8, v7e568;
 extern struct player *v7d800;
-void f37b04(void);
+void surface_at(void);
 
 void kart_hit(void)
 {
@@ -9369,7 +9369,7 @@ void kart_hit(void)
 
     v7d7a4 = lx0 + v88b68;
     v7d7a8 = ly0 + v88b6a;
-    f37b04();
+    surface_at();
     if (v7e568 == 10 && curkart->f0a == 0) {
         if (curkart->f44 != 0) {
             curkart->f44 = 0;
@@ -9468,7 +9468,7 @@ void shot_hit(void)
 
     v7d7a4 = lx0;
     v7d7a8 = ly0;
-    f37b04();
+    surface_at();
     if (v7e568 == 3) {
         v88bae = 1;
         return;
@@ -9661,15 +9661,15 @@ void kart_line(void)
     kart_hit();
 }
 
-/* ---- 0x21ee4, 29 bytes: plots the point (lx0, ly0) with f37bf0; no caller in WW.EXE (dead code). The
+/* ---- 0x21ee4, 29 bytes: plots the point (lx0, ly0) with pixel_plot; no caller in WW.EXE (dead code). The
  * call is a tail jump. */
-void f37bf0(void);
+void pixel_plot(void);
 
 void line_plot(void)
 {
     spr_x = lx0;
     spr_y = ly0;
-    f37bf0();
+    pixel_plot();
 }
 
 /* differs (near-miss, 4 rows / 2 real): the two `err` initialisations. The game emits
@@ -9688,7 +9688,7 @@ void line_plot(void)
  * swaps (dx is then the old dy, the same value) 4 -> 2; the row left is the movsx scheduled before
  * the swap moves in the game, after the first in ours (8 placements and swap orders probed). */
 /* ---- 0x21f04, 303 bytes: draws the Bresenham line (lx0, ly0) -> (lx1, ly1) point by point with
- * f37bf0, the far end included (callers 0x22182, 0x221b2 in 0x22034). kart_line's walk with
+ * pixel_plot, the far end included (callers 0x22182, 0x221b2 in 0x22034). kart_line's walk with
  * line_plot's body written out. */
 void line_draw(void)
 {
@@ -9711,7 +9711,7 @@ void line_draw(void)
         while (lx0 != lx1) {
             spr_x = lx0;
             spr_y = ly0;
-            f37bf0();
+            pixel_plot();
             err += dy;
             if (err > dx) {
                 ly0 += sy;
@@ -9730,7 +9730,7 @@ void line_draw(void)
         while (ly0 != ly1) {
             spr_x = lx0;
             spr_y = ly0;
-            f37bf0();
+            pixel_plot();
             err += dy;
             if (err > dx) {
                 lx0 += sy;
@@ -9741,7 +9741,7 @@ void line_draw(void)
     }
     spr_x = lx0;
     spr_y = ly0;
-    f37bf0();
+    pixel_plot();
 }
 
 /* ---- 0x22034, 505 bytes: the cracked-screen effect (caller 0x2fc75 in 0x2f794): v88ce9 = 20, the
@@ -9766,7 +9766,7 @@ void crack_draw(void)
     spr_h = 0x54;
     spr_w = 0x3e;
     sprptr = crackdata;
-    drawsprite();
+    spr_draw();
     for (i = 0; i < 7; i++) {
         lx0 = l[i][0];
         lx1 = l[i][1];
@@ -10464,9 +10464,9 @@ void pair_reset(void)
 }
 
 /* ---- 0x237e4, 2740 bytes: moves curkart for one frame (caller 0x297e8 in 0x290a0). The asm track
- * code works through globals: f283a4 sets the heading for v7d678, f37bb1 scales the vector
- * (v7d5f8, v7d5f4) by v7d608 into (v7d610, v7d620), f37b04 classifies the map point (v7d7a4, v7d7a8)
- * into v7e568, f37a21 maps the track pair at v7d690 to a point (v7d798/v7d79c, v7d7a4/v7d7a8).
+ * code works through globals: f283a4 sets the heading for v7d678, vec_scale scales the vector
+ * (v7d5f8, v7d5f4) by v7d608 into (v7d610, v7d620), surface_at classifies the map point (v7d7a4, v7d7a8)
+ * into v7e568, path_pt_scale maps the track pair at v7d690 to a point (v7d798/v7d79c, v7d7a4/v7d7a8).
  * The kart line from (v88b0a, v88b0e) by speed v88b94 goes through kart_line; a wall (v88bae 1)
  * bounces the heading by half a turn and probes both sides (v7e570/v7e56c, cleared together by
  * the inlined pair_reset when both or neither hit) to push the kart 0x12 track steps off the wall
@@ -10489,11 +10489,11 @@ extern short v7d610, v7d620, v88b94, v88bd8;
 extern struct surf surfs[];
 extern struct surf *v7d89c, *v7d8a0;
 void track_around(void);
-void f37bb1(void);
-void f37a21(void);
+void vec_scale(void);
+void path_pt_scale(void);
 void f24834(int side);
 
-#define VEC(a, b, n) { v7d5f8 = a; v7d608 = n; v7d5f4 = b; f37bb1(); }
+#define VEC(a, b, n) { v7d5f8 = a; v7d608 = n; v7d5f4 = b; vec_scale(); }
 
 void kart_move(void)
 {
@@ -10511,7 +10511,7 @@ void kart_move(void)
     lx0 = v88b0a;
     ly0 = v88b0e;
     v7d608 = v88b94;
-    f37bb1();
+    vec_scale();
     lx1 = lx0 + v7d610;
     v7e568 = 0;
     ly1 = ly0 + v7d620;
@@ -10551,14 +10551,14 @@ void kart_move(void)
         v7d7a4 = t + v7d610;
         u = v88b0e;
         v7d7a8 = u + v7d620;
-        f37b04();
+        surface_at();
         if (v7e568 == 3)
             v7e570 = 1;
         VEC(v7d618, v7d5e8, 0x7c);
         t = v88b0a;
         v7d7a4 = t + v7d610;
         v7d7a8 = v7d620 + v88b0e;
-        f37b04();
+        surface_at();
         if (v7e568 == 3)
             v7e56c = 1;
         if (hit == 1)
@@ -10598,7 +10598,7 @@ void kart_move(void)
         curkart->f42 = 0;
     } else {
         if (v88b92 > 0) {
-            f37a21();
+            path_pt_scale();
             v7d798 = v7d7a4;
             v7d79c = v7d7a8;
             if (curkart->f06 != 0)
@@ -10615,7 +10615,7 @@ void kart_move(void)
             v7d690 = (int *)(t + v7d6a0);
             v7d5f8 = *v7d690++;
             v7d5f4 = *v7d690--;
-            f37a21();
+            path_pt_scale();
             v7d768 = v7d798 - v7d7a4;
             v7d76c = v7d79c - v7d7a8;
             v7d798 = v7d7a4;
@@ -10629,7 +10629,7 @@ void kart_move(void)
                 curkart->f52 = 0;
         }
         if (v88b90 > 0) {
-            f37a21();
+            path_pt_scale();
             v7d798 = v7d7a4;
             v7d79c = v7d7a8;
             if (curkart->f06 != 0)
@@ -10645,7 +10645,7 @@ void kart_move(void)
             v7d690 = (int *)(v7d6a0 + curpos * 8);
             v7d5f8 = *v7d690++;
             v7d5f4 = *v7d690--;
-            f37a21();
+            path_pt_scale();
             v7d768 = v7d798 - v7d7a4;
             v7d76c = v7d79c - v7d7a8;
             v7d798 = v7d7a4;
@@ -10665,14 +10665,14 @@ void kart_move(void)
         v7d7a4 = v7d610 + v88b0a;
         t = v88b0e;
         v7d7a8 = t + v7d620;
-        f37b04();
+        surface_at();
         if (v7e568 == 3)
             v7e570 = 1;
         VEC(v7d618, v7d5e8, 0x7c);
         v7d7a4 = v7d610 + v88b0a;
         t = v88b0e;
         v7d7a8 = t + v7d620;
-        f37b04();
+        surface_at();
         if (v7e568 == 3)
             v7e56c = 1;
         if (hit == 1)
@@ -10714,10 +10714,10 @@ void kart_move(void)
     v7d608 = 0x7c;
     v7d5f8 = *v7d690++;
     v7d5f4 = *v7d690--;
-    f37bb1();
+    vec_scale();
     v7d7a4 = v88b0a + v7d610;
     v7d7a8 = v88b0e + v7d620;
-    f37b04();
+    surface_at();
     v88b68 = v7d7a4;
     v88b6a = v7d7a8;
     curkart->f56 = v7e568;
@@ -11084,7 +11084,7 @@ void rec_marker(void)
     spr_h = 0x1c;
     spr_w = 0xb;
     sprptr = gn7c528;
-    drawsprite();
+    spr_draw();
 }
 
 /* ---- 0x24afc, 208 bytes: draws a two-cell marker (13x18 frames of 0xea bytes) at (x+5, y+11) and
@@ -11121,9 +11121,9 @@ void marker_draw(short n, short y, short x, short frame, short mode)
         spr_x = x + 5;
         spr_y = y + 0xb;
         sprptr += frame * 0xea;
-        drawsprite();
+        spr_draw();
         spr_x += 0xb;
-        drawsprite();
+        spr_draw();
     }
 }
 
@@ -11190,9 +11190,9 @@ void kart_draw(void)
     if (curkart->f5a != 0 && curkart->f7e == 0) {
         if (curkart->f5a == 1) {
             if (curkart->f5c >= 2 && v88be0)
-                f37487();
+                spr_draw_scaled();
         } else if (v88be0)
-            f37487();
+            spr_draw_scaled();
         spr_h = 0x26;
         spr_w = 0x1c;
         spr_x = 0x8d;
@@ -11201,12 +11201,12 @@ void kart_draw(void)
             spr_y -= p2offset;
         sprptr = (char *)curkart->f60 + curkart->f5c * 0x428;
         if (v88be0)
-            drawsprite();
+            spr_draw();
         curkart->f5c++;
         if (curkart->f5c == 4)
             curkart->f5a = 0;
     } else if (v88be0)
-        f37487();
+        spr_draw_scaled();
     if (v88c9e != 0 && curkart->f7e == 0 && curkart->f44 == 0 && v88be0)
         rec_marker();
     if (curkart->f0a == 0 && curkart->f44 == 0 && curkart->f7e == 0) {
@@ -11248,7 +11248,7 @@ void kart_draw(void)
                 if (v88b7e && two)
                     spr_y -= p2offset;
                 if (v88be0)
-                    drawsprite();
+                    spr_draw();
             }
         } else {
             spr_x = CR->f04;
@@ -11285,9 +11285,9 @@ void kart_draw(void)
                     if (v88b7e && two)
                         spr_y -= p2offset;
                     if (v88c44 == 2 && v88be0) {
-                        drawsprite();
+                        spr_draw();
                         spr_x += 0x18;
-                        drawsprite();
+                        spr_draw();
                     }
                 } else {
                     spr_y = CR->f06 + 0x14;
@@ -11295,9 +11295,9 @@ void kart_draw(void)
                     if (v88b7e && two)
                         spr_y -= p2offset;
                     if (v88c44 == 2 && v88be0) {
-                        drawsprite();
+                        spr_draw();
                         spr_x += 0x1c;
-                        drawsprite();
+                        spr_draw();
                     }
                 }
             }
@@ -11331,7 +11331,7 @@ void kart_draw(void)
         spr_w = 9;
         sprptr = curkart->f4a;
         if (v88be0)
-            drawsprite();
+            spr_draw();
     }
     if (curkart->f0a == 3)
         curkart->f0a = 0;
@@ -11339,12 +11339,12 @@ void kart_draw(void)
 
 /* ---- 0x253d8, 506 bytes: draws the scene's sprite records (callers 0x1350e, 0x13617 in frame_draw;
  * 0x289e4 jumps here): v88be0 = draw flag of player v88b7e (v7eb80/v7eb82), bubble sort of records
- * 1..v88b78 by f10 through f36f8c (swaps *v7d88c and *v7d880), kart_bump, then each record: record
+ * 1..v88b78 by f10 through rec_swap (swaps *v7d88c and *v7d880), kart_bump, then each record: record
  * v88c12 is curkart (kart_draw); the others drawn plainly, except that with netvoices a kart record's
  * player f66 toggles and a set f66 hides it. Then the spark animation f46/f48/f4a of curkart. */
 extern int v7d864;
 extern struct crec *v7d894, *v7d88c, *v7d880;
-void f36f8c(void);
+void rec_swap(void);
 
 void sprites_draw(void)
 {
@@ -11362,7 +11362,7 @@ void sprites_draw(void)
             if (crecs[i].f10 < crecs[j].f10) {
                 v7d88c = &crecs[i];
                 v7d880 = &crecs[j];
-                f36f8c();
+                rec_swap();
             }
     kart_bump();
     p7d86c = (char *)&crecs[1];
@@ -11391,7 +11391,7 @@ void sprites_draw(void)
             sprptr = (char *)CR->f0c;
             v7d878 = CR->f14;
             if (hide == 0)
-                f37487();
+                spr_draw_scaled();
         }
         p7d86c += 0x28;
     }
@@ -11691,7 +11691,7 @@ void ents_project(void)
 /* ---- 0x25e6c, 447 bytes: moves the shot v7d874 one step (callers 0x26090 in 0x2602c, 0x2d5d3):
  * heading v7eb9c = its dir for kinds 1-4, for kinds < 1 and 5 v7d5d0 turned by dir (0 straight,
  * 1 left, 2 right by 0x1e of 0x780); a kind > 1 that does not move stays put; else the step
- * v7d6a0[v7eb9c] * speed through f37bb1 gives lx1/ly1. With move, shot_line tests the segment and the
+ * v7d6a0[v7eb9c] * speed through vec_scale gives lx1/ly1. With move, shot_line tests the segment and the
  * shot stops at lx0/ly0 unless it is a kind 1 that hit (v88bae == 3).
  * differs (2 rows, probes .work/probe_ss/F,G,H): `volatile int t` gives the game's frame (`sub esp,4`)
  * and its spill of t (`mov [esp],eax; mov ebx,[esp]`) - 11 rows -> 2. What is left is the order of the
@@ -11758,7 +11758,7 @@ void shot_step(short move)
         lx0 = v7d874->x;
         ly0 = v7d874->y;
         v7d608 = v7d874->speed;
-        f37bb1();
+        vec_scale();
         lx1 = lx0 + v7d610;
         ly1 = ly0 + v7d620;
     }
@@ -11823,7 +11823,7 @@ void shots_move(void)
                 v7d5f8 = *v7d690++;
                 v7d608 = v7d874->speed;
                 v7d5f4 = *v7d690;
-                f37bb1();
+                vec_scale();
                 v7d874->x = v7d874->x + v7d610;
                 v7d874->y = v7d874->y + v7d620;
                 v88bae = 0;
@@ -12564,7 +12564,7 @@ void effects_load(void)
  * set starting half of v7d604 further on. */
 extern char *v7eb58, *v7d99c, *v7d75c;
 extern int v7d604;
-void f376d7(void);
+void pcx_tiles(void);
 
 void track_pics_load(void)
 {
@@ -12584,13 +12584,13 @@ void track_pics_load(void)
         v7eb58 = a;
         p7d714 = p6a980;
         v7d99c = p6a978;
-        f376d7();
+        pcx_tiles();
         strcpy(tmp, gam7eaa0[i]);
         pcx_load(tmp, 2);
         v7d99c = p6a978;
         v7eb58 = b;
         p7d714 = p6a980;
-        f376d7();
+        pcx_tiles();
         if (i != 1) {
             a += q;
             b += q;
@@ -12599,7 +12599,7 @@ void track_pics_load(void)
 }
 
 /* ---- 0x278c4, 91 bytes: waits until no input is held - keyboard (v88cce sets joy88b40) and the four
- * joy88b4x flags, polled through f377ae; with flag, the abort key (key88cd0 == 1) ends it early
+ * joy88b4x flags, polled through buttons_poll; with flag, the abort key (key88cd0 == 1) ends it early
  * (callers 0x18767, 0x18e99, 0x195c0, 0x1c7d9, 0x1cc2a). */
 void wait_release(short flag)
 {
@@ -12607,7 +12607,7 @@ void wait_release(short flag)
         if (flag && key88cd0 == 1)
             return;
         v7d8a4 = v7d8ac;
-        f377ae();
+        buttons_poll();
         if (v88cce)
             joy88b40 = 1;
         if (joy88b40 == 0 && joy88b42 == 0 && joy88b44 == 0 && joy88b46 == 0)
@@ -12628,7 +12628,7 @@ int wait_input(short mode)
         ticks = 0;
     for (;;) {
         v7d8a4 = v7d8ac;
-        f377ae();
+        buttons_poll();
         if (mode == 2 && ticks >= 0x440)
             return 0;
         if (mode && key88cd0 == 1)
@@ -12651,7 +12651,7 @@ int wait_input(short mode)
  * <n>.POS: the 0x2000-byte map (64x64 shorts, zone classes, map_at src/ww.c:1513) and ncells
  * (its max; v88ba0 = ncells / 4); <n>.SIN: 0x6c 12-byte records at 0x7ad88 - the first dword
  * is read and dropped, the kept pair is the surface class of that tile with mask byte 0 /
- * nonzero, read back by f37b04 0x37b80-0x37ba9 (findings/formats.md); screen 1 from gam6a4e0 unless v7d998 is 1 or 2; f37a06;
+ * nonzero, read back by surface_at 0x37b80-0x37ba9 (findings/formats.md); screen 1 from gam6a4e0 unless v7d998 is 1 or 2; tilemap_fill;
  * <n>.M: rows 0x20..0x5f of v7d6a4 (v7d648 dwords each), 0x40 tile pointers v7d75c + b * 0x400 from
  * offset 0x80, b = 1..107 (tile 32x32, mask half at v7d75c + 0x1b000); track_pics_load; ents_load; <n>.RD: v88b7a + 1 lines of 14 bytes, each a segment
  * (+0x400) whose points line_points appends at linep (trklines[i]: points, count, f0a).
@@ -12674,7 +12674,7 @@ extern char str7eb6c[], str6a4b8[], sin7ad88[0x6c][8];
 extern char *v7d870, *v7d64c, *v7d6a4;
 extern int v7d648, *v7d688;
 extern short *v7ed14, v88ba0;
-void f37a06(void);
+void tilemap_fill(void);
 
 /* The DAT helpers as the game inlines them at some sites (the seekdat/readdat/telldat macros
  * above name non-inlinable aliases); pal_6bit called, not inlined. */
@@ -12755,7 +12755,7 @@ void track_load(void)
     if (v7d998 == 0 || v7d998 == 3)
         pcx_load(gam6a4e0, 1);
     v7d64c = v7d75c;
-    f37a06();
+    tilemap_fill();
     path_join(".M");
     v88bd6 = datfind(str7d7b8);
     if (v88bd6 == 0 && v88bea != 0)
@@ -12942,7 +12942,7 @@ void track_here(void)
 
 /* ---- 0x28480, 488 bytes: the view box around the kart (callers 0x134ac, 0x135a4, 0x2de14,
  * 0x2f9b4): the track points 0xa0 steps behind (index v7d674) and ahead (v7d670), each scaled by
- * 0x462 through f37bb1 and offset by the kart (v88b0a, v88b0e); the box (v88c16, v88c18) -
+ * 0x462 through vec_scale and offset by the kart (v88b0a, v88b0e); the box (v88c16, v88c18) -
  * (v88c2a, v88c2c) holds both and the kart. Then curpos's pair into v7d5f8/v7d5f4 and v7d614/v7d5e4. */
 void view_box(void)
 {
@@ -12955,7 +12955,7 @@ void view_box(void)
     v7d5f8 = *v7d690++;
     v7d608 = 0x462;
     v7d5f4 = *v7d690;
-    f37bb1();
+    vec_scale();
     x1 = v88b0a + v7d610;
     y1 = v88b0e + v7d620;
     v7d670 = curpos + 0xa0;
@@ -12965,7 +12965,7 @@ void view_box(void)
     v7d5f8 = *v7d690++;
     v7d608 = 0x462;
     v7d5f4 = *v7d690;
-    f37bb1();
+    vec_scale();
     x2 = v88b0a + v7d610;
     y2 = v88b0e + v7d620;
     v88c18 = y1;
@@ -12996,13 +12996,13 @@ void view_box(void)
 }
 
 /* ---- 0x28668, 259 bytes: steps the two colour cycles while v88b60 runs (callers 0x2f7a0,
- * 0x308e8): every v88b4c frames v88b38 (0..3) picks v7d6d0 + 12 * it for f37c84; v88b3a (0..8)
- * picks v7d758 + 15 * it for f37c43 every v88b5a ticks of v88b60, but at 3 it waits v88b4e and
+ * 0x308e8): every v88b4c frames v88b38 (0..3) picks v7d6d0 + 12 * it for dac_put8; v88b3a (0..8)
+ * picks v7d758 + 15 * it for dac_put5 every v88b5a ticks of v88b60, but at 3 it waits v88b4e and
  * jumps to 4. */
 extern short v88b38, v88b3a, v88b50;
 extern char *v7d744, *v7d758, *v7d6d0;
-void f37c84(void);
-void f37c43(void);
+void dac_put8(void);
+void dac_put5(void);
 
 void cycles_step(void)
 {
@@ -13012,20 +13012,20 @@ void cycles_step(void)
         if (++v88b38 > 3)
             v88b38 = 0;
         v7d744 = v7d6d0 + v88b38 * 12;
-        f37c84();
+        dac_put8();
         v88b50 = 0;
     }
     if (v88b3a == 3 && v88b60 >= v88b4e) {
         v88b3a = 4;
         v88b60 = 0;
         v7d744 = v7d758 + 0x3c;
-        f37c43();
+        dac_put5();
     } else if (v88b60 >= v88b5a && v88b3a != 3) {
         if (++v88b3a > 8)
             v88b3a = 0;
         v88b60 = 0;
         v7d744 = v7d758 + v88b3a * 15;
-        f37c43();
+        dac_put5();
     }
     v88b60++;
     v88b50++;
@@ -13404,7 +13404,7 @@ void kart_frame(void)
             v7d690++;
             v7d5f4 = *v7d690;
             v7d690--;
-            f37bb1();
+            vec_scale();
             i7d610 = -i7d610;
             v88b0a += v7d610;
             i7d620 = -i7d620;
@@ -13418,7 +13418,7 @@ void kart_frame(void)
             if (v88b0e < 0x400)
                 v88b0e = 0x400;
             v7d608 = 0x7c;
-            f37bb1();
+            vec_scale();
             v88b68 = v88b0a + v7d610;
             v88b6a = v88b0e + v7d620;
         }
@@ -13710,13 +13710,13 @@ void kart_frame(void)
  * screen without v88bde, a v7d998 mode other than 0/3, or a net game. One player: the lives
  * digit karts[v7eb80 ? 0 : 1].f6c at (0x76, 0xb); two players: both scores (v684e0/v685e4, the own
  * one first by netgame) as two zero-padded digits from the font at 0x6e380 by character. With
- * v88bde: the two 'SCORE' panels (f371e4) and in the full screen both scores at (0x107, 0x64)
+ * v88bde: the two 'SCORE' panels (box_draw) and in the full screen both scores at (0x107, 0x64)
  * and (0x107, 0). Then, in a one-player race with no lives left (curkart->f6c), GAME OVER and
  * the v7c650 tune to its end (or 500 ticks without music), then the menu song. */
 extern char *font6e380[];
 #pragma aux font6e380 "_arr6e380"
 extern int v7c650;
-void f37132(void);
+void spr_draw_key(void);
 void music_start_c(int song, int loop);         /* music_start, called (not inlined) */
 #pragma aux music_start_c "music_start_"
 
@@ -13740,7 +13740,7 @@ void hud_draw(void)
             spr_x = 0x76;
             spr_y = 0xb;
             sprptr = sp6e440[v7eb80 ? (int)karts[0].f6c : (int)karts[1].f6c];
-            f373ee();
+            spr_draw_opaque();
         } else {
             v88ce9 = '.';
             if (netgame == 1)
@@ -13753,10 +13753,10 @@ void hud_draw(void)
             spr_h = 0xa;
             sprptr = font6e380[(unsigned char)buf[0]];
             spr_w = 9;
-            f37132();
+            spr_draw_key();
             spr_x += 0xa;
             sprptr = font6e380[(unsigned char)buf[1]];
-            f37132();
+            spr_draw_key();
             if (netgame == 1)
                 itoa(v685e4, buf, 10);
             else
@@ -13765,10 +13765,10 @@ void hud_draw(void)
             spr_y = v7ec7c;
             PAD2(buf)
             sprptr = font6e380[(unsigned char)buf[0]];
-            f37132();
+            spr_draw_key();
             spr_x += 0xa;
             sprptr = font6e380[(unsigned char)buf[1]];
-            f37132();
+            spr_draw_key();
         }
     } else if (splitscreen) {
         v88ce8 = '.';
@@ -13777,10 +13777,10 @@ void hud_draw(void)
         spr_x = 0xdd;
         spr_h = 0x26;
         spr_w = 8;
-        f371e4();
+        box_draw();
         spr_x = 0xdd;
         spr_y = 1;
-        f371e4();
+        box_draw();
     } else {
         v88ce8 = '.';
         v88ce9 = '.';
@@ -13788,13 +13788,13 @@ void hud_draw(void)
         spr_x = 0xdd;
         spr_h = 0x26;
         spr_w = 8;
-        f371e4();
+        box_draw();
         print_at(spr_x, spr_y, "SCORE", 0);
         spr_h = 0x26;
         spr_w = 8;
         spr_x = 0xdd;
         spr_y = 1;
-        f371e4();
+        box_draw();
         print_at(spr_x, spr_y, "SCORE", 0);
         itoa(v684e0, buf, 10);
         PAD2(buf)
@@ -13803,19 +13803,19 @@ void hud_draw(void)
         spr_y = 0x64;
         spr_x = 0x107;
         sprptr = font6e380[(unsigned char)buf[0]];
-        f373ee();
+        spr_draw_opaque();
         spr_x += 0xa;
         sprptr = font6e380[(unsigned char)buf[1]];
-        f373ee();
+        spr_draw_opaque();
         spr_x -= 0xa;
         spr_y -= 0x64;
         itoa(v685e4, buf, 10);
         PAD2(buf)
         sprptr = font6e380[(unsigned char)buf[0]];
-        f373ee();
+        spr_draw_opaque();
         spr_x += 0xa;
         sprptr = font6e380[(unsigned char)buf[1]];
-        f373ee();
+        spr_draw_opaque();
         spr_x -= 0xa;
         spr_y -= 0x64;
     }
@@ -13878,7 +13878,7 @@ void showlines_def(int n, int wait, int t)
     save_c = pal_c;
     pal_c = 0xbb80;
     pal_a = pal_b = pal_d;
-    setpalette();
+    page_copy();
     h = strlen(netstats[1]) * 8 + 8;
     spr_w = n * 9 + 8;
     spr_x = (0x140 - h) / 2;
@@ -13886,7 +13886,7 @@ void showlines_def(int n, int wait, int t)
     v88ce9 = 0x2c;
     v88ce8 = 0x26;
     spr_h = h;
-    f371e4();
+    box_draw();
     y = spr_y + 4;
     x = spr_x + 4;
     for (i = 1; i <= n; i++, y += 9)   /* index, not a pointer: the game's `mov esi,0x3c; add esi,netstats` */
@@ -13902,7 +13902,7 @@ void showlines_def(int n, int wait, int t)
     }
     pal_b = 0xbb80;
     pal_a = pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;
@@ -13925,18 +13925,18 @@ void msgbox(char *s, int y)
         spr_y = y;
     v88ce9 = 0x2c;
     v88ce8 = 0x26;
-    f371e4();
+    box_draw();
     print_at((short)(spr_x + 4), (short)(spr_y + 4), s, 0);
 }
 
 /* ---- 0x2a4ac, 364 bytes: the minimap (caller 0x2a935 in 0x2a92c), while v88ca0: the map image
- * img7eb3c at (0, 0x3c), 0x32 x 0x4e, then a dot per player (f37bf0) at the track position mapped
+ * img7eb3c at (0, 0x3c), 0x32 x 0x4e, then a dot per player (pixel_plot) at the track position mapped
  * through the 0x800-entry tables MAP.XY (arr802cc for x, arr7faca for y, +0x3c), x/y - 0x400
  * clamped to 0..0x7ff. Colour 0xff for the own player (1 for netgame 2), 0x54 for the other one
  * in a net game with more than two players, else 0x5a.
  * MATCH (iter 36): spr_x and spr_y are the clamp variables themselves; the game caches spr_y in
  * ESI across the loop because it is the working variable (no local copies). */
-void f37bf0(void);
+void pixel_plot(void);
 
 void minimap(void)
 {
@@ -13949,7 +13949,7 @@ void minimap(void)
     spr_h = 0x4e;
     spr_w = 0x32;
     sprptr = img7eb3c;
-    f373ee();
+    spr_draw_opaque();
     me = 0;
     if (netgame && netgame != 1)
         me = 1;
@@ -13976,7 +13976,7 @@ void minimap(void)
             spr_y = 0x7ff;
         spr_x = (unsigned char)arr802cc[spr_x];
         spr_y = (unsigned char)arr7faca[spr_y] + 0x3c;
-        f37bf0();
+        pixel_plot();
     }
 }
 
@@ -14035,7 +14035,7 @@ void time_draw(short x, short y, char *s)
     for (i = 0; i < 7; i++) {
         spr_x = x;
         sprptr = font7d618[(unsigned char)s[i]];
-        drawsprite();
+        spr_draw();
         x += 7;
     }
 }
@@ -14099,7 +14099,7 @@ void lap_banner(void)
                 spr_w = 0x2c;
             spr_x = 0xfa + gig7b548[k].x;
             spr_y += gig7b548[k].y;
-            drawsprite();
+            spr_draw();
         }
         if (cars[i].fe0 != 1 && ++cars[i].fe8 > v88b80) {
             cars[i].fe8 = 0;
@@ -14190,10 +14190,10 @@ void overlay_draw(void)
         spr_y = 0x20;
         spr_x = 0x1a;
         sprptr = font6e380[(unsigned char)buf[0]];
-        f373ee();
+        spr_draw_opaque();
         spr_x += 0xa;
         sprptr = font6e380[(unsigned char)buf[1]];
-        f373ee();
+        spr_draw_opaque();
         spr_x -= 0xa;
     }
     if (v88c48)
@@ -14235,7 +14235,7 @@ void overlay_draw(void)
                     spr_w = 0x2c;
                 spr_x = 0x8d + gig7b548[k].x;
                 spr_y += gig7b548[k].y;
-                drawsprite();
+                spr_draw();
             }
             if (cars[i].fb4 != 1 && ++cars[i].fbc > v88b80) {
                 cars[i].fbc = 0;
@@ -14288,16 +14288,16 @@ void overlay_draw(void)
             spr_h = 0x2a;
             sprptr = ic7ea84;
             spr_w = 0x13;
-            f373ee();
+            spr_draw_opaque();
             spr_h = 0xa;
             spr_w = 0xf;
             spr_x += 3;
             sprptr = font7c118[(unsigned char)buf[0]];
             spr_y += 2;
-            f373ee();
+            spr_draw_opaque();
             sprptr = font7c118[(unsigned char)buf[1]];
             spr_x += 0xc;
-            f373ee();
+            spr_draw_opaque();
             spr_y -= 2;
         }
         s = karts[i].f26 + karts[i].f26;
@@ -14326,9 +14326,9 @@ void overlay_draw(void)
                     spr_y -= p2offset;
                 if (v88bde) {
                     spr_x = 4;
-                    drawsprite();
+                    spr_draw();
                 } else
-                    f373ee();
+                    spr_draw_opaque();
             }
         }
     }
@@ -14353,10 +14353,10 @@ void overlay_draw(void)
                 if (i == 1)
                     spr_y -= p2offset;
                 sprptr = font6e380[(unsigned char)buf[0]];
-                f373ee();
+                spr_draw_opaque();
                 spr_x += 0xa;
                 sprptr = font6e380[(unsigned char)buf[1]];
-                f373ee();
+                spr_draw_opaque();
                 spr_x -= 0xa;
             }
         }
@@ -14380,7 +14380,7 @@ void overlay_draw(void)
                 if (i == 1)
                     spr_y -= p2offset;
                 if (v7d998 == 0)
-                    drawsprite();
+                    spr_draw();
             }
         }
     }
@@ -14390,7 +14390,7 @@ void overlay_draw(void)
         spr_h = 0x5c;
         sprptr = ofont2;
         spr_w = 0x29;
-        drawsprite();
+        spr_draw();
         return;
     }
     lap_banner();
@@ -14497,7 +14497,7 @@ void leaderboard(short *x, short *y, short *who, short *place, short *x2, short 
             spr_h = 0x26;
             sprptr = faces[p].img[0];
             spr_w = 0x1c;
-            drawsprite();
+            spr_draw();
         }
         row += 0x26;
     }
@@ -14523,10 +14523,10 @@ void bigdigits(int x, int y, int n)
     spr_x = x;
     spr_y = y;
     sprptr = font6e350[(unsigned char)buf[0]];
-    drawsprite();
+    spr_draw();
     sprptr = font6e350[(unsigned char)buf[1]];
     spr_x += 0x16;
-    drawsprite();
+    spr_draw();
     spr_x += 0x16;
 }
 
@@ -14568,7 +14568,7 @@ void duck_screen(int after)
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a980;
-    f375cd();
+    pcx_blit();
     pal_a = 0;
     if (after) {
         found = 0;
@@ -14587,7 +14587,7 @@ void duck_screen(int after)
             v88b4a = 0;
             pal_a = 0;
             p7d714 = p6a980;
-            f375cd();
+            pcx_blit();
             pal_a = 0;
             for (i = 0; i <= 3; i++) {
                 if (v7edb4 >= duckfame[i].score) {
@@ -14622,10 +14622,10 @@ void duck_screen(int after)
     spr_w = 0x1c;
     sprptr = faces[i7ec70].img[7];
     spr_x = 0x4c;
-    drawsprite();
+    spr_draw();
     sprptr = faces[i7ec6c].img[1];
     spr_x = 0xcd;
-    drawsprite();
+    spr_draw();
     strcpy(buf, "THE WACKY DUCK TOP SHOOTERS");
     wtext((0x140 - (int)strlen(buf) * 0xb) / 2, 0x6e, buf, 0);
     y = 0x82;
@@ -14650,7 +14650,7 @@ void duck_screen(int after)
     strcpy(buf, "PRESS FIRE");
     w = (0x140 - (int)strlen(buf) * 8) / 2;
     print_at(w, 0xb4, buf, 0);
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -14686,7 +14686,7 @@ void overall_winner(void)
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = 0;
     for (i = 0; i < 2; i++) {
         if (cars[i].fc0 > hits_target)
@@ -14711,23 +14711,23 @@ void overall_winner(void)
         spr_w = 0x1c;
         sprptr = faces[myplayer].img[0];
         spr_x = 0x78;
-        drawsprite();
+        spr_draw();
         sprptr = faces[v88c6a].img[0];
         spr_x += 0x28;
-        drawsprite();
+        spr_draw();
     } else {
         spr_y = 0x56;
         spr_h = 0x26;
         spr_w = 0x1c;
         sprptr = faces[w].img[0];
         spr_x = 0x8d;
-        drawsprite();
+        spr_draw();
     }
     strcpy(buf, "PRESS FIRE");
     if (netgame && netgame != 1)
         strcpy(buf, "WAITING FOR PLAYER ONE TO PRESS FIRE");
     print_at((short)((0x140 - (int)strlen(buf) * 8) / 2), 0xb4, buf, 0);
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -14772,7 +14772,7 @@ void overall_winner(void)
 }
 
 /* ---- 0x2bff0, 4722 bytes: after a race (callers 0x315fa, 0x31e01 in 0x30aae). The points
- * players[].f1e / face go to standings[1..] (0x799d8), sorted by score with f36f8c, and
+ * players[].f1e / face go to standings[1..] (0x799d8), sorted by score with rec_swap, and
  * leaderboard draws them on ORDER.PCX; the own (and split-screen second) face then talks
  * (faces[].img[0..7]) until fire (net: exchanged with net_key). After the last race (v88b88 5):
  * the places with equal scores are grouped onto the three rostrum steps (two in a two-player
@@ -14792,7 +14792,7 @@ void overall_winner(void)
  * win lines)): SAME. Every store matches one for one; the extra use is our third fire test. The game
  * tests joy once at the top of the tail (`cmp [joy],0; je 0x2cb84` 0x2d1e9 - its joy==0 path jumps
  * straight to the loop-continue block 0x2cb84, which our build has instruction for instruction at
- * 0x1c77a: v7e724 = ticks, pal_c = pal_a, setpalette, musicon test), then its `if (mypod != 1) break`
+ * 0x1c77a: v7e724 = ticks, pal_c = pal_a, page_copy, musicon test), then its `if (mypod != 1) break`
  * (`cmp word [esp+0x338],1` 0x2d1f9), then its second joy read + splitscreen (0x2d204/0x2d20e = our
  * 0x1cdf2/0x1cdfc), and for the scores_screen arm only `cmp word [esp+0x338],1; jne 0x2cb84` 0x2d218 -
  * no joy read, joy != 0 is already true there (its `je 0x2d1f7` after the first je and its
@@ -14851,7 +14851,7 @@ void race_results(void)
             if (standings[i].score < standings[j].score) {
                 v7d88c = (struct crec *)&standings[i];
                 v7d880 = (struct crec *)&standings[j];
-                f36f8c();
+                rec_swap();
             }
         }
     }
@@ -14863,28 +14863,28 @@ void race_results(void)
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = 0;
     leaderboard(&x, &y, &who, &place, &x2, &y2, &who2, &place2);
     pal_b = 0;
     pal_c = 0x7d00;
-    setpalette();
+    page_copy();
     frame = 0;
     sprptr = faces[who].img[0];
     spr_h = 0x26;
     spr_x = x;
     spr_w = 0x1c;
     spr_y = y;
-    drawsprite();
+    spr_draw();
     if (splitscreen) {
         sprptr = faces[who2].img[0];
         spr_h = 0x26;
         spr_x = x2;
         spr_w = 0x1c;
         spr_y = y2;
-        drawsprite();
+        spr_draw();
     }
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -14899,24 +14899,24 @@ void race_results(void)
     for (;;) {
         ticks = 0;
         pal_c = pal_a;
-        setpalette();
+        page_copy();
         spr_x = x;
         spr_y = y;
         spr_h = 0x26;
         sprptr = faces[who].img[frame];
         spr_w = 0x1c;
-        drawsprite();
+        spr_draw();
         if (splitscreen) {
             spr_x = x2;
             spr_y = y2;
             spr_h = 0x26;
             sprptr = faces[who2].img[frame];
             spr_w = 0x1c;
-            drawsprite();
+            spr_draw();
         }
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();
+        buttons_poll();
         if (v88cce)
             joy88b40 = 1;
         if (netgame) {
@@ -14954,7 +14954,7 @@ void race_results(void)
                 goto done;
             }
         }
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             while (key88ccd)
@@ -14979,14 +14979,14 @@ void race_results(void)
         p7d714 = p6a978;
         save = pal_a;
         pal_a = 0;
-        f375cd();
+        pcx_blit();
         pal_b = 0;
         pal_c = 0x3e80;
         pal_a = save;
     }
-    setpalette();
+    page_copy();
     pal_a = 0;
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         while (key88ccd)
@@ -15088,12 +15088,12 @@ void race_results(void)
         p7d714 = p6a978;
         save = pal_a;
         pal_a = 0;
-        f375cd();
+        pcx_blit();
         pal_b = 0;
         pal_c = 0x7d00;
         pal_a = save;
     }
-    setpalette();
+    page_copy();
     fade_in((unsigned char *)v7d858);
     music88bcc = 0;
     music_start(v7c64c, 0);
@@ -15115,7 +15115,7 @@ void race_results(void)
     for (;;) {
         v7e724 = ticks;
         pal_c = pal_a;
-        setpalette();
+        page_copy();
         if (musicon && !songdone && !MUSIC_SongPlaying()) {
             songdone = 1;
             music_start(menusong, 1);
@@ -15129,7 +15129,7 @@ void race_results(void)
                 spr_y = pods[k].y;
                 spr_x = pods[k].x;
                 for (j = 1; j <= pods[k].n; j++) {
-                    drawsprite();
+                    spr_draw();
                     spr_y -= 0x1c;
                 }
             }
@@ -15167,7 +15167,7 @@ void race_results(void)
                         sprptr = (char *)*curkart->f4e;
                     } else
                         sprptr = faces[pods[k].pl[j]].img[0];
-                    drawsprite();
+                    spr_draw();
                     spr_y -= 0x1c;
                 }
             }
@@ -15186,7 +15186,7 @@ void race_results(void)
                 spr_x = dx;
                 spr_w = 0x17;
                 spr_y = dy;
-                drawsprite();
+                spr_draw();
                 if (dt > 1) {
                     dt = 0;
                     dfr++;
@@ -15211,7 +15211,7 @@ void race_results(void)
                 spr_x = pods[k].gx;
                 spr_w = 0xd;
                 spr_y = pods[k].gy;
-                drawsprite();
+                spr_draw();
                 pods[k].gy += 0xe;
                 if (pods[k].gy >= pods[k].gyend) {
                     pods[k].gy = pods[k].gyend;
@@ -15223,7 +15223,7 @@ void race_results(void)
         }
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();
+        buttons_poll();
         if (v88cce)
             joy88b40 = 1;
         if (netgame) {
@@ -15263,7 +15263,7 @@ void race_results(void)
                 goto done;
             }
         }
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             while (key88ccd)
@@ -15811,7 +15811,7 @@ short net_key(unsigned char key, unsigned char flag, int x)
                 v7ed6c = 1;
                 view_box_x();
                 if (v7eb80)
-                    f37e94();
+                    floor_draw();
                 sprites_build_x();
             }
             if (v7ed6c && !v7ed74)
@@ -16142,7 +16142,7 @@ void trial_book(int a, int b, int show)
     v88b4a = 0;
     pal_a = 0;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = 0;
     switch (a) {
     case 1:
@@ -16209,7 +16209,7 @@ void trial_book(int a, int b, int show)
             v88b4a = 0;
             pal_a = 0;
             p7d714 = p6a978;
-            f375cd();
+            pcx_blit();
             entered = 1;
             pal_a = 0;
             if (v7eccc <= trial70730[idx].race) {
@@ -16324,14 +16324,14 @@ void trial_book(int a, int b, int show)
     pal_b = 0;
     pal_c = 0x7d00;
     first = 1;
-    setpalette();
+    page_copy();
     blink = 0;
     pal_b = 0x7d00;
     wait_release(0);
     do {
         ticks = 0;
         pal_c = pal_a;
-        setpalette();
+        page_copy();
         if (blink) {
             ox = oy = 2;
             blink = 0;
@@ -16345,19 +16345,19 @@ void trial_book(int a, int b, int show)
         if (newlap != -1) {
             spr_x = nx - ox;
             spr_y = oy + ny;
-            drawsprite();
+            spr_draw();
         }
         if (bestlap != -1) {
             spr_x = mx - ox;
             spr_y = my + oy;
-            drawsprite();
+            spr_draw();
         }
         if (newrace != -1) {
             spr_x = rx - ox;
             spr_y = ry + oy;
-            drawsprite();
+            spr_draw();
         }
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -16410,7 +16410,7 @@ void trial_book(int a, int b, int show)
             joy88b44 = 0;
             joy88b46 = 0;
             v7d8a4 = v7d8ac;
-            f377ae();
+            buttons_poll();
             if (v88cce)
                 done = 1;
             if (key88cd0 == 1) {
@@ -16434,7 +16434,7 @@ void trial_book(int a, int b, int show)
     getpalette();
     fade_out(pal7d850);
     pal_a = 0;
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -16445,7 +16445,7 @@ void trial_book(int a, int b, int show)
 
 /* ---- 0x2f408, 158 bytes (no caller found): the view point for the track position curpos
  * (as at the end of 0x288xx's track step): the path vector at v7d6a0[curpos] scaled to 0x7c
- * (f37bb1), plus the camera v88b0a / v88b0e, into v7d7a4 / v7d7a8 and the shorts at
+ * (vec_scale), plus the camera v88b0a / v88b0e, into v7d7a4 / v7d7a8 and the shorts at
  * 0x6aaa6 / 0x6aaa8.
  * differs: one block: the game loads v7d610 first and parks v88b0e in a stack slot; operand
  * orders and a temp tried. SKIP (iter 20): ours spills v7d610 too (`movsx eax,[v7d610];
@@ -16465,7 +16465,7 @@ void view_at_curpos(void)
     v7d608 = 0x7c;
     v7d5f8 = *v7d690++;
     v7d5f4 = *v7d690--;
-    f37bb1();
+    vec_scale();
     v7d7a4 = v7d610 + v88b0a;
     v7d7a8 = v88b0e + v7d620;
     w6aaa6 = v7d7a4;
@@ -16500,7 +16500,7 @@ void net_input(void)
 
     v7d8a4 = v7d8ac;
     ctl_setup(0);
-    f377ae();
+    buttons_poll();
     v88cec = ukey88cd0 == 1;
     v7ed90 = ukey88cd0;
     if (v7ed90 >= 0x3b && v7ed90 <= 0x40)
@@ -16575,7 +16575,7 @@ void view_sprites(void)
     v7ed6c = 1;
     view_box();
     if (v7eb80)
-        f37e94();
+        floor_draw();
     v88bf4 = 0;
     v88b78 = 0;
     p7d86c = arr79a28;
@@ -16602,7 +16602,7 @@ extern char v7b6e5, v7b6e7, v7b6e9, v7b6eb, v7b6ed, v7b6ef;
 extern short v88c56;
 extern short av7eb80[];
 #pragma aux av7eb80 "_v7eb80"
-void f36ec2(void);
+void band_mirror(void);
 
 void race_frame2(void)
 {
@@ -16654,9 +16654,9 @@ void race_frame2(void)
         view_box();
         if (v7eb82) {
             if (v88bde)
-                f3c3e9();
+                floor_draw_upper();
             else
-                f37e94();
+                floor_draw();
         }
         v88bf4 = 0;
         v88b78 = 0;
@@ -16711,7 +16711,7 @@ void race_frame2(void)
                 spr_y -= p2offset * 0x50;
             if (cars[v88b72].f04) {
                 if (av7eb80[v88b72] && v88bde)
-                    f36ec2();
+                    band_mirror();
                 u = *(int *)((char *)&cars[v88b72] + 0x7a);
                 if (ticks2 - u >= 0x12c)
                     cars[v88b72].f04 = 0;
@@ -16735,7 +16735,7 @@ void race_frame2(void)
         pal_c = 0xbb80;
         pal_a = pal_d;
         pal_b = pal_d;
-        setpalette();
+        page_copy();
         if (musicon)
             music_pause();
         voices_reset();
@@ -16750,7 +16750,7 @@ void race_frame2(void)
         pal_b = 0xbb80;
         pal_a = pal_d;
         pal_c = pal_d;
-        setpalette();
+        page_copy();
         pal_b = save_b;
         pal_c = save_c;
         pal_a = save_a;
@@ -16800,7 +16800,7 @@ extern char key88cd1, v88ce1;
 extern short v88c92, v88c94;
 extern int v7c654;
 extern unsigned char v7b6e1, v7b6e3;
-void f36f55(void);
+void horizon_upload(void);
 void f29e0c(void);
 void track_setup_x(void);
 #pragma aux track_setup_x "track_setup_"
@@ -17025,7 +17025,7 @@ restart:
     curpos = players[0].pos;
     track_here_x();
     v7d608 = 0x7c;
-    f37bb1();
+    vec_scale();
     v7d7a4 = v88b0a + v7d610;
     v7d7a8 = v88b0e + v7d620;
     players[0].x = v7d7a4;
@@ -17040,7 +17040,7 @@ restart:
         v7d608 = 0x7c;
         v7d5f8 = *v7d690++;
         v7d5f4 = *v7d690--;
-        f37bb1();
+        vec_scale();
         v7d7a4 = v88ca2 + v7d610;
         v7d7a8 = v88ca6 + v7d620;
         players[1].x = v7d7a4;
@@ -17052,7 +17052,7 @@ restart:
         getpalette();
         fade_out(pal7d850);
         pal_a = 0;
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -17085,7 +17085,7 @@ restart:
                 v88c44 = 0;
                 v7eba8 = 0;
                 view_box();
-                f37e94();
+                floor_draw();
                 p7d86c = arr79a28;
                 v88bf4 = 0;
                 v88b78 = 0;
@@ -17102,7 +17102,7 @@ restart:
                 overlay_draw();
                 anim_tick();
                 draw_faces();
-                f37de0();
+                page_show();
                 if (key88ccd) {
                     screenshot();
                     if (key88ccd)
@@ -17124,7 +17124,7 @@ restart:
                     }
                 }
             } while (go);
-            f37a21();
+            path_pt_scale();
             v7d798 = v7d7a4;
             v7d79c = v7d7a8;
             curkart->f52++;
@@ -17133,7 +17133,7 @@ restart:
             curpos -= 0x28;
             if (curpos <= 0x1e0)
                 break;
-            f37a21();
+            path_pt_scale();
             v7d768 = v7d798 - v7d7a4;
             v7d76c = v7d79c - v7d7a8;
             v88b0a += v7d768;
@@ -17159,10 +17159,10 @@ restart:
         v7d608 = 0x7c;
         v7d5f8 = *v7d690++;
         v7d5f4 = *v7d690--;
-        f37bb1();
+        vec_scale();
         v7d7a4 = v88ca2 + v7d610;
         v7d7a8 = v88ca6 + v7d620;
-        f37b04();
+        surface_at();
         v88b68 = v7d7a4;
         v88b6a = v7d7a8;
         curkart->fae = map_at(v88b68, v88b6a);
@@ -17183,10 +17183,10 @@ restart:
     v7d608 = 0x7c;
     v7d5f8 = *v7d690++;
     v7d5f4 = *v7d690--;
-    f37bb1();
+    vec_scale();
     v7d7a4 = v88b0a + v7d610;
     v7d7a8 = v88b0e + v7d620;
-    f37b04();
+    surface_at();
     v88b68 = v7d7a4;
     v88b6a = v7d7a8;
     curkart->fae = map_at(v88b68, v88b6a);
@@ -17278,12 +17278,12 @@ loop:
         v7ed6c = 1;
         view_box();
         if (v7eb80)
-            f37e94();
+            floor_draw();
         sprites_build_x();
     }
     if (!v7ed74)
         race_frame2();
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -17306,7 +17306,7 @@ loop:
     if (!netgame) {
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();
+        buttons_poll();
         if (twoplayer || splitscreen) {
             v7ed90 = ukey88cd0;
             if (v7ed90 >= 0x3b && v7ed90 <= 0x40)
@@ -17384,7 +17384,7 @@ loop:
     if (v88c42 == 4 && (j = v7e72c, ticks2 - j) >= 0xd && pal_a == 0x3e80) {
         pal_b = 0;
         pal_c = 0x3e80;
-        setpalette();
+        page_copy();
         if (!v7d998)
             curkart->f6c--;
         f29e0c();
@@ -17485,7 +17485,7 @@ loop:
                             goto out;
                         pal_b = 0;
                         pal_c = 0x3e80;
-                        setpalette();
+                        page_copy();
                         ticks = 0;
                         ticks2 = 0;
                         w88c98 = 0;
@@ -17562,8 +17562,8 @@ loop:
                         spr_x = v88bf0;
                         sprptr += 0x6400;
                         spr_y = v88bf2;
-                        f373ee();
-                        f37de0();
+                        spr_draw_opaque();
+                        page_show();
                         if (key88ccd) {
                             screenshot();
                             if (key88ccd)
@@ -17572,11 +17572,11 @@ loop:
                         }
                         pal_b = 0;
                         pal_c = 0x3e80;
-                        setpalette();
+                        page_copy();
                         pal_a = 0x3e80;
                         if (!v7d998 || v7d998 == 3) {
                             v7eb54 = p6a980;
-                            f36f55();
+                            horizon_upload();
                         }
                         if (sel == 2)
                             goto out;
@@ -17588,9 +17588,9 @@ loop:
                 pal_b = 0;
                 v7ed5c = players[0].f1e;
                 pal_c = 0x3e80;
-                setpalette();
+                page_copy();
                 pal_a = 0;
-                f37de0();
+                page_show();
                 if (key88ccd) {
                     screenshot();
                     if (key88ccd)
@@ -17664,7 +17664,7 @@ loop:
                     sel = pal_a;
                     pal_a = 0x7d00;
                     p7d714 = p6a97c;
-                    f375cd();
+                    pcx_blit();
                     pal_a = sel;
                 }
             }
@@ -17682,8 +17682,8 @@ loop:
                     goto restart;
                 pal_b = 0x3e80;
                 pal_c = 0;
-                setpalette();
-                f37de0();
+                page_copy();
+                page_show();
                 if (key88ccd) {
                     screenshot();
                     if (key88ccd)
@@ -17713,7 +17713,7 @@ loop:
         w88c08 = 0;
         pal_b = 0;
         pal_c = 0x3e80;
-        setpalette();
+        page_copy();
         saverace = racetime;
         v7ec4c = ticks;
         v7ebac = ticks2;
@@ -17782,8 +17782,8 @@ loop:
         spr_x = v88bf0;
         sprptr += 0x6400;
         spr_y = v88bf2;
-        f373ee();
-        f37de0();
+        spr_draw_opaque();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -17792,11 +17792,11 @@ loop:
         }
         pal_b = 0;
         pal_c = 0x3e80;
-        setpalette();
+        page_copy();
         pal_a = 0x3e80;
         if (!v7d998 || v7d998 == 3) {
             v7eb54 = p6a980;
-            f36f55();
+            horizon_upload();
         }
         if (w88c98) {
             if (sel == 3) {
@@ -18071,7 +18071,7 @@ void kbd_restore(void)
     kbd_off();
 }
 
-/* ---- 0x32c98, 41 bytes (no direct caller found): f375cd with p7d714 = p, v88b4a = n and pal_a = a
+/* ---- 0x32c98, 41 bytes (no direct caller found): pcx_blit with p7d714 = p, v88b4a = n and pal_a = a
  * for the call, pal_a restored after; the same steps race_run does inline for the demo records.
  * Followed by fade_out's loop tail (0x32cc1-0x32cf7), which the compiler emits here because fade_out
  * is defined next (see there); check.sh differs only in the tail's two rel32 jumps back to 0x1c03a /
@@ -18084,7 +18084,7 @@ void pic_show(char *p, short n, short a)
     p7d714 = p;
     v88b4a = n;
     pal_a = a;
-    f375cd();
+    pcx_blit();
     pal_a = save;
 }
 
@@ -18092,10 +18092,10 @@ void pic_show(char *p, short n, short a)
  * fn_1c968 and eight more). The mirror of fade_in 0x32cf8: a 0x300-byte working copy (signed bytes), w88b10 =
  * 0x100 entries from w88b1e = 0, palptr = the copy; with v88caa and musicon set the music fades
  * too (ticks = ticks2 = 0, MUSIC_FadeVolume(0, 4000)); every step lowers each entry above 0 by
- * v88c46 (read as a word for the test, 0x1c033), clamped at 0, then f37cf1 uploads it; stops after a
+ * v88c46 (read as a word for the test, 0x1c033), clamped at 0, then dac_load uploads it; stops after a
  * step with no entry above 0. The k counter (0..2) is computed but unused, as in fade_in.
  * Layout (CONFIRMED by this rebuild): defined HERE, after pic_show and before its mirror fade_in, the
- * compiler emits the loop tail (the clamp store, k, i++, f37cf1, the epilogue) here, at 0x32cc1
+ * compiler emits the loop tail (the clamp store, k, i++, dac_load, the epilogue) here, at 0x32cc1
  * straight after pic_show's `ret`, and the entry block where the tail call in fade_out_screen jumps to it,
  * at 0x1bf94; that is the game's layout. Instruction-identical in both parts; the only differing
  * bytes are the six rel32 displacements between them, each 0x2c4 short = the size our build lacks
@@ -18142,13 +18142,13 @@ void fade_out(char *p)
             if (++k > 2)
                 k = 0;
         }
-        f37cf1();
+        dac_load();
     } while (!same);
 }
 
 /* ---- 0x32cf8, 218 bytes (callers race_run 0x307a9, main_menu 0x1e9d4, 0x1ec2e, ...): fades the
  * VGA palette in from black to `target`: a 0x300-byte working palette (signed bytes) starts at 0
- * and every step moves each entry by v88c46 towards target, clamped, then f37cf1 uploads it
+ * and every step moves each entry by v88c46 towards target, clamped, then dac_load uploads it
  * (palptr = working copy, w88b10 = 0x100 entries from w88b1e = 0); stops after a step with no
  * change. The k counter (0..2, the RGB component) is computed but unused.
  * differs: the init loop's i/k registers swap (game i EDX - `movsx eax,dx` 0x32d20, k EBX - `inc ebx`
@@ -18192,7 +18192,7 @@ void fade_in(unsigned char *target)
                 same = 0;
             }
         }
-        f37cf1();
+        dac_load();
     } while (!same);
 }
 
@@ -18795,7 +18795,7 @@ void waitkey(void)
  * the call), the same promotion players_project misses (QUESTIONS 2); 18 blocks follow from it.
  * Iter 36 (33 rows, 416 vs 408 bytes): `v7d800 = v7d800 + 1` in the for step (44 -> 33); not a
  * cause of the missing promotion (all diagnostic, none promotes): v88b72 replaced by a local
- * counter, the `f00 = 2` store removed, the f37487 call removed, a fresh `_v7d800` alias used
+ * counter, the `f00 = 2` store removed, the spr_draw_scaled call removed, a fresh `_v7d800` alias used
  * only here, init order `v88b72 = 0, v7d800 = players`, `< 8`, `&players[0]`. Unlike minimap
  * (MATCH by computing in the global), the global here is already the working variable. */
 void players_ahead(void)
@@ -18838,7 +18838,7 @@ void players_ahead(void)
             v7d878 = 4 * n;   /* 0x3435f: the value computed before spr_w was shortened */
         }
         spr_x = c;
-        f37487();
+        spr_draw_scaled();
     }
 }
 
@@ -18883,7 +18883,7 @@ void pic_at(int d, int lift, short x)
     spr_w = *p7d764;
     spr_y = spr_y - spr_w - lift;
     spr_x = x - (h >> 1);
-    f37487();
+    spr_draw_scaled();
 }
 
 /* ---- 0x34458, 860 bytes (caller 0x35ca4 at 0x3677f, start-up): the release check. 42.GAM in the
@@ -18944,7 +18944,7 @@ void release_check(void)
     v88b4a = 0;
     pal_a = 0x3e80;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = 0x3e80;
     for (i = 1; i <= n; i = 1 + i) {    /* this spelling gives the game's slot order (permute.py, iter 56) */
         print_at(center_x(strlen(lines[i]) * 8), y, lines[i], 0);
@@ -18953,7 +18953,7 @@ void release_check(void)
     strcpy(lines[1], "COPYRIGHT BEAVIS-SOFT 1994");
     print_at(center_x(strlen(lines[1]) * 8), 0xa0, lines[1], 0);
     print_at(center_x(strlen("PRESS FIRE") * 8), 0xb8, "PRESS FIRE", 0);
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -18967,7 +18967,7 @@ void release_check(void)
         do {
             v7d8a4 = v7d8ac;
             ctl_setup(0);
-            f377ae();
+            buttons_poll();
             if (v88cce)
                 joy88b40 = 1;
         } while (!joy88b40 && key88cd0 != 1 && ticks < 2000);
@@ -18976,10 +18976,10 @@ void release_check(void)
 }
 
 /* ---- 0x347b4, 320 bytes (caller 0x348f4 at 0x34b63): draws the 60 32x32 tiles of v7d75c
- * (0x400 bytes each) as a 10 x 6 grid with f3735c, then fills the 128 x 128 tile-pointer map at
+ * (0x400 bytes each) as a 10 x 6 grid with grab32, then fills the 128 x 128 tile-pointer map at
  * v7d6a4 (through v7d688) with them repeated: row r of the map uses tile row r % 6, column c tile
  * c % 10. LIKELY the background of a menu screen. */
-void f3735c(void);
+void grab32(void);
 
 void tiles_setup(void)
 {
@@ -18994,7 +18994,7 @@ void tiles_setup(void)
         spr_x = 0;
         for (i = 0; i <= 9; i++) {
             sprptr = p;
-            f3735c();
+            grab32();
             p += 0x400;
             spr_x += 0x20;
         }
@@ -19032,15 +19032,15 @@ void tiles_setup(void)
  * music88bcc = 0 sinks below the inlined music_start loads (0x34c5e, the zero-argument dead end); the
  * game hoists v7ea70 into EAX above the wait loop (0x3515d) where ours reads it in the loop; and the
  * `k + 1 == j` compare has its operands swapped (0x351ae `cmp esi,ecx`). The pal_a save went with
- * `void f375cd(void)` (21 -> 17) and `k + 1 == j` (was `j == k + 1`) fixed the homes (17 -> 15).
+ * `void pcx_blit(void)` (21 -> 17) and `k + 1 == j` (was `j == k + 1`) fixed the homes (17 -> 15).
  * Tried iter 36: `t = v7ea70;` + `ticks - t` (37), `-v7ea70 + ticks` (15), `< 9` (38), `t = v7eb00`
  * for the fread buffer (31), `(int)` casts on k or j (15). Iter 48 (12 rows now): `j == k + 1` again
  * in a probe (14 - .work/probe_in) - 9.5b gives a comparison's source-LEFT operand both the cmp
  * destination AND the first register home (ECX here, EAX in car_laps), so flipping the C operands
  * swaps the two temps and leaves the emitted `cmp` alone; the other rows are the moved fread load,
  * the zero sink, that hoist, and the padding/epilogue rows at 0x3526a and 0x352d4. */
-void f37e23(void);
-void f36e66(void);
+void vram_clear(void);
+void rows_restore(void);
 extern int v7aa98;
 
 void intro(void)
@@ -19071,9 +19071,9 @@ void intro(void)
         v88b4a = 0;
         pal_a = 0x3e80;
         p7d714 = p6a978;
-        f375cd();
+        pcx_blit();
         pal_a = 0x3e80;
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -19086,7 +19086,7 @@ void intro(void)
             if (ticks >= 100) {
                 v7d8a4 = v7d8ac;
                 ctl_setup(0);
-                f377ae();
+                buttons_poll();
                 if (v88cce)
                     joy88b40 = 1;
                 if (joy88b40 || key88cd0 == 1)
@@ -19097,7 +19097,7 @@ void intro(void)
     palptr = pal7d850;
     getpalette();
     fade_out(pal7d850);
-    f37e23();
+    vram_clear();
     pal_a = 0xbb80;
     pcx_load("APOG1.PCX", 0);
     pal = v7d858;
@@ -19109,9 +19109,9 @@ void intro(void)
     v88b4a = 0;
     i = pal_a;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = i;
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -19137,11 +19137,11 @@ void intro(void)
         ticks = 0;
         spr_y = y;
         spr_w = w;
-        f37e94();
-        f36e66();
+        floor_draw();
+        rows_restore();
         if (fly)
             pic_at(dist, lift, 0x82);
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -19158,7 +19158,7 @@ void intro(void)
             w88b1e = 0;
             first = 0;
             palptr = v7d858;
-            f37cf1();
+            dac_load();
         }
         while (ticks <= 6)
             ;
@@ -19169,7 +19169,7 @@ void intro(void)
             break;
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();
+        buttons_poll();
         if (v88cce)
             joy88b40 = 1;
         if (joy88b40 || key88cd0 == 1)
@@ -19195,13 +19195,13 @@ void intro(void)
             y = 0;
         }
         if (y == 0 && w == 0x82) {
-            f37a21();
+            path_pt_scale();
             v7d798 = v7d7a4;
             v7d79c = v7d7a8;
             curpos += 0x1e;
             if (curpos >= 0x780)
                 curpos -= 0x780;
-            f37a21();
+            path_pt_scale();
             v7d768 = v7d798 - v7d7a4;
             v7d76c = v7d79c - v7d7a8;
             v88b0a += v7d768;
@@ -19232,9 +19232,9 @@ void intro(void)
     v88b4a = 0;
     pal_a = 0x3e80;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = 0x3e80;
-    f37de0();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -19246,7 +19246,7 @@ void intro(void)
     do {
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();
+        buttons_poll();
         if (v88cce)
             joy88b40 = 1;
     } while (!joy88b40 && key88cd0 != 1 && ticks < 0x110);
@@ -19262,12 +19262,12 @@ void intro(void)
     v88b4a = 0;
     pal_a = 0x3e80;
     p7d714 = p6a978;
-    f375cd();
+    pcx_blit();
     pal_a = 0x3e80;
     pal_b = 0x3e80;
     pal_c = 0x7d00;
-    setpalette();
-    f37de0();
+    page_copy();
+    page_show();
     if (key88ccd) {
         screenshot();
         if (key88ccd)
@@ -19296,9 +19296,9 @@ void intro(void)
     for (;;) {
         v7ea70 = ticks;
         pal_c = pal_a;
-        setpalette();
+        page_copy();
         players_ahead();
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             if (key88ccd)
@@ -19331,7 +19331,7 @@ void intro(void)
             continue;
         v7d8a4 = v7d8ac;
         ctl_setup(0);
-        f377ae();
+        buttons_poll();
         if (v88cce)
             joy88b40 = 1;
         if (joy88b40 || key88cd0 == 1)
@@ -19524,10 +19524,10 @@ void cursor_at(int x, int y, int show)
 }
 
 /* ---- 0x35bb0, 241 bytes (caller 0x35ca4 at 0x36a2f, on exit): shows the DOS end screen `name`
- * from the DAT (0xfa0 bytes = 80 x 25 text cells, read into p6a978 and put on screen by f36a4e),
+ * from the DAT (0xfa0 bytes = 80 x 25 text cells, read into p6a978 and put on screen by textscreen_show),
  * cursor to the last row, waits for a key. When the entry is missing: beep, "Cannot find DOS end
  * screen %s", key. */
-void f36a4e(void);
+void textscreen_show(void);
 void cursor_at_x(int x, int y, int show);
 #pragma aux cursor_at_x "cursor_at_"
 
@@ -19549,7 +19549,7 @@ void end_screen(char *name)
     fread(p6a978, 0xfa0, 1, datfile);
     while (kbhit())
         getch();
-    f36a4e();
+    textscreen_show();
     cursor_at_x(0x4f, 0x18, 1);
     getch();
 }
@@ -19571,8 +19571,8 @@ void TS_Dispatch(void);
 void TS_Terminate(struct task *t);
 void MUSIC_Shutdown(void);
 void FX_Shutdown(void);
-void f36d42(void);
-void f37e41(void);
+void rowtab_init(void);
+void modex_init(void);
 extern struct task *t7ee00, *t7ee04;
 #pragma aux t7ee00 "_v7ee00"
 #pragma aux t7ee04 "_v7ee04"
@@ -19816,7 +19816,7 @@ nomem:
             k = 7;
     }
     v7eb84 = (int)(size_t)lit7cbe8;
-    f36d42();
+    rowtab_init();
     v7d81c = 0x462;
     v7d818 = 0x460;
     v88bd6 = datfind("VEL.TAB");
@@ -19840,8 +19840,8 @@ nomem:
     palptr = v7d858;
     w88b1e = 0;
     setvmode_keep(0x13);
-    f37cf1();
-    f37e41();
+    dac_load();
+    modex_init();
     pal = v7d758;
     datfind("BEACH.PCX");
     seekdat(telldat() + datsize() - 0x300);
@@ -19891,9 +19891,9 @@ nomem:
         v88b4a = 0;
         i = pal_a;
         p7d714 = p6a980;
-        f375cd();
+        pcx_blit();
         pal_a = i;
-        f37de0();
+        page_show();
         if (key88ccd) {
             screenshot();
             while (key88ccd != 0)

@@ -147,15 +147,15 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   print_at's arg1.
 - The selection box (`sp6a878[id0 + id1]`, `spr_w = 0x1c`, `spr_h = 0x26`) is drawn in
   three places: 0x1a983-0x1a996, 0x1ae3f-0x1ae5d (right after the `ents_show` 0x1adfe)
-  and 0x1ba13-0x1ba31. CONFIRMED by the three `call drawsprite`; our C had only two of
+  and 0x1ba13-0x1ba31. CONFIRMED by the three `call spr_draw`; our C had only two of
   them until iter 60 - the middle one was missing, and fndiff hid it.
 - Info lines: buf0 at (0x2e, 0xaf) 0x1a5da, buf2 at (0x2e, 0xbc) 0x1a605.
 - `pal_a` is set to 0x7d00 at 0x1a5b3, restored from 0x11c at 0x1a61e, then
   blinked 0 / 0x3e80 once per frame (0x1a744, 0x1a9ce, 0x1aec3, 0x1bb0c), with
-  `setpalette` (0x36f14) and a `ticks - v7ea70` wait (8 ticks 0x1a76f, 16 /
+  `page_copy` (0x36f14) and a `ticks - v7ea70` wait (8 ticks 0x1a76f, 16 /
   60 ticks 0x1aa04/0x1aa23, 0x1a ticks 0x1aeef, 10 ticks 0x1af1b/0x1bb37,
   4 ticks 0x1afb4).
-- Each frame ends with `f37de0` (0x37de0, LIKELY the flip/present) and the
+- Each frame ends with `page_show` (0x37de0, LIKELY the flip/present) and the
   `key88ccd` screenshot hook (0x1a724, 0x1a9ae, 0x1ae99, 0x1baf5).
 - The car-name block 0x1a8a7-0x1a932 (CONFIRMED; our C was wrong until iter 75):
   `p7d838 = tab6e5b0[cd]` 0x1a8d1 and `p7d764 = p7d838 + 1` (stored twice, 0x1a8d6
@@ -166,7 +166,7 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   twice. Our C had `p7d838 += 2` and `pname_desc` inside that loop: difffn
   (`TICK=8 SEED=0x88cce=1:b`, findings/menus.md) showed 0x7d838 ending 0x08 where
   the game leaves 0x04. p7d838 is the `.SP` stream cursor the scaled blit
-  `f37487` steps (findings/formats.md), so what the block leaves behind is what
+  `spr_draw_scaled` steps (findings/formats.md), so what the block leaves behind is what
   the next draw reads.
 - `ents_draw(9)` at 0x1a71a; `voice_play(0x12)` at 0x1a632 (LIKELY the
   "choose a car" voice), `voice_play(0x1a)` at 0x1b4a7 (with the ORDERING INFO

@@ -150,47 +150,46 @@ REG bh, 7, 0, 0
         EXT _v88ce8, 0x88ce8
         EXT _v88ce9, 0x88ce9
 
-        global f36a4e_
+        global textscreen_show_
         global getpalette_
-        global f36d42_
-        global f36e66_
-        global f36ec2_
-        global setpalette_
-        global fn_36f55_
-        global f36f55_
-        global f36f8c_
-        global drawsprite_
-        global drawsprite2_
-        global f37132_
-        global f371e4_
-        global getline_
-        global blit372c7_
-        global f3735c_
-        global f373ee_
-        global f37487_
-        global f375cd_
-        global f376d7_
-        global f377ae_
-        global joy_detect_
-        global f37a06_
-        global f37a21_
-        global f37b04_
-        global f37bb1_
-        global f37bf0_
-        global f37c43_
-        global f37c84_
-        global f37cf1_
-        global waitretrace_
-        global f37de0_
-        global f37e23_
-        global f37e41_
-        global f37e94_
-        global f3c3e9_
+        global rowtab_init_
+        global rows_restore_
+        global band_mirror_
+        global page_copy_
+        global horizon_upload_
+        global rec_swap_
+        global spr_draw_
+        global spr_draw_clip_
+        global spr_draw_key_
+        global box_draw_
+        global spr_grab_
+        global grab32_
+        global spr_draw_opaque_
+        global spr_draw_scaled_
+        global pcx_blit_
+        global pcx_tiles_
+        global buttons_poll_
+        global joy_poll_
+        global tilemap_fill_
+        global path_pt_scale_
+        global surface_at_
+        global vec_scale_
+        global pixel_plot_
+        global dac_put5_
+        global dac_put8_
+        global dac_load_
+        global page_show_
+        global vram_clear_
+        global modex_init_
+        global floor_draw_
+        global floor_draw_upper_
         global kbd_isr_
         global disable_ints_
         global enable_ints_
 
-f36a4e_:
+
+; ---- 0x36a4e textscreen_show: copies 0x3e8 dwords (one 80x25 text screen) from [p7d714] to B800:0; main calls it after fread(p6a978,0xfa0) at exit (src/ww.c textscreen_show())
+textscreen_show_:
         pushad
         push edi
         push esi
@@ -204,13 +203,16 @@ f36a4e_:
         pop edi
         popad
         ret
+
+; ---- 0x36a69 strips_restore: UNREFERENCED (no call, jump or fixup reaches it): latch copy of 20-byte strips from VRAM 0xbb80+0x12c0 to page pal_a +0x12c0
+strips_restore:
         push edi
         push esi
         push eax
         push ecx
         push edx
         cld
-        call L_36e36
+        call vga_latch_on
         mov edi, 0xa0000
         add di, word [_pal_a]
         add di, 0x12c0
@@ -419,13 +421,15 @@ f36a4e_:
         rep movsb
         rr add, di, dx
         rr add, si, dx
-        call L_36e53
+        call vga_latch_off
         pop edx
         pop ecx
         pop eax
         pop esi
         pop edi
         ret
+
+; ---- 0x36cca getpalette: reads the 256 DAC entries (0x3c7, 3x 0x3c9) to [palptr], each read after a display-enable wait on 0x3da bit 0
 getpalette_:
         pushad
         push edi
@@ -496,7 +500,9 @@ L_36d32:
         pop edi
         popad
         ret
-f36d42_:
+
+; ---- 0x36d42 rowtab_init: fills [v7eb84] with 320 dwords y*80: the Mode X row-offset table every blit indexes with spr_y
+rowtab_init_:
         push eax
         push edx
         push esi
@@ -518,6 +524,9 @@ L_36d54:
         pop edx
         pop eax
         ret
+
+; ---- 0x36d69 rect_overlap: UNREFERENCED: v88bbc = 1 if the rectangles (88bca,88bac,88bc8,88baa) and (88bba,88bbe,88bc6,88ba8) overlap
+rect_overlap:
         push ax
         push bx
         push cx
@@ -613,7 +622,9 @@ L_36e2d:
         pop bx
         pop ax
         ret
-L_36e36:
+
+; ---- 0x36e36 vga_latch_on: GC mode 0x41 (write mode 1: latch copy), map mask 0x0f; local, called 3x
+vga_latch_on:
         push dx
         push ax
         mov dx, 0x3ce
@@ -625,7 +636,9 @@ L_36e36:
         pop ax
         pop dx
         ret
-L_36e53:
+
+; ---- 0x36e53 vga_latch_off: GC mode 0x40 (write mode 0); local, called 3x
+vga_latch_off:
         push dx
         push ax
         mov dx, 0x3ce
@@ -634,14 +647,16 @@ L_36e53:
         pop ax
         pop dx
         ret
-f36e66_:
+
+; ---- 0x36e66 rows_restore: CONFIRMED the bytes: latch copy of spr_w rows (80 bytes each) from VRAM 0xcc60 to page pal_a row spr_y; LIKELY restores the background under the intro fly-in (its one caller, after floor_draw)
+rows_restore_:
         push ecx
         push eax
         push esi
         push edi
         push edx
         cld
-        call L_36e36
+        call vga_latch_on
         rr xor, eax, eax
         mov ax, word [_spr_y]
         mov ecx, dword [_v7eb84]
@@ -664,12 +679,14 @@ f36e66_:
         pop esi
         pop eax
         pop ecx
-        call L_36e53
+        call vga_latch_off
         ret
-f36ec2_:
+
+; ---- 0x36ec2 band_mirror: latch copy: the 90 rows from page pal_a + spr_y, bottom row first, to VRAM 0xbb80, then back - a vertical mirror of the band; called per car in two-player when av7eb80 && v88bde
+band_mirror_:
         pushad
         cld
-        call L_36e36
+        call vga_latch_on
         rr xor, eax, eax
         mov ax, word [_pal_a]
         add ax, word [_spr_y]
@@ -689,10 +706,12 @@ L_36eef:
         pop edi
         mov esi, 0xabb80
         rep movsb
-        call L_36e53
+        call vga_latch_off
         popad
         ret
-setpalette_:
+
+; ---- 0x36f14 page_copy: was setpalette - NOT a palette op: latch copy 0x3e80 bytes (one page) from A000+pal_b to A000+pal_c (findings/video.md)
+page_copy_:
         pushad
         mov dx, 0x3ce
         mov ax, 0x4105
@@ -712,8 +731,9 @@ setpalette_:
         out dx, ax
         popad
         ret
-fn_36f55_:
-f36f55_:
+
+; ---- 0x36f55 horizon_upload: CONFIRMED the bytes: 0x6400 linear bytes from [v7eb54] to planar A000:7d00, map mask 1,2,4,8 per source byte (four pixels per address); the horizon strip floor_draw copies from 0x7d00 is 1280x20 = 0x6400 (findings/video.md)
+horizon_upload_:
         pushad
         rr xor, ecx, ecx
         mov esi, dword [_v7eb54]
@@ -740,7 +760,9 @@ L_36f88:
         loop L_36f72
         popad
         ret
-f36f8c_:
+
+; ---- 0x36f8c rec_swap: swaps [v7d88c] and [v7d880] through [v7d894], v7d864 dwords each (rep movsd x3); the record sorts of crecs[] and standings[] call it
+rec_swap_:
         push ecx
         push edi
         push esi
@@ -761,7 +783,9 @@ f36f8c_:
         pop edi
         pop ecx
         ret
-drawsprite_:
+
+; ---- 0x36fd0 spr_draw: column-major sprite at (spr_x,spr_y) page pal_a: spr_h columns of spr_w pixels from [sprptr], colour 0 transparent
+spr_draw_:
         push eax
         push ebx
         push ecx
@@ -837,7 +861,9 @@ L_3706f:
         pop ebx
         pop eax
         ret
-drawsprite2_:
+
+; ---- 0x3707e spr_draw_clip: spr_draw that skips clipy source bytes after each column
+spr_draw_clip_:
         push eax
         push ebx
         push ecx
@@ -914,7 +940,9 @@ L_37123:
         pop ebx
         pop eax
         ret
-f37132_:
+
+; ---- 0x37132 spr_draw_key: spr_draw with the transparent colour v88ce9 instead of 0
+spr_draw_key_:
         push eax
         push ebx
         push ecx
@@ -990,7 +1018,9 @@ L_371d5:
         pop ebx
         pop eax
         ret
-f371e4_:
+
+; ---- 0x371e4 box_draw: box spr_h x spr_w at (spr_x,spr_y): outer columns and top/bottom pixels v88ce8, inside v88ce9
+box_draw_:
         push eax
         push ebx
         push ecx
@@ -1090,8 +1120,9 @@ L_372b8:
         pop ebx
         pop eax
         ret
-getline_:
-blit372c7_:
+
+; ---- 0x372c7 spr_grab: reverse of spr_draw: spr_h columns of spr_w pixels from page pal_a at (spr_x,spr_y) to [sprptr], plane by read-map select (0x3ce index 4)
+spr_grab_:
         push eax
         push ebx
         push ecx
@@ -1150,7 +1181,9 @@ L_3734d:
         pop ebx
         pop eax
         ret
-f3735c_:
+
+; ---- 0x3735c grab32: 32x32 pixels from page pal_a at (spr_x,spr_y) to [sprptr], row by row
+grab32_:
         push eax
         push ebx
         push ecx
@@ -1212,7 +1245,9 @@ L_373d2:
         pop ebx
         pop eax
         ret
-f373ee_:
+
+; ---- 0x373ee spr_draw_opaque: spr_draw with no transparent colour
+spr_draw_opaque_:
         push eax
         push bx
         push ecx
@@ -1272,7 +1307,9 @@ L_37477:
         pop bx
         pop eax
         ret
-f37487_:
+
+; ---- 0x37487 spr_draw_scaled: Mode X scaled sprite blit: per screen column (plane mask 0x3c4), source sprptr stepped by the p7d838 .INF delta table, colour 0 skipped (findings/formats.md .SP)
+spr_draw_scaled_:
         push eax
         push ebx
         push ecx
@@ -1426,7 +1463,9 @@ L_375c6:
         pop ebx
         pop eax
         ret
-f375cd_:
+
+; ---- 0x375cd pcx_blit: CONFIRMED pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
+pcx_blit_:
         pushad
         rr xor, ecx, ecx
         rr xor, ax, ax
@@ -1541,7 +1580,9 @@ L_376ce:
 L_376d5:
         popad
         ret
-f376d7_:
+
+; ---- 0x376d7 pcx_tiles: decodes a 320x200 PCX RLE image from [p7d714] to [v7d99c] (0xc0 = run), then cuts it into 54 tiles of 32x32 at [v7eb58], 10 tiles per row
+pcx_tiles_:
         pushad
         rr xor, ecx, ecx
         rr xor, ax, ax
@@ -1634,7 +1675,9 @@ L_377a8:
         jne short L_37779
         popad
         ret
-f377ae_:
+
+; ---- 0x377ae buttons_poll: joy88b40..46 = bytes [v7d8a4]+5/7/9/11; with joyfound != 1 also game-port buttons (port 0x201 bits 4-7, pressed = 0 -> 1)
+buttons_poll_:
         push edx
         push ax
         rr xor, ax, ax
@@ -1699,7 +1742,9 @@ L_37847:
         pop ax
         pop edx
         ret
-joy_detect_:
+
+; ---- 0x3784b joy_poll: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre v88b5c/v88b5e; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
+joy_poll_:
         push eax
         push ebx
         push ecx
@@ -1875,6 +1920,9 @@ L_379e6:
         pop ebx
         pop eax
         ret
+
+; ---- 0x379ec pt_load: UNREFERENCED: v7d5f8/v7d5f4 = the two dwords at [D_7d680]
+pt_load:
         push ebx
         push eax
         mov ebx, dword [D_7d680]
@@ -1885,7 +1933,9 @@ L_379e6:
         pop eax
         pop ebx
         ret
-f37a06_:
+
+; ---- 0x37a06 tilemap_fill: fills [v7d6a4] (the floor tile map) with v7d64c, 0x4000 dwords; called at track load
+tilemap_fill_:
         push edi
         push ecx
         push eax
@@ -1899,7 +1949,9 @@ f37a06_:
         pop ecx
         pop edi
         ret
-f37a21_:
+
+; ---- 0x37a21 path_pt_scale: CONFIRMED the bytes: v7d7a4/v7d7a8 = round(16.16 product of point curpos of [v7d6a0] (8 bytes per point) and [v7d660]); LIKELY the track path
+path_pt_scale_:
         push ebx
         push eax
         push edx
@@ -1927,6 +1979,9 @@ f37a21_:
         pop eax
         pop ebx
         ret
+
+; ---- 0x37a6c surface_at_7c: UNREFERENCED: surface_at with the point scaled by 0x7c and offset by the camera v88b0a/v88b0e
+surface_at_7c:
         pushad
         mov ebx, dword [_curpos]
         mov esi, 0x7c
@@ -1981,7 +2036,9 @@ L_37afc:
 L_37b02:
         popad
         ret
-f37b04_:
+
+; ---- 0x37b04 surface_at: surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
+surface_at_:
         pushad
         mov eax, dword [_v7d7a8]
         mov ecx, dword [_v7d7a4]
@@ -2057,7 +2114,9 @@ L_37ba9:
 L_37baf:
         popad
         ret
-f37bb1_:
+
+; ---- 0x37bb1 vec_scale: v7d610/v7d620 = round(16.16 product of v7d5f8/v7d5f4 and v7d608); src/ww.c VEC()
+vec_scale_:
         push eax
         push edx
         mov eax, dword [_v7d5f8]
@@ -2077,7 +2136,9 @@ f37bb1_:
         pop edx
         pop eax
         ret
-f37bf0_:
+
+; ---- 0x37bf0 pixel_plot: one pixel of colour v88ce9 at (spr_x,spr_y) on page pal_a
+pixel_plot_:
         push eax
         push ebx
         push ecx
@@ -2109,7 +2170,9 @@ f37bf0_:
         pop ebx
         pop eax
         ret
-f37c43_:
+
+; ---- 0x37c43 dac_put5: DAC 0xa1-0xa4 and 0x94 from [v7d744] (15 bytes); a palette animation steps v7d744 through v7d758
+dac_put5_:
         push ecx
         push esi
         push eax
@@ -2149,7 +2212,9 @@ L_37c56:
         pop esi
         pop ecx
         ret
-f37c84_:
+
+; ---- 0x37c84 dac_put8: DAC 0xad,0xac, 0xae,0xaf from [v7d744], 0xa8-0xab from [v7d744]+0x30; a palette animation steps v7d744 through v7d6d0
+dac_put8_:
         push ecx
         push esi
         push eax
@@ -2213,7 +2278,9 @@ L_37cd6:
         pop esi
         pop ecx
         ret
-f37cf1_:
+
+; ---- 0x37cf1 dac_load: w88b10 DAC entries from index w88b1e out of [palptr], each byte after a display-enable wait
+dac_load_:
         push esi
         push eax
         push ebx
@@ -2301,6 +2368,9 @@ L_37d7e:
         pop eax
         pop esi
         ret
+
+; ---- 0x37d96 tile_show: UNREFERENCED: a 32x32 tile from [v7d64c] to A000:0 as linear rows of 320 (a debug view?)
+tile_show:
         push ecx
         push esi
         push edi
@@ -2321,6 +2391,9 @@ L_37db0:
         pop esi
         pop ecx
         ret
+
+; ---- 0x37dc7 vretrace_wait: UNREFERENCED: waits for the start of vertical retrace (0x3da bit 3)
+vretrace_wait:
         push ax
         push dx
         mov dx, 0x3da
@@ -2337,8 +2410,9 @@ L_37dd5:
         pop dx
         pop ax
         ret
-waitretrace_:
-f37de0_:
+
+; ---- 0x37de0 page_show: was waitretrace: waits for display enable, pal_d = pal_a, CRTC start address (0x0c/0x0d) = pal_a, waits for vertical retrace - the page flip
+page_show_:
         push ax
         push bx
         push dx
@@ -2369,7 +2443,9 @@ L_37e17:
         pop bx
         pop ax
         ret
-f37e23_:
+
+; ---- 0x37e23 vram_clear: all four planes, 64 KB each, to 0
+vram_clear_:
         pushad
         cld
         mov dx, 0x3c4
@@ -2381,7 +2457,9 @@ f37e23_:
         rep stosw
         popad
         ret
-f37e41_:
+
+; ---- 0x37e41 modex_init: unchained 256-colour mode: GC5 odd/even off, GC6 chain off, SEQ4 chain-4 off, VRAM cleared, CRTC 0x14 dword off, 0x17 byte mode
+modex_init_:
         pushad
         mov dx, 0x3ce
         mov al, 5
@@ -2426,7 +2504,9 @@ f37e41_:
         out dx, al
         popad
         ret
-f37e94_:
+
+; ---- 0x37e94 floor_draw: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera v88b0a/v88b0e, tile of map v7d6a4 (32x32 tiles), one byte; three unrolled bodies by v88c20 = detail 1/2/3 (High/Medium/Low)
+floor_draw_:
         pushad
         cld
         mov dx, 0x3ce
@@ -8708,7 +8788,9 @@ L_3c3e2:
 L_3c3e7:
         popad
         ret
-f3c3e9_:
+
+; ---- 0x3c3e9 floor_draw_upper: floor_draw from screen row 10 (0x320): the second view in two-player when v88bde
+floor_draw_upper_:
         pushad
         mov dx, 0x3ce
         mov ax, 0x4105
@@ -14972,6 +15054,8 @@ L_40900:
 L_40905:
         popad
         ret
+
+; ---- 0x40907 kbd_isr: keyboard interrupt handler (iretd); DS from the sel16 fixup 0x4090e
 kbd_isr_:
         pushaw
         push ds
@@ -15102,9 +15186,13 @@ L_409e4:
         popaw
         sti
         iretd
+
+; ---- 0x409eb disable_ints: cli; ret
 disable_ints_:
         cli
         ret
+
+; ---- 0x409ed enable_ints: sti; ret
 enable_ints_:
         sti
         ret

@@ -228,10 +228,11 @@ def main():
     if asmok:
         src = open(os.path.join(ROOT, 'src', 'wwasm.asm')).read()
         ents = set(re.findall(r'^\s+global (\w+)', src, re.M))
+        named = len(re.findall(r'^; ---- 0x', src, re.M))
         w('| The game\'s assembler (VGA blitters, interrupt handlers), `src/wwasm.asm` | 0x%05X-0x%05X, %s bytes | '
           'reassembled byte for byte (nasm; `tools/asm/asmcheck.py`) and linked in place of the game\'s bytes; '
-          'still raw disassembly: %d entry names, the rest `L_xxxxx` labels |'
-          % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), len(ents)))
+          '%d routines read and named (%d used by the C), branch targets still `L_xxxxx` |'
+          % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), named, len(ents)))
     else:
         w('| The game\'s assembler (VGA blitters, interrupt handlers) | 0x%05X-0x%05X, %s bytes | not rebuilt: %d routines found |'
           % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), asm_found))

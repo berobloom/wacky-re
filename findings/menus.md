@@ -258,7 +258,7 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   function that stores a local's address into a global turns a *frame-size* difference into a
   data-segment DIFF. `ARGS=2,0,0,0x4e` and `ARGS=5,0,1,0` print SAME outright (no `fade_in` on those
   paths). The `call 0: game 0x375cd(0,0,0,[88464,0,0]) ours 0x10b8f(0,0,0,[242267,0,0])` line printed
-  with each DIFF is not a difference: `f375cd` 0x375cd takes no arguments (`pushal`..`popal` 0x376d5,
+  with each DIFF is not a difference: `pcx_blit` 0x375cd takes no arguments (`pushal`..`popal` 0x376d5,
   findings/video.md), so those four values are registers the caller happened to leave (GOTCHAS).
 - CONFIRMED (iter 85: `cars_menu` 0x1a380 - `TICK=8 SEED=0x88cce=1:b,0x88cd0=1:b,0x88c46=4:w
   RESEED=0x88cd0=0:b CALLS=20000 COUNT=120000000` - SAME with **both sides returning**, no DIFF byte,
@@ -275,7 +275,7 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   per-line frame delay 0x1f305 `cmp edi, dword [0x7e720]; jge 0x1f305`: `edi` is the `pal_a` 0x88b24
   **word** loaded at 0x1f064 and 0x1f3d1 (0xbb80 / 0x7d00), and the page head 0x1f05a stores 0 to
   `ticks`, so `SEED=0x7e720=` cannot help (it is wiped every page) and the loop body has no stubbed
-  call, so `TICK=` only pays at the next `f37de0` 0x1f2e0. `TICK=65536` (one add per stubbed call,
+  call, so `TICK=` only pays at the next `page_show` 0x1f2e0. `TICK=65536` (one add per stubbed call,
   more than any word deadline) passes it at once; `TICK=8` needs > 2000 calls. The six pages take
   between 2000 and 20000 stubbed calls, hence `CALLS=20000`: with that both sides of
   `difffn.py credits_screen` reach the return and agree (control with the same env SAME, and SAME
@@ -304,7 +304,7 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   and the function takes its normal path at 0x1e7c5.
   (b) The menu loop 0x1eada-0x1ee9d has a frame-rate limit 0x1ecac `while (ticks - v7e724 < 0xe)`
   whose snapshot `v7e724` is `ticks` read at 0x1eadf; between them sit the two stubbed pumps
-  `drawsprite` 0x1ec64 and `f37de0` 0x1ec69, so `TICK=8` pays it every pass. With
+  `spr_draw` 0x1ec64 and `page_show` 0x1ec69, so `TICK=8` pays it every pass. With
   `TICK=8 SEED=0x7ed4c=1:d CALLS=3000` both sides of `difffn.py volume_menu` are SAME over 3000
   stubbed calls (~300 redraws) and the control (game vs game, same env) is SAME too; neither side
   returns, because the only exit is (c).
@@ -415,7 +415,7 @@ what `SEED=` left them, so:
   arguments of the only call site, 0x1911f `trial_book(v88bb6 + v7ecb4, v88b88, 0)` - 43194 insns at 928
   addrs, also SAME/returned): `trial_book` 0x2e4b8's wall is its **own input pump** 0x2f2fa-0x2f395, not
   the pair. Each pass stores EBX (0, from 0x2f2f8) into `joy88b40/42/44/46` 0x88b40-0x88b46 and `v88cec`
-  0x88cec, calls `f377ae` 0x377ae, and re-tests `v88cce` 0x88cce (0x2f32d), `key88cd0` (0x2f337, against
+  0x88cec, calls `buttons_poll` 0x377ae, and re-tests `v88cce` 0x88cce (0x2f32d), `key88cd0` (0x2f337, against
   ECX = 1 from 0x2f2f3) and `key88ccd` 0x88ccd (0x2f347, then `call screenshot` 0x2f34f and the bare wait
   0x2f35c). EDX is 0 from 0x2f305 `mov edx,ebx` unless one of those tests mismatches, which sets it to
   ECX (0x2f335, 0x2f33f, 0x2f388); `test edx,edx; je 0x2f2fa` 0x2f393 re-pumps (2841 passes at
@@ -425,7 +425,7 @@ what `SEED=` left them, so:
   needs the 0 back, so it takes the same `SEED=`/`RESEED=` pair as `fn_1d704`. Walked return chain
   (address counts, `.work/fncover.py`, each x1): 0x2f38a -> 0x2f39b -> 0x2f3a3 -> `wait_release` mode 0
   at 0x2f3ae (its 0x278e7 test sees 0 and 0x2f307-0x2f31c has just zeroed the joy flags) -> `getpalette`
-  0x2f3bd -> `fade_out` 0x2f3c7 -> `f37de0` 0x2f3d5 -> 0x2f3da `cmp byte [key88ccd],0` -> `add esp,0x15c`
+  0x2f3bd -> `fade_out` 0x2f3c7 -> `page_show` 0x2f3d5 -> 0x2f3da `cmp byte [key88ccd],0` -> `add esp,0x15c`
   + 5 pops -> the **only `ret`** 0x2f404 (whole-range disasm of 0x2e4b8-0x2f407: one `ret`, one jump-table
   jump 0x2e533). Not walked: the record block behind 0x2f193 `cmp dword [esp+0x144],0; je 0x2f2d5` (0x2f1d9
   and its three call-free ticks waits 0x2f1fe/0x2f25e/0x2f2b8 measured x0 - `TICKREAD=` is the knob for a

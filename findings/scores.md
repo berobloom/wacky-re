@@ -85,7 +85,7 @@ car-select chain and the name entry.
   or writes the saved table; nothing else in it has been read.
 - CONFIRMED (0x1ce7d and 0x1d120 load `v88bb2` with `movsx`): `v88bb2` is a signed `short`;
   declaring it unsigned turns the 0x1d120 argument load into a `movzx`. The `mov dx,[pal_a]` at 0x1ce57 is
-  not a parameter: it is a `short` save of pal_a around `f375cd` (findings/video.md).
+  not a parameter: it is a `short` save of pal_a around `pcx_blit` (findings/video.md).
 - CONFIRMED (`tools/le/xref.py ww 0x77758`: four references in the whole image,
   0x1caf8/0x1cb12/0x1cb31/0x1d870, all of them `add eax, 0x77758` - the base of the row product,
   never a destination; `xref.py ww 0x7d8a8`: the record pointer has exactly two writers, 0x1cb3d in
@@ -133,7 +133,7 @@ car-select chain and the name entry.
   `joy88b40 != 0`: `mypod != 1` exits the loop (0x2d1f9/0x2d202 -> 0x2d22c) with no scores screen,
   `mypod == 1 && splitscreen` exits it the same way (0x2d20e/0x2d216), and `mypod == 1 && !splitscreen`
   calls `scores_screen` 0x2d227 first. With `joy88b40 == 0` the loop continues at 0x2cb84, which is a
-  mid-loop point (`v7e724 = ticks; pal_c = pal_a; setpalette(); if (musicon && ![esp+0x314] &&
+  mid-loop point (`v7e724 = ticks; pal_c = pal_a; page_copy(); if (musicon && ![esp+0x314] &&
   MUSIC_SongPlaying()) ...` 0x2cb84-0x2cbbb), not the loop head - and the game reads the flag only twice
   there because the first test's `je 0x2cb84` 0x2d1f1 already excluded 0 (`je` 0x2d1f7 and
   `jne 0x2d221` are dead code).
@@ -148,9 +148,9 @@ car-select chain and the name entry.
   name-entry screen. It centred-prints `heading` at y 0xa with `wtext`
   (`center_x(strlen * 11)` inlined, 0x1cb74-0x1cba5), copies "PLEASE ENTER NAME.."
   (0x60d8c) into a local 0x28-byte buffer and prints it at (0xa, 0x60) (0x1cbbf-0x1cbce),
-  then per key redraws: `pal_c = pal_a` + `setpalette`, the caret sprite `gn7eb2c`
+  then per key redraws: `pal_c = pal_a` + `page_copy`, the caret sprite `gn7eb2c`
   0xd x 0xf at (`cx`, 0x5b) with `cx = 0xaa + 8i` (0x1ccf0-0x1cd16), `wtext`, the
-  prompt at (0xa, 0x60) and the name at (0xaa, 0x60), then `f37de0`, the
+  prompt at (0xa, 0x60) and the name at (0xaa, 0x60), then `page_show`, the
   `key88ccd` screenshot wait and the `pal_a` flip (0x1cd45-0x1cd87).
 - CONFIRMED (0x1cd88-0x1cdfa): the key loop. `getch`; 0xd and 0x1b leave through
   `kbd_on` (0x1ce04); a character >= 'a' is folded to upper case at 0x1cda3 and

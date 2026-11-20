@@ -113,7 +113,7 @@ store to the same address with the same instruction, only the value differs.
   STRONGLY SUPPORTED. `shot_hit` sets `curkart = 0x68410 + i*0x104` (0x21cde) and stops the
   engine sound at karts +0xd4 = 0x684e4, which is `cars[i].sndhandle` (+0xc4). `curkart` (0x7d5b0)
   points at one of these records. Both rebuilds use `struct kart` (pack(1), src/ww.c).
-- Both functions call the asm map probe `f37b04` 0x37b04 with the point in `v7d7a4`/`v7d7a8`; it
+- Both functions call the asm map probe `surface_at` 0x37b04 with the point in `v7d7a4`/`v7d7a8`; it
   returns a class in `v7e568` (CONFIRMED by the code: 10 = pickup for a kart, 3 = v88bae 1).
   How it computes it (CONFIRMED, disasm 0x37b04-0x37bb0): both coordinates are clamped to
   0..0xfff (0x37b10-0x37b48), the 128x128 tile-pointer map `v7d6a4` is indexed at row `[y>>5]`,
@@ -346,7 +346,7 @@ merged).
   index into `k1[]`/`k2[]`, a byte index: 0x24ee5 loads it and 0x24ef0 adds it to the pointer) takes
   both builds to the return, SAME including the writes to the fake
   record (iter 76). The seed block has to be zero in both images - see GOTCHAS.
-- The surface under a kart is not a lookup in the `.POS` map: `f37b04` goes through the `.M`
+- The surface under a kart is not a lookup in the `.POS` map: `surface_at` goes through the `.M`
   tile map, and its transparent/solid test byte lives 0x1b000 bytes past the tile pointer - the
   second half of `v7d75c` (`add esi,0x1b000` 0x37b8f). Tiles are 32x32 with the pixel at
   `(y&31)*32 + (x&31)` (0x37b4d-0x37b5a).
@@ -497,7 +497,7 @@ merged).
   (`cmp ecx,eax+1; jle 0x2b361` 0x2b547, so it runs i = 1..nplayers+1 over the place/points table
   `0x799d8 + i*8`), `myplayer` 0x88b96 (0x2b478 `cmp dx, word [0x88b96]; jne 0x2b4b0` - the
   not-my-player arm keeps EAX=1 from 0x2b467 and that is what makes 0x2b4ff `test ax,ax` fall through
-  to the face draw 0x2b504: `faces[pl*0x98]` 0x73c08 -> `sprptr` 0x7d704 -> `drawsprite` 0x36fd0), and
+  to the face draw 0x2b504: `faces[pl*0x98]` 0x73c08 -> `sprptr` 0x7d704 -> `spr_draw` 0x36fd0), and
   `splitscreen` 0x88bdc + `v88c6a` (0x2b4b0/0x2b4c5) for the second-viewer stores of args 5-8. With
   those the three runs reach **211 of the 215 instruction starts** in 0x2b270-0x2b558, all SAME, all
   controls SAME; the four left (0x2b389-0x2b395, the `itoa` single-digit pad `mov byte [esp],0x30`)

@@ -285,8 +285,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
 13. **OPEN** (src/ww.c `main_menu`): why does the game's build keep a constant in a register
     instead of folding it? 0x1f950 `mov edx,9` before `call ents_init`, then `movsx eax,dx` as
     menu's first argument at 0x1f9b2, 0x1fa89 and 0x1fadf. The same DX saves pal_a around every
-    f375cd fade (0x1fb6f, 0x1fc43, ...). Our 9.5b build folds the 9 (`mov eax,9`) and saves pal_a in
-    BX. PART ANSWERED (iter 36): f375cd 0x375cd is pushal..popal, so `void f375cd(void)` lets DX hold
+    pcx_blit fade (0x1fb6f, 0x1fc43, ...). Our 9.5b build folds the 9 (`mov eax,9`) and saves pal_a in
+    BX. PART ANSWERED (iter 36): pcx_blit 0x375cd is pushal..popal, so `void pcx_blit(void)` lets DX hold
     the save across the call (main_menu 379 -> 341 rows); the `mov edx,9` part is still open. Tried and failed: one shared short local for both uses, separate locals, `int sel`, six
     declaration orders. Possibly the same build difference as QUESTIONS 6 (calls the game keeps that
     our `-oe` inlines). Test: 8 fade blocks and the three menu(9) calls in 0x1f858 match.
@@ -339,7 +339,7 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     the slots).
 18. **OPEN** (findings/formats.md ".SIN"): why does every `.SIN` record start with four bytes the
    engine throws away, and what are they? CONFIRMED: `track_load` reads 4 bytes then 8 per record
-   over 108 iterations (0x27d7b-0x27dbc), the only reader of the table is `f37b04` (0x37b80), and it
+   over 108 iterations (0x27d7b-0x27dbc), the only reader of the table is `surface_at` (0x37b80), and it
    uses only the two kept dwords; the dropped leading value is 0x1, 0x10000 or 0x10001 (two 0/1
    shorts; 1544 / 476 / 2516 records over all 42 tracks), so it is inert in the shipped engine and
    must come from whatever wrote the tracks. Also CONFIRMED inert: `v88ba0 = ncells / 4` -

@@ -128,7 +128,7 @@ stride 8 in memory (`sin7ad88[0x6c][8]` at 0x7ad88), and the first 4 bytes of
 every record are read and thrown away.
 
 The array is written once (0x27dbc -> `v7d870 0x7d870`) and read once - by the
-asm `f37b04` 0x37b04 (`tools/le/xref.py ww 0x7d870` finds exactly those two
+asm `surface_at` 0x37b04 (`tools/le/xref.py ww 0x7d870` finds exactly those two
 sites). It takes the tile under a point from the tile map (`mov edx,[v7d6a4]`,
 `shr eax,5; shl eax,9`, `shr ecx,5; shl ecx,2` 0x37b5c-0x37b72 = the dword at
 row `[y>>5]`, column `[x>>5]` of a 0x80-dword map), converts the tile pointer
@@ -142,7 +142,7 @@ first stored dword, otherwise the second (0x37b9e / 0x37ba9). So the file's
 `surfs[]` records (src/ww.c:1425), and the two dwords run 0..27 across all 42
 files (24 and 23 distinct values) while `WACKY.SDX`'s count word is 30, 29
 records read after `v88b7c--` (`src/ww.c:12592-12593`) - LIKELY the surface
-index; CONFIRMED that these dwords are what `f37b04` stores into `v7e568`.
+index; CONFIRMED that these dwords are what `surface_at` stores into `v7e568`.
 
 The discarded leading 4 bytes are 0x1, 0x10000 or 0x10001 (two shorts, each 0 or
 1; census over all 42: 1544 / 476 / 2516 records). Nothing in WW.EXE reads them
@@ -160,12 +160,12 @@ range over all 42 files: 1..107, i.e. 108 tiles. A tile is 0x400 bytes = 32x32
 `(y&31)*32 + (x&31)` at 0x37b4d-0x37b5a).
 
 The tile *graphics* are not in `.M`: `track_pics_load` 0x277b8 `pcx_load`s the
-four `A_` names from the `.GAM` and the asm `f376d7` 0x376d7 paints them into
+four `A_` names from the `.GAM` and the asm `pcx_tiles` 0x376d7 paints them into
 `v7d75c` in four quarters `q = v7d604 / 4` apart (`src/ww.c:12288-12305`,
 `v7d604 = 0x36000` at `src/ww.c:18127`): `gam7eabc[0..1]` at +0 and +0xd800,
 `gam7eaa0[0..1]` at +0x1b000 and +0x28800. 0x36000 / 0x400 = 216 tiles = 108
 picture tiles plus 108 mask tiles, which is exactly the `.SIN` record count and
-the +0x1b000 `f37b04` adds. CONFIRMED for the addresses; what `f376d7` does
+the +0x1b000 `surface_at` adds. CONFIRMED for the addresses; what `pcx_tiles` does
 inside a quarter is asm and unpinned (OPEN).
 
 ### .PAR - 25600 bytes of raw picture, blitted to A000:7d00 (transfer CONFIRMED)
@@ -176,7 +176,7 @@ the copier and the live screenshot fit below make it 1280x20 - do not take that 
 Read raw (no PCX header) into `p6a980` (`src/ww.c:4415`); when `v7d998` is 0 or
 3 - not in the record/playback modes 1 and 2 (`v7d998` is set to 2 or 3 at
 0x1e450-0x1e485, to 1 by `demo_start`) - `v7eb54 = p6a980` and the asm
-`fn_36f55` 0x36f55 streams it (disasm):
+`horizon_upload` 0x36f55 streams it (disasm):
 
     0x36f5e mov edi,0xa0000 ; 0x36f63 add di,0x7d00   ; A000:7d00
     0x36f68 mov cx,0x6400                             ; 25600 iterations
@@ -306,7 +306,7 @@ A frame of a `w x h` set is `w * h` bytes stored **column by column**: pixel
 (x, y) is byte `x * h + y`, frame f starts at `f * w * h`. One byte per pixel,
 no mask plane (the census above: size = `w*h*nframes` exactly). Evidence:
 
-- The blitter `f37487` 0x37487 (asm module) draws in Mode X: the outer loop
+- The blitter `spr_draw_scaled` 0x37487 (asm module) draws in Mode X: the outer loop
   is per screen column (map mask 0x3C4 index 2 per plane, `edi++` every four
   columns, 0x374fd-0x3755a), the inner loop goes down the column (`stosb`
   then `add di,0x4f` = 80 bytes a row, 0x3751d-0x37529), skips colour 0
@@ -577,7 +577,7 @@ DHATT, CHRIST WHITE, ...). |
   `f1.pcx` finds nothing; `A_F1.PCX` is the entry.
 - Two different "maps" per track. The surface class under a point comes from
   `.M` (tile indices) + `.SIN` + the mask half at `v7d75c + 0x1b000`
-  (`f37b04` 0x37b62-0x37baf); the `.POS` zone classes and their `ncells` are a
+  (`surface_at` 0x37b62-0x37baf); the `.POS` zone classes and their `ncells` are a
   separate lookup (`map_at`, `src/ww.c:1513`). Indexing `.SIN` by a `.POS` cell
   value is wrong - it is indexed by tile index, and 108 = the number of tiles
   in one half of the tile area.
@@ -609,7 +609,7 @@ was only the `fputc` count: 200 rows of the screen emit ~2 `fputc` each plus the
 300 stubs is not enough to reach the `ret` 0x11805.
 
 - CONFIRMED (0x11700-0x117c3): the body is 200 rows - `inc edi; cmp di,0xc7; jle 0x11700` - and each
-  row pulls itself into the local buffer at `[esp+0x320]` through `call blit372c7` 0x11730, after
+  row pulls itself into the local buffer at `[esp+0x320]` through `call spr_grab` 0x11730, after
   0x11700-0x1172b set `spr_x` 0x88b32 = 0, `spr_h` 0x88b36 = 0x140, `spr_w` 0x88b26 = 1,
   `spr_y` 0x88b34 = the row counter and `sprptr` 0x7d704 = `[esp+0x508]`. So the writer captures a
   320 x 200 window, not the whole 0x140x0x1e0 screen.
@@ -647,6 +647,6 @@ was only the `fputc` count: 200 rows of the screen emit ~2 `fputc` each plus the
   emulator that starts a function directly never runs `main`, so it reads 0. `fade_out` 0x1bf94 then
   never converges: its per-entry test 0x1c03d `cmp byte ptr [esp+eax],0` / 0x1c04d `xor edi,edi` marks
   the pass "changed" for every entry above 0, `sub byte ptr [esp+eax], cl` 0x1c05d subtracts the step
-  (0), and `call f37cf1; test di,di; je 0x1c017` 0x32cdd-0x32ce5 repeats the 768-entry pass forever
+  (0), and `call dac_load; test di,di; je 0x1c017` 0x32cdd-0x32ce5 repeats the 768-entry pass forever
   (1,190,831 passes of 0x1c03a before the instruction cap). Seed `0x88c46=4:w` and the fade finishes
   in 14 passes. `fade_in` 0x32cf8 reads the same global (0x32d78, 0x32d95).

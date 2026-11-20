@@ -4,9 +4,9 @@
  * can inline them. Bodies from the game's code 0x1c068-0x1c0f0. */
 extern unsigned short pal_a, pal_b, pal_c, pal_d;
 extern unsigned short save_a, save_b, save_c;
-void setpalette(void);
+void page_copy(void);
 
-/* ---- 0x1c068: keep the page offsets, show page pal_d through 48000, tail jmp setpalette */
+/* ---- 0x1c068: keep the page offsets, show page pal_d through 48000, tail jmp page_copy */
 void fn_1c068(void)
 {
     save_a = pal_a;
@@ -15,16 +15,16 @@ void fn_1c068(void)
     pal_c = 48000;
     pal_a = pal_d;
     pal_b = pal_d;
-    setpalette();
+    page_copy();
 }
 
-/* ---- 0x1c0ac: the reverse - pal_b = 48000, pal_a = pal_c = pal_d, setpalette, then restore */
+/* ---- 0x1c0ac: the reverse - pal_b = 48000, pal_a = pal_c = pal_d, page_copy, then restore */
 void fn_1c0ac(void)
 {
     pal_b = 48000;
     pal_a = pal_d;
     pal_c = pal_d;
-    setpalette();
+    page_copy();
     pal_b = save_b;
     pal_c = save_c;
     pal_a = save_a;

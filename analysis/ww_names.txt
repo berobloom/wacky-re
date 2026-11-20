@@ -23,8 +23,6 @@
 0x0105b0 com_getc     # LIKELY: byte from the receive ring buffer, -1 when empty
 0x0106c8 com_isr      # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): the vector com_open sets without a FIFO
 0x010810 com_isr_fifo # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): the vector com_open sets with a 16550 FIFO
-0x0409eb disable_ints # LIKELY: asm 'cli; ret'
-0x0409ed enable_ints  # LIKELY: asm 'sti; ret'
 0x0409ef int386       # CONFIRMED: clib module (libmatch)
 0x040a0d _dos_getvect # CONFIRMED: clib module d_getvec (libmatch)
 0x040a44 _dos_setvect # CONFIRMED: clib module d_setvec (libmatch)
@@ -97,8 +95,6 @@
 0x01c068 fn_1c068
 0x01c0ac fn_1c0ac
 0x02a414 msgbox       # LIKELY: draws a message box (string, arg2); fn_1d704 0x1d865 titles the record table with it, arg2 = 0x32
-0x036f14 setpalette   # SPECULATIVE: asm; called around the modem dialogue with 0x88B1A/1C/24 set
-0x036fd0 drawsprite   # SPECULATIVE: asm; uses sprptr and spr_x/y/w/h
 0x07c0a4 faceimgs     # SPECULATIVE: pointer table indexed by car.face
 0x07d704 sprptr       # SPECULATIVE: image pointer for drawsprite
 0x07eb80 playing      # SPECULATIVE: short per player
@@ -140,12 +136,8 @@
 0x011480 frame_wait   # SPECULATIVE: waitretrace, then pausemenu while 'paused'
 0x0114a8 pal_shift    # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): 768 palette bytes << 2 in place; no caller found (QUESTIONS 15)
 0x0114c8 screenshot   # LIKELY: writes WACKnnn.PCX (first free number); frame_wait calls it while 0x88CCD is set
-0x03707e drawsprite2  # SPECULATIVE: asm sprite routine used with clipy
-0x037de0 waitretrace  # LIKELY: asm; polls port 0x3DA bit 3
 0x07d878 clipy        # SPECULATIVE: rows clipped at the bottom
 0x088ccd shotkey      # SPECULATIVE: char; frame_wait takes a screenshot, then waits until it clears
-0x036cca getpalette   # SPECULATIVE: asm; reads the VGA palette to palptr
-0x0372c7 getline      # SPECULATIVE: asm; reads spr_h pixels of line spr_y to sprptr
 0x07d760 palptr       # SPECULATIVE: buffer pointer for getpalette
 0x042614 sound        # CONFIRMED: clib sound module
 0x042672 nosound      # LIKELY: in the clib sound module
@@ -248,7 +240,6 @@
 0x088be6 keymap2      # SPECULATIVE: short = 2
 0x088be8 keymap3      # SPECULATIVE: short = 3
 0x088c74 joyfound     # SPECULATIVE: short, cleared before joy_detect, tested after
-0x03784b joy_detect   # SPECULATIVE: asm routine called from sound_init; sets joyfound?
 0x07ee4a v7ee4a       # SPECULATIVE: short config flag cleared when joyfound
 0x07ee44 v7ee44       # SPECULATIVE: short config flag
 0x041fc8 MUSIC_Init   # LIKELY: ASS; returns MUSIC_Ok (0) or an error for MUSIC_ErrorString
@@ -335,7 +326,6 @@
 0x088bde v88bde       # SPECULATIVE: short; draw_status shows two names at y 1 and 0x65
 0x07eb80 v7eb80       # SPECULATIVE: short; picks myplayer's name over v88c6a's
 0x07ec7c v7ec7c       # SPECULATIVE: y of the second SCORE line
-0x0372c7 blit372c7    # SPECULATIVE: asm, takes sprptr
 0x07eb5c img7eb5c     # SPECULATIVE
 0x07eb3c img7eb3c     # SPECULATIVE
 0x07d83c img7d83c     # SPECULATIVE
@@ -360,10 +350,6 @@
 0x07d86c p7d86c       # SPECULATIVE
 0x027060 pcx_load     # CONFIRMED (rebuild src/ww.c): (name, n) DAT PCX picture data (no header, no palette) into p6a978[n]
 0x01bf94 fade_out     # CONFIRMED (rebuild src/ww.c, LAYOUT match: instruction-identical, only the head<->tail jump displacements differ): fades palette p to black by v88c46 a step, MUSIC_FadeVolume(0, 4000) with music on; loop tail at 0x32cc1-0x32cf7 (defined after pic_show, the mirror of fade_in)
-0x036f55 fn_36f55     # CONFIRMED (disasm): planar blit, 0x6400 bytes from [v7eb54] to A000:7d00, the map mask (port 3c4 idx 2) rotated 1,2,4,8 so each video byte is written 4x (findings/video.md)
-0x0375cd f375cd       # CONFIRMED: pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
-0x037b04 f37b04       # CONFIRMED (disasm 0x37b04-0x37bb0): surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
-0x037e94 f37e94       # SPECULATIVE: called from frame_draw
 0x0287ec players_frames # CONFIRMED (rebuild src/ww.c): per player f38[v88b7e] = arr706a0[dir class][f1a], f30[v88b7e] visibility flag; loops v88b72 0..nplayers inclusive
 0x028998 sprites_build # CONFIRMED (rebuild src/ww.c): resets the list at arr79a28, players_frames, the five *_project, sprites_draw when v88b78
 0x0289ec hit_timer    # LIKELY (rebuild src/ww.c): v7d800 f58 timer against ticks2 - f4c (0x21/0x32/4), voices 0x18/0x19/0xd, v7edb4 score; meaning of f58 inferred
@@ -411,11 +397,9 @@
 0x0255d4 players_project # CONFIRMED (rebuild src/ww.c): projects the other players into the view and appends sprite records; callers frame_draw 0x134e1, 0x135ea
 0x025e6c shot_step    # CONFIRMED (rebuild src/ww.c): (short move) one step of the shot v7d874 along its heading; shot_line when moving; callers 0x26090, 0x2d5d3
 0x02602c shots_move   # CONFIRMED (rebuild src/ww.c): moves the 61 shots at 0x7f2b0 (animation, shot_step, bounce, range, hit explosion); caller 0x327a0
-0x03c3e9 f3c3e9       # SPECULATIVE: called from frame_draw
 0x02a92c f2a92c       # SPECULATIVE: called from frame_draw
 0x029e0c f29e0c       # SPECULATIVE: called from frame_draw
 0x0261fc anim_tick    # CONFIRMED (rebuild src/ww.c): ents frame step, players face/sprite animation counters; callers frame_draw 0x13689, 0x2fb73, 0x308f2
-0x037de0 f37de0       # SPECULATIVE: called from frame_draw
 0x032cf8 f32cf8       # SPECULATIVE: called from frame_draw
 0x0136f8 ani_giggles  # LIKELY: loads GIGGLES.SP (0xB6E0) and QUACK.VOC into anidata/sfx2data, clears anidope
 0x01375c ani_tick     # SPECULATIVE: every 0x36 of anitimer: anikick = 1, ani_dope
@@ -510,7 +494,6 @@
 0x06e560 tab6e560     # SPECULATIVE: short* per sel (custom)
 0x07d338 v7d338       # SPECULATIVE: int per ent; draws lp7d804 beside it
 0x088c68 v88c68       # SPECULATIVE: short ent index marked with gn7eae8
-0x037487 f37487       # STRONGLY SUPPORTED: asm Mode X scaled sprite blit: per screen column (plane mask 0x3c4), source sprptr stepped by the p7d838 .INF delta table, colour 0 skipped (findings/formats.md .SP)
 0x0146d4 wtext        # LIKELY: (x, y, s, scaled) draws s with the WFONT1 glyphs (A-Z, 0-9, ! ? ~ space . < > #), 11 px apart
 0x088c2e v88c2e       # SPECULATIVE: glyph height when scaled
 0x088c10 v88c10       # SPECULATIVE: glyph width when scaled
@@ -518,8 +501,6 @@
 0x06a4c8 sfont        # LIKELY: sprite pointers indexed by character code (overlaps the other sp6a... tables)
 0x088ce8 v88ce8       # SPECULATIVE: char, box colour for f371e4
 0x088ce9 v88ce9       # SPECULATIVE: char, box colour for f371e4
-0x0373ee f373ee       # SPECULATIVE: asm sprite draw
-0x0371e4 f371e4       # SPECULATIVE: asm box fill (spr_x/y/h/w)
 0x014b00 ctl_setup    # LIKELY: (which) copies six control shorts from the config (cfg7ee1c+0x1C or cfg77128+8), keymaps 1/2/3 or 4/8/12, joy_detect
 0x014c10 center_x     # LIKELY: (320 - w) / 2
 0x014c24 center_y     # LIKELY: (200 - h) / 2
@@ -671,8 +652,6 @@
 0x088c58 v88c58       # LIKELY: short, set to 1 by both bonus menus
 0x026ec4 pal_6bit     # CONFIRMED (rebuild src/ww.c): 0x300 palette bytes >> 2 in place; callers 0x18537, 0x194e7, 0x27c46
 0x0278c4 wait_release # CONFIRMED (rebuild src/ww.c): (short flag) waits until no key/joy flag is held; flag lets key88cd0 end it
-0x037cf1 f37cf1       # SPECULATIVE: called after each fn_182d0 palette flash (refreshes the palette)
-0x0377ae f377ae       # SPECULATIVE: called after ctl_setup(0) in the menu loops
 0x02da28 f2da28       # SPECULATIVE: netgame==1 menu branch, before net_key
 0x019c68 ctl_label     # LIKELY: control label for the car-select screen (0x1a380): "KEYBOARD"/"JOYSTICK #n"/"GAME PAD #n" in arg1, hint line in arg2; net-game remote branch
 0x019c68 ctl_label     # see the line above: matched byte for byte except 0x19d0e (QUESTIONS.md 2)
@@ -722,7 +701,6 @@
 0x01bf00 fn_1bf00          # writes CONFIRMED, meaning SPECULATIVE: players[i].f64 = 1 and players[i].face = v7ec6c for the first v7eca4+1 (max 0x15) rows and v7ec70 after, i = 1..nplayers, then nplayers = its own copy (0x1bf71); called from fn_16f90 at 0x17098
 0x01c068 fn_1c068          # CONFIRMED (rebuilt byte-identical in a probe build, then removed): saves pal_a/b/c and moves pages to 48000, tail `jmp setpalette` (0x1c0a7). NOT defined in src/ww.c: -oe then inlines it at every call site and net_end 0x110d4 stops matching (GOTCHAS)
 0x01c0ac fn_1c0ac          # CONFIRMED (ditto): the reverse, pal_b = 48000, pal_a = pal_c = pal_d, call setpalette (0x1c0c7), then restore save_b/c/a
-0x036f14 setpalette        # CONFIRMED (the asm read at 0x36f14-0x36f54): NOT a palette op. pushal; out 0x3ce,0x4105; out 0x3c4,0x0f02; rep movsb 0x3e80 bytes from 0xa0000+pal_b to 0xa0000+pal_c; out 0x3ce,0x4005; popal. So pal_a/b/c/d are 320x200 screen page offsets (0x3e80 apart)
 0x01be3c fn_1be3c          # CONFIRMED (rebuild, src/ww.c): 196 bytes with the game's size, 13 instruction diffs - Watcom keeps a constant 0 in edi, the game materialises each zero (findings/game-loop.md, shapes k1-k4 in analysis/shapes/SHAPES.C)
 0x01bf00 fn_1bf00          # CONFIRMED (rebuild, src/ww.c): 97 of 125 bytes; the game keeps the store/continue block inside both arms (0x1bf36-0x1bf4c, 0x1bf5b-0x1bf6f) and our build merges them, and it loads nplayers first (0x1bf04). 27 shapes scored, best 14 diffs (findings/game-loop.md)
 0x01c994 fn_1c994          # CONFIRMED (rebuild, src/ww.c, near miss 312/313): builds a >=10-char stamp in its arg string - itoa of the DOS-time bytes, the month table 0x10154 indexed by (seconds-1), then spaces; dos_gettime 0x43164, called 0x1cf67 (findings/scores.md)
@@ -861,3 +839,48 @@
 0x07ed5c v7ed5c         # CONFIRMED: the score of the finished run; compared against the four table entries at 0x1cf3f/0x1cf77, stored into record+4 at 0x1d040-0x1d047
 0x01d13c race_records_menu  # CONFIRMED (rebuild src/ww.c): the class record-book menu (AMATEUR/PRO/CHAMP drivers), rows -> fn_1d704(class, v7ecb4 + choice); caller 0x2108f  - rows built as strcpy(prefix) then strcat(row text): " BONUS" x3 + "" when v7ecb4 != 0 (0x1d16f-0x1d1c7), then the pad loop while (strlen(row3) < strlen(row0)) strcat(row3," ") 0x1d28e; v88c80 saved at 0x1d147, rewritten with the previous choice at 0x1d168 and restored at 0x1d32b
 0x01d340 trial_records_menu  # CONFIRMED (rebuild src/ww.c, byte-identical): the TIME TRIAL record book; metal menu (BRONZE/SILVER/GOLD TRIALS) then five "<metal>TRACK n" rows through menu(6, v88bda, 0, 0) 0x1d671, a track -> f2e4b8(metal + v7ecb4, track, 0) 0x1d6ca and CHECK.PCX reload; no argument (reads v88c80 itself 0x1d349); caller 0x2107e
+# The assembler module (src/wwasm.asm, iter 91): every routine, read in the asm; UNREFERENCED = no call, jump or fixup reaches it
+0x036a4e textscreen_show  # CONFIRMED: copies 0x3e8 dwords (one 80x25 text screen) from [p7d714] to B800:0; main calls it after fread(p6a978,0xfa0) at exit (src/ww.c textscreen_show())
+0x036a69 strips_restore   # CONFIRMED: UNREFERENCED (no call, jump or fixup reaches it): latch copy of 20-byte strips from VRAM 0xbb80+0x12c0 to page pal_a +0x12c0
+0x036cca getpalette       # CONFIRMED: reads the 256 DAC entries (0x3c7, 3x 0x3c9) to [palptr], each read after a display-enable wait on 0x3da bit 0
+0x036d42 rowtab_init      # CONFIRMED: fills [v7eb84] with 320 dwords y*80: the Mode X row-offset table every blit indexes with spr_y
+0x036d69 rect_overlap     # CONFIRMED: UNREFERENCED: v88bbc = 1 if the rectangles (88bca,88bac,88bc8,88baa) and (88bba,88bbe,88bc6,88ba8) overlap
+0x036e36 vga_latch_on     # CONFIRMED: GC mode 0x41 (write mode 1: latch copy), map mask 0x0f; local, called 3x
+0x036e53 vga_latch_off    # CONFIRMED: GC mode 0x40 (write mode 0); local, called 3x
+0x036e66 rows_restore     # LIKELY: CONFIRMED the bytes: latch copy of spr_w rows (80 bytes each) from VRAM 0xcc60 to page pal_a row spr_y; LIKELY restores the background under the intro fly-in (its one caller, after floor_draw)
+0x036ec2 band_mirror      # CONFIRMED: latch copy: the 90 rows from page pal_a + spr_y, bottom row first, to VRAM 0xbb80, then back - a vertical mirror of the band; called per car in two-player when av7eb80 && v88bde
+0x036f14 page_copy        # CONFIRMED: was setpalette - NOT a palette op: latch copy 0x3e80 bytes (one page) from A000+pal_b to A000+pal_c (findings/video.md)
+0x036f55 horizon_upload   # STRONGLY SUPPORTED: CONFIRMED the bytes: 0x6400 linear bytes from [v7eb54] to planar A000:7d00, map mask 1,2,4,8 per source byte (four pixels per address); the horizon strip floor_draw copies from 0x7d00 is 1280x20 = 0x6400 (findings/video.md)
+0x036f8c rec_swap         # CONFIRMED: swaps [v7d88c] and [v7d880] through [v7d894], v7d864 dwords each (rep movsd x3); the record sorts of crecs[] and standings[] call it
+0x036fd0 spr_draw         # CONFIRMED: column-major sprite at (spr_x,spr_y) page pal_a: spr_h columns of spr_w pixels from [sprptr], colour 0 transparent
+0x03707e spr_draw_clip    # CONFIRMED: spr_draw that skips clipy source bytes after each column
+0x037132 spr_draw_key     # CONFIRMED: spr_draw with the transparent colour v88ce9 instead of 0
+0x0371e4 box_draw         # CONFIRMED: box spr_h x spr_w at (spr_x,spr_y): outer columns and top/bottom pixels v88ce8, inside v88ce9
+0x0372c7 spr_grab         # CONFIRMED: reverse of spr_draw: spr_h columns of spr_w pixels from page pal_a at (spr_x,spr_y) to [sprptr], plane by read-map select (0x3ce index 4)
+0x03735c grab32           # CONFIRMED: 32x32 pixels from page pal_a at (spr_x,spr_y) to [sprptr], row by row
+0x0373ee spr_draw_opaque  # CONFIRMED: spr_draw with no transparent colour
+0x037487 spr_draw_scaled  # STRONGLY SUPPORTED: Mode X scaled sprite blit: per screen column (plane mask 0x3c4), source sprptr stepped by the p7d838 .INF delta table, colour 0 skipped (findings/formats.md .SP)
+0x0375cd pcx_blit         # LIKELY: CONFIRMED pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
+0x0376d7 pcx_tiles        # CONFIRMED: decodes a 320x200 PCX RLE image from [p7d714] to [v7d99c] (0xc0 = run), then cuts it into 54 tiles of 32x32 at [v7eb58], 10 tiles per row
+0x0377ae buttons_poll     # CONFIRMED: joy88b40..46 = bytes [v7d8a4]+5/7/9/11; with joyfound != 1 also game-port buttons (port 0x201 bits 4-7, pressed = 0 -> 1)
+0x03784b joy_poll         # CONFIRMED: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre v88b5c/v88b5e; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
+0x0379ec pt_load          # CONFIRMED: UNREFERENCED: v7d5f8/v7d5f4 = the two dwords at [D_7d680]
+0x037a06 tilemap_fill     # CONFIRMED: fills [v7d6a4] (the floor tile map) with v7d64c, 0x4000 dwords; called at track load
+0x037a21 path_pt_scale    # LIKELY: CONFIRMED the bytes: v7d7a4/v7d7a8 = round(16.16 product of point curpos of [v7d6a0] (8 bytes per point) and [v7d660]); LIKELY the track path
+0x037a6c surface_at_7c    # CONFIRMED: UNREFERENCED: surface_at with the point scaled by 0x7c and offset by the camera v88b0a/v88b0e
+0x037b04 surface_at       # CONFIRMED: surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
+0x037bb1 vec_scale        # CONFIRMED: v7d610/v7d620 = round(16.16 product of v7d5f8/v7d5f4 and v7d608); src/ww.c VEC()
+0x037bf0 pixel_plot       # CONFIRMED: one pixel of colour v88ce9 at (spr_x,spr_y) on page pal_a
+0x037c43 dac_put5         # CONFIRMED: DAC 0xa1-0xa4 and 0x94 from [v7d744] (15 bytes); a palette animation steps v7d744 through v7d758
+0x037c84 dac_put8         # CONFIRMED: DAC 0xad,0xac, 0xae,0xaf from [v7d744], 0xa8-0xab from [v7d744]+0x30; a palette animation steps v7d744 through v7d6d0
+0x037cf1 dac_load         # CONFIRMED: w88b10 DAC entries from index w88b1e out of [palptr], each byte after a display-enable wait
+0x037d96 tile_show        # CONFIRMED: UNREFERENCED: a 32x32 tile from [v7d64c] to A000:0 as linear rows of 320 (a debug view?)
+0x037dc7 vretrace_wait    # CONFIRMED: UNREFERENCED: waits for the start of vertical retrace (0x3da bit 3)
+0x037de0 page_show        # CONFIRMED: was waitretrace: waits for display enable, pal_d = pal_a, CRTC start address (0x0c/0x0d) = pal_a, waits for vertical retrace - the page flip
+0x037e23 vram_clear       # CONFIRMED: all four planes, 64 KB each, to 0
+0x037e41 modex_init       # CONFIRMED: unchained 256-colour mode: GC5 odd/even off, GC6 chain off, SEQ4 chain-4 off, VRAM cleared, CRTC 0x14 dword off, 0x17 byte mode
+0x037e94 floor_draw       # STRONGLY SUPPORTED: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera v88b0a/v88b0e, tile of map v7d6a4 (32x32 tiles), one byte; three unrolled bodies by v88c20 = detail 1/2/3 (High/Medium/Low)
+0x03c3e9 floor_draw_upper # STRONGLY SUPPORTED: floor_draw from screen row 10 (0x320): the second view in two-player when v88bde
+0x040907 kbd_isr          # LIKELY: keyboard interrupt handler (iretd); DS from the sel16 fixup 0x4090e
+0x0409eb disable_ints     # CONFIRMED: cli; ret
+0x0409ed enable_ints      # CONFIRMED: sti; ret
