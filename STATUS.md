@@ -34,16 +34,15 @@ Short: where the project stands, and what is next. History is in git; no diary.
 2. `chat` 0x14d00 (instruction cap, it sits at 0x150ec `cmp eax,0x18`): `FN=chat N=60000 TICK=8
    .work/venv/bin/python tools/wc/hotfn.py` names the loop and the global; seed that.
 3. `fn_193a8` 0x193a8 still crashes at 0x182fd `mov cl, [edx]` (write_prot 0xfffffffd): seed that
-   pointer the way `kart_draw`'s was seeded - the block must be zero in both images
-   (findings/game-loop.md Traps).
+   pointer as `kart_draw`'s was - the block must be zero in both images (findings/game-loop.md Traps).
 4. The functions ending in a key press+release pair - `fn_1c0f4`, `race_records_menu`, `fn_1832c`,
-   `main_menu` (iter 78: its only return is switch slot 8 of 0x1f824 -> 0x16978 and needs selection 9,
-   findings/menus.md) - need a difffn knob that re-asserts a global at every stubbed call (a press set
-   only after the mode-0 `wait_release` returned). Cheapest test: add `RESEED=`, try `fn_1c0f4`.
+   `main_menu` (iter 78: its only return is jt_1f824 slot 8 -> 0x16978, needs selection 9,
+   findings/menus.md) - need a difffn knob re-asserting a global at every stubbed call (a press set
+   only after the mode-0 `wait_release` returned); cheapest test: `RESEED=`, try `fn_1c0f4`.
 5. The still-open CALLCAP set - `screenshot`, `enter_name`, `trial_book`, `demo_mode`, `fn_17928`,
    `fn_1be3c`, `fn_1d704`, `race_run`, `fn_1c0f4` - one run each with `TICK=8 CALLS=3000
-   SEED=0x88cce=1:b`, plus the volume_menu recipe: seed the *branch test* of a
-   `ticks = 0; while (ticks <= N)` wait (0x7ed4c for 0x1e7af), not `ticks`.
+   SEED=0x88cce=1:b`, plus the volume_menu recipe: seed the *branch test* of a `ticks = 0; while
+   (ticks <= N)` wait (0x7ed4c for 0x1e7af), not `ticks`.
 6. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
    first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
    {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
