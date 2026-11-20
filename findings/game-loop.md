@@ -328,3 +328,20 @@ merged).
   instruction both sides emit identically apart from the operand. `tools/wc/difffn.py` runs one
   function in the original and in the hybrid build and compares the memory they leave - it found
   this one; `nmrefs.py`'s address and constant censuses did not (iter 69).
+- **A zero-argument run of a race-screen function returns at once and buys a worthless SAME**
+  (CONFIRMED that the runs are thin, iter 85, `tools/wc/hotfn.py` walk counts at `CALLS=3000`,
+  all of them printing `SAME` with both sides returning): `netkeys_in` 0x2d94c **29** insns at 29
+  addrs, `kart_bump` 0x22bf4 32, `track_around` 0x283a4 44, `line_points` 0x21554 52.
+  Each is a straight line into its own first branch, taken because this run leaves the globals it
+  reads at 0 - which global per function is not read off yet, and no conclusion about those four
+  lines should be drawn from these runs (they need the race state seeded, the way `kart_draw`
+  0x24bcc's verdict line did). `minimap` 0x2a4ac belonged to that list at 15 insns until it was
+  seeded: its gate is `v88ca0` (`cmp word [0x88ca0],0; je 0x2a60b` 0x2a4b8), and with
+  `SEED=0x88ca0=1:w,0x88c40=1:w` (nplayers), `0x88c0c=2:w` (netgame) and `players[].x/y` seeded
+  around the 0x7ff clamp (0x6aa90+0x16/0x18 and +0x68 for player 1) it runs 106 insns at 70 addrs and
+  is SAME on both sides, control SAME - the two clamp arms and both lookup tables adjudicated
+  (src/nearmiss.txt). Two more runs from the same sweep are thick enough to count: `leaderboard`
+  0x2b270 (1673 insns at 304 addrs, SAME, both sides returning - it writes through its
+  pointer-as-0 arguments into the compared zero page) and `time_str` 0x2a618 given a real buffer and
+  a real count (`ARGS=<t>,0x8000`: 75 insns at 75 addrs = the whole fixed-width digit routine, and
+  eight `t` values 0/59/60/3599/3600/4660/65535/100000 all SAME, control SAME).

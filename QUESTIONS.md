@@ -161,7 +161,11 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     Fixed (src/ww.c menu): `msgbox("LEE & JACKSON LAWNMOWERS", c)`; difffn engines_menu and menu now
     both SAME, engines_menu's 32 rows unchanged, menu 228 -> 266 rows (correctness first).
     Still untriaged: scores_screen 0x1ce14 ends with 0x7d760 = 0xe8 (game) / 0xe4 (ours) - not the
-    same cause, that DIFF survived the menu fix.
+    same cause, that DIFF survived the menu fix. TRIAGED (iter 85): 0x7d760 is `palptr` and
+    `fade_in` 0x32cf8 stores the **address of its local** `cur[0x300]` there (`mov dword [0x7d760],
+    eax`, game 0x32d4c / ours 0x57d68, prologues byte-identical), so the value is a stack address and
+    every delta is a caller's frame gap - the same class as `menu`'s 0xeffaf0/0xeffafc
+    (findings/menus.md iter 85). No C change wanted.
 
 ## Hypotheses
 
@@ -418,6 +422,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `difffn.py intro`. If the DIFF disappears, the fade-step wall was the whole story; if it survives,
     the writes that remain name a real bug. (The 11-call gap in between was `fade_in` stepping a
     garbage palette 19 vs 6 times - `difffn.py fade_in SEED=0x88c46=4:w ARGS=0x8000` is SAME.)
+
+27. **OPEN** (iter 85, findings/game-loop.md `## Traps`): which global does each of the four race-
+    screen near misses test first - `netkeys_in` 0x2d94c, `kart_bump` 0x22bf4, `track_around`
+    0x283a4, `line_points` 0x21554? Their `difffn.py` runs return in 29-52 executed instructions, so
+    their `SAME` covers only the entry straight line. Read the first branch of each out of the
+    disassembly, seed what it tests the way `kart_draw` 0x24bcc's verdict line does (`curkart` 0x7d5b0
+    and the `players`/`kart` records) - `minimap` 0x2a4ac is the worked example, its gate is `v88ca0`
+    0x88ca0 - and re-run: a run under ~200 executed instructions is not a verdict.
 
 25. **RESOLVED** iter 73 (unrelocated literals in `fn_17928`; see the end of this entry) (iter 71, `tools/link/racetest.sh` race-grid screen, findings/video.md "The race HUD box
     loses its bright-yellow figure"): inside the race HUD box (`img7d83c`, drawn by `draw_status`

@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 84 still 207 -
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 85 still 207 -
   no C change, `difffn.py`/`hotfn.py` work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
@@ -28,25 +28,26 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. Wider run of `demo_mode` 0x1e2e4, now SAME with both sides returning (`RAND=8 FREAD=13
-   SEED=0x88cd0=1:b,0x7ec58=5:d,0x88c46=4:w,0x7d998=2:d`, hotfn 458394 insns at 3709 addrs): raise
-   `CALLS=`/`COUNT=` to walk the rest of the 10-lap pass, and do NOT add `RESEED=0x88cd0=0:b` - the
-   abort arm 0x31eae needs the press value on every read.
+1. QUESTIONS 27: seed the first branch of `kart_bump` 0x22bf4, `track_around` 0x283a4, `netkeys_in`
+   0x2d94c, `line_points` 0x21554 - their zero-argument runs return in 29-52 executed instructions, so
+   their `SAME` says nothing. Read each first `je` in the disassembly, seed what it tests (`minimap`
+   0x2a4ac worked example: gate `v88ca0` 0x88ca0, `nplayers` 0x88c40, `netgame` 0x88c0c,
+   `players[].x/y` 0x6aa90+0x16/0x18) and report the `hotfn.py` count with the verdict.
 2. QUESTIONS 26: seed the palette/picture pointers `main` mallocs (src/ww.c 18540-18700) into
    scratch-page blocks and re-run `difffn.py intro` - it returns on both sides now, and its 123
    remaining DIFF bytes are all in the harness's zero page.
-3. A thick run of the three menu lines closed this iter (`volume_menu`, `main_menu`,
-   `race_records_menu` - 2-6k insns each): `difffn.py menu ARGS=...` (iter 79 says the zero-argument
-   call never walks `menu`'s frame wait 0x16004/0x1604c or its input arm), and the same `SEED=`/`RESEED=`
-   pair with `ARGS=` on the near misses that call `menu` (classes_menu 0x19eac, cars_menu 0x1a380).
-4. Wider walks of two functions closed earlier: `trial_book` with `TICKREAD=8` past 0x2f193 into the
-   record block, and `race_run` with `SEED=0x7d998=2:d` alone (no `0x88cd0`) past the first frame.
+3. `leaderboard` 0x2b270 with `ARGS=` set to scratch-page blocks for its eight `short *` arguments
+   (0x8000, 0x8080, ...): its 1673-insn zero-argument run is SAME but writes through 0, so the
+   compared bytes are the scratch page it scribbles on, not the arrays it fills.
+4. Wider walks of three functions closed earlier: `demo_mode` 0x1e2e4 (raise `CALLS=`/`COUNT=`; do
+   NOT add `RESEED=0x88cd0=0:b`, the abort arm 0x31eae needs the press value on every read), `trial_book`
+   0x2e4b8 with `TICKREAD=8` past 0x2f193, `race_run` 0x2fd8c with `SEED=0x7d998=2:d` alone.
 5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
-   first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
+   first trap); after a C change also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
    {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
-   and compare the DIFFs against the recorded verdicts in `src/nearmiss.txt`: the known uncapped DIFFs
-   are the dead `v7d7f4`/`v7d874` pointers (findings/game-loop.md) and the page-0 scribble class
-   (GOTCHAS iter 84), and `CALLSEQ=1` names both stub-call sequences to find a `calls n/m` gap.
+   and compare its DIFFs with the verdicts in `src/nearmiss.txt` - the known uncapped classes are the
+   dead `v7d7f4`/`v7d874` pointers, the page-0 scribble and a global holding a stack address
+   (`palptr` 0x7d760, findings/menus.md); `CALLSEQ=1` names both stub-call sequences for a `calls n/m`.
 7. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
    slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
 
