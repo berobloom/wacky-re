@@ -125,6 +125,16 @@ it can be copied back into DREA.
   legal value rather than moving the base (`SEED=0x88c96=1:w` for
   `pal7d848 + 3*(v88c96-1)`, iter 79, findings/menus.md).
   Recipe and its evidence: findings/menus.md, findings/serial.md, findings/game-loop.md.
+- **A stubbed library read leaves the callee's stack local undefined, and a later function can turn it
+  into a DIFF in a compared global** (iter 89). `kartsets_load` 0x280e2 reads each frameset header as two
+  2-byte `fread`s into `[esp+0x10]`/`[esp+0x14]` (0x280f2, 0x28115) and stores the words (0x2810b,
+  0x2811e); difffn does not execute the library, and `FREAD=` fills only size-1 reads, so both builds
+  store their own stack garbage - and `players_ahead` 0x34208 reads it back through `tab6e470` (0x3429d,
+  0x342de) into `spr_w` 0x88b26 / `spr_y` 0x88b34, which is 3 of `intro`'s 123 DIFF bytes and looks like
+  a state difference (findings/game-loop.md). Check a compared-global DIFF's last writer for a stubbed
+  read among its sources before spending a variant on it, and do not widen the stub to fix it: the same
+  read's *count* feeds a copy loop, so filling it moves both sides from a return to a fault/cap and
+  changes verdicts already recorded elsewhere. [generic]
 - **A thin `hotfn.py` count is a warning, not a verdict, in both directions** (iter 86). `kart_bump`
   0x22bf4's 32-insn SAME meant nothing (gated on the record count `v88b78` 0x88b78 first, then six
   more globals - findings/game-loop.md `## Traps`), but `netkeys_in` 0x2d94c's 29-insn SAME was

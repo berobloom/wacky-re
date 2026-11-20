@@ -283,8 +283,46 @@ merged).
   `void FUN_0002fd8c(void)` and all four call sites in the decompile (lines 10774, 12023, 12119, 12183)
   call it as a statement.
 
+## `kartsets_load` 0x280e2 fills the frameset table from two 2-byte `fread`s per row (CONFIRMED, iter 89)
+
+- CONFIRMED (disasm 0x280cc-0x28159, 10 rows: `cmp di,9; jle 0x280cc` 0x28155): per row the game reads
+  `fread(&[esp+0x10], 2, 1, datfile)` 0x280f2 -> `mov word [esi], ax` 0x2810b, `fread(&[esp+0x14], 2, 1,
+  datfile)` 0x28115 -> `mov word [esi], ax` 0x2811e, then the row's pixel run with
+  `imul esi, [esp+0x10]` 0x28124 + `shl esi,2` 0x2813b + `fread(p7d838, esi<<2, ...)` 0x28146, moving the
+  cursor `add [p7d838],4` 0x2812e and `add [p7d838], sx` 0x2814f; `mov [ebp+eax*4+0x6e470], edx` 0x280e2
+  records each row's base in `tab6e470` 0x6e470. So the two header words, the byte count of the pixel run
+  and the table entry are all file-driven.
+- CONFIRMED (the chain that makes a data-segment DIFF out of a stubbed read, iter 89): `players_ahead`
+  0x34208 takes a row base from `tab6e470[dx]` (0x3429d `mov eax,[eax*4+0x6e470]`, 0x342a4 `mov
+  [p7d838], eax`), reads its two header words back (0x342cb `add eax,2` + 0x342d5 `mov dx,[eax-2]` ->
+  `spr_h` 0x88b36 0x342e1, and 0x342de `mov ax,[eax]` -> `spr_w` 0x88b26 0x342ef and `sub [spr_y 0x88b34],
+  ax` 0x342e8). Under
+  `tools/wc/difffn.py` the `fread` stub 0x42c68 is never executed, so those two words are the stack value
+  the callee's `[esp+0x10]`/`[esp+0x14]` happened to hold: 60 word stores of each build's own garbage
+  (stride 4 through the null `p7d838`), read back later as globals.
+- CONFIRMED (experiment, iter 89): that is the whole of `intro` 0x348f4's residual `DIFF 123 byte(s)` at
+  the iter-84 seed set - bucketed by 0x1000 blocks: 60 in the zero page (written by 0x2811e), 60 in the
+  `SEED=`-ed `v7d858` buffer at 0x8000 (written by the byte copy 0x3527f, then re-written in place by
+  `pal_6bit` 0x26edc), and **3 in the compared data segment**: `spr_w` 0x88b26 game 0x3f ours 0 and
+  `spr_y` 0x88b34 game 0xffc1 ours 0, written by the instructions above. Same three bytes at
+  `TICKREAD=8`, `4` and `1`, so they are not the injected clock; and the game's 0x3f / ours 0 is exactly
+  the frameset word at the row base (the `tab6e470` entry is 0 in both runs, so the row is the null page).
+  The iter-84 note's cause ("writes through the palette pointers `main` mallocs") is therefore wrong for
+  those bytes - the palette pointer seed only moves the writes from the zero page into a compared block.
+- CONFIRMED (tried and reverted, iter 89): letting `FREAD=` fill short reads of any size up to 8 instead
+  of size 1 (difffn.py 214) makes `intro` print no DIFF byte at all, but both sides then loop to the
+  instruction cap and fault at the same instruction (`mov [esi], ax`) - the copy length of 0x28146 comes
+  from the same stubbed read - and the recorded walks of `fn_17928` 0x17928 and `demo_mode` 0x1e2e4 drop
+  from "both sides return" to `CALLCAP`. The knob stays as it was; the `intro` verdict is "same-shape
+  (stubbed-read garbage)" rather than SAME.
+
 ## Traps
 
+- `tab6e470` 0x6e470's row bases and the two header words in each row come from `kartsets_load`'s 2-byte
+  `fread`s (above), so under a stubbed read they hold each build's own stack garbage: a function that
+  reads a frameset back (`players_ahead` 0x342de) reports DIFF bytes in compared globals that no C change
+  can explain. Before hunting such a DIFF, check that its last writer's source is not a stubbed read's
+  destination.
 - The first race's grid is not one screen: under `tools/link/racetest.sh`'s fixed key path the
   ORIGINAL (`WWORIG.EXE`) drew grid A in 3 of 4 runs and grid B (other opponents, other order) in 1;
   our hybrid A 2, B 1 (iter 74). CONFIRMED by pixels (B-run of ours vs B-run of the original: mean
