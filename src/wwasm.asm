@@ -2517,7 +2517,7 @@ floor_draw_:
         out dx, ax
         mov ax, word [_v88c20]
         cmp ax, strict word 1
-        je short L_37ece
+        je short floor_hi
         nop
         nop
         nop
@@ -2528,10 +2528,10 @@ floor_draw_:
         nop
         nop
         nop
-        jmp near L_395dd
+        jmp near floor_med
 L_37ec9:
-        jmp near L_3ad0f
-L_37ece:
+        jmp near floor_lo
+floor_hi:
         mov edi, 0xa0000
         add edi, 0x2260
         add di, word [_pal_a]
@@ -4617,7 +4617,7 @@ L_395cb:
         jmp near L_3c3e7
 L_395d8:
         jmp near L_37ff1
-L_395dd:
+floor_med:
         mov edi, 0xa0000
         add edi, 0x2260
         add di, word [_pal_a]
@@ -6715,7 +6715,7 @@ L_3acfd:
         jmp near L_3c3e7
 L_3ad0a:
         jmp near L_3971c
-L_3ad0f:
+floor_lo:
         mov edi, 0xa0000
         add edi, 0x2260
         add di, word [_pal_a]
@@ -8800,7 +8800,7 @@ floor_draw_upper_:
         out dx, ax
         mov ax, word [_v88c20]
         cmp ax, strict word 1
-        je short L_3c422
+        je short floor_upper_hi
         nop
         nop
         nop
@@ -8811,10 +8811,10 @@ floor_draw_upper_:
         nop
         nop
         nop
-        jmp near L_3db24
+        jmp near floor_upper_med
 L_3c41d:
-        jmp near L_3f22d
-L_3c422:
+        jmp near floor_upper_lo
+floor_upper_hi:
         mov edi, 0xa0000
         add edi, 0x320
         add di, word [_pal_a]
@@ -10897,7 +10897,7 @@ L_3db12:
         jmp near L_40905
 L_3db1f:
         jmp near L_3c538
-L_3db24:
+floor_upper_med:
         mov edi, 0xa0000
         add edi, 0x320
         add di, word [_pal_a]
@@ -12981,7 +12981,7 @@ L_3f21b:
         jmp near L_40905
 L_3f228:
         jmp near L_3dc3a
-L_3f22d:
+floor_upper_lo:
         mov edi, 0xa0000
         add edi, 0x320
         add di, word [_pal_a]

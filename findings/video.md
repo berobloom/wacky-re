@@ -266,7 +266,29 @@ the link still resolves (1174 externals).
   menu, formats.md +0x3c). Six bodies, 33 KB of the module's 40 KB. Per pixel: a precomputed point
   `[ebx]` times the scale `[esi]`, plus the camera `v88b0a`/`v88b0e`, gives a tile of the map
   `v7d6a4` (32x32 tiles, 128 per map row) and one byte from it. CONFIRMED that shape (instruction
-  census); the exact per-detail difference is not read yet.
+  census).
+- **The three bodies differ only in horizontal resolution** (CONFIRMED, iter 91: the bodies diffed
+  with labels normalized, 2071-2097 lines each). Each body is one screen column of **70 floor rows,
+  unrolled** bottom to top (`movsb; sub edi,0x51` = one row up), in a loop over columns:
+
+  | `v88c20` | label | columns | pixels per column | plane mask per column | points used (`ebx +=`) | scale entries skipped (`esi +=`) |
+  |---|---|---|---|---|---|---|
+  | 1 High | `floor_hi` 0x37ece | 0x140 = 320 | 1 | 1,2,4,8 rotating (`shl ah,1`) | 8 (every point) | 0 |
+  | 2 Medium | `floor_med` 0x395dd | 0xa0 = 160 | 2 | 3, 0xc (`shl ah,2`) | 0x10 (every 2nd) | 0x118 = 70*4 |
+  | 3 Low | `floor_lo` 0x3ad0f | 0x50 = 80 | 4 | none: 0x0f from the entry | 0x20 (every 4th) | 0x348 = 3*0x118 |
+
+  So the point table at `[ebx]` has 320 entries of 8 bytes (one per screen column) and the scale
+  table at `[esi]` 70 dwords per column (one per floor row). After a column `edi` goes back down
+  0x15e0 = 70 rows (+1 address on Low, and on High/Medium when the plane mask wraps).
+- **Screen rows:** `floor_draw` copies the horizon (20 rows of `[v7d860]`, 80 of each 320 addresses)
+  to rows 110-129 and draws the floor from row 199 (`edi` 0x3e30) up to row 130; `floor_draw_upper`
+  (`floor_upper_hi/med/lo`) is the same code with rows 10-29 and 99 (0x1ef0) up to 30, the
+  two-player top view. CONFIRMED (the only differing lines are those offsets and the arms below).
+- **`v7d998` arms only in `floor_draw`, and not the same per detail** (CONFIRMED the bytes): High
+  skips the horizon copy when `v7d998` == 1; Medium, when `v7d998` == 2, instead copies 0x28a0 bytes
+  (130 rows) from VRAM 0x7d00 to the top of the page and skips the horizon; Low has neither.
+  `v7d998` 1/2 are the record/playback modes (formats.md), in which the horizon strip is not loaded.
+  Why the arms differ per detail level is unknown (QUESTIONS 29).
 - **Six routines nothing reaches** (no call, jump or LE fixup; CONFIRMED by the census in
   findings/executables.md "Open"): `strips_restore` 0x36a69, `rect_overlap` 0x36d69, `pt_load` 0x379ec,
   `surface_at_7c` 0x37a6c, `tile_show` 0x37d96, `vretrace_wait` 0x37dc7. They are labelled in the asm

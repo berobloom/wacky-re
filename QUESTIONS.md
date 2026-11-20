@@ -175,6 +175,12 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     gate. Next pass: print `[0x7d86c]` at the gate (a `UC_HOOK_CODE` probe, `.work/kbprobe.py`) and
     seed only that record.
 
+29. **OPEN** (iter 91, `floor_draw` 0x37e94, findings/video.md): why do the `v7d998` arms differ
+    per detail level? High skips the horizon copy when `v7d998` == 1 (record mode?); Medium copies
+    130 rows from VRAM 0x7d00 over the top of the page when `v7d998` == 2 (playback?); Low has
+    neither, and `floor_draw_upper` has neither at any level. Test: record and play back a race at
+    each detail level in the original and screenshot the horizon band (rows 0-129).
+
 ## Hypotheses
 
 - LIKELY: <claim>. For: <evidence>. Against / gap: <what is missing>.

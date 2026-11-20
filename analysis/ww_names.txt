@@ -879,7 +879,7 @@
 0x037de0 page_show        # CONFIRMED: was waitretrace: waits for display enable, pal_d = pal_a, CRTC start address (0x0c/0x0d) = pal_a, waits for vertical retrace - the page flip
 0x037e23 vram_clear       # CONFIRMED: all four planes, 64 KB each, to 0
 0x037e41 modex_init       # CONFIRMED: unchained 256-colour mode: GC5 odd/even off, GC6 chain off, SEQ4 chain-4 off, VRAM cleared, CRTC 0x14 dword off, 0x17 byte mode
-0x037e94 floor_draw       # STRONGLY SUPPORTED: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera v88b0a/v88b0e, tile of map v7d6a4 (32x32 tiles), one byte; three unrolled bodies by v88c20 = detail 1/2/3 (High/Medium/Low)
+0x037e94 floor_draw       # STRONGLY SUPPORTED: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera v88b0a/v88b0e, tile of map v7d6a4 (32x32 tiles), one byte; three unrolled bodies by v88c20 = detail 1/2/3: floor_hi/med/lo, 320/160/80 columns of 70 rows, 1/2/4 pixels each (findings/video.md)
 0x03c3e9 floor_draw_upper # STRONGLY SUPPORTED: floor_draw from screen row 10 (0x320): the second view in two-player when v88bde
 0x040907 kbd_isr          # LIKELY: keyboard interrupt handler (iretd); DS from the sel16 fixup 0x4090e
 0x0409eb disable_ints     # CONFIRMED: cli; ret

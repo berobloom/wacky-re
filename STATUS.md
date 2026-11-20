@@ -34,9 +34,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. The asm is named (iter 91: 36 routines + 2 helpers + 6 unreferenced, findings/video.md). Next in it:
-   what differs between `floor_draw`'s three detail bodies (v88c20 1/2/3, ~2,070 insns each), then
-   name the data the asm reads (`v7d6a4` tile map, `v88b0a`/`v88b0e` camera, `pal_a`-`pal_d` pages).
+1. The asm is named (iter 91: 36 routines + 2 helpers + 6 unreferenced, findings/video.md; the floor's
+   three detail bodies are 320/160/80 columns of 70 rows). Next: name the data the asm reads
+   (`v7d6a4` tile map, `v88b0a`/`v88b0e` camera, `pal_a`-`pal_d` pages), C and asm together.
 2. `L_xxxxx` -> nasm local labels (`.loop`) inside each routine; the floor bodies jump between
    pieces (0x37e94 -> 0x395dd), so check every target stays in its routine. `asmcheck.py` after.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
