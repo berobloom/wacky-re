@@ -28,10 +28,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `demo_mode` 0x1e2e4 and `fn_1be3c` 0x1be3c (CALLCAP): iter 80's recipe - `FREAD=13` (the new fread
-   stub byte, `read_line` 0x26ff0) `SEED=0x88cd0=1:b,0x7ebc0=1:d,0x88c46=4:w CALLS=200000
-   COUNT=20000000` - made `fn_17928` return with both sides agreeing; `hotfn.py` takes those knobs too
-   and says which loop it lands in (`screenshot` 0x114c8, `fn_1832c` 0x1832c done, iter 80).
+1. `demo_mode` 0x1e2e4, `fn_1be3c` 0x1be3c (CALLCAP): iter 80's recipe `FREAD=13
+   SEED=0x88cd0=1:b,0x7ebc0=1:d,0x88c46=4:w CALLS=200000 COUNT=20000000` made `fn_17928` return with
+   both sides agreeing; `hotfn.py` takes the same knobs and says which loop a run sits in.
 2. `fade_in` 0x32cf8 reads the fade step `v88c46` at 0x32d78/0x32d95, and a direct call leaves it 0
    (the game stores 4 at 0x36334) - `difffn.py fade_in FREAD=13 SEED=0x88c46=4:w` may return.
 3. The press-and-release class - `main_menu` 0x1f858, `race_records_menu` 0x1d13c, `volume_menu`
