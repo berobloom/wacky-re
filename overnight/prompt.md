@@ -11,62 +11,56 @@ Do exactly this, in order:
    Obey the context-budget rules in `AGENTS.md`: grep before reading, read line ranges, never read
    whole: `.work/ghidra/*.c`, `src/ww.c` (~19k lines, grep it), `harness/TRAPS.md`.
 
-2. BEHAVIOUR NIGHT: THE CAPPED FUNCTIONS. The C rebuild covers every function (207 of 285
-   byte-identical); do NOT add functions and do NOT chase row counts tonight. `tools/wc/difffn.py`
-   runs one function in WW.EXE and in the hybrid build under Unicorn and compares the data segment,
-   EAX and the library calls. It says SAME for 74 of the 78 open near misses, but 28 of those runs
-   stop at a cap before the function finishes, so their SAME covers only part of the code:
-   - 3M-instruction cap ("both stopped at the 3000000-instruction cap"): classes_menu com_wait_byte
-     com_expect com_open kart_draw intro credits_screen showlines race_records_menu engines_menu
-     volume_menu main_menu fn_193a8 chat race_results menu cars_menu fn_1832c
-   - 300-call cap ("CALLCAP 300/300"): screenshot fn_17928 demo_mode fn_1be3c fn_1c0f4 enter_name
-     fn_1d704 main trial_book race_run
-   Take them in this order, up to 3 per iteration. Skip one whose `src/nearmiss.txt` line already has
-   `SEEDED:` (an earlier pass did it). For one function:
-   a. Prepare once per iteration: `src/check.sh >/dev/null 2>&1; tools/link/build.sh >/dev/null 2>&1;
-      .work/venv/bin/python tools/le/leparse.py .work/link/WWNEW.EXE .work/le/wwnew >/dev/null`.
-   b. Find the loop it never leaves: `timeout 300 .work/venv/bin/python tools/wc/difffn.py NAME` and
-      `python3 tools/le/disasm.py ww 0xADDR 400 | grep -n -E 'cmp|test|j[a-z]+ '` (chunk it: the
-      tool stops at the first undecodable byte). A wait loop jumps back to an earlier address and
-      tests a global (`cmp byte ptr [0x88ccd], 0`, a key flag, a timer, a menu result) that only an
-      interrupt or a stubbed call would change. Note that global and the value that exits the loop.
-   c. Seed it: `SEED=0xADDR=VALUE[:b|:w|:d] timeout 300 .work/venv/bin/python tools/wc/difffn.py NAME`
-      (several: comma-separated; width after a colon, default a dword). Raise `COUNT=`/`CALLS=` only
-      if the run is still making progress. First run the control with the same SEED:
-      `NEW=wworig MAP=.work/link/WWORIG.MAP SEED=... difffn.py NAME` must print SAME; if the control
-      is not SAME, the seed is wrong, not our C.
-   d. Verdict. Both sides return (no cap, no CRASH) and SAME: done. A DIFF: read the watch lines
-      (the instruction that writes each differing byte, both sides), find that place in our C, and
-      decide BUG (our C computes something else: fix it, citing the game's address in a comment) or
-      SAME-shape (a stack address cached in a global, a dead pointer: findings/game-loop.md lists the
-      known ones; say which). If no seed gets both sides out of the loop within the budget, that is
-      the verdict too: `SEEDED: still capped (<global tried>, <why>)`.
-   e. Write `SEEDED: <seed used> -> <SAME | n bugs fixed (what) | DIFF same-shape (what) | still
-      capped (why)>` at the start of the status column in `src/nearmiss.txt` (keep the old text after
-      it). A bug you could not fix: `SEEDED: OPEN <what, game address>` and add it to QUESTIONS.md.
-   f. After a C change: `src/check.sh 2>&1 | grep -c " MATCH"` must be >= `src/matched.baseline`
-      (if a fix makes another function stop matching, undo it and write the BUG down as unfixed), then
-      `.work/venv/bin/python tools/link/fixcensus.py` must print `0 unexplained`, then the behaviour
-      check below.
-   g. Budget: about 25 minutes per function. A bug fix is worth more than any verdict.
-   ALWAYS end a function with a commit. A pass without a commit counts as stuck.
-   Never commit a src/ww.c that lowers the MATCH count; overnight/check.sh rejects it.
-   Do not guess: a DIFF you cannot place in our C with the game's instruction in front of you is
-   `DIFF unknown`, written down as such, not "fixed".
-   Behaviour check, once per function after a BUG fix (not for SAME-only functions):
-      `tools/link/racetest.sh` (~4 minutes; builds the hybrid WW.EXE from our C and the game's
-      library and data, boots it in the harness, drives the menus to the first race and compares the
-      screens with the original's). It prints one line: `RACETEST OK`, `RACETEST FAIL`,
-      `RACETEST NOBUILD` or `RACETEST NOHARNESS`. Put that line in the function's commit message.
-      The first race's start grid is drawn at random (findings/game-loop.md `## Traps`): a race
-      line under 3% bad is OK; a FAIL on the race screen alone: look at `.work/link/racetest_race.png`
-      before blaming your fix. NOBUILD after your change means your C broke the link: read
-      `.work/link/racetest.build` and fix it. NOHARNESS: note it in the commit and do not retry this
-      iteration.
-   The emulator is used ONLY through `tools/link/racetest.sh`: no `tools/dosrun.py`, no MCP dosre
-   tools, no DOSBox commands of your own, never two racetests at once. Never name `dosrun.py` in a
-   shell command at all: `overnight/cleanup.sh` kills any process whose command line contains it,
-   your own shell included (GOTCHAS).
+2. REGISTER-HOME NIGHT: the near misses whose only difference is which register a value lives in.
+   210 of 285 functions are byte-identical (`src/matched.baseline`). Iter 93s matched netkeys_out,
+   netkeys_pack and netkeys_in after 30+ failed spellings, by one idea: the game had NO local there.
+   The game's register was Watcom's own temporary for a GLOBAL that the source used in place
+   (`v88cf0 = 0; if (k) v88cf0 += 2;` instead of `c = 0; if (k) c += 2; v88cf0 = c;`). A register
+   the allocator would never give a declared local is often the home of such a compiler temp
+   (findings/compiler.md, GOTCHAS "Which of two locals gets EAX"). Tonight retries that idea and its
+   relatives on these functions, in this order, up to 3 per iteration:
+     shots_clear 0x2d4fc, shots_move 0x2602c, voices_reset 0x11adc, drawsprite_clip 0x11404,
+     self_project 0x26a3c, fn_1bf00 0x1bf00, net_input 0x2f4a8, com_wait_byte 0x2df70,
+     com_expect 0x2e008, fade_in 0x32cf8, view_at_curpos 0x2f408, pcx_load 0x27060,
+     net_recv 0x2db00, fn_19db8 0x19db8, car_laps 0x12b44
+   Skip one whose `src/nearmiss.txt` status already starts with `VB:` (an earlier pass did it).
+   For one function:
+   a. Read its `differs:` note in `src/ww.c` (grep `^[a-z].* NAME(` and read from the comment above
+      it to the closing brace) and the rows: `.work/venv/bin/python tools/wc/fndiff.py ww
+      .work/src/WW.OBJ NAME 0xADDR | head -40` (run `src/check.sh >/dev/null 2>&1` once first if
+      .work/src/WW.OBJ is missing). Name which local or global each differing register holds.
+   b. Write up to 12 variants into `.work/vbatch/NAME.py`, none already in the differs note:
+      `VARIANTS = [('label', [('old text', 'new text'), ...]), ...]`. Each old text must occur
+      exactly once in src/ww.c: include the function's own lines (a statement plus its neighbour),
+      never a bare `c = 0;`. Use triple-quoted Python strings for multi-line text and keep the
+      file's 4-space indentation exactly. Levers, best first:
+      1. delete a local and use the global it copies from or into in place, in every statement;
+      2. the reverse: cache a global the function reads several times in a new local;
+      3. a pointer local <-> the indexed global array expression (`p->f` <-> `arr[i].f`);
+      4. merge two locals that are never live together, or split one local used for two jobs;
+      5. a `for` <-> `while`/`do` loop, `x += k` <-> `x = x + k`, an `if/else` <-> `?:`;
+      6. move a local's declaration or first assignment (only when it changes the code order).
+   c. Run `.work/venv/bin/python tools/wcc95/vbatch.py src/ww.c NAME 0xADDR .work/vbatch/NAME.py`
+      (35 seconds a variant; it compiles the whole file in `.work/vbatch/` and never touches
+      src/ww.c; `control` must show the row count from step a). One vbatch at a time. A variant
+      that prints `pattern not found once`: fix its old text and rerun it alone afterwards.
+   d. A variant with 0 instruction diffs: apply exactly that change to src/ww.c, replace the
+      `differs:` part of its comment with one line saying what the source shape is (and `iter N`),
+      run `src/check.sh 2>&1 | grep -c " MATCH"`: it must be >= `src/matched.baseline` + 1; then
+      write the new count into `src/matched.baseline`, set the nearmiss.txt status to `MATCH (iter N:
+      <shape>) Was: <old status>`, run `.work/venv/bin/python tools/progress.py`, commit (src/ww.c,
+      src/matched.baseline, src/nearmiss.txt, PROGRESS.md, docs/WWPROGRESS.*). If a lever worked,
+      add one line to GOTCHAS "Which of two locals gets EAX" naming the function.
+      A variant with fewer rows but not 0: apply it only if the whole check's MATCH count stays the
+      same and the function's row count drops by 2 or more; say so in the differs note.
+      No variant helps: prepend `VB: iter N, K variants (labels), best R rows (label)` to the
+      nearmiss.txt status and add the labels to the differs note's tried list. Commit that.
+   e. Budget: about 25 minutes per function. ALWAYS end a function with a commit. A pass without a
+      commit counts as stuck. Never commit a src/ww.c that lowers the MATCH count.
+   Not tonight: `tools/wcc95/ratrace.py`, `vtrace.py`, `setup.sh` (they run a DOSBox-X harness), the
+   emulator in any other form, `tools/wc/difffn.py`, new functions. `tools/wc/wcc.sh` (used by
+   vbatch.py and src/check.sh) runs a headless stock DOSBox and is allowed. Never name `dosrun.py`
+   in a shell command: `overnight/cleanup.sh` kills any process whose command line contains it.
 
 3. Mark every claim CONFIRMED / STRONGLY SUPPORTED / LIKELY / SPECULATIVE with its evidence
    (addresses, capture files, the experiment). Facts go to `findings/<subsystem>.md` (+ INDEX row
