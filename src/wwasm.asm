@@ -108,15 +108,15 @@ REG bh, 7, 0, 0
         EXT _spr_x, 0x88b32
         EXT _spr_y, 0x88b34
         EXT _spr_h, 0x88b36
-        EXT _v88b3c, 0x88b3c
-        EXT _v88b3e, 0x88b3e
+        EXT _joy_lim_r, 0x88b3c
+        EXT _joy_lim_u, 0x88b3e
         EXT _joy88b40, 0x88b40
         EXT _joy88b42, 0x88b42
         EXT _joy88b44, 0x88b44
         EXT _joy88b46, 0x88b46
-        EXT _v88b48, 0x88b48
+        EXT _joy_lim_d, 0x88b48
         EXT _v88b4a, 0x88b4a
-        EXT _v88b52, 0x88b52
+        EXT _joy_lim_l, 0x88b52
         EXT _joy_ax, 0x88b54
         EXT _joy_ay, 0x88b56
         EXT _pcx_row, 0x88b58
@@ -131,12 +131,12 @@ REG bh, 7, 0, 0
         EXT D_88bc6, 0x88bc6
         EXT D_88bc8, 0x88bc8
         EXT D_88bca, 0x88bca
-        EXT _keymap1, 0x88be4
-        EXT _keymap2, 0x88be6
-        EXT _keymap3, 0x88be8
+        EXT _joy_xbit, 0x88be4
+        EXT _joy_ybit, 0x88be6
+        EXT _joy_bits, 0x88be8
         EXT _detail_lvl, 0x88c20
         EXT _joyfound, 0x88c74
-        EXT _v88c8a, 0x88c8a
+        EXT _joy_skip, 0x88c8a
         EXT _shotkey, 0x88ccd
         EXT _key_select, 0x88cce
         EXT _plane_bit, 0x88ccf
@@ -1743,7 +1743,7 @@ L_37847:
         pop edx
         ret
 
-; ---- 0x3784b joy_poll: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre joy_cx/joy_cy; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
+; ---- 0x3784b joy_poll: was joy_detect: times the two game-port axes (0x201, masks joy_xbit/2, joy_bits ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (joy_lim_l/joy_lim_r/joy_lim_u/joy_lim_d) around the centre joy_cx/joy_cy; a timeout sets joyfound = 1 = no stick; skipped when joy_skip == 1
 joy_poll_:
         push eax
         push ebx
@@ -1755,7 +1755,7 @@ joy_poll_:
         mov byte [_key88cdd], al
         mov byte [_key88cd6], al
         mov byte [_key88cd3], al
-        mov bx, word [_v88c8a]
+        mov bx, word [_joy_skip]
         cmp bx, 1
         jne short L_3787d
         nop
@@ -1778,17 +1778,17 @@ L_3789c:
         mov dx, 0x201
         in al, dx
         mov ah, 0
-        and ax, word [_keymap1]
+        and ax, word [_joy_xbit]
         add word [_joy_ax], ax
         mov dx, 0x201
         in al, dx
         mov ah, 0
-        and ax, word [_keymap2]
+        and ax, word [_joy_ybit]
         add word [_joy_ay], ax
         inc si
         mov dx, 0x201
         in al, dx
-        test byte [_keymap3], al
+        test byte [_joy_bits], al
         jne short L_378df
         nop
         nop
@@ -1842,7 +1842,7 @@ L_3792a:
         rr mov, dx, bx
         rr sub, dx, ax
         inc dx
-        cmp dx, word [_v88b52]
+        cmp dx, word [_joy_lim_l]
         jl short L_37960
         nop
         nop
@@ -1864,7 +1864,7 @@ L_37965:
         rr mov, dx, ax
         rr sub, dx, bx
         inc dx
-        cmp dx, word [_v88b3c]
+        cmp dx, word [_joy_lim_r]
         jl short L_37989
         nop
         nop
@@ -1884,7 +1884,7 @@ L_37989:
         rr mov, dx, bx
         rr sub, dx, ax
         inc dx
-        cmp dx, word [_v88b3e]
+        cmp dx, word [_joy_lim_u]
         jl short L_379bd
         nop
         nop
@@ -1906,7 +1906,7 @@ L_379c2:
         rr mov, dx, ax
         rr sub, dx, bx
         inc dx
-        cmp dx, word [_v88b48]
+        cmp dx, word [_joy_lim_d]
         jl short L_379e6
         nop
         nop

@@ -1135,12 +1135,12 @@ void voice_play(int n)
 
 /* ---- sound and music setup */
 
-extern short v88c8a, sfxready, joyfound, v7ee4a, v7ee44;
+extern short joy_skip, sfxready, joyfound, v7ee4a, v7ee44;
 extern int musicready, sfxsoft;
 extern int musiccard, musicaddr, musicvol;
 extern int fxcard, fxvoices, fxbits, fxvol;
 extern char fxdevice[];
-extern short keymap1, keymap2, keymap3;
+extern short joy_xbit, joy_ybit, joy_bits;
 int MUSIC_Init(int card, int address);
 char *MUSIC_ErrorString(int err);
 void MUSIC_SetVolume(int vol);
@@ -1154,7 +1154,7 @@ int sound_init(void)
 {
     int status;
 
-    v88c8a = 0;
+    joy_skip = 0;
     soundon = 0;
     musicready = 0;
     sfxsoft = 0;
@@ -1205,12 +1205,12 @@ int sound_init(void)
     } else {
         printf("No SOUND FX selected....\n");
     }
-    keymap1 = 1;
-    keymap2 = 2;
-    keymap3 = 3;
+    joy_xbit = 1;
+    joy_ybit = 2;
+    joy_bits = 3;
     input_clear1();
     joyfound = 0;
-    v88c8a = 0;
+    joy_skip = 0;
     joy_poll();
     input_clear1();
     if (joyfound) {
@@ -1223,7 +1223,7 @@ int sound_init(void)
         v7ee44 = 0;
     else if (v7ee44)
         return 1;
-    v88c8a = 1;
+    joy_skip = 1;
     return 1;
 }
 
@@ -3065,37 +3065,37 @@ void print_at(short x, int y, char *s, short mode)
 
 /* ---- controls, timing */
 
-extern short joy_cx, joy_cy, v88b52, v88b3c, v88b3e, v88b48;
+extern short joy_cx, joy_cy, joy_lim_l, joy_lim_r, joy_lim_u, joy_lim_d;
 
 void ctl_setup(short which)
 {
-    v88c8a = 0;
+    joy_skip = 0;
     if (joyfound)
-        v88c8a = 1;
+        joy_skip = 1;
     if (which == 0) {
         if (!v7ee4a)
-            v88c8a = 1;
+            joy_skip = 1;
         joy_cx = ((short *)cfg7ee1c)[14];
         joy_cy = ((short *)cfg7ee1c)[15];
-        v88b52 = ((short *)cfg7ee1c)[16];
-        v88b3c = ((short *)cfg7ee1c)[17];
-        v88b3e = ((short *)cfg7ee1c)[18];
-        v88b48 = ((short *)cfg7ee1c)[19];
-        keymap1 = 1;
-        keymap2 = 2;
-        keymap3 = 3;
+        joy_lim_l = ((short *)cfg7ee1c)[16];
+        joy_lim_r = ((short *)cfg7ee1c)[17];
+        joy_lim_u = ((short *)cfg7ee1c)[18];
+        joy_lim_d = ((short *)cfg7ee1c)[19];
+        joy_xbit = 1;
+        joy_ybit = 2;
+        joy_bits = 3;
     } else {
         if (((short *)cfg77128)[2])
-            v88c8a = 1;
+            joy_skip = 1;
         joy_cx = ((short *)cfg77128)[4];
         joy_cy = ((short *)cfg77128)[5];
-        v88b52 = ((short *)cfg77128)[6];
-        v88b3c = ((short *)cfg77128)[7];
-        v88b3e = ((short *)cfg77128)[8];
-        v88b48 = ((short *)cfg77128)[9];
-        keymap1 = 4;
-        keymap2 = 8;
-        keymap3 = 12;
+        joy_lim_l = ((short *)cfg77128)[6];
+        joy_lim_r = ((short *)cfg77128)[7];
+        joy_lim_u = ((short *)cfg77128)[8];
+        joy_lim_d = ((short *)cfg77128)[9];
+        joy_xbit = 4;
+        joy_ybit = 8;
+        joy_bits = 12;
     }
     joy_poll();
 }
@@ -3147,7 +3147,7 @@ void wait_or_key(int n)
 void joy_reset(void)
 {
     joyfound = 0;
-    v88c8a = 0;
+    joy_skip = 0;
     joy_poll();
 }
 

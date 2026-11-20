@@ -1,7 +1,7 @@
 # Input
 
-Status: OPEN (the keyboard handler, its installer and its table are read; the joystick calibration
-and what each C reader of these bytes does are not)
+Status: OPEN (keyboard handler, its installer and table, and the joystick poll with its calibration
+are read; SETUP's limit arithmetic and what each C reader of these bytes does are not)
 
 ## Summary
 
@@ -37,6 +37,16 @@ calls it `aborted` / `key88cd0`). The joystick is polled, not interrupt-driven: 
   player one's accelerate/fire/brake/hand-brake slots (`[v7d8a4]` = `cfg7b6d8` too, +5/+7/+9/+11);
   when a joystick is present (`joyfound` != 1) a pressed game-port button 1-4 (0x201 bits 4-7 low)
   also sets them.
+- CONFIRMED (code 0x3784b `joy_poll` + src/ww.c `ctl_setup` 0x14b00): the joystick is timed, not
+  read: after `out 0x201` the loop counts how long each axis bit stays high (`joy_xbit`/`joy_ybit`,
+  summed into `joy_ax`/`joy_ay` until `joy_bits` are all low; the y count is halved), with a
+  16-bit timeout that sets `joyfound` = 1 (no stick). Each of the four direction keys is set when
+  the doubled count is past the centre `joy_cx`/`joy_cy` by at least its limit `joy_lim_l/r/u/d`.
+  `ctl_setup(which)` loads the centre and limits from the CFG calibration - player one (which 0):
+  `cfg7ee1c` shorts +0x1c..+0x26, port bits 1/2/3; player two: `cfg77128` +8..+0x12, bits 4/8/12 -
+  and sets `joy_skip` when that player has no stick. SETUP's calibration screen (0x129a4: centre,
+  top-left, bottom-right) writes those fields (findings/formats.md). LIKELY that each limit is a
+  fraction of the calibrated range: SETUP's arithmetic is not read.
 - CONFIRMED (the C side, src/ww.c): `aborted == 1` / `key88cd0 == 1` tests are "Esc (scancode 1)
   was the last key event and it was a press": the handler never writes a separate abort flag.
 

@@ -224,7 +224,7 @@
 0x088b96 myplayer     # SPECULATIVE: short compared with the voice number in voice_play
 0x07ecd0 countplays   # SPECULATIVE: voice_play counts plays when set
 0x011c9c sound_init   # LIKELY: MUSIC_Init/FX_SetupCard/FX_Init with "Checking ... Hardware" messages
-0x088c8a v88c8a       # SPECULATIVE: short; set at the end of sound_init unless v7ee4a && v7ee44
+0x088c8a joy_skip           # SPECULATIVE: short; set at the end of sound_init unless v7ee4a && v7ee44
 0x07ed4c musicready   # SPECULATIVE: set after MUSIC_Init succeeds
 0x07ed48 sfxsoft      # SPECULATIVE: copy of soundon after FX_Init
 0x07ee4c sfxready     # SPECULATIVE: short, cleared in sound_init
@@ -236,9 +236,9 @@
 0x077418 fxbits       # LIKELY: FX_Init sample bits
 0x077428 fxvol        # LIKELY: FX_SetVolume, copied to sfxvol
 0x07ecfc fxdevice     # LIKELY: fx_device FX_SetupCard fills
-0x088be4 keymap1      # SPECULATIVE: short = 1 in sound_init
-0x088be6 keymap2      # SPECULATIVE: short = 2
-0x088be8 keymap3      # SPECULATIVE: short = 3
+0x088be4 joy_xbit          # SPECULATIVE: short = 1 in sound_init
+0x088be6 joy_ybit          # SPECULATIVE: short = 2
+0x088be8 joy_bits          # SPECULATIVE: short = 3
 0x088c74 joyfound     # SPECULATIVE: short, cleared before joy_detect, tested after
 0x07ee4a v7ee4a       # SPECULATIVE: short config flag cleared when joyfound
 0x07ee44 v7ee44       # SPECULATIVE: short config flag
@@ -518,10 +518,10 @@
 0x07b6dd v7b6dd       # SPECULATIVE: char
 0x088b5c joy_cx             # SPECULATIVE: control from the config
 0x088b5e joy_cy             # SPECULATIVE
-0x088b52 v88b52       # SPECULATIVE
-0x088b3c v88b3c       # SPECULATIVE
-0x088b3e v88b3e       # SPECULATIVE
-0x088b48 v88b48       # SPECULATIVE
+0x088b52 joy_lim_l          # SPECULATIVE
+0x088b3c joy_lim_r          # SPECULATIVE
+0x088b3e joy_lim_u          # SPECULATIVE
+0x088b48 joy_lim_d          # SPECULATIVE
 0x014d00 chat         # STRONGLY SUPPORTED: "PRESS ESC TO END CHAT MODE", two 38-char lines, ours and the net peer's
 0x07d58c oldkbd_off   # LIKELY: offset given to DOS set vector 9 (0x2509) when chat starts
 0x07d5a4 oldkbd_seg   # LIKELY: its selector
@@ -923,3 +923,11 @@
 0x088cce key_select   # CONFIRMED: kbd_isr: 1 while Enter (0x1c) or Space (0x39) is held (was v88cce; iter 91, from the asm)
 0x088cdb key_up       # CONFIRMED: kbd_isr: 1 while Up (0x48) is held (was v88cdb; iter 91, from the asm)
 0x088cd2 key_down     # CONFIRMED: kbd_isr: 1 while Down (0x50) is held (was v88cd2; iter 91, from the asm)
+0x088c8a joy_skip     # CONFIRMED: joy_poll returns at once when it is 1; ctl_setup sets it when joyfound (no stick) or the player is not on a joystick (cfg7ee1c v7ee4a == 0 / cfg77128 +4 != 0) (was v88c8a; iter 91, from the asm)
+0x088be4 joy_xbit     # CONFIRMED: joy_poll's game-port x-axis bit: 1 for player one, 4 for player two (ctl_setup) (was keymap1; iter 91, from the asm)
+0x088be6 joy_ybit     # CONFIRMED: joy_poll's game-port y-axis bit: 2 / 8 (was keymap2; iter 91, from the asm)
+0x088be8 joy_bits     # CONFIRMED: joy_poll's both-axes mask: 3 / 12; the timing loop ends when none of them is high (was keymap3; iter 91, from the asm)
+0x088b52 joy_lim_l    # LIKELY: CONFIRMED joy_poll sets the steer-left key (key88cd5) when joy_cx - 2*joy_ax + 1 >= it; from the CFG calibration (cfg7ee1c +0x20 / cfg77128 +0xc) (was v88b52; iter 91, from the asm)
+0x088b3c joy_lim_r    # LIKELY: the same for steer right (key88cdd), 2*joy_ax - joy_cx + 1 >= it (cfg +0x22 / +0xe) (was v88b3c; iter 91, from the asm)
+0x088b3e joy_lim_u    # LIKELY: the same for the y axis below the centre (key88cd6) (cfg +0x24 / +0x10) (was v88b3e; iter 91, from the asm)
+0x088b48 joy_lim_d    # LIKELY: the same for the y axis above the centre (key88cd3) (cfg +0x26 / +0x12) (was v88b48; iter 91, from the asm)

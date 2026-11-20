@@ -455,7 +455,7 @@ Header fields (offsets from 0x7ee1c; ING / CFG values from the two byte images):
 | +0x0e | `cfg7ee2a` | tested 0x1196c, cleared 0x11976 | 1 | 1 |
 | +0x14 | dword -> `v7eba0` | 0x35e43 | 14666 | 0 |
 | +0x18 | dword -> `v7eba4` | 0x35e39 | 51456 | 0 |
-| +0x1c..+0x26 | six words -> `joy_cx, joy_cy, v88b52, v88b3c, v88b3e, v88b48` | `ctl_setup` 0x14b00, 0x14b34-0x14b82 (`src/ww.c:3015`) | 0 | 0 |
+| +0x1c..+0x26 | six words -> `joy_cx, joy_cy, joy_lim_l, joy_lim_r, joy_lim_u, joy_lim_d` | `ctl_setup` 0x14b00, 0x14b34-0x14b82 (`src/ww.c:3015`) | 0 | 0 |
 | +0x28, +0x2a, +0x2e, +0x30, +0x32 | five flags `0x7ee44/46/4a/4c/4e` | written by the startup helper 0x11c9c (0x11cc8-0x11f79) | 0,1,0,0,0 | same |
 | +0x34, +0x36, +0x38, +0x3a | 1, 1, 7, 544 | never read | as shown | as shown |
 | +0x3c | `v7ee58` | 0x1e461 (`demo_mode`), 0x3680c (`main`) | 2 | 1 |
