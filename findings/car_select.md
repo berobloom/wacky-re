@@ -247,6 +247,13 @@ declaration: our 26 spilled scalars are a fixed permutation of the game's 27,
 and the game additionally spills what we keep live in a register. Open in
 QUESTIONS.md.
 
+Behaviour is closed on this screen (iter 85): `tools/wc/difffn.py cars_menu` with
+`TICK=8 SEED=0x88cce=1:b,0x88cd0=1:b,0x88c46=4:w RESEED=0x88cd0=0:b CALLS=20000
+COUNT=120000000` returns on both sides and leaves the data segment identical
+(control SAME, hotfn 18136 insns at 819 addrs) - see findings/menus.md for the
+run and `src/nearmiss.txt` for the verdict line, so nothing above this frame
+permutation is a behavioural difference.
+
 ## Traps
 
 - A loop that re-bumps a global stream pointer where the game bumps it once per

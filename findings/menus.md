@@ -241,6 +241,33 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   0x2bff0 SAME with both sides returning (27876 insns at 644 addrs), and `menu` 0x155c0 SAME and
   returning but on only **604 insns at 406 addrs** - with zero arguments it leaves near the top, so
   that SAME says nothing about its frame wait 0x16004/0x1604c or its input arm (`ARGS=`, iter 76).
+- CONFIRMED (iter 85: `menu` 0x155c0 run with its arguments set, `TICK=8 SEED=0x88cce=1:b,0x88cd0=1:b,
+  0x88c46=4:w RESEED=0x88cd0=0:b CALLS=20000 COUNT=60000000`, argument shapes taken from the real call
+  sites in `src/ww.c` - `ARGS=6,1,2,0` (`mode` 2, the arm that zeroes `net7ed78` at 0x155c4),
+  `7,1,0,0`, `3,1,1,0` (`mode` 1), `2,1,0,0x4e`, `5,1,0,0`; the control
+  `NEW=wworig MAP=.work/link/WWORIG.MAP` prints SAME for every one, and `hotfn.py` counts **14932 insns
+  at 510 addrs, `returned`**, against 604 at 406 for the zero-argument call, so the frame pump and the
+  input arm are inside the comparison now): every one of those runs reports exactly **one**
+  data-segment difference, `palptr` 0x7d760 game `f0` / ours `fc`, and the writers are the same
+  instruction on both sides - `mov dword [0x7d760], eax` at game 0x32d4c and ours 0x57d68, inside
+  `fade_in` 0x32cf8, whose prologue is byte-identical in both builds (six pushes + `sub esp,0x308`).
+  `fade_in` caches the address of its local `signed char cur[0x300]` in a global, so the value is a
+  stack address: game 0xeffaf0, ours 0xeffafc, **12 bytes apart = `menu`'s own frame gap** (game 0xe0,
+  ours 0xd4 - the `#0xd4` same-shape row note in `src/nearmiss.txt`): everything below menu's frame
+  moves with it. That is same-shape, not a bug, and it is the general rule for these comparisons - a
+  function that stores a local's address into a global turns a *frame-size* difference into a
+  data-segment DIFF. `ARGS=2,0,0,0x4e` and `ARGS=5,0,1,0` print SAME outright (no `fade_in` on those
+  paths). The `call 0: game 0x375cd(0,0,0,[88464,0,0]) ours 0x10b8f(0,0,0,[242267,0,0])` line printed
+  with each DIFF is not a difference: `f375cd` 0x375cd takes no arguments (`pushal`..`popal` 0x376d5,
+  findings/video.md), so those four values are registers the caller happened to leave (GOTCHAS).
+- CONFIRMED (iter 85: `cars_menu` 0x1a380 - `TICK=8 SEED=0x88cce=1:b,0x88cd0=1:b,0x88c46=4:w
+  RESEED=0x88cd0=0:b CALLS=20000 COUNT=120000000` - SAME with **both sides returning**, no DIFF byte,
+  EAX equal and equal stub-call counts; control with the same env SAME; `hotfn.py` 18136 insns at 819
+  addrs, `returned`): the iter 72/75 "cars_menu never returns, it waits for the player" was one static
+  seed that both pressed and released the key. With the press/release pair the whole car-select screen
+  runs - menus, slides, the three selection-box draws, msgbox - and leaves the data segment identical,
+  so this line's 445 rows are byte-level homes with no behavioural divergence behind them
+  (findings/car_select.md).
 
 - CONFIRMED (0x1efb0-0x1f43b executed under `tools/wc/difffn.py`, iter 77): `credits_screen` ends by
   itself - it is six pages, the loop back edge is 0x1f428 `cmp dword [esp],5; jle 0x1f037` and the

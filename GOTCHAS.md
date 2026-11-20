@@ -214,6 +214,24 @@ it can be copied back into DREA.
   made a 25-call gap out of an 11-call one, and our clib symbols carry a trailing underscore the
   game's hand names do not (`fopen` vs `fopen_`), so an exact hit prints the name and anything else
   prints `?nearest`.
+- **The `call N:` pair `difffn.py` prints compares its own register snapshot, not the callee's
+  arguments** (iter 85): every thick `ARGS=` run of `menu` 0x155c0 printed
+  `call 0: game 0x375cd(0,0,0,[88464,0,0]) ours 0x10b8f(0,0,0,[242267,0,0])`, which reads like a real
+  argument difference and is not one: `f375cd` 0x375cd takes **no** arguments (`pushal`..`popal`
+  0x376d5, findings/video.md CONFIRMED), so the four recorded values are whatever the caller's code
+  left in the registers and a Watcom recompile leaves different ones - the pair can never cancel. Read
+  the callee's arity before adjudicating a call pair (loads from `[esp+..]` in its first instructions,
+  or a `pushal` prologue); here the byte comparison of the same run reported one DIFF and it sat
+  elsewhere, which is the confirmation. [generic]
+- **A one-byte data-segment DIFF can be an address the program itself computed** (iter 85): `fade_in`
+  0x32cf8 stores the address of its local `cur[0x300]` into the global `palptr` 0x7d760, so running
+  `menu` 0x155c0 with real arguments leaves exactly one differing dword (game 0xeffaf0 ours 0xeffafc)
+  and the 12 bytes of it are `menu`'s frame gap (0xe0 vs 0xd4). Check such a DIFF against the frame
+  sizes, and against the writer (both sides `mov dword [0x7d760], eax`, game 0x32d4c / ours 0x57d68,
+  identical prologues), before writing BUG. Same class as the zero-page scribble above.
+- **`COUNT=` and `CALLS=` are plain integers** (iter 85): the shorthand the notes use, `COUNT=120M`,
+  dies with `ValueError: invalid literal for int() with base 10: '120M'` at import; write
+  `COUNT=120000000`.
 - **A stub cannot fake a return from a noreturn clib entry: `exit_` ends the run** (iter 82): `main`
   0x35ca4 tail-jumps to clib `exit_` (game 0x42c11, hybrid 0x1c1d3) at 0x35e10, and the call stub's
   "return" pops the slot at ESP - inside main's live frame one of its own locals - so the game jumped to
