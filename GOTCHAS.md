@@ -146,7 +146,10 @@ it can be copied back into DREA.
   it blocks are `fn_1c0f4`, `race_records_menu`, `fn_1832c`, `main_menu`). `CALLS=` is the useful lever for
   a screen that prints a lot: `credits_screen` returns between CALLS=2000 and 20000. For an argument
   register use `ARGS=` (eax, edx, ebx, ecx): `showlines` prints its three lines with `ARGS=3,1,0` and
-  its mode argument decides which tail runs (findings/menus.md).
+  its mode argument decides which tail runs (findings/menus.md). A run **still capped at the end** with
+  `TICK=`/`TICKREAD=` on reports the injected clock 0x7e720 itself as its only DIFF byte (game 08, ours
+  10/0x18, `fn_1832c` at CALLS=3000/5000, iter 80): that value is where each side's cap fell, not a
+  behaviour difference - a verdict needs a seed that makes both sides *return*.
 - **`SEED=` a global that a callee clears is no seed at all**: `SEED=0x7ecc0=1:d` makes
   `race_records_menu` 0x1d13c take its exit arm at 0x1d2f1 only if it is still nonzero there, and
   `menu` 0x155c0 stores 0 to it at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77). Name the

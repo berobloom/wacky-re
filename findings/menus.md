@@ -350,6 +350,23 @@ what `SEED=` left them, so:
   word [0x88c0c],0`; with netgame 0 the `jmp 0x1c833` at 0x1c7ef skips it. Nothing in that body calls
   the stub, so `TICK=` never advances it: another wait no seed ends (its difference is always 0).
 
+- CONFIRMED (iter 80: `SEED=0x88cd0=1:b,0x7ebc0=1:d tools/wc/difffn.py fn_1832c` prints **SAME with
+  both sides returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same seeds SAME;
+  `hotfn.py` with those seeds reports 45646 insns at 617 addrs and `returned`): the races menu's wait
+  0x18c96-0x18cbb has three tests - `cmp byte [key88cd0],1`, `cmp dword [connected v7ebc0],0` and
+  `cmp dword [ticks],0x14` - and the body calls nothing, so `TICK=` cannot advance it and 0x18c82
+  zeroes `ticks` a few instructions before the loop (`ebp` = the constant 8 from 0x18356, and that is
+  also why `TICK=8` alone never returns: the store 0x18843 then the frame pump 0x18860 leave 8 in
+  `ticks`, so 0x18896 `cmp ebp, [ticks]; jle 0x188b8` takes the not-ESC path and `v88cec` stays 0). `key88cd0` alone is not enough: the `connected` test 0x18c9f sends the run
+  back to 0x18c96, so seed both, exactly like `fn_193a8` (iter 79). The exit is 0x18ca8
+  `v7ebb0 = 1` -> 0x18cbd, and the return path is 0x19369 `cmp byte [v88cec],0; je 0x18843` with
+  `v88cec` set at 0x188b1, then the 0x300-byte palette copy to `p7d718` 0x19378-0x1938e,
+  `v88b9e = 1` 0x19390 and `ret` 0x193a5 - the menu's **only** `ret`.
+  Still uncovered: the timeout side (the joystick nav 0x18f8a-0x1912b, `trial_book` 0x1911f) - with
+  `TICK=8 SEED=0x88cd0=1:b,0x7ebc0=1:d` both sides walk it but stay in the menu to a 5000-call cap,
+  and the only reported DIFF byte is the injected clock `ticks` 0x7e720 itself (game 08, ours 10):
+  the end value of a counter the harness drives is the cap's position, not a behaviour difference.
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands
