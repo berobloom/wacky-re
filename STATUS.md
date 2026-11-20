@@ -30,28 +30,25 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 1. `kart_bump` 0x22bf4: 117 of its 606 instruction starts are still unwalked after iter 87's six
    SAME runs (`tools/wc/fncov.py kart_bump` prints them). Take the two biggest blocks first -
-   0x23600-0x23699 (25 starts) and 0x22fdf-0x2303d (19) - by reading the tests in the neighbours that
-   *are* walked; start from the iter-86/87 seed base in src/nearmiss.txt (`0x7d86c=0x79aa0:d` = the
-   pickup record, `0x7d800=0x6aa90:d`, `0x88c44=2:w`) and report the fncov count with the verdict.
-2. Same function, one cheap arm each: 0x23261/0x23265 and 0x232a8-0x232d1 need the kind word
-   `sprattr[0].+0` = 3 with `curkart->f16` != 0 (`0x72998=3:w`, `0x8216=1:w`, curkart at scratch 0x8200).
+   0x23600-0x23699 (25 starts) and 0x22fdf-0x2303d (19) - reading the tests in the neighbours that
+   *are* walked, from the seed base in src/nearmiss.txt (`0x7d86c=0x79aa0:d` = the pickup record,
+   `0x7d800=0x6aa90:d`, `0x88c44=2:w`), and report the fncov count with the verdict.
+2. `kart_bump` again, one cheap arm: 0x23261/0x23265 and 0x232a8-0x232d1 need kind 3 with
+   `curkart->f16` != 0 (`0x72998=3:w`, `0x8216=1:w`, curkart at scratch 0x8200).
 3. QUESTIONS 26: seed the palette/picture pointers `main` mallocs (src/ww.c 18540-18700) into
    scratch-page blocks and re-run `difffn.py intro` - it returns on both sides now, and its 123
    remaining DIFF bytes are all in the harness's zero page.
-4. Wider walks of three functions closed earlier, each reported with a `fncov.py` count now that the
-   tool is committed: `demo_mode` 0x1e2e4 (raise `CALLS=`/`COUNT=`; do NOT add
+4. Wider walks of three functions closed earlier, each with a `fncov.py` count now that the tool is
+   committed: `demo_mode` 0x1e2e4 (raise `CALLS=`/`COUNT=`; do NOT add
    `RESEED=0x88cd0=0:b`, the abort arm 0x31eae needs the press value on every read), `trial_book`
    0x2e4b8 with `TICKREAD=8` past 0x2f193, `race_run` 0x2fd8c with `SEED=0x7d998=2:d` alone.
-5. Give the `SEEDED:` verdicts that quote no coverage count a number: `fncov.py` over the
-   nearmiss.txt lines whose note says only SAME - a thin SAME is not a verdict on the branches it
-   never reached (findings/game-loop.md, the zero-argument-run trap).
-6. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
+5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
    first trap); after a C change also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
    {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
    and compare its DIFFs with the verdicts in `src/nearmiss.txt` - the known uncapped classes are the
    dead `v7d7f4`/`v7d874` pointers, the page-0 scribble and a global holding a stack address
    (`palptr` 0x7d760, findings/menus.md); `CALLSEQ=1` names both stub-call sequences for a `calls n/m`.
-7. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
+6. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
    slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
 
 ## BLOCKED
