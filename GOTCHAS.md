@@ -119,7 +119,11 @@ it can be copied back into DREA.
   fixed it). A `SEED=` **pointer** has to point at a block that is zero in BOTH images: the hybrid's
   data object is 0x35464 bytes against the game's 0x33100 and carries its own initialised data, so
   0x92000 is zero in the game but `+++.OK` at 0x92126 in ours, which invented a 5-byte `kart_draw`
-  DIFF (iter 76).
+  DIFF (iter 76). A fault address just **below** the zero page (`read at 0xfffffffd`) is not a null
+  pointer but a **negative index**: a zero global run through a `dec` and an index multiply
+  (`lea eax,[edx*4]; sub eax,edx` = *3) lands under the mapped page, so seed the source global to a
+  legal value rather than moving the base (`SEED=0x88c96=1:w` for
+  `pal7d848 + 3*(v88c96-1)`, iter 79, findings/menus.md).
   Recipe and its evidence: findings/menus.md, findings/serial.md, findings/game-loop.md.
 - **A capped `difffn.py` run is only as good as the progress its cap allows**, and `hotfn.py`'s
   `capped` does not say which limit fired (instruction cap, `CALLS`, or the quiet stop at an `in`/`out`

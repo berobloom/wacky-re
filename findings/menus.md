@@ -212,6 +212,24 @@ the wait for `ticks` > 6 (0x34cb4: no stubbed call in the body, so `TICK=` alone
 at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction on both sides
 (inconclusive; a null pointer global).
 
+- CONFIRMED (iter 79: `SEED=0x88c96=1:w,0x88cd0=1:b,0x7ebc0=1:d tools/wc/difffn.py fn_193a8` prints
+  SAME with **both sides returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same
+  seeds SAME; `tools/wc/hotfn.py` with those seeds reports 45797 insns at 475 addrs and `returned`,
+  so the run walks the body and its helpers, it is not a short-circuit; `TICK=` is not needed):
+  the zones menu leaves its two waits on **key88cd0**, not on `ticks` - each wait zeroes `ticks` a
+  few instructions before testing it (0x19633, 0x199c7) and neither loop body contains a stubbed
+  call, so `TICK=` can never pay there; the 8-tick wait leaves at 0x1965e `je 0x1966b`, the 20-tick
+  wait at 0x199f2, which needs both key88cd0 == 1 and EBP non-zero (`test ebp,ebp` 0x199e4
+  `je 0x199f4`): EBP is `connected` v7ebc0 (loaded 0x19608/0x1962d), so seed that non-zero too.
+- CONFIRMED (iter 79, the crash both builds used to share): it is `fn_182d0` 0x182d0's **source**
+  pointer. 0x19591 `mov ax, word [0x88c96]; dec eax` and the helper's
+  `lea eax,[edx*4]; sub eax,edx; add edx,[esp+0xc]` 0x182dc-0x182f3 make it
+  `pal7d848 + 3*(v88c96-1)`; with the emulator's zero globals that is 0 - 3 = 0xfffffffd, below the
+  mapped zero page, faulting at 0x182fd `mov cl, byte [edx]` - `pal7d848` 0x7d848 is 0 because the
+  loader that fills it (readdat/fread) is stubbed. `SEED=0x88c96=1:w` (1 is a real zone number) puts
+  the index at 0, inside the zero page, and the palette-flash calls 0x19575-0x195a7 and
+  0x19a2b-0x19a5e then run identically on both sides.
+
 - CONFIRMED (0x1efb0-0x1f43b executed under `tools/wc/difffn.py`, iter 77): `credits_screen` ends by
   itself - it is six pages, the loop back edge is 0x1f428 `cmp dword [esp],5; jle 0x1f037` and the
   return is 0x1f432, so a capped run is a wait, not a menu that needs the player. The wait is the
