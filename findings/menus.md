@@ -440,6 +440,10 @@ what `SEED=` left them, so:
   every one of the 768 entries changed (`xor edi,edi` 0x1c04d, `test di,di; je` 0x32ce2) and the menu
   spins in the palette pass instead of walking: that is the wall `intro` 0x348f4 and `demo_mode`
   0x1e2e4 sit on, and with `SEED=0x88c46=4:w` **intro returns on both sides** for the first time.
+  `demo_mode` with it plus `SEED=0x7d998=2:d` now returns too (iter 84b: SAME, control SAME, hotfn
+  458394 insns at 3709 addrs) - and its abort arm is the counter-example to the press/release pair:
+  0x31eae `cmp byte [key88cd0],1` must see 1 on **every** read, so `RESEED=0x88cd0=0:b` there puts the
+  race back on the cap (SAME but `CALLCAP 6000/6000`, neither side returns).
   `intro`'s verdict is `DIFF same-shape`, not a bug: all 123 DIFF bytes are inside the harness's
   0x0-0x10000 zero page, written through the palette pointers `main` takes from `malloc` (stubbed, so
   0): `v7d858` 0x7d858 (APOG1/BEAVIS, pal_6bit 0x26ecc) and `v7d85c` 0x7d85c (WINTRO). Pointing one

@@ -28,11 +28,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `demo_mode` 0x1e2e4 (`still capped`): its hot loop was `fade_out` 0x1bf94's palette scan, and iter
-   84 found the knob - add `SEED=0x88c46=4:w` (the fade step `main` stores at 0x36334) to its existing
-   env (`RAND=8 FREAD=13 SEED=0x88cd0=1:b,0x7ec58=5:d`), plus `0x7d998=2:d` for the race abort arm
-   (findings/game-loop.md) and `TICKREAD=8` for the call-free waits. `fade_in` 0x32cf8 is now SAME run
-   on its own (`SEED=0x88c46=4:w ARGS=0x8000`).
+1. Wider run of `demo_mode` 0x1e2e4, now SAME with both sides returning (`RAND=8 FREAD=13
+   SEED=0x88cd0=1:b,0x7ec58=5:d,0x88c46=4:w,0x7d998=2:d`, hotfn 458394 insns at 3709 addrs): raise
+   `CALLS=`/`COUNT=` to walk the rest of the 10-lap pass, and do NOT add `RESEED=0x88cd0=0:b` - the
+   abort arm 0x31eae needs the press value on every read.
 2. QUESTIONS 26: seed the palette/picture pointers `main` mallocs (src/ww.c 18540-18700) into
    scratch-page blocks and re-run `difffn.py intro` - it returns on both sides now, and its 123
    remaining DIFF bytes are all in the harness's zero page.
