@@ -263,6 +263,26 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   `[esp+0x128]` clamp at 0x1ed50/0x1ed87), `key88cd3`/`key88cd2` 0x88cd3/0x88cd2 (row up/down,
   0x1ee73-0x1ee9d).
 
+- CONFIRMED (whole span 0x1f858-0x2130f disassembled, iter 78): **`main_menu` contains no `ret` and no
+  direct jump out of its span.** Its only return is indirect: the switch head 0x1fa6b `dec esi;
+  cmp esi,8; ja 0x1f878` and 0x1fa75 `jmp dword ptr cs:[esi*4 + 0x1f824]`, whose 13 dwords (read out of
+  `.work/le/ww.obj1.bin`: 0x1fb0e, 0x1f878, 0x200f2, 0x2037c, 0x205b9, 0x210ba, 0x20df5, 0x212fe,
+  **0x16978**, 0x20f43, 0x20f5b, 0x20f73, 0x21099) sit in the gap just before the function; slot 8 =
+  selection 9 = LEAVE GAME is the single entry that leaves the span, and it lands on
+  `engines_menu`'s 9-byte epilogue at 0x16978 (`add esp,8` + pop ebp/edi/esi/edx/ecx/ebx + ret), the
+  tail the linker shared with it (iter 66). Slot 1 (selection 2) and the out-of-range arm 0x1fa6f both
+  land on 0x1f878, the loop back edge that the seven `jmp 0x1f878` sites share. So a capped
+  `difffn.py main_menu` is not parked in a wait of its own: with `TICK=8 SEED=0x88cce=1:b` it is inside
+  a submenu at the call cap (hotfn.py counts 8629 instructions at 661 addresses in the first 300 stubbed
+  calls) and reaches the cap at 20000 calls, SAME on both sides, control SAME.
+  To reach the return the menu has to hand back 9, and `menu` produces 9 only at 0x162b8-0x162c6 - the
+  arm `v88bb0` in {1,0x10} with `v7ecc0` != 0, which returns the **incoming** cursor argument
+  (`mov eax,[esp+0xcc]; mov [esp+0xbc],eax`) - while `v7ecc0` is written 1 only at 0x16273, under
+  `key88cd0` == 1 tested at 0x1626a, three instructions before that same key's release wait 0x16286
+  `cmp byte [0x88cd0],1; je 0x16286`; the other arm 0x16291 stores `v7ecc0 = 0`, which erases a seed.
+  Same press-and-release contradiction as `volume_menu` (d) above, so `main_menu` stays capped under one
+  static seed.
+
 ### The input pair `wait_release` 0x278c4 / `wait_input` 0x27920 sets the ceiling on a seeded run (CONFIRMED, iter 77)
 
 Both take their mode in EAX (`0x278c6`/`0x27922` `mov edx, eax`). Every one of the ten
