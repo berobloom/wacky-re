@@ -73,6 +73,7 @@ def main():
     class FS:                                       # a fake Run for Run._stub
         def __init__(self, uc):
             self.e, self.stubs, self.ncalls, self.calls, self.fread = FE(uc), [], 0, False, 0x2000
+            self.rand, self.rseed = None, 0x1234    # RAND= needs these too (iter 81)
 
     u.mem_map(0x2000, 0x2000)                       # the fread stub, its frame and the buffer
     u.mem_write(0x2000, bytes(8))                   # the "fread" entry and the return address
@@ -91,6 +92,35 @@ def main():
         assert fs.stubs[0][0] == addr and fs.ncalls == 1
         # the stub returns like Watcom's: EAX = 0 and the caller's frame popped past the return address
         assert u.reg_read(UC_X86_REG_EAX) == 0 and u.reg_read(UC_X86_REG_ESP) == 0x2104
+
+    # ---- RAND=n (iter 81): the `rand` stub must draw 0..n-1 AND vary, or the seat retry loop
+    # (fn_1be3c 0x1beae, which rejects everything but 0-7 and re-draws) still never ends.
+    fs = FS(u)
+    fs.rand = 0x2000
+    D.FREAD = 0                                     # the fread case above left it on; EDX is 0 here
+    D.RAND = 8
+    draws = []
+    for _ in range(6):
+        u.reg_write(UC_X86_REG_ESP, 0x2100)         # _stub pops the return address every call
+        u.reg_write(UC_X86_REG_EAX, 0)
+        D.Run._stub(fs, u, 0x2000, 5, None)
+        draws.append(u.reg_read(UC_X86_REG_EAX))
+    assert all(0 <= d < 8 for d in draws), [hex(d) for d in draws]
+    assert len(set(draws)) > 1, [hex(d) for d in draws]
+
+    # ---- RESEED= (iter 81): the read that arms the flag still sees the old byte, the next one sees
+    # the new value (unicorn 2.1.4 has no READ_AFTER and the READ hook fires before the load). A value
+    # written on the first read parks the run in the wait that comes first instead.
+    D.RAND = 0
+    D.RESEED = D.parse_seed('0x3010=1:b')
+    u.mem_write(0x3010, b'\x00')
+    fs.reseed, fs.reseed_seen = dict(D.RESEED), set()
+    D.Run._reseed(fs, u, 0, 0x3010, 1, 0, None)
+    assert bytes(u.mem_read(0x3010, 1)) == b'\x00', 'the arming read must see the old byte'
+    D.Run._reseed(fs, u, 0, 0x3010, 1, 0, None)
+    assert bytes(u.mem_read(0x3010, 1)) == b'\x01'
+    D.Run._reseed(fs, u, 0, 0x3000, 1, 0, None)     # an unrelated read changes nothing
+    assert bytes(u.mem_read(0x3010, 1)) == b'\x01'
     print('OK')
 
 

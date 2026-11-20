@@ -13,6 +13,7 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     SEED=0x88ccd=1:b .work/venv/bin/python tools/wc/difffn.py NAME   # globals set first (parse_seed)
     TICK=8 .work/venv/bin/python tools/wc/difffn.py NAME   # ticks (0x7e720) += 8 per stubbed call
     TICKREAD=8 ...   # ticks += 8 per READ of the clock, for a wait loop whose body has no call
+    RESEED=0x88cce=1:b ...   # value written after every READ of that global (press+release waits)
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
         control: the game against itself, which must print SAME
 
@@ -66,6 +67,20 @@ TICKADDR = int(os.environ.get('TICKADDR', '0x7e720'), 0)   # hex, so base 0
 # read_line tests; the buffer is a local of the callee, so SEED= cannot reach it (the two builds' frames
 # sit at different addresses).
 FREAD = int(os.environ.get('FREAD', '0'), 0)
+# RAND=8: give the clib `rand` stub a small draw instead of the constant 0. fn_1be3c's pick-7-distinct
+# seats loop (draw at 0x1beb8, `test ax,ax; jl 0x1beae` / `cmp ax,7; jg 0x1beae` reject everything but
+# 0-7, reject a repeat at 0x1bed5-0x1bee0 `je 0x1beae`) re-draws until it gets a value in 0..7, so with
+# the stub always returning 0 it loops forever and that is where demo_mode 0x1e2e4 and fn_1be3c 0x1be3c
+# sit at the call cap - not a global wait, so SEED=/TICK= cannot reach it. RAND=n makes the draw
+# 0..n-1: RAND=8 is what the loop wants (one draw per seat) and the game's own acceptance rate is
+# ~1/4096 with the image's un-seeded LCG state (57134 draws for 6 accepted values, hotfn iter 81) -
+# srand(max(racetime,8)) at 0x1be4e is stubbed, so the real seed is never installed. The generator is
+# the game's own clib LCG (0x43092 `imul edx, [eax], 0x41c64e6d`, 0x43098 `add edx, 0x3039`) from a
+# fixed start, because the stub never touches the clib's seed slot. Both builds draw the same nth
+# value, so the comparison still compares the C; if the two sides draw at different rates the data
+# DIFF shows it. fn_1be3c's other arm skips rand when splitscreen != 0 (0x1beb6), which demo_mode
+# zeroes at 0x1e51e.
+RAND = int(os.environ.get('RAND', '0'), 0)
 
 
 def parse_seed(text):
@@ -85,6 +100,19 @@ def parse_seed(text):
 
 
 SEED = parse_seed(os.environ.get('SEED', ''))
+# RESEED=0x88cce=1:b - the same syntax as SEED=, but written on every READ of those bytes (the
+# TICKREAD mechanism, a data hook so both builds' copies of a loop are covered). A press is seedable
+# and a release never is: `wait_release` 0x278c4 with mode 0 returns only while v88cce and the four joy
+# flags are 0 (0x278e7 `cmp bl,[v88cce]; je` -> it stores joy88b40=1 itself and then never matches bx),
+# and `wait_input` 0x27920 with mode 0 returns only once v88cce != 0 (0x27995 `cmp bl,[v88cce];
+# jne 0x279e2`) - fn_1c0f4's tail calls one after the other (0x1c7d9, 0x1c7ea), so one static SEED=
+# parks one side in each. The write lands on the read AFTER the one that arms it (the READ hook fires
+# before the value is fetched, and unicorn 2.1.4's python wrapper has UC_HOOK_MEM_READ_AFTER commented
+# out of its handler table): the first poll of the pair returns on the image's state, the next sees the
+# seeded value. A UC_HOOK_MEM_READ that wrote on the first read moved the hot loop from wait_input to
+# wait_release instead - it parks the run one wait earlier (iter 81). Reads are counted, so both builds
+# must poll the flag the same number of times: check the byte DIFF before believing one.
+RESEED = parse_seed(os.environ.get('RESEED', ''))
 # ARGS=0x3f8,4,0x3840,1 -> the Watcom argument registers (eax, edx, ebx, ecx, ...). Zero arguments are
 # not always a legal call: com_open's `div ecx` at 0x103b1 is a divide error when baud is 0, and both
 # runs then die at the same instruction, which is inconclusive (iter 76).
@@ -107,6 +135,9 @@ class Run:
         self.stubs, self.crash, self.watch, self.calls = [], None, set(), False
         self.ncalls = 0        # stubbed calls and interrupts only - not the port traffic below
         self.fread = None      # this image's clib fread, set by main() (map offset + code base)
+        self.rand = None       # ditto for clib rand (RAND=)
+        self.rseed = 0x1234    # the rand stub's own seed; the clib's slot is never written
+        self.reseed = dict(RESEED)   # RESEED= address -> bytes (written after every READ but the first)
         o = self.e.img.meta['objects']
         self.cend = o[0]['base'] + o[0]['vsize']
         # the DPMI zero page: half these functions run with a pointer global still 0, so give the
@@ -139,6 +170,8 @@ class Run:
         # tick-dependent DIFF against the read counts before calling it a bug (iter 79).
         if TICKREAD:
             self.e.uc.hook_add(UC_HOOK_MEM_READ, self._tickread, begin=TICKADDR, end=TICKADDR + 3)
+        if RESEED:      # the address test is in the callback: one hook for all entries
+            self.e.uc.hook_add(UC_HOOK_MEM_READ, self._reseed)
 
     def _stub(self, uc, addr, size, _):
         esp = uc.reg_read(UC_X86_REG_ESP)
@@ -147,7 +180,11 @@ class Run:
         self.ncalls += 1
         if FREAD and addr == self.fread and self.e.reg('edx') == 1:
             self.e.uc.mem_write(self.e.reg('eax'), bytes([FREAD]))   # before EAX is zeroed
-        self.e.reg('eax', 0)
+        if RAND and addr == self.rand:
+            self.rseed = (self.rseed * 0x41c64e6d + 0x3039) & 0xffffffff   # the game's clib LCG
+            self.e.reg('eax', (self.rseed >> 16) % RAND)                   # RAND=n -> a draw of 0..n-1
+        else:
+            self.e.reg('eax', 0)
         if TICK:                                  # the timer ISR that drives ticks lives above the C
             self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)   # module (0x10a15 et al only zero it),
         # so `while (ticks - snapshot < 8)` at 0x1604c can never end. A stubbed call is the frame pump
@@ -168,6 +205,13 @@ class Run:
 
     def _tickread(self, uc, _access, _address, _size, _value, _):
         self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICKREAD)
+
+    def _reseed(self, uc, _access, address, _size, _value, _):
+        for a, v in self.reseed.items():
+            if a <= address < a + len(v):
+                if a in self.reseed_seen:      # the arming read itself still sees the old bytes
+                    self.e.uc.mem_write(a, v)
+                self.reseed_seen.add(a)
 
     def _intr(self, uc, num, _):
         self.stubs.append(('int%d' % num, self.e.reg('eax'), 0, 0, []))
@@ -214,6 +258,8 @@ class Run:
         # the first stubbed call: the watch pass of a CALLCAP function stopped at once and printed no
         # writers at all (iter 70)
         self.stubs, self.crash, self.calls, self.ncalls = [], None, False, 0
+        self.rseed = 0x1234                      # so the watch re-run draws the same sequence
+        self.reseed_seen = set()                 # ... and arms its RESEED globals the same way
         if self.watch:
             self.wh = self.e.uc.hook_add(UC_HOOK_MEM_WRITE, self._watch)
         try:
@@ -268,19 +314,27 @@ def json_base(name):
     return [o['base'] for o in m['objects']]
 
 
-def fread_addr(img):
-    """one image's clib `fread` (the FREAD= stub hook needs the address, and the two images differ):
-    the WLINK map offset + that image's code object base. The original's symbols come from the
-    relinked map WWORIG.MAP - 0x10000 + 0x32c68 = 0x42c68, the `call 0x42c68` of the disassembly -
+def lib_addr(img, cands):
+    """one image's address of a clib routine (the FREAD=/RAND= stub hooks need it, and the two images
+    differ): the WLINK map offset + that image's code object base. The original's symbols come from
+    the relinked map WWORIG.MAP - 0x10000 + 0x32c68 = 0x42c68, the `call 0x42c68` of the disassembly -
     the hybrid's from its own map (MAP=), 0x10000 + 0xc22a = 0x1c22a, whose first bytes are identical
     to the game's (iter 80)."""
     mapf = (os.path.join(ROOT, '.work', 'link', 'WWORIG.MAP') if img == 'ww'
             else os.environ.get('MAP', os.path.join(ROOT, '.work', 'link', 'WWNEW.MAP')))
     _, p, _s = map_publics(mapf, os.path.join(ROOT, '.work', 'link', 'WW.LNK'))
-    for cand in ('fread', 'fread_', '_fread'):
+    for cand in cands:
         if cand in p:
             return json_base(img)[0] + p[cand][1]
     return None
+
+
+def fread_addr(img):
+    return lib_addr(img, ('fread', 'fread_', '_fread'))
+
+
+def rand_addr(img):
+    return lib_addr(img, ('rand', 'rand_', '_rand'))
 
 
 def one(eip, r):
@@ -310,8 +364,8 @@ def main():
                 return (nb[0] if cls[s] == 'CODE' else nb[1]) + off
         return None
 
-    ofread = fread_addr(orig)
-    nfread = fread_addr(new)
+    ofread, orand = fread_addr(orig), rand_addr(orig)
+    nfread, nrand = fread_addr(new), rand_addr(new)
     names = M.names(orig)
     todo = []
     for a in sys.argv[1:]:
@@ -328,11 +382,11 @@ def main():
             print('%-20s not in %s names or not a hybrid public' % (name, orig))
             continue
         a = Run(orig, CMOD_END, 1 << 32)
-        a.fread = ofread
+        a.fread, a.rand = ofread, orand
         a = a.go(addr)
         b = Run(new, CMOD_END, 1 << 32) if text is None \
             else Run(new, nb[0], text)               # BLOBTEXT below our code is asm + clib
-        b.fread = nfread
+        b.fread, b.rand = nfread, nrand
         b = b.go(naddr)
         dif = diff_bytes(a.init, a.fin, b.init, b.fin)
         notes = []

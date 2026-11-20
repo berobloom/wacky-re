@@ -28,6 +28,7 @@ if FN not in names:
     sys.exit('%s not in the ww names' % FN)
 r = D.Run('ww', D.CMOD_END, 1 << 32)
 r.fread = D.fread_addr('ww')          # so FREAD= works here too (difffn.py sets this in main())
+r.rand = D.rand_addr('ww')            # ... and RAND=
 cnt = collections.Counter()
 
 

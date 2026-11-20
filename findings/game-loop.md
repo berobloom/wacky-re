@@ -33,6 +33,21 @@ post-increment 0x1beec and the store 0x1beed, so `cd` is unchanged and that slot
 two range rejects of the candidate (0x1bec2 `jl 0x1beae`, 0x1bec8 `jg 0x1beae`) are the same head,
 which re-reads `splitscreen` 0x1beae - dead, nothing between the test and the draw writes it.
 
+**The draw rejects almost everything, so this function is dominated by `rand`** (CONFIRMED, iter 81).
+The candidate must land in 0..7 as a short: `test ax,ax; jl 0x1beae` 0x1bec2 and `cmp ax,7;
+jg 0x1beae` 0x1bec8, and `rand` 0x43088 returns `(seed >> 16) & 0x7fff` (0x430a2 `shr eax,0x10`,
+0x430a5 `and eax,0x7fff`) - about one draw in 4096 is accepted. `hotfn.py` over `demo_mode`'s call at
+0x1e5b9 counted 57134 draws at 0x1beb8 for 6 accepted seats, so a full grid costs the real game a few
+tens of thousands of `rand` calls. `srand(racetime)` at 0x1be4e is a call, so under the emulator's
+stub it seeds nothing and the sequence is whatever the image's static seed holds.
+
+Emulator consequence (CONFIRMED, iter 81): with the call stub leaving EAX = 0 every draw is 0, the
+repeat test 0x1bee0 `je 0x1beae` always fires, and `fn_1be3c` / `demo_mode` sit at the `CALLS` cap -
+not a wait on a global, so `SEED=`/`TICK=` never reach it. `difffn.py RAND=8` (the stub draws the
+image's own clib LCG, 0x43092 `imul edx,[eax],0x41c64e6d` + 0x43098 `add edx,0x3039`, mod 8) makes
+both sides fill the table and return: `difffn.py fn_1be3c` prints **SAME with both sides returning**,
+control `NEW=wworig MAP=.work/link/WWORIG.MAP RAND=8` SAME.
+
 ## `fn_1bf00` (0x1bf00-0x1bf7d) writes one row per player before the race
 
 Called from `fn_16f90` at 0x17098. The stores are CONFIRMED, what the values mean is

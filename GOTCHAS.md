@@ -141,15 +141,30 @@ it can be copied back into DREA.
   bug, and prove the fast clock did not skip the body by re-running at `TICKREAD=1`; and
   `SEED=` is applied once before the run, so a press is seedable and a release never is
   (findings/menus.md: `wait_release` 0x278c4 with mode 0 returns only when `v88cce` and all four
-  joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0) - the knob for that class would be
-  `RESEED=`, re-writing the seeds at every stubbed call and interrupt; not written (iter 78; the lines
-  it blocks are `fn_1c0f4`, `race_records_menu`, `fn_1832c`, `main_menu`). `CALLS=` is the useful lever for
+  joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0) - **`RESEED=0x88cce=1:b`** now ends
+  that class: same syntax as `SEED=`, but it writes the value on every READ of those bytes except the
+  first, which gets `fn_1c0f4` 0x1c0f4 to return on both sides (findings/menus.md, iter 81). The
+  first-read exception is not decoration: the READ hook fires **before** the value is fetched and
+  unicorn 2.1.4's python wrapper comments `UC_HOOK_MEM_READ_AFTER` out of its handler table
+  (`hook_add` raises UC_ERR_ARG), so writing on the first read parks the run in the earlier wait. It
+  counts reads like `TICKREAD` does, and it must be keyed on the global's address, not on stubbed calls
+  - the two builds make different numbers of calls (`demo_mode` 87402 vs 95594 at the same
+  instruction cap, iter 81). `CALLS=` is the useful lever for
   a screen that prints a lot: `credits_screen` returns between CALLS=2000 and 20000. For an argument
   register use `ARGS=` (eax, edx, ebx, ecx): `showlines` prints its three lines with `ARGS=3,1,0` and
   its mode argument decides which tail runs (findings/menus.md). A run **still capped at the end** with
   `TICK=`/`TICKREAD=` on reports the injected clock 0x7e720 itself as its only DIFF byte (game 08, ours
   10/0x18, `fn_1832c` at CALLS=3000/5000, iter 80): that value is where each side's cap fell, not a
   behaviour difference - a verdict needs a seed that makes both sides *return*.
+- **A stubbed call that must return a different value every time makes its caller loop forever**
+  (iter 81): `fn_1be3c`'s start-seat draw keeps only a candidate in 0..7 (0x1bec2 `test ax,ax;
+  jl 0x1beae`, 0x1bec8 `cmp ax,7; jg 0x1beae`) and re-draws otherwise, so with the call stub leaving
+  EAX = 0 the retry never ends and `fn_1be3c`/`demo_mode` look like a `CALLS` cap that no seed reaches.
+  `SEED=` writes memory, not a return value, and `srand` is stubbed too so the seed the game asks for
+  is never installed; the knob is **`RAND=n`**, which returns the image's own clib LCG (0x43092 `imul
+  edx,[eax],0x41c64e6d`, 0x43098 `add edx,0x3039`) shifted and taken mod n - `RAND=8` draws exactly
+  what that loop wants. `hotfn.py` names the class: the hot address is a `call` executed tens of
+  thousands of times whose successor is a conditional jump back to itself, not a wait on a global.
 - **A `SEED=` cannot reach a stack buffer, and a read stub that returns nothing makes a byte-wise
   parser loop forever** (iter 80): `read_line` 0x26ff0 stops on the byte it read, so with the clib
   `fread` stub delivering nothing it walks off `gam_load` 0x2717c's frame into unmapped memory; the

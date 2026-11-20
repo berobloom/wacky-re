@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 80 still 207 -
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 81 still 207 -
   no C change, `difffn.py`/`hotfn.py` work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
@@ -28,21 +28,16 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `demo_mode` 0x1e2e4, `fn_1be3c` 0x1be3c (CALLCAP): iter 80's recipe `FREAD=13
-   SEED=0x88cd0=1:b,0x7ebc0=1:d,0x88c46=4:w CALLS=200000 COUNT=20000000` made `fn_17928` return with
-   both sides agreeing; `hotfn.py` takes the same knobs and says which loop a run sits in.
-2. `fade_in` 0x32cf8 reads the fade step `v88c46` at 0x32d78/0x32d95, and a direct call leaves it 0
+1. `enter_name` 0x1cb44 and `fn_1d704` 0x1d704 (CALLCAP): `RESEED=0x88cce=1:b` - the knob that made
+   `fn_1c0f4` return this iter - on top of iter 80's seeds; `hotfn.py FN=... RESEED=...` first to see
+   whether the run stops in `wait_release` 0x278c4.
+2. `trial_book` 0x2e4b8 and `main` 0x35ca4 (CALLCAP): add `RAND=8` (iter 81: the seat draw at 0x1beae
+   was the whole cap for `fn_1be3c`) and `FREAD=13`.
+3. `race_run` 0x2fd8c (CALLCAP): `RAND=8`; its early exit is the ESC abort 0x31eae -> 0x31eb7
+   `mov dword [v7ec68],1`, reached past 0x318bb `cmp dword [v7d998],1` - `v7d998` is 1 only on the
+   demo-record arm (set 0 at 0x31900), so seed what makes that arm run.
+4. `fade_in` 0x32cf8 reads the fade step `v88c46` at 0x32d78/0x32d95, and a direct call leaves it 0
    (the game stores 4 at 0x36334) - `difffn.py fade_in FREAD=13 SEED=0x88c46=4:w` may return.
-3. The press-and-release class - `main_menu` 0x1f858, `race_records_menu` 0x1d13c, `volume_menu`
-   0x1e760 - needs `RESEED=` (seeds re-written at every stubbed call/interrupt, GOTCHAS): a static
-   seed can press but never release, so `wait_release` 0x278c4 spins (iter 78/80).
-4. `menu` 0x155c0 with `ARGS=` (iter 76's register arguments): zero arguments leave after 604 insns,
-   so its frame wait 0x16004/0x1604c and its input arm are still untested (findings/menus.md).
-5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
-   first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
-   {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
-   and compare the DIFFs against the recorded verdicts in `src/nearmiss.txt`; the known uncapped DIFFs
-   are the dead `v7d7f4`/`v7d874` pointers (findings/game-loop.md).
 5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
    first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
    {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)

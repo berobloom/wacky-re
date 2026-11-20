@@ -344,6 +344,15 @@ what `SEED=` left them, so:
   from 0x1d7ae). `race_records_menu`'s exit arm - 0x1d2f1 `cmp dword [0x7ecc0],0` -> 0x1d2fa
   `v88b9e = 1` -> 0x1d312 `cmp edi,4` -> return at 0x1d32b - is not seedable either: menu stores 0 to
   `v7ecc0` 0x7ecc0 at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77).
+- The pair is **not** a ceiling after all: `RESEED=0x88cce=1:b` (iter 81, `tools/wc/difffn.py` and
+  `hotfn.py`) writes 1 into `v88cce` on every READ of it but the first, so the mode-0
+  `wait_release` returns on the image's 0 and the following mode-0 `wait_input` sees 1 at 0x27995 and
+  exits at 0x279e2 with EAX=0. `difffn.py fn_1c0f4` then prints **SAME with both sides returning**
+  (control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same env SAME; `hotfn.py` reports 5525
+  insns and `returned`), and the last blocks 0x1c7ef-0x1c88b are covered. Writing on the first read
+  instead moves the spin one wait earlier (hot loop 0x278ca-0x278ff, `wait_release`'s pump) - the READ
+  hook fires before the value is fetched, and unicorn 2.1.4's python wrapper has no
+  `UC_HOOK_MEM_READ_AFTER` (commented out of its handler table; `hook_add` raises UC_ERR_ARG).
 - CONFIRMED (0x1c7de, 0x1c821-0x1c831): fn_1c0f4's second tail wait compares `ticks` with itself -
   0x1c821 loads `dword [0x7e720]` into EAX once, the loop body 0x1c826 reloads it into EDX, `sub
   edx,eax`, `cmp edx,0x3c`, `jl 0x1c826` - and is reached only on the net-game side of 0x1c7de `cmp
