@@ -118,7 +118,14 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   the recreation source byte for byte against the original 1.04 LIB, so it is the ASS LIBs' compiler
   (CONFIRMED). Yet GF1OS 1993 built with it (`-d2`, `-of`, plain) still matches 0-1 game functions:
   the 1993 GF1OS is an older revision than ASS's `NEWGF1\GF1NEW` (CONFIRMED by the misses, the
-  compiler being right). 10.0a matches 1, the 10.0 prerelease (3/1994) 3. Dead end for byte matching. That project
+  compiler being right). 10.0a matches 1, the 10.0 prerelease (3/1994) 3. Dead end for byte matching.
+  **The game's ASS objects come from two compilers (iter 93):** src/ass (the recreation source at
+  ASSREV 19941101) built per module with 10.0b / 10.0a / 9.5b and compared at the named addresses
+  (`tools/ass/asscheck.py`): USER matches 2/2 only with 9.5b (0/2 with 10.0x: 9.5b loads a global
+  with `mov eax,[x]`, 10.0 with `mov edx,[x]`); IRQ 3/3 only with 10.0a (10.0b 2/3); every other
+  module scores the same with 10.0a and 10.0b, and lower with 9.5b (DPMI 5 vs 0, MPU401 10 vs 6).
+  STRONGLY SUPPORTED: built mostly with Watcom 10.0a (the .b patch is January 1995, after the game),
+  with objects a make never rebuilt left from 9.5b. Baseline: 90 of 144 named functions identical. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,

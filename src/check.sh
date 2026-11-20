@@ -12,3 +12,4 @@ for c in WW EXTRA; do
     else .work/venv/bin/python tools/wc/objmatch.py ww $w/$c.OBJ | grep -v '^      '; fi
 done
 .work/venv/bin/python tools/asm/asmcheck.py     # src/wwasm.asm: the assembler module 0x36A4E-0x409EE
+.work/venv/bin/python tools/ass/asscheck.py | tail -1
