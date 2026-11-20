@@ -371,7 +371,55 @@ merged).
     0x22bf4-0x237a8 (`tools/wc/fncov.py`, capstone decode minus the union of the runs). Unwalked: the
     largest blocks 0x22fdf-0x2303d, 0x23600-0x23699, 0x2374c-0x2376c, 0x234b1-0x234d2, 0x22ef5-0x22f10,
     0x231b8-0x231cf (SPECULATIVE that they need a second player, `twoplayer`/`splitscreen` and real
-    `faces[]`/spark records - each is behind such a test in the neighbours that *are* walked).
+    `faces[]`/spark records - each is behind such a test in the neighbours that *are* walked; the two
+    biggest were closed in iter 88 and needed neither).
+  - **Iter 88 closed iter 87's two biggest blocks and the whole kind >= 2 dispatch; none of them
+    needed a second player** (CONFIRMED, eight more seeded runs, each `SAME` with both sides
+    returning and the `NEW=wworig` control SAME; union of the fourteen seed sets **551 of the 606
+    instruction starts** in 0x22bf4-0x237a8, 55 left):
+    - the horn block **0x22fdf-0x2303d** is entered by `cmp dword [netvoices 0x7ec74],0; je 0x22faa`
+      0x22f6c - **netvoices == 0**, the opposite of iter 87's netvoices arm - with `v88c44` == 2, and
+      its gate is `cmp dword [0x7aa9c],4; jle 0x23047` 0x22fd6: 0x7aa9c = `s7a9dc + 0xc0`, the record
+      of **face/sfx 8**, the compiler having folded `pl->f26*0x18` to the constant as the `mov eax,8`
+      0x22fb8/0x22fbd show (`SEED=0x7aa9c=5:d`). `sfx_busy` 0x22ff0 must return 0 - it does with
+      `soundon` 0x7ecf8 == 0 at 0x10c5a, and with sound on too through `FX_SoundActive` 0x41dd4 while
+      the channel record `s7b0f8` is 0 - and 0x2302a `cmp dword [f26*0x10 + 0x7b100],3; jle 0x23047`
+      needs that counter above 3 **by hand**, because `sfx_play`'s own `inc dword [esi+0x7b100]`
+      0x10ce0 only runs when `soundon` != 0 (`SEED=0x7b100=4:d`).
+    - the per-player sound reset **0x23600-0x23699** is entered by `twoplayer` 0x88be2 != 0 (0x235bd)
+      or `splitscreen` 0x88bdc != 0 (0x235bf) or `netvoices` != 0 (0x235c9), along the `f24 > 0` tail.
+      `SEED=0x79ac4=5:w,0x8242=0x64:w,0x88be2=1:w,0x79ab8=1:w,0x7ecf8=1:d` walks the whole
+      `bx = 0..1` loop (`cmp bx,1; jle 0x23610` 0x23699): the sound records
+      0x6848e/0x68430/0x6844c/0x68428/0x68452/0x68454 at stride 0x104, the player records
+      0x6aae6 / 0x6aa92 = 2 / 0x6aae8, and with `soundon` != 0 `FX_StopSound` 0x41e24 on
+      `[bx*0x104+0x684e4]` plus the -1 store 0x2362d.
+    - the `curkart` clear arms 0x236b9 (`+0x3c`) / 0x236d1 (`+0x20`) are reachable **only if the
+      `voice 0xd` block 0x23538-0x23576 is skipped**, since that block zeroes f20/f3c itself
+      (0x2355e/0x23564): seed `0x8244=1:w` (0x23527 `jne 0x2369f`) or make EAX 0 at 0x23517 through
+      the f18 arm - `+0x823c=1:w,0x8220=1:w,0x88be2=1:w,0x79ab8=2:w` (on top of the f24/f42 seeds)
+      walks both, and that same `0x79ab8=2:w` (live record 3's `f18` > 1) is what walks 0x234be.
+    - **`p7d86c` is written by the function itself**, so a record-field seed must name the record that
+      is live at that gate, not the one `SEED=` starts with (CONFIRMED with a `UC_HOOK_CODE` probe at
+      the gate instructions, `.work/kbprobe.py`/`kbprobe2.py`: at 0x231d5 the pointer is 0x79a78 =
+      record 2 on the first pass and 0x79aa0 = record 3 on the second, and 0x2306e/0x23744 see the
+      record 2 and record 3 values respectively), so 0x2374c-0x2376c (`cmp bx,4; jb 0x23756` 0x23746,
+      bx = the live record's `f20`) is still unwalked: seeding 0x79ac0 and 0x79a98 to 4 changed the
+      flow upstream instead of reaching that gate with `f20` = 4.
+    - the kind >= 2 block 0x2324d-0x232d1 is fully walked by three runs on the `f6a` counter and the
+      `f16` flag: `cmp word [curkart+0x6a],0x63; jge 0x23441` 0x2324d (so `0x826a` < 0x63 to get in),
+      `cmp word [curkart+0x16],0; je 0x23267` 0x2325a with `cmp bx,2; jne 0x2326c` 0x23261 behind it
+      (kind 3 with `curkart->f16` != 0 is the only way over 0x23261/0x23265: `SEED=0x72998=3:w,
+      0x8216=1:w`), `cmp bx,2; je 0x232b6` 0x232a2 picking the `curkart->f16 = kind` store
+      0x232ad (kind != 2, `f16` == 0 so the DX test 0x2327a passes) or the `add word [curkart+0x6a],4`
+      0x232bb pair (kind == 2, and `SEED=0x826a=0x60:w` puts 0x6a past 0x63 so 0x232cb/0x232d1 run).
+    - **iter 87's kind <= 0 run is only reproducible without `0x72998=1:w`** (CONFIRMED): the ents
+      kind word is the same global the kind == 1 base seeds and a later `SEED=` entry wins, so with
+      the inherited `0x72998=1:w` the run measures 428 insns at 340 addrs and never reaches
+      `test bx,bx; jle 0x2334d` 0x2323a; spelled `0x72998=0:w` it walks 0x2334d -> 0x233a4 ->
+      `FX_StopSound` 0x233e0 as iter 87 reported. Fourteen sets: `fncov.py` prints 551; the 55 left
+      group as 0x2374c-0x2376c, 0x231b8-0x231cf, 0x22d2d-0x22d4a, 0x22c6a-0x22c7a, 0x234f0-0x23505,
+      0x22ef5-0x22f10, 0x2317b-0x23181, 0x23119/0x23121, 0x2309a/0x230a0, 0x22f53/0x22f58,
+      0x22dd8/0x22ddd, 0x234d2, 0x237a5.
   - `line_points` 0x21554 is gated only by its own four input globals and its output cursor: the
     dx sign `test si,si; jge 0x2159e` 0x21590, the dy sign `cmp word [esp+0xc],0` 0x215a6, and
     `cmp si, word [esp+0xc]; jle 0x2160d` 0x215c4 (x-major loop 0x215dd vs y-major 0x2163d).

@@ -282,6 +282,16 @@ it can be copied back into DREA.
   `race_records_menu` 0x1d13c take its exit arm at 0x1d2f1 only if it is still nonzero there, and
   `menu` 0x155c0 stores 0 to it at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77). Name the
   writer with a `UC_HOOK_MEM_WRITE` probe over `difffn.Run` before blaming the seed or the C.
+- **A record-field seed is dead when the function rewrites the cursor that points at the record, and a
+  shared seed prefix silently switches the arm you meant to take** (iter 88, `kart_bump` 0x22bf4):
+  0x23746 reads `f20` through `p7d86c` 0x7d86c, which the function itself restocks each pass of its
+  record loop (0x79a78 then 0x79aa0) - `SEED=0x79ac0=4:w` on the record the *seed* starts with does
+  nothing. Fix: a `UC_HOOK_CODE` probe at the gate printing `[0x7d86c]`/`[curkart]`
+  (`.work/kbprobe.py`), then seed the fields the gate's own record holds. Same trap in the seed
+  string: `parse_seed` applies the list in order, so a later duplicate wins - the kind <= 0 run
+  spelled on the kind == 1 base (`...,0x72998=1:w,...,0x8242=0x64:w`) never reaches
+  `test bx,bx; jle 0x2334d` 0x2323a, and looked like a 428-insn run rather than a missing arm.
+  Quote the whole string, not a base plus a delta, when a verdict depends on which arm was taken.
 - **`overnight/check.sh` runs `tools/*/test_*.py` with plain `python3`, not `.work/venv/bin/python`**,
   so a test that imports unicorn/capstone fails the check in a tree that compiles fine (`test_difffn.py`
   iter 76). Such a test catches ImportError and

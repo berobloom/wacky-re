@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 87 still 207 -
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 88 still 207 -
   no C change, `difffn.py`/`fncov.py` behaviour work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
@@ -28,13 +28,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `kart_bump` 0x22bf4: 117 of its 606 instruction starts are still unwalked after iter 87's six
-   SAME runs (`tools/wc/fncov.py kart_bump` prints them). Take the two biggest blocks first -
-   0x23600-0x23699 (25 starts) and 0x22fdf-0x2303d (19) - reading the tests in the neighbours that
-   *are* walked, from the seed base in src/nearmiss.txt (`0x7d86c=0x79aa0:d` = the pickup record,
-   `0x7d800=0x6aa90:d`, `0x88c44=2:w`), and report the fncov count with the verdict.
-2. `kart_bump` again, one cheap arm: 0x23261/0x23265 and 0x232a8-0x232d1 need kind 3 with
-   `curkart->f16` != 0 (`0x72998=3:w`, `0x8216=1:w`, curkart at scratch 0x8200).
+1. `kart_bump` 0x22bf4: 55 of 606 instruction starts still unwalked after iter 88's fourteen SAME
+   seed sets (strings in src/nearmiss.txt); biggest gaps 0x2374c-0x2376c, 0x231b8-0x231cf,
+   0x22d2d-0x22d4a, 0x22c6a-0x22c7a, 0x234f0-0x23505, 0x22ef5-0x22f10.
+2. 0x23746 `cmp bx,4; jb 0x23756` reads the **live** pickup record's `f20` and the function rewrites
+   `p7d86c` itself: print `[0x7d86c]` at the gate (`.work/kbprobe.py`) before seeding. The f38 arm
+   0x234f0-0x23505 wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be).
 3. QUESTIONS 26: seed the palette/picture pointers `main` mallocs (src/ww.c 18540-18700) into
    scratch-page blocks and re-run `difffn.py intro` - it returns on both sides now, and its 123
    remaining DIFF bytes are all in the harness's zero page.

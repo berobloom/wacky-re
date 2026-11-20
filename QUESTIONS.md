@@ -167,6 +167,14 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     every delta is a caller's frame gap - the same class as `menu`'s 0xeffaf0/0xeffafc
     (findings/menus.md iter 85). No C change wanted.
 
+28. **OPEN** (iter 88, `kart_bump` 0x22bf4, findings/game-loop.md): which `arr79a28` record is live
+    at a given gate? The function rewrites `p7d86c` 0x7d86c itself - 0x231d5 sees record 2 (0x79a78)
+    on one pass of its record loop and record 3 (0x79aa0) on the next - so the last nine starts at
+    0x2374c-0x2376c (`cmp bx,4; jb 0x23756` 0x23746, bx = that record's `f20`) stayed unwalked:
+    seeding `0x79ac0`/`0x79a98` to 4 changed the flow upstream instead of carrying `f20` = 4 to the
+    gate. Next pass: print `[0x7d86c]` at the gate (a `UC_HOOK_CODE` probe, `.work/kbprobe.py`) and
+    seed only that record.
+
 ## Hypotheses
 
 - LIKELY: <claim>. For: <evidence>. Against / gap: <what is missing>.
