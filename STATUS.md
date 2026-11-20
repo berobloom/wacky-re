@@ -24,8 +24,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
   column MATCH / SKIP: cause / LAYOUT / empty = open). Each function's causes and tried spellings
   are in its `differs:` note in `src/ww.c`.
-  Iter 93q: every line has a status; the register "coin flips" are now traced inside 9.5b's own
-  allocator (findings/compiler.md, `tools/wcc95/`). Next: GiveBestReg's scores for net_recv's `crc`.
+  Iter 93r: register coin flips traced in 9.5b's own allocator (findings/compiler.md, tools/wcc95).
 - What works and what does not: GOTCHAS.md "This project's traps" - *Reading a near-miss diff*,
   *Levers that produced MATCHes*, *Dead ends*. Do not copy levers into this file.
 - Findings, evidence at the links: serial (findings/serial.md) rings 0x84b00/0x80afa, wrap 0x4000;
