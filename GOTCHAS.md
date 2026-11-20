@@ -196,6 +196,11 @@ it can be copied back into DREA.
   number of int3 records each side racked up. The fix is to stop at the call (EIP = the run's sentinel,
   `emu_stop`), which makes `main` print SAME with 11 calls on each side; resolve the entry's address from
   each image's map (`exit_`) and re-wire it in `hotfn.py`.
+- **A `void` function's `EAX x/y` note from `difffn.py` is not a DIFF** (iter 83): `race_run` 0x2fd8c
+  returns from the abort arm 0x31eca with EAX = 1 in the game and 0 in our build. Its signature is
+  `void FUN_0002fd8c(void)` and all four call sites in the decompile (lines 10774, 12023, 12119, 12183)
+  call it as a statement, so EAX is dead and the line reads SAME on the data segment and the calls - a
+  pass. Read the signature and the call sites before writing BUG.
 - **A `SEED=` cannot reach a stack buffer, and a read stub that returns nothing makes a byte-wise
   parser loop forever** (iter 80): `read_line` 0x26ff0 stops on the byte it read, so with the clib
   `fread` stub delivering nothing it walks off `gam_load` 0x2717c's frame into unmapped memory; the

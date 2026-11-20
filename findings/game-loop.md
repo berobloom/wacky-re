@@ -253,6 +253,36 @@ merged).
   filler `cc eb fd 90` (`int3`, `jmp 0x10000`, `nop`), the address a run lands on when a stub's faked
   return pops the wrong stack slot - it is not code and not a jump table.
 
+## `race_run` 0x2fd8c leaves the race loop through the abort arm of `v7d998` (CONFIRMED, iter 83)
+
+- CONFIRMED (whole-range disasm 0x2fd8c-0x327b3: nine `ret`s; the arm below is 0x31eae-0x31eca): the
+  end-of-frame check 0x318ae-0x318c2 branches three ways on `v7d998` 0x7d998.
+  - **0** -> 0x32056, keep racing (the loop head 0x3006a uses the same test at 0x3006a `cmp
+    dword [0x7d998],0` to gate the per-frame array clear 0x30073-0x30095).
+  - **1** -> the record-file arm: `call f2da28` 0x318c8, `mov eax,0x88cca` 0x318e4 + `call 0x429f9`
+    (`fwrite`) 0x318e9, then 0x318ee `cmp byte [v88cec],0; je 0x32056`; when `v88cec` != 0: `v7d998 = 0`
+    0x31900, `call 0x428b9` (`fclose`) 0x3190a, epilogue, `ret` 0x31918.
+  - **any other value (2/3)** -> `jne 0x31eae`: 0x31eae `cmp byte [key88cd0],1` (ESC). Equal -> 0x31eb7
+    `mov dword [v7ec68 0x7ec68],1` -> `add esp,0x44` + pop ebp/edi/esi/edx/ecx/ebx -> `ret` 0x31eca (this
+    is what `demo_mode` 0x1e61a `cmp ebx,[v7ec68]` reads back). Not equal -> 0x31ecb `xor eax,eax` +
+    `cmp dword [0x7d998],2` 0x31ecd, i.e. the two non-zero non-one modes diverge there; 2 then tests
+    `key88cd2` 0x88cd2, `key88cd3` 0x88cd3, `v88cce` and `joy88b40` 0x31eda-0x31ef5.
+- CONFIRMED (capstone scan of every instruction naming 0x7d998 in 0x10000-0x44000, iter 83): stores of 0
+  at 0x1e69f, 0x1f896, 0x31900, 0x35d6b; of 1 at 0x34b0e; from a register at 0x1e485 (`demo_mode`
+  0x1e2e4) and 0x34e5c (`intro` 0x348f4, which also reads it at 0x348fd). About sixty comparisons against
+  0/1/2/3 sit elsewhere (0x13371, 0x18199, 0x3070d, 0x31ecd, 0x395f7, ...), so the abort arm is reachable
+  only in the modes `intro` and `demo_mode` select. What 2 and 3 mean is **not** established here
+  (SPECULATIVE: a per-player / two-player mode distinction).
+- CONFIRMED (`SEED=0x7d998=2:d,0x88cd0=1:b tools/wc/difffn.py race_run` -> **SAME with both sides
+  returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same env SAME; `hotfn.py` 91401
+  insns at 2175 addrs and `returned`; address counts x1 at 0x318ae, 0x318bb, 0x31eae, 0x31eb7 and the
+  `ret` 0x31eca, x0 at the three other returns probed (0x31608, 0x31918, 0x327b3), x1 at the loop head
+  0x3006a - the run walks the race
+  setup and one frame, and 2440 passes of `shots_project` 0x26344's 60-entry loop inside it): the seed
+  pair is what ends the run. `EAX` on return is 1 in the game and 0 in our build, which carries nothing:
+  `void FUN_0002fd8c(void)` and all four call sites in the decompile (lines 10774, 12023, 12119, 12183)
+  call it as a statement.
+
 ## Traps
 
 - The first race's grid is not one screen: under `tools/link/racetest.sh`'s fixed key path the
