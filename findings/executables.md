@@ -159,6 +159,8 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   is 0x54 bytes (no wavetype, GetSound, LoopEnd, LoopSize or DemandFeed); the VOC parser returns
   nothing, has no NULL-pointer stop, skips block 8 and does not take block 9's 12 header bytes off
   the length; the error enum ends at `GUSWAVE_VoiceNotFound` = 5; `GUSWAVE_Init` calls `PITCH_Init`.
+  Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
+  in GetVoice, VoicesPlaying, AllocVoice and around the start of playback.
   PITCH (iter 93f, whole module, 10.0 prerelease): the code 1.04 comments out is live: the table is
   computed at run time (`PITCH_Init`, `pow( 2, n / 300.0 ) * 0x10000` into a BSS table, guarded by
   `PITCH_Installed`, which the lock functions cover), `PITCH_GetScale` calls `PITCH_Init` on first
@@ -233,10 +235,21 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   PAS_UnsignedSampleFlag 0x14); PAS_Irq is unsigned and there is no VALID_IRQ check; the interrupt
   status is a register local, not the locked global `irqstatus`; Shutdown calls PAS_RestoreState
   (commented out in 1.04); a 1 KB interrupt stack.
-  Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
-  in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
-  builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
-  the game's release. A start for matching the sound library from source.
+  MULTIVOC (iter 93m, whole module 0x4872E-0x4A28A, 7004 bytes, 10.0a, AUDIO.MAK's flags **without
+  `/zu`**, `#pragma aux ... frame` on MV_Mix16bitUnsignedStereo, MV_Mix16bitSignedStereo and
+  MV_PlayVOC): the older Multivoc the GPL release keeps as `MV1.C` (C mixers, VOC only), with
+  `MV_Play`/`MV_Play3D` named PlayVOC/PlayVOC3D, plus signed 16-bit mono and stereo mixers (the
+  unsigned ones without the `- 0x8000`, into a second clip table). CONFIRMED by the identical build:
+  **16 volume levels** (`MV_MaxVolume` 15, `MIX_VOLUME(v)` = v >> 4, pan table 32 x 16), 16-bit
+  silence 0x80008000, `MV_MaxLevel` 256, the 16-bit stereo buffer as unsigned shorts; the
+  VoiceNode has `Active[16]` before `handle`/`priority` (callbackval at +0x88); VoiceList and
+  VoicePool are not volatile; only cards 0, 1 and 6 are switched on (no AWE32, SoundMan16, Tandy);
+  `MV_StartPlayback` returns nothing and ignores the drivers' status (the Sound Source rate is the
+  constant `SS_SampleRate` 7000); no recording or demand feed; errors Ok..DPMI_Error (no
+  SoundScapeError or later codes); `MV_Init(card, rate, voices, mode)`. The empty `MV_LockEnd`
+  shares MV_StopPlayback's final `ret` (0x49438).
+  The recreation project (gamesrc-ver-recreation/audiolib, src/ass/README.md) builds with Watcom C
+  10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate the game's release.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
   `tools/asm/asmcheck.py`) settled: CONFIRMED that it is **self-contained code** - 14,700 instructions
   decode in one linear sweep with no undecodable byte; none of its calls or jumps leaves the range; its

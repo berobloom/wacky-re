@@ -34,7 +34,9 @@ for m in $mods; do
         GUS|GUSMIDI)          f="/zq /w4 /d2"
                               # Wacky Wheels' GUSMIDI: optimised, but packed (no /zp4: its GF1 patch structs are 1-byte aligned)
                               [ "$rev" -lt 19950518 ] && [ "$m" = GUSMIDI ] && f="/zq /w4 /d1 /omaxnet /5r" ;;
-        MULTIVOC)             f="/zq /w4 /d1 /omaxne /zp4 /5r /zu" ;;
+        MULTIVOC)             f="/zq /w4 /d1 /omaxne /zp4 /5r /zu"
+                              # Wacky Wheels' MULTIVOC: no /zu (its functions use ebp as a register)
+                              [ "$rev" -lt 19950518 ] && f="/zq /w4 /d1 /omaxne /zp4 /5r" ;;
         MIDI|AL_MIDI)         f="$std /zu"
                               # Wacky Wheels' MIDI: no /zu (its functions use ebp as a register)
                               [ "$rev" -lt 19950518 ] && [ "$m" = MIDI ] && f="$std" ;;

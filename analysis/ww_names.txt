@@ -1109,6 +1109,41 @@
 0x0484b0 SS_Shutdown              # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x0484e8 SS_UnlockMemory          # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x0485ec SS_LockMemory            # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
+0x04875e MV_ErrorString           # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0487c3 MV_Mix8bitMono           # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x04885a MV_Mix8bitStereo         # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048942 MV_Mix16bitUnsignedMono  # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048a03 MV_Mix16bitSignedMono    # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048aa8 MV_Mix16bitUnsignedStereo # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048bbe MV_Mix16bitSignedStereo  # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048cc2 MV_PrepareBuffer         # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048d4a MV_DeleteDeadVoices      # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048dc5 MV_ServiceVoc            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048e05 MV_GetVoice              # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048e34 MV_VoicePlaying          # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048e5d MV_KillAllVoices         # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048e94 MV_Kill                  # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048f3a MV_VoicesPlaying         # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x048f77 MV_AllocVoice            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x04903c MV_SetPitch              # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0490ac MV_SetPan                # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0491f5 MV_Pan3D                 # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049272 MV_SetMixMode            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049350 MV_StartPlayback         # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x04941f MV_StopPlayback          # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049438 MV_LockEnd               # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A; the empty static function shares MV_StopPlayback's final ret (Watcom merged it)
+0x04946a MV_GetNextVOCBlock       # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049615 MV_PlayVOC               # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049816 MV_PlayVOC3D             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0498ac MV_CalcVolume            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049a05 MV_CalcPanTable          # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049ac2 MV_SetVolume             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049af8 MV_GetVolume             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049afe MV_SetCallBack           # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049b04 MV_Init                  # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049d91 MV_Shutdown              # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x049e9b MV_UnlockMemory          # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x04a065 MV_LockMemory            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
 0x04a28a D32DosMemAlloc           # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x04a2f1 GUS_Init                 # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x04a3d7 GUS_Shutdown             # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
@@ -1245,6 +1280,26 @@
 0x064374 SS_TransferLength        # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x064378 SS_CurrentLength         # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x06437c SS_ErrorCode             # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
+0x064380 MV_8BitVolumeTable       # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x064384 MV_16BitVolumeTable      # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x064388 MV_Installed             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x06438c MV_SoundCard             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x064390 MV_TotalVolume           # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x064394 MV_MaxVoices             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x064398 MV_BufferSize            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x06439c MV_SampleSize            # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643a0 MV_NumberOfBuffers       # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643a4 MV_MixMode               # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643a8 MV_Silence               # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643ac MV_SwapLeftRight         # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643b0 MV_Voices                # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643b4 VoiceList                # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643bc VoicePool                # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643c4 MV_MixPage               # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643c8 MV_PlayPage              # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643cc MV_VoiceHandle           # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643d0 MV_CallBackFunc          # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
+0x0643d4 MV_ErrorCode             # CONFIRMED: src/ass MULTIVOC.C builds byte-identical to the whole module 0x4872E-0x4A28A
 0x0643f0 _MIDI_RerouteFunctions   # CONFIRMED: read by _MIDI_SendControlChange/_MIDI_SetChannelVolume (identical), 16 cdecl pointers
 0x064430 _MIDI_TrackPtr           # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
 0x064434 _MIDI_SongActive         # CONFIRMED: MIDI_LockMemory (identical) locks it; src/ass MIDI.C order
@@ -1312,13 +1367,6 @@
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
-0x048e05 MV_GetVoice              # LIKELY: ASS 104 multivoc.c near match 0.97 (47 bytes), anchored by its module's exact hits
-0x048e34 MV_VoicePlaying          # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 41 bytes
-0x048f3a MV_VoicesPlaying         # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 61 bytes
-0x0491f5 MV_Pan3D                 # LIKELY: ASS 104 multivoc.c near match 0.98 (107 bytes), anchored by its module's exact hits
-0x049ac2 MV_SetVolume             # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 54 bytes
-0x049e9b MV_UnlockMemory          # LIKELY: ASS 104 multivoc.c near match 0.75 (593 bytes), anchored by its module's exact hits
-0x04a065 MV_LockMemory            # LIKELY: ASS 104 multivoc.c near match 0.71 (702 bytes), anchored by its module's exact hits
 0x04dd30 dig_init                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 232 bytes
 0x04de18 set_addr_regs            # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 84 bytes
 0x04de6c dig_change_voice         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 340 bytes

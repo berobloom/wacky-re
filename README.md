@@ -101,8 +101,9 @@ The game's C is all written (fn_1c068 and fn_1c0ac stay out on purpose: the comp
 inline them where the game calls them), and 207 of its functions match. The assembler module
 (VGA drawing, interrupt handlers) is reassembled byte for byte from `src/wwasm.asm`, still as raw
 disassembly. The hybrid link (`tools/link/build.sh`) uses our C and our asm with the game's library
-bytes and runs to the first race. Not started: the sound library from source, and a link that
-reproduces WW.EXE's layout.
+bytes and runs to the first race. The sound library is being rebuilt from source in `src/ass`
+(15 modules byte-identical so far, `tools/ass/asscheck.py`). Not started: a link that reproduces
+WW.EXE's layout.
 
 ## License
 

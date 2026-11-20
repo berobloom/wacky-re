@@ -35,6 +35,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern int MV_ErrorCode;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+enum MV_Errors
+   {
+   MV_Warning = -2,
+   MV_Error   = -1,
+   MV_Ok      = 0,
+   MV_UnsupportedCard,
+   MV_NotInstalled,
+   MV_NoVoices,
+   MV_NoMem,
+   MV_VoiceNotFound,
+   MV_BlasterError,
+   MV_PasError,
+   MV_SoundSourceError,
+   MV_DPMI_Error
+   };
+#else
 enum MV_Errors
    {
    MV_Warning = -2,
@@ -59,7 +76,30 @@ enum MV_Errors
    MV_DMA16Failure,
    MV_NullRecordFunction
    };
+#endif
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+char *MV_ErrorString( int ErrorNumber );
+int   MV_VoicePlaying( int handle );
+int   MV_KillAllVoices( void );
+int   MV_Kill( int handle );
+int   MV_VoicesPlaying( void );
+int   MV_SetPitch( int handle, int pitchoffset );
+int   MV_SetPan( int handle, int vol, int left, int right );
+int   MV_Pan3D( int handle, int angle, int distance );
+int   MV_SetMixMode( int mode );
+void  MV_StartPlayback( void );
+void  MV_StopPlayback( void );
+int   MV_PlayVOC( char *ptr, int pitchoffset, int vol, int left, int right,
+         int priority, unsigned long callbackval );
+int   MV_PlayVOC3D( char *ptr, int pitchoffset, int angle, int distance,
+         int priority, unsigned long callbackval );
+void  MV_SetVolume( int volume );
+int   MV_GetVolume( void );
+void  MV_SetCallBack( void ( *function )( unsigned long ) );
+int   MV_Init( int soundcard, int MixRate, int Voices, int MixMode );
+int   MV_Shutdown( void );
+#else
 char *MV_ErrorString( int ErrorNumber );
 int   MV_VoicePlaying( int handle );
 int   MV_KillAllVoices( void );
@@ -128,6 +168,7 @@ int   MV_Init( int soundcard, int MixRate, int Voices, int numchannels,
          int samplebits );
 #endif
 int   MV_Shutdown( void );
+#endif
 void  MV_UnlockMemory( void );
 int   MV_LockMemory( void );
 

@@ -15,11 +15,12 @@ Wacky Wheels links a revision of the Apogee Sound System (ASS) older than any re
 - **Build**: `tools/ass/build.sh` (one DOSBox run, AUDIO.MAK's 1.04 production flags). The compiler
   is per module: Watcom 10.0a, except USER, GUS, PITCH, MIDI, GUSMIDI, BLASTOLD and PAS16 (the Watcom 10.0
   prerelease: the game's objects predate the switch to 10.0a); MIDI without AUDIO.MAK's `/zu`,
-  GUSMIDI optimised but without `/zp4`;
+  GUSMIDI optimised but without `/zp4`, MULTIVOC without `/zu`;
   10.0b for the 1.04 rebuild.
 - **Check**: `tools/ass/asscheck.py` compares every function with the game at its address in
   analysis/ww_names.txt (`tools/wc/objmatch.py`): `ASS: N of M named functions byte-identical`.
-- GUSWAVE.C holds Wacky Wheels' GUSWAVE as one alternative block (it differs in every function).
+- GUSWAVE.C, FX_MAN.C, MUSIC.C, MIDI.C and MULTIVOC.C hold Wacky Wheels' module as one alternative
+  block (they differ almost everywhere); MULTIVOC's is the GPL release's older `MV1.C`, adapted.
 - `tools/ass/portnames.py MODULE` names a whole-identical module's functions and data in
   analysis/ww_names.txt (the "ASS port" block).
 - Not built: the assembler mixers (`MV_MIX*.ASM`, need TASM) and the GF1 library (`gf1_osf.lib`,

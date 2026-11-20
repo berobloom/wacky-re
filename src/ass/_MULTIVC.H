@@ -56,7 +56,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MV_MaxTotalVolume  255
 // *** VERSIONS RESTORATION ***
 // Uncomment for earlier versions
-#if (LIBVER_ASSREV < 20011231L)
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#define MV_MaxVolume       15
+#elif (LIBVER_ASSREV < 20011231L)
 #define MV_MaxVolume       63
 #endif
 #define MV_NumVoices       8
@@ -66,13 +68,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #if (LIBVER_ASSREV >= 20011231L)
 #define MIX_VOLUME( volume ) \
    ( ( max( 0, min( ( volume ), 255 ) ) * ( MV_MaxVolume + 1 ) ) >> 8 )
+#elif (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md): 16 volume levels
+#define MIX_VOLUME( volume ) \
+   ( ( max( 0, min( ( volume ), 255 ) ) ) >> 4 )
 #else
 #define MIX_VOLUME( volume ) \
    ( ( max( 0, min( ( volume ), 255 ) ) ) >> 2 )
 #endif
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#define SILENCE_16BIT     0x80008000
+#else
 //#define SILENCE_16BIT     0x80008000
 #define SILENCE_16BIT     0
+#endif
 #define SILENCE_8BIT      0x80808080
 //#define SILENCE_16BIT_PAS 0
 
@@ -98,6 +107,38 @@ typedef enum
    } playbackstatus;
 
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+typedef struct VoiceNode
+   {
+   struct VoiceNode *next;
+   struct VoiceNode *prev;
+
+   char         *NextBlock;
+   char         *LoopStart;
+   unsigned      LoopCount;
+   unsigned long BlockLength;
+
+   unsigned long PitchScale;
+
+   char         *sound;
+   unsigned long length;
+   unsigned long SamplingRate;
+   unsigned long RateScale;
+   unsigned long position;
+   int           Playing;
+
+   int           Active[ NumberOfBuffers ];
+
+   int           handle;
+   int           priority;
+
+   int           Volume;
+   int           LeftVolume;
+   int           RightVolume;
+
+   unsigned long callbackval;
+   } VoiceNode;
+#else
 typedef struct VoiceNode
    {
    struct VoiceNode *next;
@@ -139,6 +180,7 @@ typedef struct VoiceNode
    unsigned long callbackval;
 
    } VoiceNode;
+#endif
 
 typedef struct
    {
@@ -157,10 +199,15 @@ typedef signed char  MONO8;
 
 typedef struct
    {
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   unsigned short left;
+   unsigned short right;
+#else
    MONO16 left;
    MONO16 right;
 //   unsigned short left;
 //   unsigned short right;
+#endif
    } STEREO16;
 
 typedef struct
@@ -205,8 +252,20 @@ typedef struct
 typedef MONO8  VOLUME8[ 256 ];
 typedef MONO16 VOLUME16[ 256 ];
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+typedef VOLUME8  VOLUME_TABLE_8BIT[ MV_MaxVolume + 1 ];
+typedef VOLUME16 VOLUME_TABLE_16BIT[ MV_MaxVolume + 1 ];
+#endif
+
 typedef char HARSH_CLIP_TABLE_8[ MV_NumVoices * 256 ];
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+typedef unsigned short HARSH_CLIP_TABLE_16[ MV_NumVoices * 256 * 16 ];
+
+#define MV_MaxLevel 256
+
+void MV_GetNextVOCBlock( VoiceNode *voice );
+#else
 static void MV_Mix( VoiceNode *voice, int buffer );
 static void MV_PlayVoice( VoiceNode *voice );
 static void MV_StopVoice( VoiceNode *voice );
@@ -230,6 +289,7 @@ static void       MV_SetVoiceMixMode( VoiceNode *voice );
 static void       MV_SetVoicePitch( VoiceNode *voice, unsigned long rate, int pitchoffset );
 static void       MV_CalcVolume( int MaxLevel );
 static void       MV_CalcPanTable( void );
+#endif
 
 #define ATR_INDEX               0x3c0
 #define STATUS_REGISTER_1       0x3da
