@@ -61,8 +61,6 @@
 0x010cec engine_clear # SPECULATIVE: sets the two per-car sound handles to -1
 0x010d04 engine_start # SPECULATIVE: FX_PlayVOC of the engine sample per player, priority 0x28, pitch -1800
 0x010d80 makepath     # LIKELY: strcpy + strcat of the global suffix 0x80ADC
-0x041bc8 FX_PlayVOC   # LIKELY: Apogee Sound System; 7 arguments (ptr, pitchoffset, vol, left, right, priority, callbackval)
-0x041dd4 FX_SoundActive # LIKELY: Apogee Sound System; non-zero while the handle plays (sfx_busy) (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x0414e0 free         # CONFIRMED: clib nfree (libmatch)
 0x041450 strncmp      # CONFIRMED: clib (libmatch)
 0x041475 malloc       # CONFIRMED: clib nmalloc (libmatch)
@@ -83,7 +81,6 @@
 0x010be8 tick_task    # LIKELY: task-manager callback: ++*task->data
 0x010bf0 engine_stop  # SPECULATIVE: FX_StopSound of a car's engine handle, then -1
 0x010c20 sfx_play2    # SPECULATIVE: FX_PlayVOC of the sample at 0x7EAEC, priority 0x20
-0x041e24 FX_StopSound # LIKELY: Apogee Sound System; takes the engine handle, which is then set to -1 (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x07eaec sfx2data     # SPECULATIVE: sample for sfx_play2
 0x07eda8 comopen      # LIKELY: set while the serial port is open
 0x07ee5a v7ee5a          # CONFIRMED: the save slot = the engine choice (1 " FAST 12 HP ENGINES ", 2 " SLOW 6 HP ENGINES "); keys <savedir>WACKY<n>.HI/.TIM (records_load 0x1691d, scores_write 0x1d0d0, trial_write 0x2f01b)
@@ -153,7 +150,6 @@
 0x042160 MUSIC_SongPlaying # SPECULATIVE: Apogee Sound System; polled until 0
 0x04219c MUSIC_StopSong # SPECULATIVE: Apogee Sound System
 0x0421e0 MUSIC_PlaySong # SPECULATIVE: Apogee Sound System; (song, loop), non-zero = error
-0x04191c FX_Shutdown  # LIKELY: Apogee Sound System; main 0x3697a at exit when sfxon
 0x042064 MUSIC_Shutdown # LIKELY: Apogee Sound System; main 0x3696b at exit after MUSIC_StopSong when musicon
 0x042488 MUSIC_FadeVolume # LIKELY: Apogee Sound System MUSIC_FadeVolume(tovolume, milliseconds): called (0, 4000) from fade_out when music is on, clamps arg1 to 0..255 (0x424aa-0x424bb) after checking a handle 0x63ff8
 0x042bec printf       # CONFIRMED: clib (libmatch)
@@ -196,7 +192,6 @@
 0x035bb0 end_screen   # CONFIRMED (rebuild src/ww.c): DOS end screen from the DAT (0xfa0 bytes via p6a978, f36a4e), or "Cannot find DOS end screen"
 0x035ca4 main         # CONFIRMED (rebuild src/ww.c): start-up, command line (TURBO/JUMP/HOG/ICE/FIRE cheats, NOW, /1 /2 /3, /DEBUG), config checks, allocation, tasks, data, intro, main menu, shutdown
 0x07c158 savedir      # LIKELY: directory prefix of the .TIM / .HI save files
-0x041ec8 FX_StopAllSounds # LIKELY: Apogee Sound System (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
 0x042c4d getch        # CONFIRMED: clib (libmatch)
 0x0774e4 ctl774e4
@@ -240,11 +235,6 @@
 0x07ee44 v7ee44       # SPECULATIVE: short config flag
 0x041fc8 MUSIC_Init   # LIKELY: ASS; returns MUSIC_Ok (0) or an error for MUSIC_ErrorString
 0x0420dc MUSIC_SetVolume # LIKELY: ASS
-0x041644 FX_SetupCard # LIKELY: ASS (card, fx_device *)
-0x041820 FX_Init      # LIKELY: ASS (card, voices, channels, bits, rate 11000)
-0x041550 FX_ErrorString # LIKELY: ASS
-0x041a0c FX_SetVolume # LIKELY: ASS
-0x041b44 FX_SetPitch  # LIKELY: ASS, (handle, f26 * 0x14 - 0x708) per frame from overlay_draw; position between FX_SetVolume and FX_PlayVOC (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x011f98 voices_load  # LIKELY: reads AUDIOHED.FX (offsets) and AUDIOT.FX (samples) from the data file into voices
 0x01418c datfind      # LIKELY: strupr(name), finds it in datdir (sets datidx), seeks to offset+2; returns found
 0x065080 datdir       # LIKELY: 0x16-byte entries {name[14], size, ?}; a 0 first byte ends it
@@ -951,6 +941,21 @@
 0x041028 TS_LockEnd               # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
 0x04102c TS_UnlockMemory          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
 0x0410d4 TS_LockMemory            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x041550 FX_ErrorString           # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: ASS
+0x041644 FX_SetupCard             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: ASS (card, fx_device *)
+0x041820 FX_Init                  # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: ASS (card, voices, channels, bits, rate 11000)
+0x04191c FX_Shutdown              # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System; main 0x3697a at exit when sfxon
+0x0419a0 FX_SetCallBack           # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x041a0c FX_SetVolume             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: ASS
+0x041a7c FX_GetVolume             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x041ad8 FX_SetPan                # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x041b44 FX_SetPitch              # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: ASS, (handle, f26 * 0x14 - 0x708) per frame from overlay_draw; position between FX_SetVolume and FX_PlayVOC (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
+0x041bc8 FX_PlayVOC               # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System; 7 arguments (ptr, pitchoffset, vol, left, right, priority, callbackval)
+0x041c8c FX_PlayVOC3D             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x041d60 FX_Pan3D                 # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x041dd4 FX_SoundActive           # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System; non-zero while the handle plays (sfx_busy) (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
+0x041e24 FX_StopSound             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System; takes the engine handle, which is then set to -1 (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
+0x041ec8 FX_StopAllSounds         # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x0434b0 LL_AddNode               # CONFIRMED: src/ass LL_MAN.C builds byte-identical to the whole module 0x434B0-0x43569
 0x0434d8 LL_RemoveNode            # CONFIRMED: src/ass LL_MAN.C builds byte-identical to the whole module 0x434B0-0x43569
 0x043534 LL_LockEnd               # CONFIRMED: src/ass LL_MAN.C builds byte-identical to the whole module 0x434B0-0x43569
@@ -1054,6 +1059,8 @@
 0x063fa8 TaskServiceCount         # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
 0x063fac TS_Installed             # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
 0x063fad TS_ExitHooked            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); name ours (SPECULATIVE): set once atexit(TS_Shutdown) is registered
+0x063fe8 FX_SoundDevice           # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x063fec FX_ErrorCode             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
 0x064328 PCFX_Sound               # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x06432c PCFX_CallBackFunc        # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x064330 PCFX_TotalVolume         # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
@@ -1104,10 +1111,6 @@
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
-0x041b44 FX_SetPitch              # LIKELY: ASS 104 fx_man.c free near match 0.94 (148 bytes), no anchor; next best start 0.10 lower or more
-0x041dd4 FX_SoundActive           # LIKELY: ASS 109 fx_man.c free near match 0.96 (96 bytes), no anchor; next best start 0.10 lower or more
-0x041e24 FX_StopSound             # LIKELY: ASS 109 fx_man.c free near match 0.95 (184 bytes), no anchor; next best start 0.10 lower or more
-0x041ec8 FX_StopAllSounds         # LIKELY: ASS 104 fx_man.c free near match 0.92 (140 bytes), no anchor; next best start 0.10 lower or more
 0x042420 MUSIC_FadeRoutine        # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 104 bytes
 0x042560 MUSIC_FadeActive         # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 16 bytes
 0x042570 MUSIC_StopFade           # CONFIRMED: byte-identical (fixups masked) to ASS 109 music.c, 30 bytes

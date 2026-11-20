@@ -66,12 +66,20 @@ enum FX_ERRORS
    FX_Warning = -2,
    FX_Error = -1,
    FX_Ok = 0,
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   FX_SoundCardError,
+   FX_InvalidCard,
+   FX_MultiVocError,
+   FX_InvalidVOCFile,
+   FX_DPMI_Error
+#else
    FX_ASSVersion,
    FX_BlasterError,
    FX_SoundCardError,
    FX_InvalidCard,
    FX_MultiVocError,
    FX_DPMI_Error
+#endif
    };
 
 enum fx_BLASTER_Types
@@ -90,6 +98,9 @@ int   FX_GetBlasterSettings( fx_blaster_config *blaster );
 int   FX_SetupSoundBlaster( fx_blaster_config blaster, int *MaxVoices, int *MaxSampleBits, int *MaxChannels );
 int   FX_Init( int SoundCard, int numvoices, int numchannels, int samplebits, unsigned mixrate );
 int   FX_Shutdown( void );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#pragma aux FX_Shutdown frame;
+#endif
 int   FX_SetCallBack( void ( *function )( unsigned long ) );
 void  FX_SetVolume( int volume );
 int   FX_GetVolume( void );

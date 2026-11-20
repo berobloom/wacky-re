@@ -115,6 +115,19 @@ def main(argv):
             continue                     # keep a hand-written line that says more
         block[a] = l
     keep = lambda l: not (re.match(r'^0x([0-9a-f]+) ', l) and int(l.split()[0], 16) in new)  # noqa: E731
+    # a hand-written line about one of these addresses (outside the generated ASSMATCH block) may say how
+    # the game uses it: its note goes on, after the new reason
+    gen, notes = False, {}
+    for k, l in enumerate(lines):
+        if h <= k <= e:
+            continue
+        gen = (gen or l.startswith('# ---- ASSMATCH begin')) and not l.startswith('# ---- ASSMATCH end')
+        m = re.match(r'^0x([0-9a-f]+) +\S+ +# *(?:CONFIRMED|STRONGLY SUPPORTED|LIKELY|SPECULATIVE): *(.*)$', l)
+        if m and not gen and int(m.group(1), 16) in new and not l.startswith(HEAD):
+            notes.setdefault(int(m.group(1), 16), []).append(m.group(2).strip())
+    for a, ns in notes.items():
+        if 'earlier: ' not in block[a]:
+            block[a] += '; earlier: ' + ' / '.join(ns)
     out = [l for l in lines[:h + 1] if keep(l)] + [block[a] for a in sorted(block)] + [l for l in lines[e:] if keep(l)]
     open(NAMES, 'w').write('\n'.join(out))
     return 0

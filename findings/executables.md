@@ -164,6 +164,20 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   `PITCH_Installed`, which the lock functions cover), `PITCH_GetScale` calls `PITCH_Init` on first
   use, and it has no correction for a negative `detune` (it cannot happen: `noteshift` is made
   non-negative first).
+  FX_MAN (iter 93g, whole module 0x41510-0x41F23, 10.0a) is an older FX_MAN, and with it the sound
+  card list: **eight cards, `SoundBlaster` 0, `ProAudioSpectrum` 1, `Adlib` 2, `GenMidi` 3,
+  `SoundCanvas` 4, `UltraSound` 5, `SoundSource` 6, `PC` 7** (CONFIRMED by FX_MAN's and MUSIC_Init's
+  switch tables: 2 has music but no FX, 3-4 MIDI only, 5-7 no music). No SoundMan16, AWE32,
+  WaveBlaster, SoundScape or Tandy Sound Source; the game links no SNDSCAPE code (the old
+  `SOUNDSCAPE_Interrupts` LIKELY name at 0x43F11 lies in BLASTOLD's tables). Blaster, PAS and Sound
+  Source are mixed by MULTIVOC, whose `MV_Init(card, rate, voices, mode)` takes a mix mode (bit 0
+  stereo, bit 1 16-bit) that `FX_Init` builds from its channel and bit arguments; GUS and PC speaker
+  are driven directly. `FX_SetupCard` gives 8 voices to Blaster, PAS and GUS, 4 to the Sound Source
+  (`SS_SetPort( 0x378 )`, fixed LPT1), 1 to the PC speaker; it checks no ASSVER switch. Error codes:
+  1 sound card, 2 invalid card, 3 MULTIVOC, 4 "Invalid VOC file.", 5 DPMI. Functions: ErrorString,
+  SetupCard, Init, Shutdown (`#pragma aux frame`, as the other drivers' Shutdowns), SetCallBack,
+  Set/GetVolume, SetPan (uncalled; 0x41AD8), SetPitch (tests the handle, not the status, after
+  `GUSWAVE_SetPitch`), PlayVOC, PlayVOC3D, Pan3D, SoundActive, StopSound, StopAllSounds.
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate

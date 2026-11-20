@@ -42,6 +42,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ASS_VERSION_STRING "1.12"
 #endif
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+// Eight cards; the names of later cards follow NumSoundCards, so that the modules not yet
+// reconstructed at this revision still compile (no card number reaches them).
+typedef enum
+   {
+   SoundBlaster,
+   ProAudioSpectrum,
+   Adlib,
+   GenMidi,
+   SoundCanvas,
+   UltraSound,
+   SoundSource,
+   PC,
+   NumSoundCards,
+   SoundMan16,
+   Awe32,
+   WaveBlaster,
+   SoundScape,
+   TandySoundSource
+   } soundcardnames;
+#else
 typedef enum
    {
 //   ASS_NoSound,
@@ -60,5 +81,6 @@ typedef enum
    PC,
    NumSoundCards
    } soundcardnames;
+#endif
 
 #endif

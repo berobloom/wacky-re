@@ -52,6 +52,883 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+// An older FX_MAN: eight sound cards (SNDCARDS.H), Sound Blaster, Pro Audio Spectrum and Sound
+// Source mixed by MULTIVOC (whose MV_Init takes a mix mode), the Gravis UltraSound and the PC
+// speaker driven directly; no version string, Blaster settings, reverb, WAV or raw playback.
+
+static unsigned FX_MixRate;
+
+int FX_SoundDevice = -1;
+int FX_ErrorCode = FX_Ok;
+
+#define FX_SetErrorCode( status ) \
+   FX_ErrorCode = ( status );
+
+
+/*---------------------------------------------------------------------
+   Function: FX_ErrorString
+
+   Returns a pointer to the error message associated with an error
+   number.  A -1 returns a pointer the current error.
+---------------------------------------------------------------------*/
+
+char *FX_ErrorString
+   (
+   int ErrorNumber
+   )
+
+   {
+   char *ErrorString;
+
+   switch( ErrorNumber )
+      {
+      case FX_Warning :
+      case FX_Error :
+         ErrorString = FX_ErrorString( FX_ErrorCode );
+         break;
+
+      case FX_Ok :
+         ErrorString = "Fx ok.";
+         break;
+
+      case FX_SoundCardError :
+         switch( FX_SoundDevice )
+         {
+            case SoundBlaster :
+               ErrorString = BLASTER_ErrorString( BLASTER_Error );
+               break;
+
+            case ProAudioSpectrum :
+               ErrorString = PAS_ErrorString( PAS_Error );
+               break;
+
+            case PC :
+               ErrorString = PCFX_ErrorString( PCFX_Error );
+               break;
+
+            case UltraSound :
+               ErrorString = GUSWAVE_ErrorString( GUSWAVE_Error );
+               break;
+
+            case SoundSource :
+               ErrorString = SS_ErrorString( SS_Error );
+               break;
+            }
+         break;
+
+      case FX_InvalidCard :
+         ErrorString = "Invalid Sound Fx device.";
+         break;
+
+      case FX_MultiVocError :
+         ErrorString = MV_ErrorString( MV_Error );
+         break;
+
+      case FX_InvalidVOCFile :
+         ErrorString = "Invalid VOC file.";
+         break;
+
+      case FX_DPMI_Error :
+         ErrorString = "DPMI Error in FX_MAN.";
+         break;
+
+      default :
+         ErrorString = "Unknown Fx error code.";
+         break;
+      }
+
+   return( ErrorString );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_SetupCard
+
+   Sets the configuration of a sound device.
+---------------------------------------------------------------------*/
+
+int FX_SetupCard
+   (
+   int SoundCard,
+   fx_device *device
+   )
+
+   {
+   int status;
+   int DeviceStatus;
+   BLASTER_CONFIG Blaster;
+
+   FX_SoundDevice = SoundCard;
+
+   status = FX_Ok;
+
+   switch( SoundCard )
+      {
+      case SoundBlaster :
+         DeviceStatus = BLASTER_GetEnv( &Blaster );
+         if ( DeviceStatus != BLASTER_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            break;
+            }
+
+         BLASTER_SetCardSettings( Blaster );
+         DeviceStatus = BLASTER_Init();
+         if ( DeviceStatus != BLASTER_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            break;
+            }
+
+         device->MaxVoices = 8;
+         BLASTER_GetCardInfo( &device->MaxSampleBits, &device->MaxChannels );
+         break;
+
+      case ProAudioSpectrum :
+         DeviceStatus = PAS_Init();
+         if ( DeviceStatus != PAS_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            break;
+            }
+
+         device->MaxVoices = 8;
+         PAS_GetCardInfo( &device->MaxSampleBits, &device->MaxChannels );
+         break;
+
+      case GenMidi :
+      case SoundCanvas :
+         device->MaxVoices     = 0;
+         device->MaxSampleBits = 0;
+         device->MaxChannels   = 0;
+         break;
+
+      case UltraSound :
+         if ( GUSWAVE_Init( 8 ) != GUSWAVE_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            break;
+            }
+
+         device->MaxVoices     = 8;
+         device->MaxSampleBits = 0;
+         device->MaxChannels   = 0;
+         break;
+
+      case SoundSource :
+         DeviceStatus = SS_SetPort( 0x378 );
+         if ( DeviceStatus != SS_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            break;
+            }
+
+         device->MaxVoices     = 4;
+         device->MaxSampleBits = 8;
+         device->MaxChannels   = 1;
+         break;
+
+      case PC :
+         device->MaxVoices     = 1;
+         device->MaxSampleBits = 0;
+         device->MaxChannels   = 1;
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_Init
+
+   Selects which sound device to use.
+---------------------------------------------------------------------*/
+
+int FX_Init
+   (
+   int SoundCard,
+   int numvoices,
+   int numchannels,
+   int samplebits,
+   unsigned mixrate
+   )
+
+   {
+   int status;
+   int devicestatus;
+   int mode;
+
+   status = LL_LockMemory();
+   if ( status != LL_Ok )
+      {
+      FX_SetErrorCode( FX_DPMI_Error );
+      return( FX_Error );
+      }
+
+   FX_MixRate = mixrate;
+   status = FX_Ok;
+   FX_SoundDevice = SoundCard;
+   switch( SoundCard )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         mode = MONO_8BIT;
+         if ( numchannels == 2 )
+            {
+            mode = STEREO;
+            }
+
+         if ( samplebits == 16 )
+            {
+            mode |= SIXTEEN_BIT;
+            }
+
+         devicestatus = MV_Init( SoundCard, FX_MixRate, numvoices, mode );
+         if ( devicestatus != MV_Ok )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            status = FX_Error;
+            }
+         break;
+
+      case UltraSound :
+         devicestatus = GUSWAVE_Init( numvoices );
+         if ( devicestatus != GUSWAVE_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            }
+         break;
+
+      case PC :
+         devicestatus = PCFX_Init();
+         if ( devicestatus != PCFX_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            status = FX_Error;
+            }
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   if ( status != FX_Ok )
+      {
+      LL_UnlockMemory();
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_Shutdown
+
+   Terminates use of sound device.
+---------------------------------------------------------------------*/
+
+int FX_Shutdown
+   (
+   void
+   )
+
+   {
+   int status;
+
+   status = FX_Ok;
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         status = MV_Shutdown();
+         if ( status != MV_Ok )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            status = FX_Error;
+            }
+         break;
+
+      case UltraSound :
+         GUSWAVE_Shutdown();
+         break;
+
+      case PC :
+         PCFX_Shutdown();
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   LL_UnlockMemory();
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_SetCallBack
+
+   Sets the function to call when a voice is done.
+---------------------------------------------------------------------*/
+
+int FX_SetCallBack
+   (
+   void ( *function )( unsigned long )
+   )
+
+   {
+   int status;
+
+   status = FX_Ok;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         MV_SetCallBack( function );
+         break;
+
+      case UltraSound :
+         GUSWAVE_SetCallBack( function );
+         break;
+
+      case PC :
+         PCFX_SetCallBack( function );
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_SetVolume
+
+   Sets the volume of the current sound device.
+---------------------------------------------------------------------*/
+
+void FX_SetVolume
+   (
+   int volume
+   )
+
+   {
+   int status;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+         if ( BLASTER_CardHasMixer() )
+            {
+            BLASTER_SetVoiceVolume( volume );
+            }
+         else
+            {
+            MV_SetVolume( volume );
+            }
+         break;
+
+      case ProAudioSpectrum :
+         status = PAS_SetPCMVolume( volume );
+         if ( status != PAS_Ok )
+            {
+            MV_SetVolume( volume );
+            }
+         break;
+
+      case GenMidi :
+      case SoundCanvas :
+         break;
+
+      case SoundSource :
+         MV_SetVolume( volume );
+         break;
+
+      case UltraSound :
+         GUSWAVE_SetVolume( volume );
+         break;
+
+      case PC :
+         PCFX_SetTotalVolume( volume );
+         break;
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_GetVolume
+
+   Returns the volume of the current sound device.
+---------------------------------------------------------------------*/
+
+int FX_GetVolume
+   (
+   void
+   )
+
+   {
+   int volume;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+         if ( BLASTER_CardHasMixer() )
+            {
+            volume = BLASTER_GetVoiceVolume();
+            }
+         else
+            {
+            volume = MV_GetVolume();
+            }
+         break;
+
+      case ProAudioSpectrum :
+         volume = PAS_GetPCMVolume();
+         if ( volume == PAS_Error )
+            {
+            volume = MV_GetVolume();
+            }
+         break;
+
+      case GenMidi :
+      case SoundCanvas :
+         volume = 255;
+         break;
+
+      case UltraSound :
+         volume = GUSWAVE_GetVolume();
+         break;
+
+      case PC :
+         volume = PCFX_GetTotalVolume();
+         break;
+
+      case SoundSource :
+         volume = MV_GetVolume();
+         break;
+
+      default :
+         volume = 0;
+      }
+
+   return( volume );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_SetPan
+
+   Sets the stereo and mono volume level of the voice associated
+   with the specified handle.
+---------------------------------------------------------------------*/
+
+int FX_SetPan
+   (
+   int handle,
+   int vol,
+   int left,
+   int right
+   )
+
+   {
+   int status = FX_Ok;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         status = MV_SetPan( handle, vol, left, right );
+         if ( status == MV_Error )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            status = FX_Warning;
+            }
+         break;
+
+      case UltraSound :
+      case PC :
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_SetPitch
+
+   Sets the pitch of the voice associated with the specified handle.
+---------------------------------------------------------------------*/
+
+int FX_SetPitch
+   (
+   int handle,
+   int pitchoffset
+   )
+
+   {
+   int status = FX_Ok;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         status = MV_SetPitch( handle, pitchoffset );
+         if ( status == MV_Error )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            status = FX_Warning;
+            }
+         break;
+
+      case UltraSound :
+         status = GUSWAVE_SetPitch( handle, pitchoffset );
+         // A bug of the original: tests the handle, not the status
+         if ( handle == GUSWAVE_Error )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            }
+         break;
+
+      case PC :
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_PlayVOC
+
+   Begin playback of sound data with the given volume and priority.
+---------------------------------------------------------------------*/
+
+int FX_PlayVOC
+   (
+   char *ptr,
+   int pitchoffset,
+   int vol,
+   int left,
+   int right,
+   int priority,
+   unsigned long callbackval
+   )
+
+   {
+   int handle;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         handle = MV_PlayVOC( ptr, pitchoffset, vol, left, right,
+            priority, callbackval );
+         if ( handle == MV_Error )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            handle = FX_Warning;
+            }
+         break;
+
+      case UltraSound :
+         handle = GUSWAVE_PlayVOC( ptr, pitchoffset, 0, vol,
+            priority, callbackval );
+         if ( handle == GUSWAVE_Error )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            handle = FX_Warning;
+            }
+         break;
+
+      case PC :
+         handle = PCFX_Play( ( PCSound * )ptr, priority, callbackval );
+         if ( handle < PCFX_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            handle = FX_Warning;
+            }
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         handle = FX_Error;
+      }
+
+   return( handle );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_PlayVOC3D
+
+   Begin playback of sound data at specified angle and distance
+   from listener.
+---------------------------------------------------------------------*/
+
+int FX_PlayVOC3D
+   (
+   char *ptr,
+   int pitchoffset,
+   int angle,
+   int distance,
+   int priority,
+   unsigned long callbackval
+   )
+
+   {
+   int handle;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         handle = MV_PlayVOC3D( ptr, pitchoffset, angle, distance,
+            priority, callbackval );
+         if ( handle == MV_Error )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            handle = FX_Warning;
+            }
+         break;
+
+      case UltraSound :
+         handle = GUSWAVE_PlayVOC( ptr, pitchoffset, angle, 255-distance,
+            priority, callbackval );
+         if ( handle == GUSWAVE_Error )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            handle = FX_Warning;
+            }
+         break;
+
+      case PC :
+         handle = PCFX_Play( ( PCSound * )ptr, priority, callbackval );
+         if ( handle < PCFX_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            handle = FX_Warning;
+            }
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         handle = FX_Error;
+      }
+
+   return( handle );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_Pan3D
+
+   Set the angle and distance from the listener of the voice associated
+   with the specified handle.
+---------------------------------------------------------------------*/
+
+int FX_Pan3D
+   (
+   int handle,
+   int angle,
+   int distance
+   )
+
+   {
+   int status = FX_Ok;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         status = MV_Pan3D( handle, angle, distance );
+         if ( status != MV_Ok )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            status = FX_Warning;
+            }
+         break;
+
+      case UltraSound :
+         status = GUSWAVE_SetPan3D( handle, angle, distance );
+         break;
+
+      case PC :
+         break;
+
+      default :
+         FX_SetErrorCode( FX_InvalidCard );
+         status = FX_Error;
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_SoundActive
+
+   Tests if the specified sound is currently playing.
+---------------------------------------------------------------------*/
+
+int FX_SoundActive
+   (
+   int handle
+   )
+
+   {
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         return( MV_VoicePlaying( handle ) );
+
+      case UltraSound :
+         return( GUSWAVE_VoicePlaying( handle ) );
+
+      case PC :
+         return( PCFX_SoundPlaying( handle ) );
+      }
+
+   return( FALSE );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_StopSound
+
+   Halts playback of a specific voice
+---------------------------------------------------------------------*/
+
+int FX_StopSound
+   (
+   int handle
+   )
+
+   {
+   int status;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         status = MV_Kill( handle );
+         if ( status != MV_Ok )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            return( FX_Warning );
+            }
+         break;
+
+      case UltraSound :
+         status = GUSWAVE_Kill( handle );
+         if ( status != GUSWAVE_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            return( FX_Warning );
+            }
+         break;
+
+      case PC :
+         status = PCFX_Stop( handle );
+         if ( status != PCFX_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            return( FX_Warning );
+            }
+         break;
+
+      default:
+         FX_SetErrorCode( FX_InvalidCard );
+      }
+
+   return( FX_Ok );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: FX_StopAllSounds
+
+   Halts playback of all sounds.
+---------------------------------------------------------------------*/
+
+int FX_StopAllSounds
+   (
+   void
+   )
+
+   {
+   int status;
+
+   switch( FX_SoundDevice )
+      {
+      case SoundBlaster :
+      case ProAudioSpectrum :
+      case SoundSource :
+         status = MV_KillAllVoices();
+         if ( status != MV_Ok )
+            {
+            FX_SetErrorCode( FX_MultiVocError );
+            return( FX_Warning );
+            }
+         break;
+
+      case UltraSound :
+         status = GUSWAVE_KillAllVoices();
+         if ( status != GUSWAVE_Ok )
+            {
+            FX_SetErrorCode( FX_SoundCardError );
+            return( FX_Warning );
+            }
+         break;
+
+      case PC :
+         break;
+
+      default:
+         FX_SetErrorCode( FX_InvalidCard );
+      }
+
+   return( FX_Ok );
+   }
+#else
 static unsigned FX_MixRate;
 
 int FX_SoundDevice = -1;
@@ -2450,3 +3327,4 @@ void FX_StopRecord
          break;
       }
    }
+#endif

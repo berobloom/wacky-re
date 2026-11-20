@@ -3490,8 +3490,12 @@ int MV_Init
    int soundcard,
    int MixRate,
    int Voices,
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   int MixMode
+#else
    int numchannels,
    int samplebits
+#endif
    )
 
    {
@@ -3499,6 +3503,12 @@ int MV_Init
    int  status;
    int  buffer;
    int  index;
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   // Placeholder until MULTIVOC is reconstructed at this revision: the mode
+   // FX_Init passes (bit 0 stereo, bit 1 16-bit) as 1.04's two arguments.
+   int  numchannels = ( MixMode & STEREO ) ? 2 : 1;
+   int  samplebits  = ( MixMode & SIXTEEN_BIT ) ? 16 : 8;
+#endif
 
    if ( MV_Installed )
       {
