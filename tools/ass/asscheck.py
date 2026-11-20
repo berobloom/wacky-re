@@ -21,6 +21,11 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'wc'))
 import libmatch as L  # noqa: E402
+import objmatch  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, 'tools', 'le'))
+from lelib import Image  # noqa: E402
+
+IMG = Image('ww')
 
 WW_REV, LIB_REV = '19941101', '19950518'
 
@@ -61,7 +66,7 @@ def check_lib(mods):
 
 def check_ww(mods, verbose):
     out = build(WW_REV)
-    tot = ok = 0
+    tot = ok = mods_ok = 0
     for m in mods:
         r = subprocess.run([sys.executable, 'tools/wc/objmatch.py', 'ww', os.path.join(out, m + '.OBJ')],
                            cwd=ROOT, capture_output=True, text=True)
@@ -71,13 +76,33 @@ def check_ww(mods, verbose):
         near = [l.split()[0] for l in fn if 'differs from' in l]
         tot += len(match) + len(near)
         ok += len(match)
-        print('%-9s %3d MATCH, %3d near miss, %3d with no address%s' % (
-            m, len(match), len(near), len(fn) - len(match) - len(near),
+        whole = segment(os.path.join(out, m + '.OBJ'), lines)
+        mods_ok += whole.startswith('whole')
+        print('%-9s %3d MATCH, %3d near miss, %3d with no address  %s%s' % (
+            m, len(match), len(near), len(fn) - len(match) - len(near), whole,
             ('  near: ' + ' '.join(n.rstrip('_') for n in near))[:200] if near else ''))
         if verbose:
             print('\n'.join('    ' + l for l in lines))
-    print('ASS: %d of %d named functions byte-identical' % (ok, tot))
+    print('ASS: %d of %d named functions byte-identical; %d modules identical as a whole' % (ok, tot, mods_ok))
     return 0
+
+
+def segment(obj, lines):
+    """the whole _TEXT against the game, placed by the first MATCHed public: statics and padding included"""
+    recs = [r for _, r in L.modules(open(obj, 'rb').read())][0]
+    segs = L.code_of(recs)
+    if '_TEXT' not in segs:
+        return ''
+    buf, mask = segs['_TEXT']
+    offs = {n: o for s, o, n in objmatch.publics(recs) if s == '_TEXT'}
+    for l in lines:
+        m = re.match(r'^(\S+)\s+\d+ bytes\s+MATCH at 0x([0-9a-f]+)', l)
+        if m and m.group(1) in offs:
+            base = int(m.group(2), 16) - offs[m.group(1)]
+            g = IMG.code[base - IMG.code_base:base - IMG.code_base + len(buf)]
+            d = sum(1 for i in range(len(buf)) if not mask[i] and buf[i] != g[i])
+            return ('whole module identical at 0x%05X' % base) if not d else '(module: %d bytes differ)' % d
+    return ''
 
 
 def main(argv):

@@ -31,7 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TRUE  ( 1 == 1 )
 #define FALSE ( !TRUE )
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#define USESTACK
+#else
 //#define USESTACK
+#endif
 #define LOCKMEMORY
 #define NOINTS
 #define USE_USRHOOKS
@@ -45,7 +49,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include "interrup.h"
 #endif
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#include "ll_man.h"
+#else
 #include "linklist.h"
+#endif
 #include "task_man.h"
 
 #ifdef USESTACK
@@ -79,7 +87,11 @@ typedef struct
 #ifdef USESTACK
 
 // adequate stack size
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#define kStackSize 1024
+#else
 #define kStackSize 2048
+#endif
 
 static unsigned short StackSelector = NULL;
 static unsigned long  StackPointer;
@@ -89,8 +101,12 @@ static unsigned long  oldStackPointer;
 
 #endif
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static volatile tasklist TaskList;
+#else
 static task HeadTask;
 static task *TaskList = &HeadTask;
+#endif
 
 static void ( __interrupt __far *OldInt8 )( void );
 
@@ -103,13 +119,22 @@ static volatile int  TS_TimesInInterrupt;
 
 static char TS_Installed = FALSE;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static char TS_ExitHooked = FALSE;  // TS_Shutdown registered with atexit
+#else
 volatile int TS_InInterrupt = FALSE;
+#endif
 
 /*---------------------------------------------------------------------
    Function prototypes
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static void TS_FreeTaskList( tasklist list );
+static void TS_ServiceTasks( void );
+#else
 static void TS_FreeTaskList( void );
+#endif
 static void TS_SetClockSpeed( long speed );
 static long TS_SetTimer( long TickBase );
 static void TS_SetTimerToMaxTaskRate( void );
@@ -159,6 +184,33 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
    structures.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static void TS_FreeTaskList
+   (
+   tasklist list
+   )
+
+   {
+   task *node;
+   task *next;
+   unsigned flags;
+
+   flags = DisableInterrupts();
+
+   node = list.start;
+   while( node != NULL )
+      {
+      next = node->next;
+      FreeMem( node );
+      node = next;
+      }
+
+   list.start = NULL;
+   list.end   = NULL;
+
+   RestoreInterrupts( flags );
+   }
+#else
 static void TS_FreeTaskList
    (
    void
@@ -184,6 +236,7 @@ static void TS_FreeTaskList
 
    RestoreInterrupts( flags );
    }
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -265,8 +318,13 @@ static void TS_SetTimerToMaxTaskRate
 
    MaxServiceRate = 0x10000L;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   ptr = TaskList.start;
+   while( ptr != NULL )
+#else
    ptr = TaskList->next;
    while( ptr != TaskList )
+#endif
       {
       if ( ptr->rate < MaxServiceRate )
          {
@@ -285,7 +343,71 @@ static void TS_SetTimerToMaxTaskRate
    }
 
 
-#ifdef NOINTS
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+/*---------------------------------------------------------------------
+   Function: TS_ServiceSchedule
+
+   Interrupt service routine: runs the tasks on the timer stack.
+---------------------------------------------------------------------*/
+
+static void __interrupt __far TS_ServiceSchedule
+   (
+   void
+   )
+
+   {
+   GetStack( &oldStackSelector, &oldStackPointer );
+   SetStack( StackSelector, StackPointer );
+
+   TS_ServiceTasks();
+
+   SetStack( oldStackSelector, oldStackPointer );
+
+   TaskServiceCount += TaskServiceRate;
+   if ( TaskServiceCount > 0xffffL )
+      {
+      TaskServiceCount &= 0xffff;
+      _chain_intr( OldInt8 );
+      }
+
+   outp( 0x20,0x20 );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: TS_ServiceTasks
+
+   Services every active task whose time has come.
+---------------------------------------------------------------------*/
+
+static void TS_ServiceTasks
+   (
+   void
+   )
+
+   {
+   task *ptr;
+   task *next;
+
+   ptr = TaskList.start;
+   while( ptr != NULL )
+      {
+      next = ptr->next;
+
+      if ( ptr->active )
+         {
+         ptr->count += TaskServiceRate;
+         if ( ptr->count >= ptr->rate )
+            {
+            ptr->count -= ptr->rate;
+            ptr->TaskService( ptr );
+            }
+         }
+      ptr = next;
+      }
+   }
+
+#elif defined( NOINTS )
 /*---------------------------------------------------------------------
    Function: TS_ServiceSchedule
 
@@ -545,9 +667,14 @@ static int TS_Startup
 
 #endif
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+      TaskList.start = NULL;
+      TaskList.end   = NULL;
+#else
 //static const task *TaskList = &HeadTask;
       TaskList->next = TaskList;
       TaskList->prev = TaskList;
+#endif
 
       TaskServiceRate  = 0x10000L;
       TaskServiceCount = 0;
@@ -564,6 +691,14 @@ static int TS_Startup
       #endif
 
       TS_Installed = TRUE;
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+
+      if ( !TS_ExitHooked )
+         {
+         atexit( TS_Shutdown );
+         TS_ExitHooked = TRUE;
+         }
+#endif
       }
 
    return( TASK_Ok );
@@ -584,8 +719,10 @@ void TS_Shutdown
    {
    if ( TS_Installed )
       {
+#if (LIBVER_ASSREV >= 19950518L)
       TS_FreeTaskList();
 
+#endif
       TS_SetClockSpeed( 0 );
 
       _dos_setvect( 0x08, OldInt8 );
@@ -595,6 +732,10 @@ void TS_Shutdown
       deallocateTimerStack( StackSelector );
       StackSelector = NULL;
 
+#endif
+
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+      TS_FreeTaskList( TaskList );
 #endif
 
       // Set Date and Time from CMOS
@@ -675,7 +816,40 @@ static void TS_AddTask
    )
 
    {
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   task *ptr;
+
+   if ( TaskList.start == NULL )
+      {
+      LL_AddToHead( task, &TaskList, node );
+      }
+   else if ( node->priority >= TaskList.end->priority )
+      {
+      LL_AddToTail( task, &TaskList, node );
+      }
+   else
+      {
+      ptr = TaskList.start;
+      while( node->priority >= ptr->priority )
+         {
+         ptr = ptr->next;
+         }
+
+      if ( ptr->prev == NULL )
+         {
+         LL_AddToHead( task, &TaskList, node );
+         }
+      else
+         {
+         node->prev = ptr->prev;
+         node->next = ptr;
+         ptr->prev  = node;
+         node->prev->next = node;
+         }
+      }
+#else
    LL_SortedInsertion( TaskList, node, next, prev, task, priority );
+#endif
    }
 
 
@@ -697,6 +871,16 @@ int TS_Terminate
 
    flags = DisableInterrupts();
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   ptr = TaskList.start;
+   while( ptr != NULL )
+      {
+      next = ptr->next;
+
+      if ( ptr == NodeToRemove )
+         {
+         LL_Remove( task, &TaskList, NodeToRemove );
+#else
    ptr = TaskList->next;
    while( ptr != TaskList )
       {
@@ -705,6 +889,7 @@ int TS_Terminate
       if ( ptr == NodeToRemove )
          {
          LL_RemoveNode( NodeToRemove, next, prev );
+#endif
          NodeToRemove->next = NULL;
          NodeToRemove->prev = NULL;
          FreeMem( NodeToRemove );
@@ -742,8 +927,13 @@ void TS_Dispatch
 
    flags = DisableInterrupts();
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   ptr = TaskList.start;
+   while( ptr != NULL )
+#else
    ptr = TaskList->next;
    while( ptr != TaskList )
+#endif
       {
       ptr->active = TRUE;
       ptr = ptr->next;
@@ -816,6 +1006,9 @@ void TS_UnlockMemory
 #ifndef NOINTS
    DPMI_Unlock( TS_TimesInInterrupt );
 #endif
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   DPMI_Unlock( TS_ExitHooked );
+#endif
 
 #ifdef USESTACK
    DPMI_Unlock( StackSelector );
@@ -849,6 +1042,9 @@ int TS_LockMemory
 
 #ifndef NOINTS
    status |= DPMI_Lock( TS_TimesInInterrupt );
+#endif
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   status |= DPMI_Lock( TS_ExitHooked );
 #endif
 
 #ifdef USESTACK

@@ -196,7 +196,12 @@ def main(argv):
     lines = [BEGIN,
              '# Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =',
              '# byte-identical (fixups masked) to that version\'s function, LIKELY = anchored near match (score).']
-    for a in sorted(set(exact) | set(near) | set(free)):
+    port = set()                                 # addresses the ASS port block names: never re-listed here
+    nf = open(os.path.join(ROOT, 'analysis', 'ww_names.txt')).read()
+    if '# ---- ASS port (' in nf:
+        blk = nf[nf.index('# ---- ASS port ('):nf.index('# ---- ASS port end')]
+        port = {int(l.split()[0], 16) for l in blk.splitlines() if l.startswith('0x')}
+    for a in sorted((set(exact) | set(near) | set(free)) - port):
         if a in free:
             r, n, v, mod, ln = free[a]
             lines.append('0x%06x %-24s # %s: ASS %s %s free near match %.2f (%d bytes), no anchor; next best start %.2f lower or more'

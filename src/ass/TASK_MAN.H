@@ -54,7 +54,9 @@ typedef struct task
 // Use this if you have code that may be used both outside
 // and within interrupts.
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 extern volatile int TS_InInterrupt;
+#endif
 
 void    TS_Shutdown( void );
 task    *TS_ScheduleTask( void ( *Function )( task * ), int rate,

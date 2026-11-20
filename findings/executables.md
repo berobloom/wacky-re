@@ -125,7 +125,14 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   with `mov eax,[x]`, 10.0 with `mov edx,[x]`); IRQ 3/3 only with 10.0a (10.0b 2/3); every other
   module scores the same with 10.0a and 10.0b, and lower with 9.5b (DPMI 5 vs 0, MPU401 10 vs 6).
   STRONGLY SUPPORTED: built mostly with Watcom 10.0a (the .b patch is January 1995, after the game),
-  with objects a make never rebuilt left from 9.5b. Baseline: 90 of 144 named functions identical. That project
+  with objects a make never rebuilt left from 9.5b. Baseline: 90 of 144 named functions identical.
+  **TASK_MAN is an older task manager (iter 93, CONFIRMED: src/ass TASK_MAN.C now builds the whole
+  module 0x40A80-0x411AC byte for byte):** a `volatile tasklist TaskList` {start, end} kept with
+  ll_man.h's `LL_AddToHead`/`LL_AddToTail`/`LL_Remove` (1.04: a circular list with a sentinel),
+  `USESTACK` on with a 1 KB timer stack, the ISR calling a separate task loop, no `TS_InInterrupt`,
+  `atexit(TS_Shutdown)` registered once from TS_Startup, and `TS_FreeTaskList(tasklist list)` taking
+  the list by value (its NULL stores hit the copy). 1.04 still carries the unused `tasklist` typedef.
+  `volatile` was found by its codegen: without it the loop's first load is scheduled earlier. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,

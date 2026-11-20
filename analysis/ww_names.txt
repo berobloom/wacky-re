@@ -153,9 +153,6 @@
 0x042160 MUSIC_SongPlaying # SPECULATIVE: Apogee Sound System; polled until 0
 0x04219c MUSIC_StopSong # SPECULATIVE: Apogee Sound System
 0x0421e0 MUSIC_PlaySong # SPECULATIVE: Apogee Sound System; (song, loop), non-zero = error
-0x040e38 TS_ScheduleTask # LIKELY: Apogee Sound System TS_ScheduleTask(func, rate, priority, data): main 0x364d6/0x364f4/0x3650f with tick_task and rates 0x88 / 10 / 1, the result kept as a task handle
-0x040f68 TS_Terminate # LIKELY: Apogee Sound System; main 0x36943-0x36957 on the three task handles at exit
-0x040fcc TS_Dispatch  # LIKELY: Apogee Sound System; main 0x36519 right after the three TS_ScheduleTask calls
 0x04191c FX_Shutdown  # LIKELY: Apogee Sound System; main 0x3697a at exit when sfxon
 0x042064 MUSIC_Shutdown # LIKELY: Apogee Sound System; main 0x3696b at exit after MUSIC_StopSong when musicon
 0x042488 MUSIC_FadeVolume # LIKELY: Apogee Sound System MUSIC_FadeVolume(tovolume, milliseconds): called (0, 4000) from fade_out when music is on, clamps arg1 to 0..255 (0x424aa-0x424bb) after checking a handle 0x63ff8
@@ -937,14 +934,39 @@
 0x0464b4 PAS_GetCardInfo          # CONFIRMED: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
 0x04f6d0 USER_CheckParameter      # CONFIRMED: byte-identical (fixups masked) to user.c built with wcc386 9.5b (iter 92e)
 0x04f72c USER_GetText             # CONFIRMED: byte-identical (fixups masked) to user.c built with wcc386 9.5b (iter 92e)
+# ---- ASS port (src/ass, tools/ass/asscheck.py): functions and data of modules rebuilt byte for byte
+0x040a80 TS_FreeTaskList          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); takes the list by value (its NULL stores hit the copy); inlined in TS_Shutdown
+0x040ab0 TS_SetClockSpeed         # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x040afc TS_SetTimer              # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x040b20 TS_SetTimerToMaxTaskRate # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x040b5c TS_ServiceSchedule       # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); int 8 handler: switches to the timer stack, calls TS_ServiceTasks, chains every 64K ticks
+0x040be4 TS_ServiceTasks          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); name ours (SPECULATIVE): the task loop, a separate function in this revision
+0x040c20 allocateTimerStack       # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); DPMI 0x100, 1024 bytes
+0x040c7c deallocateTimerStack     # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x040cbc TS_Startup               # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); also atexit(TS_Shutdown) once
+0x040d7c TS_Shutdown              # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x040e38 TS_ScheduleTask          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); main 0x364d6/0x364f4/0x3650f schedule three tasks
+0x040ecc TS_AddTask               # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); priority-sorted insert
+0x040f68 TS_Terminate             # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); main 0x36943-0x36957 on the three task handles at exit
+0x040fcc TS_Dispatch              # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); main 0x36519
+0x040ff0 TS_SetTaskRate           # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x041028 TS_LockEnd               # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x04102c TS_UnlockMemory          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x0410d4 TS_LockMemory            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x063fa0 StackSelector            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x063fa4 TaskServiceRate          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x063fa8 TaskServiceCount         # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x063fac TS_Installed             # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x063fad TS_ExitHooked            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); name ours (SPECULATIVE): set once atexit(TS_Shutdown) is registered
+0x088d00 TaskList                 # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); volatile tasklist {start, end}, NULL-terminated
+0x088d08 StackPointer             # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x088d0c oldStackPointer          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x088d12 OldInt8                  # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); far pointer, 6 bytes
+0x088d18 oldStackSelector         # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+# ---- ASS port end
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
-0x040ab0 TS_SetClockSpeed         # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 76 bytes
-0x040afc TS_SetTimer              # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 36 bytes
-0x040ff0 TS_SetTaskRate           # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 56 bytes
-0x04102c TS_UnlockMemory          # LIKELY: ASS 104 task_man.c near match 0.89 (96 bytes), anchored by its module's exact hits
-0x0410d4 TS_LockMemory            # LIKELY: ASS 104 task_man.c near match 0.72 (124 bytes), anchored by its module's exact hits
 0x041b44 FX_SetPitch              # LIKELY: ASS 104 fx_man.c free near match 0.94 (148 bytes), no anchor; next best start 0.10 lower or more
 0x041dd4 FX_SoundActive           # LIKELY: ASS 109 fx_man.c free near match 0.96 (96 bytes), no anchor; next best start 0.10 lower or more
 0x041e24 FX_StopSound             # LIKELY: ASS 109 fx_man.c free near match 0.95 (184 bytes), no anchor; next best start 0.10 lower or more

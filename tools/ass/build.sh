@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build the Apogee Sound System C modules of src/ass with Watcom C, headless, in one DOSBox run.
 #
-#   [ASSWC=WC95B] tools/ass/build.sh [REV]
+#   [ASSWC=WC95B] [ASSMODS="TASK_MAN ..."] tools/ass/build.sh [REV]     (ASSMODS: build only these)
 #
 # REV = LIBVER_ASSREV: default 19941101, Wacky Wheels' revision (src/ass/README.md); 19950518 builds
 # ASS 1.04 as the recreation does. Objects go to .work/ass/REV/ (MODULE.OBJ, WCC.OUT = the compiler's
@@ -26,8 +26,10 @@ drive() { case $1 in WC100B) echo C;; WC100A) echo F;; WC95B) echo G;; *) echo "
 std="/zq /w4 /d1 /omaxnet /zp4 /5r"
 bat=$out/BUILD.BAT
 printf '@echo off\r\n' > "$bat"
-for m in ADLIBFX AL_MIDI AWE32 BLASTOLD DEBUGIO DMA DPMI FX_MAN GMTIMBRE GUS GUSMIDI GUSWAVE IRQ LL_MAN \
-         MIDI MPU401 MULTIVOC MUSIC PAS16 PCFX PITCH SNDSCAPE SNDSRC TASK_MAN USER; do
+all="ADLIBFX AL_MIDI AWE32 BLASTOLD DEBUGIO DMA DPMI FX_MAN GMTIMBRE GUS GUSMIDI GUSWAVE IRQ LL_MAN
+     MIDI MPU401 MULTIVOC MUSIC PAS16 PCFX PITCH SNDSCAPE SNDSRC TASK_MAN USER"
+mods=${ASSMODS:-$all}
+for m in $mods; do
     case $m in
         GUS|GUSMIDI)          f="/zq /w4 /d2" ;;
         MULTIVOC)             f="/zq /w4 /d1 /omaxne /zp4 /5r /zu" ;;
@@ -52,5 +54,7 @@ SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 600 dosbox -noconsole -exit 
     -c "e:" -c "call E:\\BUILD.BAT" -c exit >/dev/null 2>&1 || true
 n=$(ls "$out"/*.OBJ 2>/dev/null | wc -l)
 tr -d '\r' < "$out/WCC.OUT" | grep -E 'Error!' | head -8 || true
-echo "$out: $n of 25 modules built"
-[ "$n" = 25 ]
+want=$(echo $mods | wc -w); got=0
+for m in $mods; do [ -f "$out/$m.OBJ" ] && got=$((got + 1)); done
+echo "$out: $got of $want modules built"
+[ "$got" = "$want" ]
