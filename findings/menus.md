@@ -237,6 +237,32 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   then agree through the return (control SAME). `ARGS=` takes the Watcom registers in order, so this
   is eax=3, edx=1, ebx=0.
 
+- CONFIRMED (0x1e760-0x1eee1 executed under `tools/wc/difffn.py`, iter 78): `volume_menu` has three
+  waits and difffn can leave none of them, but two of them no longer stop the comparison.
+  (a) In the default image `musicready` 0x7ed4c = 0 and `sfxsoft` 0x7ed48 = 0, so 0x1e76c/0x1e775 take
+  the `BOTH SOUND DEVICES SET TO NONE!` branch: `call fn_1c068` 0x1e77e, `msgbox` 0x1e78a, then
+  **`mov [0x7e720],0` 0x1e78f** and the wait 0x1e7af `cmp dword [0x7e720],0x12c; jle 0x1e7af`.
+  `SEED=0x7e720=` is wiped by 0x1e78f and the loop body holds no call, so `TICK=` never pays: that
+  branch (which does return, 0x1e7c0 -> 0x1eed5) cannot be run to its end. Seed `0x7ed4c=1:d` instead
+  and the function takes its normal path at 0x1e7c5.
+  (b) The menu loop 0x1eada-0x1ee9d has a frame-rate limit 0x1ecac `while (ticks - v7e724 < 0xe)`
+  whose snapshot `v7e724` is `ticks` read at 0x1eadf; between them sit the two stubbed pumps
+  `drawsprite` 0x1ec64 and `f37de0` 0x1ec69, so `TICK=8` pays it every pass. With
+  `TICK=8 SEED=0x7ed4c=1:d CALLS=3000` both sides of `difffn.py volume_menu` are SAME over 3000
+  stubbed calls (~300 redraws) and the control (game vs game, same env) is SAME too; neither side
+  returns, because the only exit is (c).
+  (c) The exit is a key press **and** release: 0x1ecd2 `cmp byte [0x88cd0],1; je 0x1eea2`, and 0x1eea2
+  `cmp byte [0x88cd0],1; je 0x1eea2` waits for the same global to be clear again. One static seed
+  cannot do both, so `SEED=0x88cd0=1:b` moves the park from the menu loop to 0x1eea2 (hotfn.py:
+  18942 passes) - still capped, still SAME. The tail it is trying to reach (0x1eeab `FX_StopAllSounds`
+  if `sfxsoft`, `eax = 1`, `save_config` 0x1eebe, then `v88bda = v88b9e = 0` and the epilogue 0x1eed5)
+  stays unexecuted for this function.
+  (d) Inside the loop the navigation is four key globals read without any wait: `key88ccd` 0x88ccd
+  (screenshot, then the release wait 0x1ec85 `cmp byte [0x88ccd],0; jne 0x1ec85` - seeding that one
+  parks the run there), `key88cd5` 0x88cd5 and `key88cdd` 0x88cdd (volume -5/+5 with the
+  `[esp+0x128]` clamp at 0x1ed50/0x1ed87), `key88cd3`/`key88cd2` 0x88cd3/0x88cd2 (row up/down,
+  0x1ee73-0x1ee9d).
+
 ### The input pair `wait_release` 0x278c4 / `wait_input` 0x27920 sets the ceiling on a seeded run (CONFIRMED, iter 77)
 
 Both take their mode in EAX (`0x278c6`/`0x27922` `mov edx, eax`). Every one of the ten
