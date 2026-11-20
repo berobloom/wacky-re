@@ -931,6 +931,12 @@
 0x088b3e joy_lim_u    # LIKELY: the same for the y axis below the centre (key88cd6) (cfg +0x24 / +0x10) (was v88b3e; iter 91, from the asm)
 0x088b48 joy_lim_d    # LIKELY: the same for the y axis above the centre (key88cd3) (cfg +0x26 / +0x12) (was v88b48; iter 91, from the asm)
 0x057e2c emu387               # CONFIRMED (iter 92): Watcom 9.5b LIB386/DOS/EMU387.LIB module emu387, 12838 bytes: every byte from +0x77 on equals the LIB (10002 of its 10070 unmasked bytes); the 68 that differ are all in +0xa..+0x76, zero in the LIB and filled in the game (a table, not code). The 9.5/9.5a EMU387 shares 432 bytes. libmatch.py misses it because it needs every byte equal
+# Iter 92e: the ASS 1.04 recreation source (gamesrc-ver-recreation/audiolib, ASSREV=19950518) compiled with
+# Watcom 9.5b and 1.04's production flags; these four occur exactly once and match no original (10.0b) LIB.
+0x045f64 PAS_SetMixMode           # CONFIRMED: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
+0x0464b4 PAS_GetCardInfo          # CONFIRMED: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
+0x04f6d0 USER_CheckParameter      # CONFIRMED: byte-identical (fixups masked) to user.c built with wcc386 9.5b (iter 92e)
+0x04f72c USER_GetText             # CONFIRMED: byte-identical (fixups masked) to user.c built with wcc386 9.5b (iter 92e)
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).

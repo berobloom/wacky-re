@@ -94,7 +94,15 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   fx_man.c 3.5; the GF1 modules only ~2.4 KB (gf1sound, gf1note1, digpos, gf1pat1, gf1mixer, gf1isr).
   LIKELY not Gravis's GUSDK 2.22 low-level toolkit (`Ultra*`, github RobertSundling/Annotated-GUSDK,
   checked iter 92): ASS's GUS code is its own `C:\PRG\NEWGF1\GF1NEW\gf1*.c` library (module names
-  in the LIBs), already matched there, and the gaps are in ASS's own modules. That project
+  in the LIBs), already matched there, and the gaps are in ASS's own modules.
+  **Compiler test (iter 92e):** the 1.04 recreation source rebuilt with *our* wcc386 9.5b and 1.04's
+  production flags matches fewer functions than the original 10.0b LIB in most modules (task_man 1
+  vs 3, dpmi 0/5, pcfx 5/10, mpu401 6/10, pas16 12/18, sndsrc 7/11; multivoc 3/3), and only four
+  new ones (`PAS_SetMixMode`, `PAS_GetCardInfo`, `USER_CheckParameter`, `USER_GetText`, CONFIRMED
+  in the names file). So LIKELY the game's ASS was not built with 9.5b and these flags: the gaps are
+  source revisions before 1.04 (the recreation's earliest is ASSREV 19950518; Wacky Wheels is late
+  1994), not the compiler. Gravis's GUSDK 2.01/2.22 are 16-bit `Ultra*` toolkits, not the 32-bit
+  gf1 library ASS links (checked iter 92e). No ASS older than 1.04 is known online (searched). That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
