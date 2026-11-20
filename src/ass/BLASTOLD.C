@@ -108,11 +108,17 @@ static int BLASTER_OriginalMidiVolumeRight  = 255;
 static int BLASTER_OriginalVoiceVolumeLeft  = 255;
 static int BLASTER_OriginalVoiceVolumeRight = 255;
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 static int BLASTER_WaveBlasterPort  = UNDEFINED;
 static int BLASTER_WaveBlasterState = 0x0F;
+#endif
 
 // adequate stack size
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#define kStackSize 1024
+#else
 #define kStackSize 2048
+#endif
 
 static unsigned short StackSelector = NULL;
 static unsigned long  StackPointer;
@@ -122,7 +128,9 @@ static unsigned long  oldStackPointer;
 
 // This is defined because we can't create local variables in a
 // function that switches stacks.
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 static int GlobalStatus;
+#endif
 
 // These declarations are necessary to use the inline assembly pragmas.
 
@@ -131,12 +139,24 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
 
 // This function will get the current stack selector and pointer and save
 // them off.
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+// The Watcom 10.0 prerelease assembles "mov ax,ss" without the operand-size
+// prefix the game has: spelled out here.
+#pragma aux GetStack =  \
+   "mov  [edi],esp"     \
+   "db   66h"           \
+   "mov  ax,ss"         \
+   "mov  [esi],ax"      \
+   parm [esi] [edi]     \
+   modify [eax esi edi];
+#else
 #pragma aux GetStack =  \
    "mov  [edi],esp"     \
    "mov  ax,ss"         \
    "mov  [esi],ax"      \
    parm [esi] [edi]     \
    modify [eax esi edi];
+#endif
 
 // This function will set the stack selector and pointer to the specified
 // values.
@@ -161,6 +181,89 @@ int BLASTER_ErrorCode = BLASTER_Ok;
    number.  A -1 returns a pointer the current error.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+char *BLASTER_ErrorString
+   (
+   int ErrorNumber
+   )
+
+   {
+   char *ErrorString;
+
+   switch( ErrorNumber )
+      {
+      case BLASTER_Error :
+         ErrorString = BLASTER_ErrorString( BLASTER_ErrorCode );
+         break;
+
+      case BLASTER_Ok :
+         ErrorString = "Sound Blaster ok.";
+         break;
+
+      case BLASTER_EnvNotFound :
+         ErrorString = "BLASTER evironment variable not set.";
+         break;
+
+      case BLASTER_AddrNotSet :
+         ErrorString = "Missing Sound Blaster address in BLASTER evironment variable.";
+         break;
+
+      case BLASTER_IntNotSet :
+         ErrorString = "Missing Sound Blaster interrupt in BLASTER evironment variable.";
+         break;
+
+      case BLASTER_DMANotSet :
+         ErrorString = "Missing Sound Blaster DMA channel in BLASTER evironment variable.";
+         break;
+
+      case BLASTER_CardTypeNotSet :
+         ErrorString = "Sound Blaster card type not set.";
+         break;
+
+      case BLASTER_InvalidParameter :
+         ErrorString = "Invalid parameter in BLASTER evironment variable.";
+         break;
+
+      case BLASTER_CardNotReady :
+         ErrorString = "Sound Blaster card not ready.";
+         break;
+
+      case BLASTER_NoSoundPlaying :
+         ErrorString = "No sound playing.";
+         break;
+
+      case BLASTER_InvalidIrq :
+         ErrorString = "Invalid Sound Blaster Irq.";
+         break;
+
+      case BLASTER_UnableToSetIrq :
+         ErrorString = "Unable to set Sound Blaster Irq.";
+         break;
+
+      case BLASTER_DmaError :
+         ErrorString = DMA_ErrorString( DMA_Error );
+         break;
+
+      case BLASTER_NoMixer :
+         ErrorString = "Mixer not available on selected Sound Blaster card.";
+         break;
+
+      case BLASTER_DPMI_Error :
+         ErrorString = "DPMI Error in Blaster.";
+         break;
+
+      case BLASTER_OutOfMemory :
+         ErrorString = "Out of conventional memory in Blaster.";
+         break;
+
+      default :
+         ErrorString = "Unknown Sound Blaster error code.";
+         break;
+      }
+
+   return( ErrorString );
+   }
+#else
 char *BLASTER_ErrorString
    (
    int ErrorNumber
@@ -264,6 +367,7 @@ char *BLASTER_ErrorString
 
    return( ErrorString );
    }
+#endif
 
 
 /**********************************************************************
@@ -353,6 +457,93 @@ void BLASTER_DisableInterrupt
    transfer.  Calls the user supplied callback function.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+void __interrupt __far BLASTER_ServiceInterrupt
+   (
+   void
+   )
+
+   {
+   int status;
+
+   #ifdef USESTACK
+   // save stack
+   GetStack( &oldStackSelector, &oldStackPointer );
+
+   // set our stack
+   SetStack( StackSelector, StackPointer );
+   #endif
+
+   // Acknowledge interrupt
+   // Check if this is this an SB16 or newer
+   if ( BLASTER_Version >= DSP_Version4xx )
+      {
+      outp( BLASTER_Config.Address + BLASTER_MixerAddressPort,
+         MIXER_DSP4xxISR_Ack );
+
+      status = inp( BLASTER_Config.Address + BLASTER_MixerDataPort );
+
+      // Check if a 16-bit DMA interrupt occurred
+      if ( status & MIXER_16BITDMA_INT )
+         {
+         // Acknowledge 16-bit transfer interrupt
+         inp( BLASTER_Config.Address + BLASTER_16BitDMAAck );
+         }
+      else if ( status & MIXER_8BITDMA_INT )
+         {
+         inp( BLASTER_Config.Address + BLASTER_DataAvailablePort );
+         }
+      else
+         {
+         #ifdef USESTACK
+         // restore stack
+         SetStack( oldStackSelector, oldStackPointer );
+         #endif
+
+         // Wasn't our interrupt.  Call the old one.
+         _chain_intr( BLASTER_OldInt );
+         }
+      }
+   else
+      {
+      // Older card - can't detect if an interrupt occurred.
+      inp( BLASTER_Config.Address + BLASTER_DataAvailablePort );
+      }
+
+   // Keep track of current buffer
+   BLASTER_CurrentDMABuffer += BLASTER_TransferLength;
+
+   if ( BLASTER_CurrentDMABuffer >= BLASTER_DMABufferEnd )
+      {
+      BLASTER_CurrentDMABuffer = BLASTER_DMABuffer;
+      }
+
+   // Continue playback on cards without autoinit mode
+   if ( BLASTER_Version < DSP_Version2xx )
+      {
+      BLASTER_DSP1xx_BeginPlayback( BLASTER_TransferLength );
+      }
+
+   // Call the caller's callback function
+   if ( BLASTER_CallBack != NULL )
+      {
+      BLASTER_CallBack();
+      }
+
+   #ifdef USESTACK
+   // restore stack
+   SetStack( oldStackSelector, oldStackPointer );
+   #endif
+
+   // send EOI to Interrupt Controller
+   if ( BLASTER_Config.Interrupt > 7 )
+      {
+      outp( 0xA0, 0x20 );
+      }
+
+   outp( 0x20, 0x20 );
+   }
+#else
 void __interrupt __far BLASTER_ServiceInterrupt
    (
    void
@@ -444,6 +635,7 @@ void __interrupt __far BLASTER_ServiceInterrupt
 
    outp( 0x20, 0x20 );
    }
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -463,8 +655,11 @@ int BLASTER_WriteDSP
    int      status;
 
    port = BLASTER_Config.Address + BLASTER_WritePort;
-
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   status = BLASTER_CardNotReady;
+#else
    status = BLASTER_Error;
+#endif
 
    count = 0xFFFF;
 
@@ -481,10 +676,14 @@ int BLASTER_WriteDSP
       }
    while( count > 0 );
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   BLASTER_SetErrorCode( status );
+#else
    if ( status != BLASTER_Ok )
       {
       BLASTER_SetErrorCode( BLASTER_CardNotReady );
       }
+#endif
 
    return( status );
    }
@@ -594,6 +793,10 @@ int BLASTER_ResetDSP
       }
    while( count > 0 );
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   BLASTER_SetErrorCode( status );
+#endif
+
    return( status );
    }
 
@@ -622,7 +825,9 @@ int BLASTER_GetDSPVersion
    if ( ( MajorVersion == BLASTER_Error ) ||
       ( MinorVersion == BLASTER_Error ) )
       {
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
       BLASTER_SetErrorCode( BLASTER_CardNotReady );
+#endif
       return( BLASTER_Error );
       }
 
@@ -736,10 +941,12 @@ void BLASTER_SetPlaybackRate
       BLASTER_WriteDSP( HiByte );
       BLASTER_WriteDSP( LoByte );
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
       // Set recording rate
       BLASTER_WriteDSP( DSP_Set_AD_Rate );
       BLASTER_WriteDSP( HiByte );
       BLASTER_WriteDSP( LoByte );
+#endif
       }
    }
 
@@ -853,6 +1060,7 @@ void BLASTER_StopPlayback
       BLASTER_WriteDSP( BLASTER_HaltTransferCommand );
       }
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    // Disable the DMA channel
    if ( BLASTER_MixMode & SIXTEEN_BIT )
       {
@@ -863,12 +1071,15 @@ void BLASTER_StopPlayback
       DmaChannel = BLASTER_Config.Dma8;
       }
    DMA_EndTransfer( DmaChannel );
+#endif
 
    // Turn off speaker
    BLASTER_SpeakerOff();
 
    BLASTER_SoundPlaying = FALSE;
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    BLASTER_SoundRecording = FALSE;
+#endif
 
    BLASTER_DMABuffer = NULL;
    }
@@ -880,6 +1091,47 @@ void BLASTER_StopPlayback
    Programs the DMAC for sound transfer.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int BLASTER_SetupDMABuffer
+   (
+   char *BufferPtr,
+   int   BufferSize
+   )
+
+   {
+   int DmaChannel;
+   int DmaStatus;
+
+   if ( BLASTER_MixMode & SIXTEEN_BIT )
+      {
+      DmaChannel = BLASTER_Config.Dma16;
+      }
+   else
+      {
+      DmaChannel = BLASTER_Config.Dma8;
+      }
+
+   if ( DmaChannel == UNDEFINED )
+      {
+      BLASTER_SetErrorCode( BLASTER_DMANotSet );
+      return( BLASTER_Error );
+      }
+
+   DmaStatus = DMA_SetupTransfer( DmaChannel, BufferPtr, BufferSize );
+   if ( DmaStatus == DMA_Error )
+      {
+      BLASTER_SetErrorCode( BLASTER_DmaError );
+      return( BLASTER_Error );
+      }
+
+   BLASTER_DMABuffer          = BufferPtr;
+   BLASTER_CurrentDMABuffer   = BufferPtr;
+   BLASTER_TotalDMABufferSize = BufferSize;
+   BLASTER_DMABufferEnd       = BufferPtr + BufferSize;
+
+   return( BLASTER_Ok );
+   }
+#else
 int BLASTER_SetupDMABuffer
    (
    char *BufferPtr,
@@ -909,11 +1161,7 @@ int BLASTER_SetupDMABuffer
       return( BLASTER_Error );
       }
 
-#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
-   DmaStatus = DMA_SetupTransfer( DmaChannel, BufferPtr, BufferSize );
-#else
    DmaStatus = DMA_SetupTransfer( DmaChannel, BufferPtr, BufferSize, mode );
-#endif
    if ( DmaStatus == DMA_Error )
       {
       BLASTER_SetErrorCode( BLASTER_DmaError );
@@ -929,6 +1177,7 @@ int BLASTER_SetupDMABuffer
 
    return( BLASTER_Ok );
    }
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -1088,6 +1337,7 @@ int BLASTER_DSP4xx_BeginPlayback
       TransferCommand = DSP_16BitDAC;
       SampleLength = ( length / 2 ) - 1;
       BLASTER_HaltTransferCommand = DSP_Halt16bitTransfer;
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
       if ( BLASTER_MixMode & STEREO )
          {
          TransferMode = DSP_SignedStereoData;
@@ -1096,12 +1346,14 @@ int BLASTER_DSP4xx_BeginPlayback
          {
          TransferMode = DSP_SignedMonoData;
          }
+#endif
       }
    else
       {
       TransferCommand = DSP_8BitDAC;
       SampleLength = length - 1;
       BLASTER_HaltTransferCommand = DSP_Halt8bitTransfer;
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
       if ( BLASTER_MixMode & STEREO )
          {
          TransferMode = DSP_UnsignedStereoData;
@@ -1110,7 +1362,19 @@ int BLASTER_DSP4xx_BeginPlayback
          {
          TransferMode = DSP_UnsignedMonoData;
          }
+#endif
       }
+
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   if ( BLASTER_MixMode & STEREO )
+      {
+      TransferMode = DSP_UnsignedStereoData;
+      }
+   else
+      {
+      TransferMode = DSP_UnsignedMonoData;
+      }
+#endif
 
    HiByte = hibyte( SampleLength );
    LoByte = lobyte( SampleLength );
@@ -1133,6 +1397,38 @@ int BLASTER_DSP4xx_BeginPlayback
    Begins multibuffered playback of digitized sound on the sound card.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int BLASTER_BeginBufferedPlayback
+   (
+   char    *BufferStart,
+   int      BufferSize,
+   int      NumDivisions,
+   unsigned SampleRate,
+   int      MixMode,
+   void  ( *CallBackFunc )( void )
+   )
+
+   {
+   int DmaStatus;
+   int TransferLength;
+
+   if ( BLASTER_SoundPlaying )
+      {
+      BLASTER_StopPlayback();
+      }
+
+   DmaStatus = BLASTER_SetupDMABuffer( BufferStart, BufferSize );
+   if ( DmaStatus == BLASTER_Error )
+      {
+      return( BLASTER_Error );
+      }
+
+   BLASTER_SetMixMode( MixMode );
+   BLASTER_SetPlaybackRate( SampleRate );
+
+   BLASTER_SetCallBack( CallBackFunc );
+
+#else
 int BLASTER_BeginBufferedPlayback
    (
    char    *BufferStart,
@@ -1169,6 +1465,7 @@ int BLASTER_BeginBufferedPlayback
 
    BLASTER_SetCallBack( CallBackFunc );
 
+#endif
    BLASTER_EnableInterrupt();
 
    // Turn on speaker
@@ -1195,6 +1492,7 @@ int BLASTER_BeginBufferedPlayback
    }
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: BLASTER_DSP4xx_BeginRecord
 
@@ -1380,6 +1678,7 @@ int BLASTER_BeginBufferedRecord
    }
 
 
+#endif
 /*---------------------------------------------------------------------
    Function: BLASTER_WriteMixer
 
@@ -1838,7 +2137,11 @@ int BLASTER_GetEnv
             break;
          default  :
             // Skip the offending data
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+            sscanf( Blaster, "%*s" );
+#else
             // sscanf( Blaster, "%*s" );
+#endif
             break;
          }
 
@@ -1881,7 +2184,7 @@ int BLASTER_GetEnv
       }
 
    // *** VERSIONS RESTORATION ***
-#if (LIBVER_ASSREV < 19950821L)
+#if (LIBVER_ASSREV >= 19950518L) && (LIBVER_ASSREV < 19950821L) // not in Wacky Wheels' revision
    if ( ( Config->Type < BLASTER_MinCardType ) ||
       ( Config->Type > BLASTER_MaxCardType ) ||
       ( !BLASTER_CardConfig[ Config->Type ].IsSupported ) )
@@ -1917,6 +2220,7 @@ int BLASTER_SetCardSettings
       BLASTER_Shutdown();
       }
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    if ( ( Config.Type < BLASTER_MinCardType ) ||
       ( Config.Type > BLASTER_MaxCardType ) ||
       ( !BLASTER_CardConfig[ Config.Type ].IsSupported ) )
@@ -1924,6 +2228,8 @@ int BLASTER_SetCardSettings
       BLASTER_SetErrorCode( BLASTER_UnsupportedCardType );
       return( BLASTER_Error );
       }
+
+#endif
 
    BLASTER_Config.Address   = Config.Address;
    BLASTER_Config.Type      = Config.Type;
@@ -1933,6 +2239,7 @@ int BLASTER_SetCardSettings
    BLASTER_Config.Midi      = Config.Midi;
    BLASTER_Config.Emu       = Config.Emu;
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    BLASTER_MixerAddress = Config.Address;
    BLASTER_MixerType = 0;
   // *** VERSIONS RESTORATION ***
@@ -1941,11 +2248,13 @@ if ( ( Config.Type >= BLASTER_MinCardType ) ||
    ( Config.Type <= BLASTER_MaxCardType ) )
 #endif
    BLASTER_MixerType = Config.Type;
+#endif
 
    return( BLASTER_Ok );
    }
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: BLASTER_GetCardSettings
 
@@ -1977,6 +2286,7 @@ int BLASTER_GetCardSettings
    }
 
 
+#endif
 /*---------------------------------------------------------------------
    Function: BLASTER_GetCardInfo
 
@@ -2084,7 +2394,9 @@ void BLASTER_UnlockMemory
    DPMI_Unlock( BLASTER_SampleRate );
    DPMI_Unlock( BLASTER_HaltTransferCommand );
    DPMI_Unlock( BLASTER_SoundPlaying );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    DPMI_Unlock( BLASTER_SoundRecording );
+#endif
    DPMI_Unlock( BLASTER_CallBack );
    DPMI_Unlock( BLASTER_IntController1Mask );
    DPMI_Unlock( BLASTER_IntController2Mask );
@@ -2094,7 +2406,9 @@ void BLASTER_UnlockMemory
    DPMI_Unlock( BLASTER_OriginalMidiVolumeRight );
    DPMI_Unlock( BLASTER_OriginalVoiceVolumeLeft );
    DPMI_Unlock( BLASTER_OriginalVoiceVolumeRight );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    DPMI_Unlock( GlobalStatus );
+#endif
    }
 
 
@@ -2130,7 +2444,9 @@ int BLASTER_LockMemory
    status |= DPMI_Lock( BLASTER_SampleRate );
    status |= DPMI_Lock( BLASTER_HaltTransferCommand );
    status |= DPMI_Lock( BLASTER_SoundPlaying );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    status |= DPMI_Lock( BLASTER_SoundRecording );
+#endif
    status |= DPMI_Lock( BLASTER_CallBack );
    status |= DPMI_Lock( BLASTER_IntController1Mask );
    status |= DPMI_Lock( BLASTER_IntController2Mask );
@@ -2140,7 +2456,9 @@ int BLASTER_LockMemory
    status |= DPMI_Lock( BLASTER_OriginalMidiVolumeRight );
    status |= DPMI_Lock( BLASTER_OriginalVoiceVolumeLeft );
    status |= DPMI_Lock( BLASTER_OriginalVoiceVolumeRight );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    status |= DPMI_Lock( GlobalStatus );
+#endif
 
    if ( status != DPMI_Ok )
       {
@@ -2220,6 +2538,7 @@ static void deallocateTimerStack
    }
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: BLASTER_SetupWaveBlaster
 
@@ -2294,6 +2613,7 @@ void BLASTER_ShutdownWaveBlaster
    }
 
 
+#endif
 /*---------------------------------------------------------------------
    Function: BLASTER_Init
 
@@ -2358,11 +2678,14 @@ int BLASTER_Init
 
       // Install our interrupt handler
       Irq = BLASTER_Config.Interrupt;
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
       if ( !VALID_IRQ( Irq ) )
          {
          BLASTER_SetErrorCode( BLASTER_InvalidIrq );
          return( BLASTER_Error );
          }
+
+#endif
 
       Interrupt = BLASTER_Interrupts[ Irq ];
       if ( Interrupt == INVALID )

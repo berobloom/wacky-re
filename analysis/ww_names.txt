@@ -976,6 +976,51 @@
 0x043658 DPMI_LockMemory          # CONFIRMED: src/ass DPMI.C builds byte-identical to the whole module 0x43570-0x4370A
 0x0436b0 DPMI_UnlockMemoryRegion  # CONFIRMED: src/ass DPMI.C builds byte-identical to the whole module 0x43570-0x4370A
 0x0436b4 DPMI_UnlockMemory        # CONFIRMED: src/ass DPMI.C builds byte-identical to the whole module 0x43570-0x4370A
+0x043f20 BLASTER_Interrupts       # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x043f60 BLASTER_SampleSize       # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x043f70 BLASTER_CardConfig       # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x04403c BLASTER_ErrorString      # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0440c4 BLASTER_EnableInterrupt  # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044114 BLASTER_DisableInterrupt # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x04418c BLASTER_ServiceInterrupt # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0442bc BLASTER_ReadDSP          # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044308 BLASTER_ResetDSP         # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044370 BLASTER_GetDSPVersion    # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0443a0 BLASTER_SpeakerOn        # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0443a8 BLASTER_SpeakerOff       # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0443b0 BLASTER_WriteDSP         # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0443f0 BLASTER_SetPlaybackRate  # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044508 BLASTER_GetPlaybackRate  # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044510 BLASTER_SetMixMode       # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0445a4 BLASTER_StopPlayback     # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0445e4 BLASTER_SetupDMABuffer   # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044650 BLASTER_GetCurrentPos    # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0446c4 BLASTER_DSP1xx_BeginPlayback # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044704 BLASTER_DSP2xx_BeginPlayback # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044788 BLASTER_DSP4xx_BeginPlayback # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044814 BLASTER_BeginBufferedPlayback # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0448cc BLASTER_WriteMixer       # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0448e8 BLASTER_ReadMixer        # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044904 BLASTER_GetVoiceVolume   # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0449a8 BLASTER_SetVoiceVolume   # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044a54 BLASTER_GetMidiVolume    # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044af8 BLASTER_SetMidiVolume    # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044ba4 BLASTER_CardHasMixer     # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044c10 BLASTER_SaveVoiceVolume  # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044c94 BLASTER_RestoreVoiceVolume # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044d0c BLASTER_SaveMidiVolume   # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044d90 BLASTER_RestoreMidiVolume # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x044e08 BLASTER_GetEnv           # STRONGLY SUPPORTED: src/ass BLASTOLD.C builds it the same length, one lea scheduled later (44 bytes)
+0x04502c BLASTER_SetCardSettings  # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x045080 BLASTER_GetCardInfo      # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0450ec BLASTER_SetCallBack      # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0450f4 BLASTER_LockEnd          # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0450f8 BLASTER_UnlockMemory     # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x045290 BLASTER_LockMemory       # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x04547c allocateTimerStack       # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0454d8 deallocateTimerStack     # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x045518 BLASTER_Init             # STRONGLY SUPPORTED: src/ass BLASTOLD.C builds it identical except one register (esi/ebx) in the inlined GetDSPVersion
+0x045788 BLASTER_Shutdown         # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
 0x0470d8 PCFX_ErrorString         # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x04712c PCFX_Stop                # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x0471a0 PCFX_Service             # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
@@ -1110,6 +1155,21 @@
 0x063ff0 MUSIC_SoundDevice        # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
 0x063ff4 MUSIC_ErrorCode          # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
 0x063ff8 MUSIC_FadeTask           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x06429c BLASTER_Config           # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642b8 BLASTER_Installed        # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642bc BLASTER_TransferLength   # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642c0 BLASTER_MixMode          # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642c4 BLASTER_SamplePacketSize # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642c8 BLASTER_SampleRate       # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642cc BLASTER_HaltTransferCommand # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642d0 BLASTER_MixerAddress     # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642d4 BLASTER_MixerType        # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642d8 BLASTER_OriginalMidiVolumeLeft # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642dc BLASTER_OriginalMidiVolumeRight # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642e0 BLASTER_OriginalVoiceVolumeLeft # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642e4 BLASTER_OriginalVoiceVolumeRight # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642e8 StackSelector            # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642ec BLASTER_ErrorCode        # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
 0x064328 PCFX_Sound               # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x06432c PCFX_CallBackFunc        # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x064330 PCFX_TotalVolume         # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
@@ -1150,6 +1210,19 @@
 0x088d0c oldStackPointer          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
 0x088d12 OldInt8                  # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); far pointer, 6 bytes
 0x088d18 oldStackSelector         # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
+0x088e20 StackPointer             # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e24 BLASTER_SoundPlaying     # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e28 BLASTER_CallBack         # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e2c BLASTER_IntController1Mask # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e30 BLASTER_IntController2Mask # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e34 oldStackPointer          # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e38 BLASTER_Version          # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e3c BLASTER_CurrentDMABuffer # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e40 BLASTER_DMABufferEnd     # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e44 BLASTER_DMABuffer        # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e48 BLASTER_TotalDMABufferSize # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e50 BLASTER_OldInt           # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e56 oldStackSelector         # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
 0x0890d8 VoiceStatus              # CONFIRMED: src/ass GUSWAVE.C builds byte-identical to the whole module 0x47650-0x47FD2
 0x0891d8 VoiceList                # CONFIRMED: src/ass GUSWAVE.C builds byte-identical to the whole module 0x47650-0x47FD2
 0x0891e0 GUSWAVE_Voices           # CONFIRMED: src/ass GUSWAVE.C builds byte-identical to the whole module 0x47650-0x47FD2
@@ -1170,31 +1243,6 @@
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
-0x043f11 SOUNDSCAPE_Interrupts    # LIKELY: ASS 104 sndscape.c near match 0.78 (64 bytes), anchored by its module's exact hits
-0x043f60 BLASTER_SampleSize       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 16 bytes; the same bytes are SOUNDSCAPE_SampleSize
-0x043f70 BLASTER_CardConfig       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 224 bytes
-0x0440c4 BLASTER_EnableInterrupt  # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 80 bytes
-0x044114 BLASTER_DisableInterrupt # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 120 bytes
-0x0442bc BLASTER_ReadDSP          # LIKELY: ASS 104 blaster.c near match 0.98 (76 bytes), anchored by its module's exact hits
-0x044308 BLASTER_ResetDSP         # LIKELY: ASS 104 blaster.c near match 0.82 (96 bytes), anchored by its module's exact hits
-0x0443a0 BLASTER_SpeakerOn        # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 8 bytes
-0x0443a8 BLASTER_SpeakerOff       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 8 bytes
-0x0443b0 BLASTER_WriteDSP         # LIKELY: ASS 104 blaster.c near match 0.75 (56 bytes), anchored by its module's exact hits
-0x0443f0 BLASTER_SetPlaybackRate  # LIKELY: ASS 104 blaster.c near match 0.90 (304 bytes), anchored by its module's exact hits
-0x044510 BLASTER_SetMixMode       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 148 bytes
-0x0446c4 BLASTER_DSP1xx_BeginPlayback # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 64 bytes
-0x044704 BLASTER_DSP2xx_BeginPlayback # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 132 bytes
-0x0448cc BLASTER_WriteMixer       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 28 bytes; the same bytes are ga_write
-0x0448e8 BLASTER_ReadMixer        # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 28 bytes; the same bytes are ga_read
-0x0449a8 BLASTER_SetVoiceVolume   # LIKELY: ASS 104 blaster.c near match 0.99 (172 bytes), anchored by its module's exact hits
-0x044ba4 BLASTER_CardHasMixer     # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 108 bytes
-0x044c10 BLASTER_SaveVoiceVolume  # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 132 bytes
-0x044c94 BLASTER_RestoreVoiceVolume # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 120 bytes
-0x044d0c BLASTER_SaveMidiVolume   # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 132 bytes
-0x044d90 BLASTER_RestoreMidiVolume # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 120 bytes
-0x045080 BLASTER_GetCardInfo      # LIKELY: ASS 104 blaster.c near match 0.99 (108 bytes), anchored by its module's exact hits
-0x0450f8 BLASTER_UnlockMemory     # LIKELY: ASS 104 blaster.c near match 0.91 (440 bytes), anchored by its module's exact hits
-0x045290 BLASTER_LockMemory       # LIKELY: ASS 104 blaster.c near match 0.85 (528 bytes), anchored by its module's exact hits
 0x045920 PAS_ErrorString          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
 0x045b68 PAS_EnableInterrupt      # LIKELY: ASS 104 pas16.c near match 0.99 (164 bytes), anchored by its module's exact hits
 0x045c0c PAS_DisableInterrupt     # LIKELY: ASS 104 pas16.c near match 0.99 (212 bytes), anchored by its module's exact hits

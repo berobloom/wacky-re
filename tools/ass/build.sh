@@ -15,7 +15,7 @@
 set -eu
 cd "$(dirname "$0")/../.."
 rev=${1:-19941101}
-WW100P="USER GUS PITCH MIDI GUSMIDI"
+WW100P="USER GUS PITCH MIDI GUSMIDI BLASTOLD"
 inst=$PWD/.work/toolchains/inst
 out=.work/ass/$rev${ASSWC:+-$ASSWC}
 mkdir -p "$out"

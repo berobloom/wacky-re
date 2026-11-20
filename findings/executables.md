@@ -210,6 +210,20 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   (ConfigFileName 0x6444C), sizes GUS memory itself (GUS_TotalMemory 0x8F3BC, GUS_MemConfig 0x8F3B8,
   not in GUS.C), has no GUSMIDI_Installed, and GUSMIDI_Init stops at the first patch that fails to
   load.
+  BLASTOLD (iter 93k, 0x43F20-0x458A9, same length, 48 bytes differ: one `lea` scheduled later in
+  GetEnv, one register in Init's inlined GetDSPVersion): **Watcom 10.0 prerelease** (CONFIRMED: 10.0a
+  and 10.0b compile `isxdigit()` as `and cl,0x10; and ecx,0xff`, the prerelease and the game as
+  `test byte ptr [_IsTable+c],0x10`). An older driver than 1.04: errors Ok..OutOfMemory without
+  DMA16NotSet, MIDINotSet or the Unsupported* codes, other strings ("BLASTER evironment variable not
+  set.", "Sound Blaster card not ready."); WriteDSP and ResetDSP set the error code themselves
+  (CardNotReady = 7); no recording, no WaveBlaster, no GetCardSettings; SetCardSettings copies the
+  config without a type check; SetupDMABuffer(ptr, size) uses DMA_SetupTransfer's three-argument
+  form; the SB16 path plays unsigned data only and sets no recording rate; the interrupt handler
+  keeps the mixer status in a register and restarts DSP 1.xx playback unconditionally; GetEnv skips
+  unknown parameters with `sscanf( Blaster, "%*s" )`; a 1 KB interrupt stack; Init has no VALID_IRQ
+  check. The prerelease assembles the pragma's `mov ax,ss` without the 0x66 prefix the game has;
+  the port spells it out with `db 66h` (LIKELY: the original's spelling is unknown). 0x43F11
+  "SOUNDSCAPE_Interrupts" was BLASTER_Interrupts' identical table seen at a wrong offset: removed.
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate

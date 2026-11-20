@@ -59,18 +59,22 @@ enum BLASTER_ERRORS
    BLASTER_IntNotSet,
 #endif
    BLASTER_DMANotSet,
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    BLASTER_DMA16NotSet,
+#endif
    // *** VERSIONS RESTORATION ***
 #if (LIBVER_ASSREV < 19960116L)
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    BLASTER_MIDINotSet,
+#endif
    BLASTER_CardTypeNotSet,
-#if (LIBVER_ASSREV < 19950821L)
+#if (LIBVER_ASSREV >= 19950518L) && (LIBVER_ASSREV < 19950821L) // not in Wacky Wheels' revision
    BLASTER_UnsupportedSBCardType,
 #endif
 #endif
    BLASTER_InvalidParameter,
    // *** VERSIONS RESTORATION ***
-#if (LIBVER_ASSREV < 19960116L)
+#if (LIBVER_ASSREV >= 19950518L) && (LIBVER_ASSREV < 19960116L) // not in Wacky Wheels' revision
    BLASTER_UnsupportedCardType,
 #endif
    BLASTER_CardNotReady,
@@ -127,7 +131,11 @@ void  BLASTER_SetPlaybackRate( unsigned rate );
 unsigned BLASTER_GetPlaybackRate( void );
 int   BLASTER_SetMixMode( int mode );
 void  BLASTER_StopPlayback( void );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int   BLASTER_SetupDMABuffer( char *BufferPtr, int BufferSize );
+#else
 int   BLASTER_SetupDMABuffer( char *BufferPtr, int BufferSize, int mode );
+#endif
 int   BLASTER_GetCurrentPos( void );
 int   BLASTER_DSP1xx_BeginPlayback( int length );
 int   BLASTER_DSP2xx_BeginPlayback( int length );
