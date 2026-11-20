@@ -125,7 +125,14 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   with `mov eax,[x]`, 10.0 with `mov edx,[x]`); IRQ 3/3 only with 10.0a (10.0b 2/3); every other
   module scores the same with 10.0a and 10.0b, and lower with 9.5b (DPMI 5 vs 0, MPU401 10 vs 6).
   STRONGLY SUPPORTED: built mostly with Watcom 10.0a (the .b patch is January 1995, after the game),
-  with objects a make never rebuilt left from 9.5b. Baseline: 90 of 144 named functions identical.
+  with objects a make never rebuilt left from an older compiler. Baseline: 90 of 144 named functions identical.
+  **Correction (iter 93f): that older compiler is the Watcom 10.0 prerelease (`WC100`, 3/1994), not
+  9.5b.** PITCH builds byte-identical only with it (9.5/9.5a/9.5b: `DPMI_LockMemoryRegion`'s
+  arguments loaded start first, the game end first; 10.0a/10.0b: the FP constants of `PITCH_Init`'s
+  loop kept in registers), and USER and GUS build identical with it as with 9.5b. Built with the
+  prerelease throughout, every other identical module differs (IRQ 78 bytes, TASK_MAN 80, SNDSRC
+  10, DMA 9, GUSWAVE 400), so they stay 10.0a. STRONGLY SUPPORTED: two compilers, 10.0a and the
+  10.0 prerelease; no ASS object needs 9.5b (`tools/ass/build.sh` WW100P).
   **TASK_MAN is an older task manager (iter 93, CONFIRMED: src/ass TASK_MAN.C now builds the whole
   module 0x40A80-0x411AC byte for byte):** a `volatile tasklist TaskList` {start, end} kept with
   ll_man.h's `LL_AddToHead`/`LL_AddToTail`/`LL_Remove` (1.04: a circular list with a sentinel),
@@ -140,7 +147,7 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   calls the callback once after the loop when a buffer finished (`bufferdone == TRUE`).
   DMA (iter 93d, whole module): `DMA_SetupTransfer(channel, address, length)` always programs
   auto-init read (mode 0x58; 1.04 takes a mode), and `DMA_EndTransfer` does not exist yet. GUS:
-  its object is 9.5b's like USER's (GUS_Init's stack slots only come out right with 9.5b), it has no
+  its object is from the older compiler like USER's (GUS_Init's stack slots do not come out right with 10.0a; iter 93f: the 10.0 prerelease), it has no
   `GUS_ErrorString`, and `GUS_Init` neither checks the IRQ nor sizes GUS memory; `GUSWAVE_Shutdown`
   frees every voice's GUS memory without checking it (whole module identical since iter 93e).
   GUSWAVE (iter 93e, whole module, 0x47650-0x47FD2) is an older GUSWAVE than any LIB:
@@ -152,6 +159,11 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   is 0x54 bytes (no wavetype, GetSound, LoopEnd, LoopSize or DemandFeed); the VOC parser returns
   nothing, has no NULL-pointer stop, skips block 8 and does not take block 9's 12 header bytes off
   the length; the error enum ends at `GUSWAVE_VoiceNotFound` = 5; `GUSWAVE_Init` calls `PITCH_Init`.
+  PITCH (iter 93f, whole module, 10.0 prerelease): the code 1.04 comments out is live: the table is
+  computed at run time (`PITCH_Init`, `pow( 2, n / 300.0 ) * 0x10000` into a BSS table, guarded by
+  `PITCH_Installed`, which the lock functions cover), `PITCH_GetScale` calls `PITCH_Init` on first
+  use, and it has no correction for a negative `detune` (it cannot happen: `noteshift` is made
+  non-negative first).
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate

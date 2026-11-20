@@ -29,7 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 **********************************************************************/
 
 #include <stdlib.h>
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#include <math.h>
+#else
 //#include <math.h>
+#endif
 #include "dpmi.h"
 #include "standard.h"
 #include "pitch.h"
@@ -39,6 +43,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MAXDETUNE 25
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static unsigned long PitchTable[ 12 ][ MAXDETUNE ];
+
+static int PITCH_Installed = FALSE;
+#else
 static unsigned long PitchTable[ 12 ][ MAXDETUNE ] =
    {
       { 0x10000, 0x10097, 0x1012f, 0x101c7, 0x10260, 0x102f9, 0x10392, 0x1042c,
@@ -90,9 +99,12 @@ static unsigned long PitchTable[ 12 ][ MAXDETUNE ] =
       0x1f576, 0x1f69f, 0x1f7c9, 0x1f8f3, 0x1fa1e, 0x1fb4a, 0x1fc76, 0x1fda3,
       0x1fed1 }
    };
+#endif
 
 
+#if (LIBVER_ASSREV >= 19950518L)
 //static int PITCH_Installed = FALSE;
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -100,6 +112,31 @@ static unsigned long PitchTable[ 12 ][ MAXDETUNE ] =
 
    Initializes pitch table.
 ---------------------------------------------------------------------*/
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+void PITCH_Init
+   (
+   void
+   )
+
+   {
+   int note;
+   int detune;
+
+   if ( !PITCH_Installed )
+      {
+      for( note = 0; note < 12; note++ )
+         {
+         for( detune = 0; detune < MAXDETUNE; detune++ )
+            {
+            PitchTable[ note ][ detune ] = pow( 2, ( note * MAXDETUNE + detune ) / ( 12.0 * MAXDETUNE ) ) *
+               0x10000;
+            }
+         }
+
+      PITCH_Installed = TRUE;
+      }
+   }
+#else
 /*
 void PITCH_Init
    (
@@ -125,6 +162,7 @@ void PITCH_Init
       }
    }
 */
+#endif
 
 /**********************************************************************
 
@@ -154,10 +192,17 @@ unsigned long PITCH_GetScale
    int note;
    int detune;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   if ( !PITCH_Installed )
+      {
+      PITCH_Init();
+      }
+#else
 //   if ( !PITCH_Installed )
 //      {
 //      PITCH_Init();
 //      }
+#endif
 
    if ( pitchoffset == 0 )
       {
@@ -170,6 +215,13 @@ unsigned long PITCH_GetScale
       noteshift += 1200;
       }
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   note   = noteshift / 100;
+   detune = ( noteshift % 100 ) / ( 100 / MAXDETUNE );
+   scale  = PitchTable[ note ][ detune ];
+
+   octaveshift = ( pitchoffset - noteshift ) / 1200;
+#else
    note   = noteshift / 100;
    detune = ( noteshift % 100 ) / ( 100 / MAXDETUNE );
    octaveshift = ( pitchoffset - noteshift ) / 1200;
@@ -186,6 +238,7 @@ unsigned long PITCH_GetScale
       }
 
    scale = PitchTable[ note ][ detune ];
+#endif
 
    if ( octaveshift < 0 )
       {
@@ -229,7 +282,11 @@ void PITCH_UnlockMemory
    {
    DPMI_UnlockMemoryRegion( PITCH_LockStart, PITCH_LockEnd );
    DPMI_Unlock( PitchTable );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   DPMI_Unlock( PITCH_Installed );
+#else
 //   DPMI_Unlock( PITCH_Installed );
+#endif
    }
 
 
@@ -249,7 +306,11 @@ int PITCH_LockMemory
 
    status  = DPMI_LockMemoryRegion( PITCH_LockStart, PITCH_LockEnd );
    status |= DPMI_Lock( PitchTable );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   status |= DPMI_Lock( PITCH_Installed );
+#else
 //   status |= DPMI_Lock( PITCH_Installed );
+#endif
 
    if ( status != DPMI_Ok )
       {

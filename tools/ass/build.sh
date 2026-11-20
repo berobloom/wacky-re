@@ -9,20 +9,20 @@
 #
 # Compiler per module (installs under .work/toolchains/inst, findings/executables.md "Sound library"):
 #   REV 19950518: WC100B for all (10.0a + the .b patch; it rebuilds the original 1.04 LIB byte for byte);
-#   Wacky Wheels: WC100A, except the modules in WW95B below, whose objects in the game are 9.5b's
-#   (the game's make left them from before the 10.0 switch). ASSWC=<install> forces one compiler for
-#   all modules and writes to .work/ass/REV-<install>/ instead.
+#   Wacky Wheels: WC100A, except the modules in WW100P below, whose objects in the game come from the
+#   Watcom 10.0 prerelease (WC100; the game's make left them from before 10.0a). ASSWC=<install> forces
+#   one compiler for all modules and writes to .work/ass/REV-<install>/ instead.
 set -eu
 cd "$(dirname "$0")/../.."
 rev=${1:-19941101}
-WW95B="USER GUS"
+WW100P="USER GUS PITCH"
 inst=$PWD/.work/toolchains/inst
 out=.work/ass/$rev${ASSWC:+-$ASSWC}
 mkdir -p "$out"
-for w in WC100B WC100A WC95B; do
+for w in WC100B WC100A WC95B WC100; do
     [ -f "$inst/$w/BINB/WCC386.EXE" ] || [ -f "$inst/$w/BIN/WCC386.EXE" ] || { echo "no WCC386.EXE in $inst/$w"; exit 1; }
 done
-drive() { case $1 in WC100B) echo C;; WC100A) echo F;; WC95B) echo G;; *) echo "unknown compiler $1" >&2; exit 1;; esac; }
+drive() { case $1 in WC100B) echo C;; WC100A) echo F;; WC95B) echo G;; WC100) echo H;; *) echo "unknown compiler $1" >&2; exit 1;; esac; }
 std="/zq /w4 /d1 /omaxnet /zp4 /5r"
 bat=$out/BUILD.BAT
 printf '@echo off\r\n' > "$bat"
@@ -38,7 +38,7 @@ for m in $mods; do
     esac
     if [ -n "${ASSWC:-}" ]; then w=$ASSWC
     elif [ "$rev" -ge 19950518 ]; then w=WC100B
-    else case " $WW95B " in *" $m "*) w=WC95B;; *) w=WC100A;; esac
+    else case " $WW100P " in *" $m "*) w=WC100;; *) w=WC100A;; esac
     fi
     d=$(drive $w)
     bin=BINB; [ -f "$inst/$w/BINB/WCC386.EXE" ] || bin=BIN
@@ -48,7 +48,7 @@ for m in $mods; do
 done
 : > "$out/WCC.OUT"
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 600 dosbox -noconsole -exit \
-    -c "mount c \"$inst/WC100B\"" -c "mount f \"$inst/WC100A\"" -c "mount g \"$inst/WC95B\"" \
+    -c "mount c \"$inst/WC100B\"" -c "mount f \"$inst/WC100A\"" -c "mount g \"$inst/WC95B\"" -c "mount h \"$inst/WC100\"" \
     -c "mount d \"$PWD/src/ass\"" -c "mount e \"$PWD/$out\"" \
     -c "set PATH=C:\\BINB;C:\\BIN" -c "set DOS4G=QUIET" \
     -c "e:" -c "call E:\\BUILD.BAT" -c exit >/dev/null 2>&1 || true

@@ -1042,6 +1042,11 @@
 0x04d9f0 callback_x               # CONFIRMED: src/ass IRQ.C builds byte-identical to the whole module 0x4D970-0x4DD2C
 0x04da4c IRQ_SetVector            # CONFIRMED: src/ass IRQ.C builds byte-identical to the whole module 0x4D970-0x4DD2C
 0x04dc64 IRQ_RestoreVector        # CONFIRMED: src/ass IRQ.C builds byte-identical to the whole module 0x4D970-0x4DD2C
+0x04f0c0 PITCH_Init               # CONFIRMED: src/ass PITCH.C builds byte-identical to the whole module 0x4F0C0-0x4F28D
+0x04f140 PITCH_GetScale           # CONFIRMED: src/ass PITCH.C builds byte-identical to the whole module 0x4F0C0-0x4F28D
+0x04f1e8 PITCH_LockEnd            # CONFIRMED: src/ass PITCH.C builds byte-identical to the whole module 0x4F0C0-0x4F28D
+0x04f1ec PITCH_UnlockMemory       # CONFIRMED: src/ass PITCH.C builds byte-identical to the whole module 0x4F0C0-0x4F28D
+0x04f21c PITCH_LockMemory         # CONFIRMED: src/ass PITCH.C builds byte-identical to the whole module 0x4F0C0-0x4F28D
 0x04f6d0 USER_CheckParameter      # CONFIRMED: src/ass USER.C builds byte-identical to the whole module 0x4F6D0-0x4F78C
 0x04f72c USER_GetText             # CONFIRMED: src/ass USER.C builds byte-identical to the whole module 0x4F6D0-0x4F78C
 0x063fa0 StackSelector            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
@@ -1093,8 +1098,8 @@
 0x08949c SS_CurrentBuffer         # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x0894a0 SS_BufferEnd             # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x08b8fc GUS_HoldBuffer           # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
-0x08b904 GUS_TotalMemory          # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
-0x08b908 GUS_MemConfig            # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
+0x08b904 GUS_MemConfig            # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
+0x08b908 GUS_TotalMemory          # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 # ---- ASS port end
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
@@ -1194,7 +1199,6 @@
 0x04ed1c dig_voice_handler        # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 344 bytes
 0x04ee74 gf1_play_next_buffer     # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 112 bytes
 0x04eee4 gf1_play_digital         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 465 bytes
-0x04f1ec PITCH_UnlockMemory       # SPECULATIVE: ASS 104 pitch.c free near match 0.75 (36 bytes), no anchor; next best start 0.10 lower or more
 0x04f290 gf1_write_block          # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 56 bytes
 0x04f2c8 gf1_read_block           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 52 bytes
 0x04f2fc gf1_mem_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 180 bytes
