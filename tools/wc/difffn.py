@@ -12,6 +12,7 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     .work/venv/bin/python tools/wc/difffn.py                       # every open line of nearmiss.txt
     SEED=0x88ccd=1:b .work/venv/bin/python tools/wc/difffn.py NAME   # globals set first (parse_seed)
     TICK=8 .work/venv/bin/python tools/wc/difffn.py NAME   # ticks (0x7e720) += 8 per stubbed call
+    TICKREAD=8 ...   # ticks += 8 per READ of the clock, for a wait loop whose body has no call
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
         control: the game against itself, which must print SAME
 
@@ -42,8 +43,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'wc'))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'le'))
-from unicorn import (UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_UNMAPPED,
-                     UC_HOOK_INSN)                                                                        # noqa: E402
+from unicorn import (UC_HOOK_CODE, UC_HOOK_INTR, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ,
+                     UC_HOOK_MEM_UNMAPPED, UC_HOOK_INSN)                                                                        # noqa: E402
 from unicorn.x86_const import (UC_X86_REG_EIP, UC_X86_REG_ESP, UC_X86_INS_IN, UC_X86_INS_OUT)
 import capstone                                                                          # noqa: E402
 from emu import Emu, REGS, STACK_TOP, SENTINEL                                           # noqa: E402
@@ -55,6 +56,7 @@ COUNT = int(os.environ.get('COUNT', '3000000'))   # instruction cap; a run that 
 CALLS = int(os.environ.get('CALLS', '300'))   # stop after this many stubbed calls: the loop
 # counter a menu function never leaves, and the one thing that puts both runs at the same progress
 TICK = int(os.environ.get('TICK', '0'))       # ticks (0x7e720) added per stubbed call; 0 = off
+TICKREAD = int(os.environ.get('TICKREAD', '0'))   # ticks += this per READ of TICKADDR; 0 = off
 TICKADDR = int(os.environ.get('TICKADDR', '0x7e720'), 0)   # hex, so base 0
 
 
@@ -119,6 +121,15 @@ class Run:
         # calls, so the port traffic is compared too; IN reads 0 (no hardware here).
         self.e.uc.hook_add(UC_HOOK_INSN, self._pio_in, None, 0, 0, UC_X86_INS_IN, 0)
         self.e.uc.hook_add(UC_HOOK_INSN, self._pio_out, None, 0, 0, UC_X86_INS_OUT, 0)
+        # TICKREAD: the timer ISR advances the clock while a wait loop polls it, and the loop body has
+        # no stubbed call for TICK= to fire at (chat's 0x150e5 `mov eax,[ticks]; sub eax,edi; cmp
+        # eax,0x18; jl` is the whole loop). Hooking the clock's ADDRESS rather than a code range works
+        # in both builds, whose copies of that loop sit at different addresses. Both runs get the same
+        # rule, so the comparison still means the same thing - but it counts reads, so a build that
+        # polls the clock a different number of times per pass advances it differently: check a
+        # tick-dependent DIFF against the read counts before calling it a bug (iter 79).
+        if TICKREAD:
+            self.e.uc.hook_add(UC_HOOK_MEM_READ, self._tickread, begin=TICKADDR, end=TICKADDR + 3)
 
     def _stub(self, uc, addr, size, _):
         esp = uc.reg_read(UC_X86_REG_ESP)
@@ -143,6 +154,9 @@ class Run:
 
     def _pio_out(self, uc, port, size, value, _):
         self.stubs.append(('$out %#x' % port, value, size, 0, []))
+
+    def _tickread(self, uc, _access, _address, _size, _value, _):
+        self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICKREAD)
 
     def _intr(self, uc, num, _):
         self.stubs.append(('int%d' % num, self.e.reg('eax'), 0, 0, []))

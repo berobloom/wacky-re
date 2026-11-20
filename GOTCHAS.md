@@ -133,7 +133,12 @@ it can be copied back into DREA.
   `TICK=n` fires **only at a stubbed call or interrupt**, so it cannot end a wait whose body has no
   call (`credits_screen` 0x1f305, `showlines` 0x2a3bd, `intro` 0x34cb4) - seed the global there, or
   size `TICK` to beat the deadline in one add when the wait zeroes the counter first (`TICK=65536`
-  clears the word deadline 0xbb80 after 0x1f05a zeroed `ticks`, `TICK=8` needed > 2000 calls); and
+  clears the word deadline 0xbb80 after 0x1f05a zeroed `ticks`, `TICK=8` needed > 2000 calls), or hook
+  the clock itself: **`TICKREAD=n`** adds n on every READ of 0x7e720, which reaches a call-free spin and
+  is a *data* hook so it works on both builds' copies of the loop at their different addresses
+  (`chat` 0x150e5, iter 79); it counts **reads**, so a build that polls the clock a different number of
+  times per pass grows it differently - check the read counts before calling a tick-dependent DIFF a
+  bug, and prove the fast clock did not skip the body by re-running at `TICKREAD=1`; and
   `SEED=` is applied once before the run, so a press is seedable and a release never is
   (findings/menus.md: `wait_release` 0x278c4 with mode 0 returns only when `v88cce` and all four
   joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0). `CALLS=` is the useful lever for

@@ -229,6 +229,18 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   loader that fills it (readdat/fread) is stubbed. `SEED=0x88c96=1:w` (1 is a real zone number) puts
   the index at 0, inside the zero page, and the palette-flash calls 0x19575-0x195a7 and
   0x19a2b-0x19a5e then run identically on both sides.
+- CONFIRMED (iter 79, `tools/wc/difffn.py` with its new `TICKREAD=n`): `chat` 0x14d00 **returns on its
+  own** - it is not a menu waiting for a player. The only loop it never left is the per-line frame
+  limiter 0x150e5 `mov eax,[0x7e720]; sub eax,edi; cmp eax,0x18; jl 0x150e5`, whose snapshot 0x150df
+  `mov edi,[0x7e720]` is three instructions earlier: seeding `ticks` is swallowed by the snapshot and
+  `TICK=` never fires there because the loop body has no stubbed call. `TICKREAD=8` adds 8 ticks on
+  every *read* of the clock - a hook on the data address, so it covers both builds' copies of the
+  loop, which sit at different addresses - and both sides then run to the return and agree (8196 insns
+  at 735 addrs; control SAME; `TICKREAD=1` SAME over the same 735 addrs, so the clock speed is not
+  skipping the body). Same night, both `TICK=8 SEED=0x88cce=1:b` with the control SAME: `race_results`
+  0x2bff0 SAME with both sides returning (27876 insns at 644 addrs), and `menu` 0x155c0 SAME and
+  returning but on only **604 insns at 406 addrs** - with zero arguments it leaves near the top, so
+  that SAME says nothing about its frame wait 0x16004/0x1604c or its input arm (`ARGS=`, iter 76).
 
 - CONFIRMED (0x1efb0-0x1f43b executed under `tools/wc/difffn.py`, iter 77): `credits_screen` ends by
   itself - it is six pages, the loop back edge is 0x1f428 `cmp dword [esp],5; jle 0x1f037` and the
