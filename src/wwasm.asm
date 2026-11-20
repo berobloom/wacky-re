@@ -62,47 +62,47 @@ REG bh, 7, 0, 0
 %endmacro
 
         EXT _curpos, 0x7d5d4
-        EXT _v7d5f4, 0x7d5f4
-        EXT _v7d5f8, 0x7d5f8
-        EXT _v7d608, 0x7d608
-        EXT _v7d610, 0x7d610
-        EXT _v7d620, 0x7d620
-        EXT _v7d64c, 0x7d64c
+        EXT _vec_y, 0x7d5f4
+        EXT _vec_x, 0x7d5f8
+        EXT _vec_k, 0x7d608
+        EXT _vec_kx, 0x7d610
+        EXT _vec_ky, 0x7d620
+        EXT _tiles_base, 0x7d64c
         EXT _v7d660, 0x7d660
         EXT D_7d680, 0x7d680
         EXT _v7d698, 0x7d698
         EXT _v7d6a0, 0x7d6a0
-        EXT _v7d6a4, 0x7d6a4
+        EXT _tilemap, 0x7d6a4
         EXT _sprptr, 0x7d704
         EXT _p7d714, 0x7d714
-        EXT _v7d744, 0x7d744
+        EXT _dac_src, 0x7d744
         EXT _palptr, 0x7d760
-        EXT _v7d7a4, 0x7d7a4
-        EXT _v7d7a8, 0x7d7a8
+        EXT _probe_x, 0x7d7a4
+        EXT _probe_y, 0x7d7a8
         EXT _p7d838, 0x7d838
         EXT _v7d860, 0x7d860
-        EXT _v7d864, 0x7d864
+        EXT _swap_n, 0x7d864
         EXT _v7d870, 0x7d870
         EXT _clipy, 0x7d878
-        EXT _v7d880, 0x7d880
-        EXT _v7d88c, 0x7d88c
-        EXT _v7d894, 0x7d894
+        EXT _swap_b, 0x7d880
+        EXT _swap_a, 0x7d88c
+        EXT _swap_tmp, 0x7d894
         EXT _v7d8a4, 0x7d8a4
         EXT _v7d990, 0x7d990
         EXT _v7d998, 0x7d998
         EXT _v7d99c, 0x7d99c
-        EXT _v7e568, 0x7e568
+        EXT _surf_class, 0x7e568
         EXT _v7eb54, 0x7eb54
         EXT _v7eb58, 0x7eb58
-        EXT _v7eb84, 0x7eb84
-        EXT _v88b0a, 0x88b0a
-        EXT _v88b0e, 0x88b0e
-        EXT _w88b10, 0x88b10
-        EXT _pal_d, 0x88b18
-        EXT _pal_c, 0x88b1a
-        EXT _pal_b, 0x88b1c
-        EXT _w88b1e, 0x88b1e
-        EXT _pal_a, 0x88b24
+        EXT _rowtab, 0x7eb84
+        EXT _view_x, 0x88b0a
+        EXT _view_y, 0x88b0e
+        EXT _dac_count, 0x88b10
+        EXT _page_shown, 0x88b18
+        EXT _page_to, 0x88b1a
+        EXT _page_from, 0x88b1c
+        EXT _dac_first, 0x88b1e
+        EXT _page_draw, 0x88b24
         EXT _spr_w, 0x88b26
         EXT _v88b30, 0x88b30
         EXT _spr_x, 0x88b32
@@ -117,11 +117,11 @@ REG bh, 7, 0, 0
         EXT _v88b48, 0x88b48
         EXT _v88b4a, 0x88b4a
         EXT _v88b52, 0x88b52
-        EXT D_88b54, 0x88b54
-        EXT D_88b56, 0x88b56
-        EXT D_88b58, 0x88b58
-        EXT _v88b5c, 0x88b5c
-        EXT _v88b5e, 0x88b5e
+        EXT _joy_ax, 0x88b54
+        EXT _joy_ay, 0x88b56
+        EXT _pcx_row, 0x88b58
+        EXT _joy_cx, 0x88b5c
+        EXT _joy_cy, 0x88b5e
         EXT D_88ba8, 0x88ba8
         EXT D_88baa, 0x88baa
         EXT D_88bac, 0x88bac
@@ -134,12 +134,12 @@ REG bh, 7, 0, 0
         EXT _keymap1, 0x88be4
         EXT _keymap2, 0x88be6
         EXT _keymap3, 0x88be8
-        EXT _v88c20, 0x88c20
+        EXT _detail_lvl, 0x88c20
         EXT _joyfound, 0x88c74
         EXT _v88c8a, 0x88c8a
         EXT _shotkey, 0x88ccd
         EXT _v88cce, 0x88cce
-        EXT D_88ccf, 0x88ccf
+        EXT _plane_bit, 0x88ccf
         EXT _aborted, 0x88cd0
         EXT _v88cd2, 0x88cd2
         EXT _key88cd3, 0x88cd3
@@ -147,8 +147,8 @@ REG bh, 7, 0, 0
         EXT _key88cd6, 0x88cd6
         EXT _v88cdb, 0x88cdb
         EXT _key88cdd, 0x88cdd
-        EXT _v88ce8, 0x88ce8
-        EXT _v88ce9, 0x88ce9
+        EXT _border, 0x88ce8
+        EXT _ink, 0x88ce9
 
         global textscreen_show_
         global getpalette_
@@ -204,7 +204,7 @@ textscreen_show_:
         popad
         ret
 
-; ---- 0x36a69 strips_restore: UNREFERENCED (no call, jump or fixup reaches it): latch copy of 20-byte strips from VRAM 0xbb80+0x12c0 to page pal_a +0x12c0
+; ---- 0x36a69 strips_restore: UNREFERENCED (no call, jump or fixup reaches it): latch copy of 20-byte strips from VRAM 0xbb80+0x12c0 to page page_draw +0x12c0
 strips_restore:
         push edi
         push esi
@@ -214,7 +214,7 @@ strips_restore:
         cld
         call vga_latch_on
         mov edi, 0xa0000
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         add di, 0x12c0
         mov esi, 0xabb80
         add si, 0x12c0
@@ -501,14 +501,14 @@ L_36d32:
         popad
         ret
 
-; ---- 0x36d42 rowtab_init: fills [v7eb84] with 320 dwords y*80: the Mode X row-offset table every blit indexes with spr_y
+; ---- 0x36d42 rowtab_init: fills [rowtab] with 320 dwords y*80: the Mode X row-offset table every blit indexes with spr_y
 rowtab_init_:
         push eax
         push edx
         push esi
         push ecx
         push ebx
-        mov esi, dword [_v7eb84]
+        mov esi, dword [_rowtab]
         rr xor, ebx, ebx
         mov ecx, 0x140
 L_36d54:
@@ -648,7 +648,7 @@ vga_latch_off:
         pop dx
         ret
 
-; ---- 0x36e66 rows_restore: CONFIRMED the bytes: latch copy of spr_w rows (80 bytes each) from VRAM 0xcc60 to page pal_a row spr_y; LIKELY restores the background under the intro fly-in (its one caller, after floor_draw)
+; ---- 0x36e66 rows_restore: CONFIRMED the bytes: latch copy of spr_w rows (80 bytes each) from VRAM 0xcc60 to page page_draw row spr_y; LIKELY restores the background under the intro fly-in (its one caller, after floor_draw)
 rows_restore_:
         push ecx
         push eax
@@ -659,10 +659,10 @@ rows_restore_:
         call vga_latch_on
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov edi, 0xa0000
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr add, di, ax
         mov esi, 0xa0000
         add si, 0xbb80
@@ -682,13 +682,13 @@ rows_restore_:
         call vga_latch_off
         ret
 
-; ---- 0x36ec2 band_mirror: latch copy: the 90 rows from page pal_a + spr_y, bottom row first, to VRAM 0xbb80, then back - a vertical mirror of the band; called per car in two-player when av7eb80 && v88bde
+; ---- 0x36ec2 band_mirror: latch copy: the 90 rows from page page_draw + spr_y, bottom row first, to VRAM 0xbb80, then back - a vertical mirror of the band; called per car in two-player when av7eb80 && v88bde
 band_mirror_:
         pushad
         cld
         call vga_latch_on
         rr xor, eax, eax
-        mov ax, word [_pal_a]
+        mov ax, word [_page_draw]
         add ax, word [_spr_y]
         mov esi, 0xa0000
         rr add, esi, eax
@@ -710,7 +710,7 @@ L_36eef:
         popad
         ret
 
-; ---- 0x36f14 page_copy: was setpalette - NOT a palette op: latch copy 0x3e80 bytes (one page) from A000+pal_b to A000+pal_c (findings/video.md)
+; ---- 0x36f14 page_copy: was setpalette - NOT a palette op: latch copy 0x3e80 bytes (one page) from A000+page_from to A000+page_to (findings/video.md)
 page_copy_:
         pushad
         mov dx, 0x3ce
@@ -720,9 +720,9 @@ page_copy_:
         mov ax, 0xf02
         out dx, ax
         mov edi, 0xa0000
-        add di, word [_pal_c]
+        add di, word [_page_to]
         mov esi, 0xa0000
-        add si, word [_pal_b]
+        add si, word [_page_from]
         cld
         mov ecx, 0x3e80
         rep movsb
@@ -761,30 +761,30 @@ L_36f88:
         popad
         ret
 
-; ---- 0x36f8c rec_swap: swaps [v7d88c] and [v7d880] through [v7d894], v7d864 dwords each (rep movsd x3); the record sorts of crecs[] and standings[] call it
+; ---- 0x36f8c rec_swap: swaps [swap_a] and [swap_b] through [swap_tmp], swap_n dwords each (rep movsd x3); the record sorts of crecs[] and standings[] call it
 rec_swap_:
         push ecx
         push edi
         push esi
         cld
-        mov ecx, dword [_v7d864]
-        mov edi, dword [_v7d894]
-        mov esi, dword [_v7d88c]
+        mov ecx, dword [_swap_n]
+        mov edi, dword [_swap_tmp]
+        mov esi, dword [_swap_a]
         rep movsd
-        mov ecx, dword [_v7d864]
-        mov edi, dword [_v7d88c]
-        mov esi, dword [_v7d880]
+        mov ecx, dword [_swap_n]
+        mov edi, dword [_swap_a]
+        mov esi, dword [_swap_b]
         rep movsd
-        mov ecx, dword [_v7d864]
-        mov esi, dword [_v7d894]
-        mov edi, dword [_v7d880]
+        mov ecx, dword [_swap_n]
+        mov esi, dword [_swap_tmp]
+        mov edi, dword [_swap_b]
         rep movsd
         pop esi
         pop edi
         pop ecx
         ret
 
-; ---- 0x36fd0 spr_draw: column-major sprite at (spr_x,spr_y) page pal_a: spr_h columns of spr_w pixels from [sprptr], colour 0 transparent
+; ---- 0x36fd0 spr_draw: column-major sprite at (spr_x,spr_y) page page_draw: spr_h columns of spr_w pixels from [sprptr], colour 0 transparent
 spr_draw_:
         push eax
         push ebx
@@ -795,7 +795,7 @@ spr_draw_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -807,12 +807,12 @@ spr_draw_:
         mov ah, 1
         shl ah, cl
         rr xor, al, al
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov bx, word [_spr_w]
         rr xor, ecx, ecx
         mov esi, dword [_sprptr]
         mov cx, word [_spr_h]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov dx, 0x3c4
 L_37032:
         push di
@@ -841,7 +841,7 @@ L_37051:
         jne short L_3703a
 L_37059:
         pop di
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_3706f
@@ -852,7 +852,7 @@ L_37059:
         inc edi
         mov ah, 1
 L_3706f:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_37032
         pop esi
         pop edi
@@ -873,7 +873,7 @@ spr_draw_clip_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -885,12 +885,12 @@ spr_draw_clip_:
         mov ah, 1
         shl ah, cl
         rr xor, al, al
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov bx, word [_spr_w]
         rr xor, ecx, ecx
         mov esi, dword [_sprptr]
         mov cx, word [_spr_h]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov dx, 0x3c4
 L_370e0:
         push di
@@ -920,7 +920,7 @@ L_370ff:
 L_37107:
         pop di
         add esi, dword [_clipy]
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_37123
@@ -931,7 +931,7 @@ L_37107:
         inc edi
         mov ah, 1
 L_37123:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_370e0
         pop esi
         pop edi
@@ -941,7 +941,7 @@ L_37123:
         pop eax
         ret
 
-; ---- 0x37132 spr_draw_key: spr_draw with the transparent colour v88ce9 instead of 0
+; ---- 0x37132 spr_draw_key: spr_draw with the transparent colour ink instead of 0
 spr_draw_key_:
         push eax
         push ebx
@@ -952,7 +952,7 @@ spr_draw_key_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -964,12 +964,12 @@ spr_draw_key_:
         mov ah, 1
         shl ah, cl
         rr xor, al, al
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov bx, word [_spr_w]
         rr xor, ecx, ecx
         mov esi, dword [_sprptr]
         mov cx, word [_spr_h]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov dx, 0x3c4
 L_37194:
         push di
@@ -978,7 +978,7 @@ L_37194:
         out dx, ax
 L_3719c:
         lodsb
-        cmp al, byte [_v88ce9]
+        cmp al, byte [_ink]
         je short L_371b7
         nop
         nop
@@ -998,7 +998,7 @@ L_371b7:
         jne short L_3719c
 L_371bf:
         pop di
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_371d5
@@ -1009,7 +1009,7 @@ L_371bf:
         inc edi
         mov ah, 1
 L_371d5:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_37194
         pop esi
         pop edi
@@ -1019,7 +1019,7 @@ L_371d5:
         pop eax
         ret
 
-; ---- 0x371e4 box_draw: box spr_h x spr_w at (spr_x,spr_y): outer columns and top/bottom pixels v88ce8, inside v88ce9
+; ---- 0x371e4 box_draw: box spr_h x spr_w at (spr_x,spr_y): outer columns and top/bottom pixels border, inside ink
 box_draw_:
         push eax
         push ebx
@@ -1030,7 +1030,7 @@ box_draw_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -1042,11 +1042,11 @@ box_draw_:
         mov ah, 1
         shl ah, cl
         rr xor, al, al
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov bx, word [_spr_w]
         rr xor, ecx, ecx
         mov cx, word [_spr_h]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov dx, 0x3c4
 L_37240:
         push di
@@ -1059,7 +1059,7 @@ L_37240:
         nop
         nop
         nop
-        mov al, byte [_v88ce8]
+        mov al, byte [_border]
         jmp short L_37299
         nop
         nop
@@ -1071,23 +1071,23 @@ L_3725f:
         nop
         nop
         nop
-        mov al, byte [_v88ce8]
+        mov al, byte [_border]
         jmp short L_37299
         nop
         nop
         nop
 L_37273:
-        mov al, byte [_v88ce8]
+        mov al, byte [_border]
         stosb
         add di, 0x4f
         sub bh, 2
-        mov al, byte [_v88ce9]
+        mov al, byte [_ink]
 L_37285:
         stosb
         add di, 0x4f
         dec bh
         jne short L_37285
-        mov al, byte [_v88ce8]
+        mov al, byte [_border]
         stosb
         jmp short L_372a2
         nop
@@ -1100,7 +1100,7 @@ L_37299:
         jne short L_37299
 L_372a2:
         pop di
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_372b8
@@ -1111,7 +1111,7 @@ L_372a2:
         inc edi
         mov ah, 1
 L_372b8:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_37240
         pop esi
         pop edi
@@ -1121,7 +1121,7 @@ L_372b8:
         pop eax
         ret
 
-; ---- 0x372c7 spr_grab: reverse of spr_draw: spr_h columns of spr_w pixels from page pal_a at (spr_x,spr_y) to [sprptr], plane by read-map select (0x3ce index 4)
+; ---- 0x372c7 spr_grab: reverse of spr_draw: spr_h columns of spr_w pixels from page page_draw at (spr_x,spr_y) to [sprptr], plane by read-map select (0x3ce index 4)
 spr_grab_:
         push eax
         push ebx
@@ -1132,7 +1132,7 @@ spr_grab_:
         mov esi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -1142,12 +1142,12 @@ spr_grab_:
         rr mov, si, ax
         and cl, 3
         rr mov, ah, cl
-        add si, word [_pal_a]
+        add si, word [_page_draw]
         mov edi, dword [_sprptr]
         mov bx, word [_spr_w]
         rr xor, ecx, ecx
         mov cx, word [_spr_h]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov dx, 0x3ce
 L_37325:
         push si
@@ -1161,7 +1161,7 @@ L_3732d:
         dec bh
         jne short L_3732d
         pop si
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         inc ah
         cmp ah, 3
         jle short L_3734d
@@ -1172,7 +1172,7 @@ L_3732d:
         inc esi
         mov ah, 0
 L_3734d:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_37325
         pop esi
         pop edi
@@ -1182,7 +1182,7 @@ L_3734d:
         pop eax
         ret
 
-; ---- 0x3735c grab32: 32x32 pixels from page pal_a at (spr_x,spr_y) to [sprptr], row by row
+; ---- 0x3735c grab32: 32x32 pixels from page page_draw at (spr_x,spr_y) to [sprptr], row by row
 grab32_:
         push eax
         push ebx
@@ -1193,7 +1193,7 @@ grab32_:
         mov esi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -1203,14 +1203,14 @@ grab32_:
         rr mov, si, ax
         and cl, 3
         rr mov, ah, cl
-        add si, word [_pal_a]
+        add si, word [_page_draw]
         mov edi, dword [_sprptr]
         mov bl, 0x20
         rr xor, ecx, ecx
         rr mov, bh, ah
         mov dx, 0x3ce
 L_373aa:
-        mov byte [D_88ccf], bh
+        mov byte [_plane_bit], bh
         push esi
         push ax
         mov cx, 0x20
@@ -1219,7 +1219,7 @@ L_373b7:
         out dx, ax
         mov al, byte [esi]
         stosb
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         inc ah
         cmp ah, 3
         jle short L_373d2
@@ -1230,7 +1230,7 @@ L_373b7:
         inc esi
         mov ah, 0
 L_373d2:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_373b7
         pop ax
         pop esi
@@ -1257,7 +1257,7 @@ spr_draw_opaque_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -1268,12 +1268,12 @@ spr_draw_opaque_:
         and cl, 3
         mov ah, 1
         shl ah, cl
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_sprptr]
         mov bx, word [_spr_w]
         rr xor, ecx, ecx
         mov cx, word [_spr_h]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov dx, 0x3c4
 L_3744f:
         push di
@@ -1287,7 +1287,7 @@ L_37457:
         dec bh
         jne short L_37457
         pop di
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_37477
@@ -1298,7 +1298,7 @@ L_37457:
         inc edi
         mov ah, 1
 L_37477:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_3744f
         pop esi
         pop edi
@@ -1319,7 +1319,7 @@ spr_draw_scaled_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -1331,13 +1331,13 @@ spr_draw_scaled_:
         mov ah, 1
         shl ah, cl
         rr xor, al, al
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov edx, dword [_p7d838]
         mov cx, word [_spr_h]
         mov bx, word [_spr_w]
         mov esi, dword [_sprptr]
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         cmp dword [_clipy], 0
         je short L_374fd
         nop
@@ -1386,7 +1386,7 @@ L_37530:
 L_3753d:
         pop esi
         pop di
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_37554
@@ -1397,7 +1397,7 @@ L_3753d:
         inc edi
         mov ah, 1
 L_37554:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_374fd
         jmp short L_375c6
         nop
@@ -1442,7 +1442,7 @@ L_375a1:
         pop esi
         pop di
         add edx, dword [_clipy]
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_375be
@@ -1453,7 +1453,7 @@ L_375a1:
         inc edi
         mov ah, 1
 L_375be:
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         loop L_37561
 L_375c6:
         pop esi
@@ -1464,19 +1464,19 @@ L_375c6:
         pop eax
         ret
 
-; ---- 0x375cd pcx_blit: CONFIRMED pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
+; ---- 0x375cd pcx_blit: CONFIRMED pushal..popal (0x376d5), no arguments, reads p7d714/page_draw/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
 pcx_blit_:
         pushad
         rr xor, ecx, ecx
         rr xor, ax, ax
-        mov word [D_88b58], ax
+        mov word [_pcx_row], ax
         mov dx, 0x3c4
         mov al, 2
         mov ah, 1
         out dx, ax
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         mov edi, 0xa0000
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_p7d714]
 L_375fb:
         mov bx, 0
@@ -1495,7 +1495,7 @@ L_375ff:
         pop ax
         mov byte [edi], al
         push ax
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         cmp ah, 8
         jne short L_37634
         nop
@@ -1514,14 +1514,14 @@ L_37634:
         shl ah, 1
 L_37638:
         out dx, ax
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         pop ax
         inc bx
         cmp bx, 0x13f
         jle short L_375ff
         add di, word [_v88b4a]
-        inc word [D_88b58]
-        cmp word [D_88b58], 0xc8
+        inc word [_pcx_row]
+        cmp word [_pcx_row], 0xc8
         jl short L_375fb
         jmp short L_376d5
         nop
@@ -1537,7 +1537,7 @@ L_37669:
 L_37674:
         mov byte [edi], al
         push ax
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         cmp ah, 8
         jne short L_37692
         nop
@@ -1556,7 +1556,7 @@ L_37692:
         shl ah, 1
 L_37696:
         out dx, ax
-        mov byte [D_88ccf], ah
+        mov byte [_plane_bit], ah
         pop ax
         inc bx
         cmp bx, 0x13f
@@ -1566,8 +1566,8 @@ L_37696:
         nop
         nop
         add di, word [_v88b4a]
-        inc word [D_88b58]
-        cmp word [D_88b58], 0xc8
+        inc word [_pcx_row]
+        cmp word [_pcx_row], 0xc8
         je short L_376d5
         nop
         nop
@@ -1586,7 +1586,7 @@ pcx_tiles_:
         pushad
         rr xor, ecx, ecx
         rr xor, ax, ax
-        mov word [D_88b58], ax
+        mov word [_pcx_row], ax
         mov edi, dword [_v7d99c]
         mov esi, dword [_p7d714]
 L_376ef:
@@ -1609,8 +1609,8 @@ L_376f3:
         inc bx
         cmp bx, 0x13f
         jle short L_376f3
-        inc word [D_88b58]
-        cmp word [D_88b58], 0xc8
+        inc word [_pcx_row]
+        cmp word [_pcx_row], 0xc8
         jl short L_376ef
         jmp short L_37766
         nop
@@ -1633,8 +1633,8 @@ L_37738:
         nop
         nop
         nop
-        inc word [D_88b58]
-        cmp word [D_88b58], 0xc8
+        inc word [_pcx_row]
+        cmp word [_pcx_row], 0xc8
         je short L_37766
         nop
         nop
@@ -1743,7 +1743,7 @@ L_37847:
         pop edx
         ret
 
-; ---- 0x3784b joy_poll: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre v88b5c/v88b5e; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
+; ---- 0x3784b joy_poll: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre joy_cx/joy_cy; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
 joy_poll_:
         push eax
         push ebx
@@ -1767,8 +1767,8 @@ L_3787d:
         rr xor, ebx, ebx
         rr xor, eax, eax
         rr xor, edx, edx
-        mov word [D_88b54], bx
-        mov word [D_88b56], bx
+        mov word [_joy_ax], bx
+        mov word [_joy_ay], bx
         rr xor, si, si
         mov al, 0
         mov dx, 0x201
@@ -1779,12 +1779,12 @@ L_3789c:
         in al, dx
         mov ah, 0
         and ax, word [_keymap1]
-        add word [D_88b54], ax
+        add word [_joy_ax], ax
         mov dx, 0x201
         in al, dx
         mov ah, 0
         and ax, word [_keymap2]
-        add word [D_88b56], ax
+        add word [_joy_ay], ax
         inc si
         mov dx, 0x201
         in al, dx
@@ -1815,11 +1815,11 @@ L_378f6:
         rr or, dx, ax
         je short L_3789c
         sti
-        mov ax, word [D_88b56]
+        mov ax, word [_joy_ay]
         mov bx, 2
         cwd
         idiv bx
-        mov word [D_88b56], ax
+        mov word [_joy_ay], ax
         rr or, si, si
         jge short L_3792a
         nop
@@ -1830,8 +1830,8 @@ L_378f6:
         jmp near L_379e6
 L_3792a:
         mov cl, 1
-        mov bx, word [_v88b5c]
-        mov ax, word [D_88b54]
+        mov bx, word [_joy_cx]
+        mov ax, word [_joy_ax]
         shl ax, 1
         rr cmp, ax, bx
         jge short L_37965
@@ -1872,8 +1872,8 @@ L_37965:
         nop
         mov byte [_key88cdd], cl
 L_37989:
-        mov bx, word [_v88b5e]
-        mov ax, word [D_88b56]
+        mov bx, word [_joy_cy]
+        mov ax, word [_joy_ay]
         shl ax, 1
         rr cmp, ax, bx
         jge short L_379c2
@@ -1921,27 +1921,27 @@ L_379e6:
         pop eax
         ret
 
-; ---- 0x379ec pt_load: UNREFERENCED: v7d5f8/v7d5f4 = the two dwords at [D_7d680]
+; ---- 0x379ec pt_load: UNREFERENCED: vec_x/vec_y = the two dwords at [D_7d680]
 pt_load:
         push ebx
         push eax
         mov ebx, dword [D_7d680]
         mov eax, dword [ebx]
-        mov dword [_v7d5f8], eax
+        mov dword [_vec_x], eax
         mov eax, dword [ebx + 4]
-        mov dword [_v7d5f4], eax
+        mov dword [_vec_y], eax
         pop eax
         pop ebx
         ret
 
-; ---- 0x37a06 tilemap_fill: fills [v7d6a4] (the floor tile map) with v7d64c, 0x4000 dwords; called at track load
+; ---- 0x37a06 tilemap_fill: fills [tilemap] (the floor tile map) with tiles_base, 0x4000 dwords; called at track load
 tilemap_fill_:
         push edi
         push ecx
         push eax
         cld
-        mov edi, dword [_v7d6a4]
-        mov eax, dword [_v7d64c]
+        mov edi, dword [_tilemap]
+        mov eax, dword [_tiles_base]
         rr xor, ecx, ecx
         mov cx, 0x4000
         rep stosd
@@ -1950,7 +1950,7 @@ tilemap_fill_:
         pop edi
         ret
 
-; ---- 0x37a21 path_pt_scale: CONFIRMED the bytes: v7d7a4/v7d7a8 = round(16.16 product of point curpos of [v7d6a0] (8 bytes per point) and [v7d660]); LIKELY the track path
+; ---- 0x37a21 path_pt_scale: CONFIRMED the bytes: probe_x/probe_y = round(16.16 product of point curpos of [v7d6a0] (8 bytes per point) and [v7d660]); LIKELY the track path
 path_pt_scale_:
         push ebx
         push eax
@@ -1966,21 +1966,21 @@ path_pt_scale_:
         add eax, 0x8000
         adc edx, 0
         shr eax, 0x10
-        mov dword [_v7d7a4], eax
+        mov dword [_probe_x], eax
         mov eax, dword [ebx + 4]
         mov edx, dword [esi]
         imul edx
         add eax, 0x8000
         adc edx, 0
         shr eax, 0x10
-        mov dword [_v7d7a8], eax
+        mov dword [_probe_y], eax
         pop esi
         pop edx
         pop eax
         pop ebx
         ret
 
-; ---- 0x37a6c surface_at_7c: UNREFERENCED: surface_at with the point scaled by 0x7c and offset by the camera v88b0a/v88b0e
+; ---- 0x37a6c surface_at_7c: UNREFERENCED: surface_at with the point scaled by 0x7c and offset by the camera view_x/view_y
 surface_at_7c:
         pushad
         mov ebx, dword [_curpos]
@@ -1990,19 +1990,19 @@ surface_at_7c:
         mov eax, dword [ebx]
         mul esi
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul esi
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2010,7 +2010,7 @@ surface_at_7c:
         rr add, edx, eax
         rr add, edx, ecx
         mov eax, dword [edx]
-        sub eax, dword [_v7d64c]
+        sub eax, dword [_tiles_base]
         shr eax, 0xa
         shl eax, 3
         mov edi, dword [_v7d870]
@@ -2026,22 +2026,22 @@ surface_at_7c:
         nop
         nop
         nop
-        mov dword [_v7e568], ebx
+        mov dword [_surf_class], ebx
         jmp short L_37b02
         nop
         nop
         nop
 L_37afc:
-        mov dword [_v7e568], ecx
+        mov dword [_surf_class], ecx
 L_37b02:
         popad
         ret
 
-; ---- 0x37b04 surface_at: surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
+; ---- 0x37b04 surface_at: surface-class probe - tilemap tile of (probe_x,probe_y) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into surf_class (findings/formats.md, game-loop.md)
 surface_at_:
         pushad
-        mov eax, dword [_v7d7a8]
-        mov ecx, dword [_v7d7a4]
+        mov eax, dword [_probe_y]
+        mov ecx, dword [_probe_x]
         cmp eax, 0xfff
         jle short L_37b20
         nop
@@ -2080,7 +2080,7 @@ L_37b4d:
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2088,7 +2088,7 @@ L_37b4d:
         rr add, edx, eax
         rr add, edx, ecx
         mov eax, dword [edx]
-        sub eax, dword [_v7d64c]
+        sub eax, dword [_tiles_base]
         shr eax, 0xa
         shl eax, 3
         mov edi, dword [_v7d870]
@@ -2104,40 +2104,40 @@ L_37b4d:
         nop
         nop
         nop
-        mov dword [_v7e568], ebx
+        mov dword [_surf_class], ebx
         jmp short L_37baf
         nop
         nop
         nop
 L_37ba9:
-        mov dword [_v7e568], ecx
+        mov dword [_surf_class], ecx
 L_37baf:
         popad
         ret
 
-; ---- 0x37bb1 vec_scale: v7d610/v7d620 = round(16.16 product of v7d5f8/v7d5f4 and v7d608); src/ww.c VEC()
+; ---- 0x37bb1 vec_scale: vec_kx/vec_ky = round(16.16 product of vec_x/vec_y and vec_k); src/ww.c VEC()
 vec_scale_:
         push eax
         push edx
-        mov eax, dword [_v7d5f8]
-        mov edx, dword [_v7d608]
+        mov eax, dword [_vec_x]
+        mov edx, dword [_vec_k]
         imul edx
         add eax, 0x8000
         adc edx, 0
         shr eax, 0x10
-        mov dword [_v7d610], eax
-        mov eax, dword [_v7d5f4]
-        mov edx, dword [_v7d608]
+        mov dword [_vec_kx], eax
+        mov eax, dword [_vec_y]
+        mov edx, dword [_vec_k]
         imul edx
         add eax, 0x8000
         adc edx, 0
         shr eax, 0x10
-        mov dword [_v7d620], eax
+        mov dword [_vec_ky], eax
         pop edx
         pop eax
         ret
 
-; ---- 0x37bf0 pixel_plot: one pixel of colour v88ce9 at (spr_x,spr_y) on page pal_a
+; ---- 0x37bf0 pixel_plot: one pixel of colour ink at (spr_x,spr_y) on page page_draw
 pixel_plot_:
         push eax
         push ebx
@@ -2147,7 +2147,7 @@ pixel_plot_:
         mov edi, 0xa0000
         rr xor, eax, eax
         mov ax, word [_spr_y]
-        mov ecx, dword [_v7eb84]
+        mov ecx, dword [_rowtab]
         mov eax, dword [ecx + eax*4]
         mov cx, word [_spr_x]
         rr mov, bx, cx
@@ -2158,11 +2158,11 @@ pixel_plot_:
         and cl, 3
         mov ah, 1
         shl ah, cl
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov dx, 0x3c4
         mov al, 2
         out dx, ax
-        mov al, byte [_v88ce9]
+        mov al, byte [_ink]
         stosb
         pop edi
         pop edx
@@ -2171,7 +2171,7 @@ pixel_plot_:
         pop eax
         ret
 
-; ---- 0x37c43 dac_put5: DAC 0xa1-0xa4 and 0x94 from [v7d744] (15 bytes); a palette animation steps v7d744 through v7d758
+; ---- 0x37c43 dac_put5: DAC 0xa1-0xa4 and 0x94 from [dac_src] (15 bytes); a palette animation steps dac_src through v7d758
 dac_put5_:
         push ecx
         push esi
@@ -2181,7 +2181,7 @@ dac_put5_:
         rr xor, ecx, ecx
         mov cx, 4
         mov bl, 0xa1
-        mov esi, dword [_v7d744]
+        mov esi, dword [_dac_src]
 L_37c56:
         mov dx, 0x3c8
         rr mov, al, bl
@@ -2213,7 +2213,7 @@ L_37c56:
         pop ecx
         ret
 
-; ---- 0x37c84 dac_put8: DAC 0xad,0xac, 0xae,0xaf from [v7d744], 0xa8-0xab from [v7d744]+0x30; a palette animation steps v7d744 through v7d6d0
+; ---- 0x37c84 dac_put8: DAC 0xad,0xac, 0xae,0xaf from [dac_src], 0xa8-0xab from [dac_src]+0x30; a palette animation steps dac_src through v7d6d0
 dac_put8_:
         push ecx
         push esi
@@ -2223,7 +2223,7 @@ dac_put8_:
         rr xor, ecx, ecx
         mov cx, 2
         mov bl, 0xad
-        mov esi, dword [_v7d744]
+        mov esi, dword [_dac_src]
         push esi
 L_37c98:
         mov dx, 0x3c8
@@ -2279,7 +2279,7 @@ L_37cd6:
         pop ecx
         ret
 
-; ---- 0x37cf1 dac_load: w88b10 DAC entries from index w88b1e out of [palptr], each byte after a display-enable wait
+; ---- 0x37cf1 dac_load: dac_count DAC entries from index dac_first out of [palptr], each byte after a display-enable wait
 dac_load_:
         push esi
         push eax
@@ -2287,8 +2287,8 @@ dac_load_:
         push edx
         push ecx
         rr xor, ecx, ecx
-        mov cx, word [_w88b10]
-        mov bx, word [_w88b1e]
+        mov cx, word [_dac_count]
+        mov bx, word [_dac_first]
         mov eax, 3
         imul bx
         mov esi, dword [_palptr]
@@ -2369,7 +2369,7 @@ L_37d7e:
         pop esi
         ret
 
-; ---- 0x37d96 tile_show: UNREFERENCED: a 32x32 tile from [v7d64c] to A000:0 as linear rows of 320 (a debug view?)
+; ---- 0x37d96 tile_show: UNREFERENCED: a 32x32 tile from [tiles_base] to A000:0 as linear rows of 320 (a debug view?)
 tile_show:
         push ecx
         push esi
@@ -2377,7 +2377,7 @@ tile_show:
         push ax
         cld
         mov ecx, 0x20
-        mov esi, dword [_v7d64c]
+        mov esi, dword [_tiles_base]
         mov edi, 0xa0000
         mov ax, 0x20
 L_37db0:
@@ -2411,7 +2411,7 @@ L_37dd5:
         pop ax
         ret
 
-; ---- 0x37de0 page_show: was waitretrace: waits for display enable, pal_d = pal_a, CRTC start address (0x0c/0x0d) = pal_a, waits for vertical retrace - the page flip
+; ---- 0x37de0 page_show: was waitretrace: waits for display enable, page_shown = page_draw, CRTC start address (0x0c/0x0d) = page_draw, waits for vertical retrace - the page flip
 page_show_:
         push ax
         push bx
@@ -2423,8 +2423,8 @@ L_37dee:
         in al, dx
         test al, 1
         jne short L_37dee
-        mov bx, word [_pal_a]
-        mov word [_pal_d], bx
+        mov bx, word [_page_draw]
+        mov word [_page_shown], bx
         cli
         mov dx, 0x3d4
         rr mov, ah, bh
@@ -2505,7 +2505,7 @@ modex_init_:
         popad
         ret
 
-; ---- 0x37e94 floor_draw: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera v88b0a/v88b0e, tile of map v7d6a4 (32x32 tiles), one byte; three unrolled bodies by v88c20 = detail 1/2/3 (High/Medium/Low)
+; ---- 0x37e94 floor_draw: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera view_x/view_y, tile of map tilemap (32x32 tiles), one byte; three unrolled bodies by detail_lvl = detail 1/2/3 (High/Medium/Low)
 floor_draw_:
         pushad
         cld
@@ -2515,7 +2515,7 @@ floor_draw_:
         mov dx, 0x3c4
         mov ax, 0xf02
         out dx, ax
-        mov ax, word [_v88c20]
+        mov ax, word [_detail_lvl]
         cmp ax, strict word 1
         je short floor_hi
         nop
@@ -2534,7 +2534,7 @@ L_37ec9:
 floor_hi:
         mov edi, 0xa0000
         add edi, 0x2260
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         cmp dword [_v7d998], 1
         je near L_37f9d
         mov esi, dword [_v7d860]
@@ -2605,7 +2605,7 @@ L_37f9d:
         mov dx, 0x3ce
         mov ax, 0x4005
         out dx, ax
-        mov byte [D_88ccf], 1
+        mov byte [_plane_bit], 1
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
@@ -2621,12 +2621,12 @@ L_37fc9:
         mov esi, dword [_v7d660]
         mov edi, 0xa0000
         add edi, 0x3e30
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov ecx, 0x140
 L_37ff1:
         push ecx
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         mov al, 2
         mov dx, 0x3c4
         out dx, ax
@@ -2634,19 +2634,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2662,19 +2662,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2690,19 +2690,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2718,19 +2718,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2746,19 +2746,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2774,19 +2774,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2802,19 +2802,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2830,19 +2830,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2858,19 +2858,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2886,19 +2886,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2914,19 +2914,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2942,19 +2942,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2970,19 +2970,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -2998,19 +2998,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3026,19 +3026,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3054,19 +3054,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3082,19 +3082,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3110,19 +3110,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3138,19 +3138,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3166,19 +3166,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3194,19 +3194,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3222,19 +3222,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3250,19 +3250,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3278,19 +3278,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3306,19 +3306,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3334,19 +3334,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3362,19 +3362,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3390,19 +3390,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3418,19 +3418,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3446,19 +3446,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3474,19 +3474,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3502,19 +3502,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3530,19 +3530,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3558,19 +3558,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3586,19 +3586,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3614,19 +3614,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3642,19 +3642,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3670,19 +3670,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3698,19 +3698,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3726,19 +3726,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3754,19 +3754,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3782,19 +3782,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3810,19 +3810,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3838,19 +3838,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3866,19 +3866,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3894,19 +3894,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3922,19 +3922,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3950,19 +3950,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -3978,19 +3978,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4006,19 +4006,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4034,19 +4034,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4062,19 +4062,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4090,19 +4090,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4118,19 +4118,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4146,19 +4146,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4174,19 +4174,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4202,19 +4202,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4230,19 +4230,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4258,19 +4258,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4286,19 +4286,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4314,19 +4314,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4342,19 +4342,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4370,19 +4370,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4398,19 +4398,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4426,19 +4426,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4454,19 +4454,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4482,19 +4482,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4510,19 +4510,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4538,19 +4538,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4566,19 +4566,19 @@ L_37ff1:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4601,7 +4601,7 @@ L_37ff1:
         mov ebx, dword [_v7d6a0]
 L_395b0:
         add edi, 0x15e0
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_395cb
@@ -4612,7 +4612,7 @@ L_395b0:
         mov ah, 1
         inc di
 L_395cb:
-        xchg byte [D_88ccf], ah
+        xchg byte [_plane_bit], ah
         loop L_395d8
         jmp near L_3c3e7
 L_395d8:
@@ -4620,7 +4620,7 @@ L_395d8:
 floor_med:
         mov edi, 0xa0000
         add edi, 0x2260
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         cmp dword [_v7d998], 2
@@ -4702,7 +4702,7 @@ L_396c8:
         mov dx, 0x3ce
         mov ax, 0x4005
         out dx, ax
-        mov byte [D_88ccf], 3
+        mov byte [_plane_bit], 3
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
@@ -4718,12 +4718,12 @@ L_396f4:
         mov esi, dword [_v7d660]
         mov edi, 0xa0000
         add edi, 0x3e30
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov ecx, 0xa0
 L_3971c:
         push ecx
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         mov al, 2
         mov dx, 0x3c4
         out dx, ax
@@ -4731,19 +4731,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4759,19 +4759,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4787,19 +4787,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4815,19 +4815,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4843,19 +4843,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4871,19 +4871,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4899,19 +4899,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4927,19 +4927,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4955,19 +4955,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -4983,19 +4983,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5011,19 +5011,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5039,19 +5039,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5067,19 +5067,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5095,19 +5095,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5123,19 +5123,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5151,19 +5151,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5179,19 +5179,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5207,19 +5207,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5235,19 +5235,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5263,19 +5263,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5291,19 +5291,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5319,19 +5319,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5347,19 +5347,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5375,19 +5375,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5403,19 +5403,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5431,19 +5431,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5459,19 +5459,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5487,19 +5487,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5515,19 +5515,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5543,19 +5543,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5571,19 +5571,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5599,19 +5599,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5627,19 +5627,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5655,19 +5655,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5683,19 +5683,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5711,19 +5711,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5739,19 +5739,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5767,19 +5767,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5795,19 +5795,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5823,19 +5823,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5851,19 +5851,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5879,19 +5879,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5907,19 +5907,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5935,19 +5935,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5963,19 +5963,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -5991,19 +5991,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6019,19 +6019,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6047,19 +6047,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6075,19 +6075,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6103,19 +6103,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6131,19 +6131,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6159,19 +6159,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6187,19 +6187,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6215,19 +6215,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6243,19 +6243,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6271,19 +6271,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6299,19 +6299,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6327,19 +6327,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6355,19 +6355,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6383,19 +6383,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6411,19 +6411,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6439,19 +6439,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6467,19 +6467,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6495,19 +6495,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6523,19 +6523,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6551,19 +6551,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6579,19 +6579,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6607,19 +6607,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6635,19 +6635,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6663,19 +6663,19 @@ L_3971c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6699,7 +6699,7 @@ L_3971c:
         mov ebx, dword [_v7d6a0]
 L_3ace1:
         add edi, 0x15e0
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 2
         cmp ah, 0xc
         jle short L_3acfd
@@ -6710,7 +6710,7 @@ L_3ace1:
         mov ah, 3
         inc di
 L_3acfd:
-        xchg byte [D_88ccf], ah
+        xchg byte [_plane_bit], ah
         loop L_3ad0a
         jmp near L_3c3e7
 L_3ad0a:
@@ -6718,7 +6718,7 @@ L_3ad0a:
 floor_lo:
         mov edi, 0xa0000
         add edi, 0x2260
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         mov ax, 0x50
@@ -6801,7 +6801,7 @@ L_3adf6:
         mov esi, dword [_v7d660]
         mov edi, 0xa0000
         add edi, 0x3e30
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov ecx, 0x50
 L_3ae1e:
@@ -6810,19 +6810,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6838,19 +6838,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6866,19 +6866,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6894,19 +6894,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6922,19 +6922,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6950,19 +6950,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -6978,19 +6978,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7006,19 +7006,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7034,19 +7034,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7062,19 +7062,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7090,19 +7090,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7118,19 +7118,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7146,19 +7146,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7174,19 +7174,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7202,19 +7202,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7230,19 +7230,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7258,19 +7258,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7286,19 +7286,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7314,19 +7314,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7342,19 +7342,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7370,19 +7370,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7398,19 +7398,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7426,19 +7426,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7454,19 +7454,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7482,19 +7482,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7510,19 +7510,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7538,19 +7538,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7566,19 +7566,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7594,19 +7594,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7622,19 +7622,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7650,19 +7650,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7678,19 +7678,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7706,19 +7706,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7734,19 +7734,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7762,19 +7762,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7790,19 +7790,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7818,19 +7818,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7846,19 +7846,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7874,19 +7874,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7902,19 +7902,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7930,19 +7930,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7958,19 +7958,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -7986,19 +7986,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8014,19 +8014,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8042,19 +8042,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8070,19 +8070,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8098,19 +8098,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8126,19 +8126,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8154,19 +8154,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8182,19 +8182,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8210,19 +8210,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8238,19 +8238,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8266,19 +8266,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8294,19 +8294,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8322,19 +8322,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8350,19 +8350,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8378,19 +8378,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8406,19 +8406,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8434,19 +8434,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8462,19 +8462,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8490,19 +8490,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8518,19 +8518,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8546,19 +8546,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8574,19 +8574,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8602,19 +8602,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8630,19 +8630,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8658,19 +8658,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8686,19 +8686,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8714,19 +8714,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8742,19 +8742,19 @@ L_3ae1e:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8798,7 +8798,7 @@ floor_draw_upper_:
         mov dx, 0x3c4
         mov ax, 0xf02
         out dx, ax
-        mov ax, word [_v88c20]
+        mov ax, word [_detail_lvl]
         cmp ax, strict word 1
         je short floor_upper_hi
         nop
@@ -8817,7 +8817,7 @@ L_3c41d:
 floor_upper_hi:
         mov edi, 0xa0000
         add edi, 0x320
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         mov ax, 0x50
@@ -8885,7 +8885,7 @@ floor_upper_hi:
         mov dx, 0x3ce
         mov ax, 0x4005
         out dx, ax
-        mov byte [D_88ccf], 1
+        mov byte [_plane_bit], 1
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
@@ -8901,12 +8901,12 @@ L_3c510:
         mov esi, dword [_v7d660]
         mov edi, 0xa0000
         add edi, 0x1ef0
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov ecx, 0x140
 L_3c538:
         push ecx
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         mov al, 2
         mov dx, 0x3c4
         out dx, ax
@@ -8914,19 +8914,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8942,19 +8942,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8970,19 +8970,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -8998,19 +8998,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9026,19 +9026,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9054,19 +9054,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9082,19 +9082,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9110,19 +9110,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9138,19 +9138,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9166,19 +9166,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9194,19 +9194,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9222,19 +9222,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9250,19 +9250,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9278,19 +9278,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9306,19 +9306,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9334,19 +9334,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9362,19 +9362,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9390,19 +9390,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9418,19 +9418,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9446,19 +9446,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9474,19 +9474,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9502,19 +9502,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9530,19 +9530,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9558,19 +9558,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9586,19 +9586,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9614,19 +9614,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9642,19 +9642,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9670,19 +9670,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9698,19 +9698,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9726,19 +9726,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9754,19 +9754,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9782,19 +9782,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9810,19 +9810,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9838,19 +9838,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9866,19 +9866,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9894,19 +9894,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9922,19 +9922,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9950,19 +9950,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -9978,19 +9978,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10006,19 +10006,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10034,19 +10034,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10062,19 +10062,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10090,19 +10090,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10118,19 +10118,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10146,19 +10146,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10174,19 +10174,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10202,19 +10202,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10230,19 +10230,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10258,19 +10258,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10286,19 +10286,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10314,19 +10314,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10342,19 +10342,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10370,19 +10370,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10398,19 +10398,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10426,19 +10426,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10454,19 +10454,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10482,19 +10482,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10510,19 +10510,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10538,19 +10538,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10566,19 +10566,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10594,19 +10594,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10622,19 +10622,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10650,19 +10650,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10678,19 +10678,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10706,19 +10706,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10734,19 +10734,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10762,19 +10762,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10790,19 +10790,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10818,19 +10818,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10846,19 +10846,19 @@ L_3c538:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -10881,7 +10881,7 @@ L_3c538:
         mov ebx, dword [_v7d6a0]
 L_3daf7:
         add edi, 0x15e0
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
         jle short L_3db12
@@ -10892,7 +10892,7 @@ L_3daf7:
         mov ah, 1
         inc di
 L_3db12:
-        xchg byte [D_88ccf], ah
+        xchg byte [_plane_bit], ah
         loop L_3db1f
         jmp near L_40905
 L_3db1f:
@@ -10900,7 +10900,7 @@ L_3db1f:
 floor_upper_med:
         mov edi, 0xa0000
         add edi, 0x320
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         mov ax, 0x50
@@ -10968,7 +10968,7 @@ floor_upper_med:
         mov dx, 0x3ce
         mov ax, 0x4005
         out dx, ax
-        mov byte [D_88ccf], 3
+        mov byte [_plane_bit], 3
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
@@ -10984,12 +10984,12 @@ L_3dc12:
         mov esi, dword [_v7d660]
         mov edi, 0xa0000
         add edi, 0x1ef0
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov ecx, 0xa0
 L_3dc3a:
         push ecx
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         mov al, 2
         mov dx, 0x3c4
         out dx, ax
@@ -10997,19 +10997,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11025,19 +11025,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11053,19 +11053,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11081,19 +11081,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11109,19 +11109,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11137,19 +11137,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11165,19 +11165,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11193,19 +11193,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11221,19 +11221,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11249,19 +11249,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11277,19 +11277,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11305,19 +11305,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11333,19 +11333,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11361,19 +11361,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11389,19 +11389,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11417,19 +11417,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11445,19 +11445,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11473,19 +11473,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11501,19 +11501,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11529,19 +11529,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11557,19 +11557,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11585,19 +11585,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11613,19 +11613,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11641,19 +11641,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11669,19 +11669,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11697,19 +11697,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11725,19 +11725,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11753,19 +11753,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11781,19 +11781,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11809,19 +11809,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11837,19 +11837,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11865,19 +11865,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11893,19 +11893,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11921,19 +11921,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11949,19 +11949,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -11977,19 +11977,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12005,19 +12005,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12033,19 +12033,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12061,19 +12061,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12089,19 +12089,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12117,19 +12117,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12145,19 +12145,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12173,19 +12173,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12201,19 +12201,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12229,19 +12229,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12257,19 +12257,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12285,19 +12285,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12313,19 +12313,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12341,19 +12341,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12369,19 +12369,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12397,19 +12397,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12425,19 +12425,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12453,19 +12453,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12481,19 +12481,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12509,19 +12509,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12537,19 +12537,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12565,19 +12565,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12593,19 +12593,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12621,19 +12621,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12649,19 +12649,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12677,19 +12677,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12705,19 +12705,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12733,19 +12733,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12761,19 +12761,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12789,19 +12789,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12817,19 +12817,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12845,19 +12845,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12873,19 +12873,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12901,19 +12901,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12929,19 +12929,19 @@ L_3dc3a:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -12965,7 +12965,7 @@ L_3dc3a:
         mov ebx, dword [_v7d6a0]
 L_3f1ff:
         add edi, 0x15e0
-        mov ah, byte [D_88ccf]
+        mov ah, byte [_plane_bit]
         shl ah, 2
         cmp ah, 0xc
         jle short L_3f21b
@@ -12976,7 +12976,7 @@ L_3f1ff:
         mov ah, 3
         inc di
 L_3f21b:
-        xchg byte [D_88ccf], ah
+        xchg byte [_plane_bit], ah
         loop L_3f228
         jmp near L_40905
 L_3f228:
@@ -12984,7 +12984,7 @@ L_3f228:
 floor_upper_lo:
         mov edi, 0xa0000
         add edi, 0x320
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         mov ax, 0x50
@@ -13067,7 +13067,7 @@ L_3f314:
         mov esi, dword [_v7d660]
         mov edi, 0xa0000
         add edi, 0x1ef0
-        add di, word [_pal_a]
+        add di, word [_page_draw]
         rr xor, ecx, ecx
         mov ecx, 0x50
 L_3f33c:
@@ -13076,19 +13076,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13104,19 +13104,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13132,19 +13132,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13160,19 +13160,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13188,19 +13188,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13216,19 +13216,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13244,19 +13244,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13272,19 +13272,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13300,19 +13300,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13328,19 +13328,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13356,19 +13356,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13384,19 +13384,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13412,19 +13412,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13440,19 +13440,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13468,19 +13468,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13496,19 +13496,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13524,19 +13524,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13552,19 +13552,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13580,19 +13580,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13608,19 +13608,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13636,19 +13636,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13664,19 +13664,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13692,19 +13692,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13720,19 +13720,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13748,19 +13748,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13776,19 +13776,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13804,19 +13804,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13832,19 +13832,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13860,19 +13860,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13888,19 +13888,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13916,19 +13916,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13944,19 +13944,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -13972,19 +13972,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14000,19 +14000,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14028,19 +14028,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14056,19 +14056,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14084,19 +14084,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14112,19 +14112,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14140,19 +14140,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14168,19 +14168,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14196,19 +14196,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14224,19 +14224,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14252,19 +14252,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14280,19 +14280,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14308,19 +14308,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14336,19 +14336,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14364,19 +14364,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14392,19 +14392,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14420,19 +14420,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14448,19 +14448,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14476,19 +14476,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14504,19 +14504,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14532,19 +14532,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14560,19 +14560,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14588,19 +14588,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14616,19 +14616,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14644,19 +14644,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14672,19 +14672,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14700,19 +14700,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14728,19 +14728,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14756,19 +14756,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14784,19 +14784,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14812,19 +14812,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14840,19 +14840,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14868,19 +14868,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14896,19 +14896,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14924,19 +14924,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14952,19 +14952,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -14980,19 +14980,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5
@@ -15008,19 +15008,19 @@ L_3f33c:
         mov eax, dword [ebx]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0a]
+        add ax, word [_view_x]
         rr mov, ecx, eax
         mov eax, dword [ebx + 4]
         mul dword [esi]
         shr eax, 0x10
-        add ax, word [_v88b0e]
+        add ax, word [_view_y]
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
         rr mov, edx, ecx
         and edx, 0x1f
         rr add, esi, edx
-        mov edx, dword [_v7d6a4]
+        mov edx, dword [_tilemap]
         shr eax, 5
         shl eax, 9
         shr ecx, 5

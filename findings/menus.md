@@ -138,8 +138,8 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   (QUESTIONS.md).
 - CONFIRMED (0x1c183-0x1c1ea, and compare `ctl_label` 0x19cec-0x19d28): the five frame dwords are
   this side's and the other player's device value (same three tests as ctl_label: v7ee4a and the
-  shorts at cfg77128+0 for player 1, cfg77128+2/+4 for player 2), the saved `pal_d`, the player
-  index (`v88b7e`, forced to 0 in a net game) and the saved `pal_a`.
+  shorts at cfg77128+0 for player 1, cfg77128+2/+4 for player 2), the saved `page_shown`, the player
+  index (`v88b7e`, forced to 0 in a net game) and the saved `page_draw`.
 - CONFIRMED (0x1c538-0x1c5f5, 0x1c64f-0x1c6e6): rows 5 and 6 (BRAKES, HAND BRAKE TURN) show the
   record's names when `vals[vals[3]] <= 1` and the literals "BUTTON3"/"BUTTON4" (0x60d20/0x60d28)
   when it is 2, and nothing at all for any other value in the single-player path; rows 7 and 8
@@ -155,14 +155,14 @@ a sound card; `fn_193a8` (0x193a8) picks a bonus zone (v88c96). Port: both in
   a boolean (the name `aborted` on 0x88cd0 is misleading here).
 - CONFIRMED (0x1c7d9-0x1c87c): after the wait, `f278c4(0)` and `f27920(0)` run; in a net game
   `v88cf0`/`v88cf3` are zeroed, `net_key(v88cf0, v88cf3, 0)` fills `net88c14`, and the screen waits
-  60 ticks (`ticks` snapshot at 0x1c821). Then `pal_a = saved pal_d`, another retrace and screenshot
-  pair, and `pal_d`/`pal_a` are restored.
+  60 ticks (`ticks` snapshot at 0x1c821). Then `page_draw = saved page_shown`, another retrace and screenshot
+  pair, and `page_shown`/`page_draw` are restored.
 - CONFIRMED (scan of every E8/E9 rel32 target in the code object, every `lea reg,[disp32]`, and
   every absolute dword in both objects; `tools/le/xref.py` agrees): 0x1c88c and 0x1c968 are two
   more functions in this module and nothing in the image refers to either. Both are rebuilt
-  byte-identical (`fn_1c88c` 0x1c88c-0x1c964: save the three page offsets, page to `pal_d` with
-  `pal_c` = 48000, `msgbox(arg1, 0)`, 300-tick wait, page back, restore; `fn_1c968` 0x1c968-0x1c993:
-  `palptr = pal7d850`, `pal_a = 0`, `getpalette`, `fade_out(pal7d850)`, `v88bda = 1`). SPECULATIVE:
+  byte-identical (`fn_1c88c` 0x1c88c-0x1c964: save the three page offsets, page to `page_shown` with
+  `page_to` = 48000, `msgbox(arg1, 0)`, 300-tick wait, page back, restore; `fn_1c968` 0x1c968-0x1c993:
+  `palptr = pal7d850`, `page_draw = 0`, `getpalette`, `fade_out(pal7d850)`, `v88bda = 1`). SPECULATIVE:
   the linker kept them because the module was linked whole.
 
 - CONFIRMED (0x2bace-0x2bad6, `cmp [after],0; je 0x2bbc9` = the epilogue): the Duck Shoot screen
@@ -272,7 +272,7 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
 - CONFIRMED (0x1efb0-0x1f43b executed under `tools/wc/difffn.py`, iter 77): `credits_screen` ends by
   itself - it is six pages, the loop back edge is 0x1f428 `cmp dword [esp],5; jle 0x1f037` and the
   return is 0x1f432, so a capped run is a wait, not a menu that needs the player. The wait is the
-  per-line frame delay 0x1f305 `cmp edi, dword [0x7e720]; jge 0x1f305`: `edi` is the `pal_a` 0x88b24
+  per-line frame delay 0x1f305 `cmp edi, dword [0x7e720]; jge 0x1f305`: `edi` is the `page_draw` 0x88b24
   **word** loaded at 0x1f064 and 0x1f3d1 (0xbb80 / 0x7d00), and the page head 0x1f05a stores 0 to
   `ticks`, so `SEED=0x7e720=` cannot help (it is wiped every page) and the loop body has no stubbed
   call, so `TICK=` only pays at the next `page_show` 0x1f2e0. `TICK=65536` (one add per stubbed call,

@@ -80,7 +80,7 @@ pictures, e.g. `BSBCS.PCX` / `SBCS.PCX` picked by `fn_193a8` 0x193a8
 `gam_load` 0x2717c (byte-identical rebuild, `src/ww.c:12126-12180`) reads one
 value per line: four picture names into the 14-byte slots `gam7eabc[0..1]` and
 `gam7eaa0[0..1]`, a fifth name into `gam6a4e0`, two numbers (the start point
-`v88b0a`/`v88b0e`, each `+ 0x400`), one line nobody reads (line 8, `1` in every
+`view_x`/`view_y`, each `+ 0x400`), one line nobody reads (line 8, `1` in every
 file), eight pairs of numbers (the start-grid slots `order_a[0..7]` /
 `order_b[0..7]`, each `+ 0x3e0`), then `v88b60`; if that is non-zero, three more
 numbers (`v88b5a`, `v88b4e`, `v88b4c`). CONFIRMED by the line census over all 42
@@ -129,20 +129,20 @@ every record are read and thrown away.
 
 The array is written once (0x27dbc -> `v7d870 0x7d870`) and read once - by the
 asm `surface_at` 0x37b04 (`tools/le/xref.py ww 0x7d870` finds exactly those two
-sites). It takes the tile under a point from the tile map (`mov edx,[v7d6a4]`,
+sites). It takes the tile under a point from the tile map (`mov edx,[tilemap]`,
 `shr eax,5; shl eax,9`, `shr ecx,5; shl ecx,2` 0x37b5c-0x37b72 = the dword at
 row `[y>>5]`, column `[x>>5]` of a 0x80-dword map), converts the tile pointer
-to a tile index (`sub eax,[v7d64c]`, `shr eax,0xa`, `shl eax,3` 0x37b74-0x37b7c
+to a tile index (`sub eax,[tiles_base]`, `shr eax,0xa`, `shl eax,3` 0x37b74-0x37b7c
 - so a tile is 0x400 bytes) and indexes `v7d870 + index * 8` (0x37b80-0x37b86).
 Then it reads one byte of the tile's **mask** half, `tile + 0x1b000 +
-(y&31)*32 + (x&31)` (0x37b8d-0x37b95): if it is 0 `v7e568` gets the record's
+(y&31)*32 + (x&31)` (0x37b8d-0x37b95): if it is 0 `surf_class` gets the record's
 first stored dword, otherwise the second (0x37b9e / 0x37ba9). So the file's
 `.SIN[12*i+8]` = the surface class over the transparent part of tile i and
-`.SIN[12*i+12]` = the class over its solid part. `v7e568` indexes the 0x12e-byte
+`.SIN[12*i+12]` = the class over its solid part. `surf_class` indexes the 0x12e-byte
 `surfs[]` records (src/ww.c:1425), and the two dwords run 0..27 across all 42
 files (24 and 23 distinct values) while `WACKY.SDX`'s count word is 30, 29
 records read after `v88b7c--` (`src/ww.c:12592-12593`) - LIKELY the surface
-index; CONFIRMED that these dwords are what `surface_at` stores into `v7e568`.
+index; CONFIRMED that these dwords are what `surface_at` stores into `surf_class`.
 
 The discarded leading 4 bytes are 0x1, 0x10000 or 0x10001 (two shorts, each 0 or
 1; census over all 42: 1544 / 476 / 2516 records). Nothing in WW.EXE reads them
@@ -152,7 +152,7 @@ record, which is the file's +8 and +12): meaning OPEN.
 ### .M - 64x64 tile indices (CONFIRMED)
 
 4096 bytes. `track_load` reads one byte per column for rows 0x20..0x5f of the
-dword map at `v7d6a4` and stores `v7d75c + (byte << 10)` per column
+dword map at `tilemap` and stores `v7d75c + (byte << 10)` per column
 (`src/ww.c:12471-12479`); `v7d648 = v7d644 = 0x80` (`src/ww.c:17557-17558`) so
 the map is 128x128 dwords and the file fills its centre 64x64. Observed byte
 range over all 42 files: 1..107, i.e. 108 tiles. A tile is 0x400 bytes = 32x32
@@ -201,7 +201,7 @@ CONFIRMED (iter 56c, live harness on track 22 plus the copier's disasm):
 - The copier (asm, 0x395dd-0x396c8, in the race branch `v7d998 != 2`) copies 20
   rows of 0x50 bytes, adding 0xf0 to the source after each (a 320-byte = 1280-pixel
   source row), from `v7d860` (the scroll window, a pointer into A000:7d00..) to
-  `0xa0000 + 0x2260 + pal_a` = screen rows 110..129 of the page being drawn, with
+  `0xa0000 + 0x2260 + page_draw` = screen rows 110..129 of the page being drawn, with
   `rep movsb` (the latch copy moves 4 pixels a byte). So the screen shows a
   320-pixel window of a 1280-pixel horizon strip: the 20 rows directly above the
   horizon, scrolled with the view.
@@ -455,7 +455,7 @@ Header fields (offsets from 0x7ee1c; ING / CFG values from the two byte images):
 | +0x0e | `cfg7ee2a` | tested 0x1196c, cleared 0x11976 | 1 | 1 |
 | +0x14 | dword -> `v7eba0` | 0x35e43 | 14666 | 0 |
 | +0x18 | dword -> `v7eba4` | 0x35e39 | 51456 | 0 |
-| +0x1c..+0x26 | six words -> `v88b5c, v88b5e, v88b52, v88b3c, v88b3e, v88b48` | `ctl_setup` 0x14b00, 0x14b34-0x14b82 (`src/ww.c:3015`) | 0 | 0 |
+| +0x1c..+0x26 | six words -> `joy_cx, joy_cy, v88b52, v88b3c, v88b3e, v88b48` | `ctl_setup` 0x14b00, 0x14b34-0x14b82 (`src/ww.c:3015`) | 0 | 0 |
 | +0x28, +0x2a, +0x2e, +0x30, +0x32 | five flags `0x7ee44/46/4a/4c/4e` | written by the startup helper 0x11c9c (0x11cc8-0x11f79) | 0,1,0,0,0 | same |
 | +0x34, +0x36, +0x38, +0x3a | 1, 1, 7, 544 | never read | as shown | as shown |
 | +0x3c | `v7ee58` | 0x1e461 (`demo_mode`), 0x3680c (`main`) | 2 | 1 |

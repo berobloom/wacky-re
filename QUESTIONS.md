@@ -31,8 +31,8 @@ pointer to the finding, and leave it here so the number stays valid.
    Data point (engines_menu 0x167D8): the game keeps a multi-assigned int local in EDX (xor edx / mov $1,edx /
    movsx edx / mov edx,[esp]) while our compile spills it to slot 8 with identical C; `register` and declaration
    order did not change it. Data point (view_at_curpos 0x2F408, iter 20): the same shape with NO
-   locals at all - the game does `movsx edx,[v7d610]` for the first operand of a `short + short` sum,
-   ours `movsx eax,[v7d610]; mov [esp],eax; mov edx,[esp]` in the slot the next sum reuses; 30
+   locals at all - the game does `movsx edx,[vec_kx]` for the first operand of a `short + short` sum,
+   ours `movsx eax,[vec_kx]; mov [esp],eax; mov edx,[esp]` in the slot the next sum reuses; 30
    spellings (both operand orders, statement order, casts, temps for the sum and for each first
    operand) leave it, and every local grows the frame to `sub esp,8` where the game has one slot, so
    no C form is left there. screen_menu 0x16984 MATCHED only when the loop result got a second single-block
@@ -290,8 +290,8 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
 
 13. **OPEN** (src/ww.c `main_menu`): why does the game's build keep a constant in a register
     instead of folding it? 0x1f950 `mov edx,9` before `call ents_init`, then `movsx eax,dx` as
-    menu's first argument at 0x1f9b2, 0x1fa89 and 0x1fadf. The same DX saves pal_a around every
-    pcx_blit fade (0x1fb6f, 0x1fc43, ...). Our 9.5b build folds the 9 (`mov eax,9`) and saves pal_a in
+    menu's first argument at 0x1f9b2, 0x1fa89 and 0x1fadf. The same DX saves page_draw around every
+    pcx_blit fade (0x1fb6f, 0x1fc43, ...). Our 9.5b build folds the 9 (`mov eax,9`) and saves page_draw in
     BX. PART ANSWERED (iter 36): pcx_blit 0x375cd is pushal..popal, so `void pcx_blit(void)` lets DX hold
     the save across the call (main_menu 379 -> 341 rows); the `mov edx,9` part is still open. Tried and failed: one shared short local for both uses, separate locals, `int sel`, six
     declaration orders. Possibly the same build difference as QUESTIONS 6 (calls the game keeps that

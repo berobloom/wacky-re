@@ -1,4 +1,4 @@
-# Video: mode, palette, the page offsets `pal_a`-`pal_d`
+# Video: mode, palette, the page offsets `page_draw`-`page_shown`
 
 INDEX question: "Video: mode, palette, blitter, back buffer, present". Status: **OPEN**
 (every routine of the assembler module is read and named, below; the C side's frame and
@@ -12,27 +12,27 @@ The asm, read in full:
 pushal
 mov dx,0x3ce ; mov ax,0x4105 ; out dx,ax      ; Graphis: Chain4 write + read map 0
 mov dx,0x3c4 ; mov ax,0x0f02 ; out dx,ax      ; Sequencer: write map mask = all four planes
-mov edi,0xa0000 ; add di, word [0x88b1a]      ; pal_c: destination page offset
-mov esi,0xa0000 ; add si, word [0x88b1c]      ; pal_b: source page offset
+mov edi,0xa0000 ; add di, word [0x88b1a]      ; page_to: destination page offset
+mov esi,0xa0000 ; add si, word [0x88b1c]      ; page_from: source page offset
 mov ecx,0x3e80 ; rep movsb                    ; 16000 bytes = one 320x200 page
 mov dx,0x3ce ; mov ax,0x4005 ; out dx,ax      ; Graphis: undo
 popal
 ret
 ```
 
-So `pal_a`/`pal_b`/`pal_c`/`pal_d` (0x88b24/0x88b1c/0x88b1a/0x88b18) and
+So `page_draw`/`page_from`/`page_to`/`page_shown` (0x88b24/0x88b1c/0x88b1a/0x88b18) and
 `save_a`/`save_b`/`save_c` (0x88b04/0x88b12/0x88b06) are **page offsets into A000:0000**, not
 palette values: the name in the old notes is wrong. `48000 = 3 * 0x3e80` is the fourth page.
-`pal_a` is not used by this routine but the menus set it with `pal_b`/`pal_c` (0x1c09b-0x1c0a1),
+`page_draw` is not used by this routine but the menus set it with `page_from`/`page_to` (0x1c09b-0x1c0a1),
 and `fn_17888` sets it to 0 and 0x3e80 (names line 546) — LIKELY the offset the *display* reads
 (read by the asm at 0x36f55 or by the retrace), SPECULATIVE.
 
 Two helpers wrap the copy and are called at 11 sites each (menus, `cars_menu`, `modem`):
 
-- `fn_1c068` (0x1c068): saves `pal_a/b/c` into `save_a/b/c`, sets `pal_c = 48000` and
-  `pal_a = pal_b = pal_d`, then a tail `jmp page_copy` (0x1c0a7). CONFIRMED (bytes).
-- `fn_1c0ac` (0x1c0ac): the reverse — `pal_b = 48000`, `pal_a = pal_c = pal_d`, `call
-  page_copy` (0x1c0c7), then `pal_b/c/a = save_b/c/a`. CONFIRMED (bytes).
+- `fn_1c068` (0x1c068): saves `page_draw/b/c` into `save_a/b/c`, sets `page_to = 48000` and
+  `page_draw = page_from = page_shown`, then a tail `jmp page_copy` (0x1c0a7). CONFIRMED (bytes).
+- `fn_1c0ac` (0x1c0ac): the reverse — `page_from = 48000`, `page_draw = page_to = page_shown`, `call
+  page_copy` (0x1c0c7), then `page_from/c/a = save_b/c/a`. CONFIRMED (bytes).
 
 Both were rebuilt byte-identical, then taken out of `src/ww.c` again: defining them there lets
 `-oe` inline them into every caller and `net_end` (0x110d4, byte-identical) stops matching —
@@ -44,11 +44,11 @@ see GOTCHAS. Keep them as `extern` declarations until the game's inline threshol
 Six sites read in the rebuilt functions show one idiom, always as two stores:
 
 ```
-cmp word [pal_a], 0 / jne +13 / mov word [pal_a], 0x3e80 / jmp +11 / mov word [pal_a], 0
+cmp word [page_draw], 0 / jne +13 / mov word [page_draw], 0x3e80 / jmp +11 / mov word [page_draw], 0
 ```
 
 at 0x1a744, 0x1a9ce, 0x1aeb9, 0x1bb0c (`cars_menu`) and 0x1cbf8, 0x1cd6a (`enter_name`,
-findings/scores.md): `pal_a` is one 320x200 page offset, either 0 or 0x3e80, and the flip
+findings/scores.md): `page_draw` is one 320x200 page offset, either 0 or 0x3e80, and the flip
 selects the other one. 18 sites in the code object have that `cmp word [X],0 / jne / mov word
 [X],0x3e80` shape (scan of `.work/le/ww.obj1.bin` with regex `\x66\x83\x3d....\x00\x75..` before
 `\x66\xc7\x05....\x80\x3e`). CONFIRMED that the game wrote it as an `if`/`else` *statement* and
@@ -76,13 +76,13 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
 ## `pcx_blit` 0x375cd takes no arguments and preserves every register — CONFIRMED
 
 - Bytes: `pushal` at 0x375cd, `popal; ret` at 0x376d5. It reads its source from `p7d714` (0x375f5
-  `mov esi,[0x7d714]`) and the page offset from `pal_a` (0x375ee `add di,[0x88b24]`), writes planar
+  `mov esi,[0x7d714]`) and the page offset from `page_draw` (0x375ee `add di,[0x88b24]`), writes planar
   VGA at 0xa0000 through sequencer port 0x3c4 (0x375d9-0x375e1), 200 rows (`cmp word [0x88b58],0xc8`
   0x37659) with `v88b4a` added per row (0x3764b). Data bytes with the top two bits set are runs
   (0x3760a, count in the low six bits, 0x3766b): a PCX-style RLE decode straight to the screen.
   LIKELY: it is the PCX picture blit; `p6a978`/`p6a980` hold the encoded pictures.
 - So the C prototype is `void pcx_blit(void)`. The callers' `mov eax,[p6a9xx]` before the call is the
-  `p7d714 = p6a9xx` store, and `mov dx,[pal_a]` ... `mov [pal_a],dx` is a `short` save of pal_a that
+  `p7d714 = p6a9xx` store, and `mov dx,[page_draw]` ... `mov [page_draw],dx` is a `short` save of page_draw that
   DX keeps across the call (0x1ce57/0x1ce6c, 0x1d73e/0x1d758, 0x1e816/0x1e829). CONFIRMED by
   rebuild: switching `src/ww.c` to this prototype removed those rows in credits_screen, demo_mode,
   main_menu and 6 other functions (iter 36).
@@ -101,7 +101,7 @@ Rebuild byte-identical: `src/check.sh` MATCH, 32 bytes, 0x114a8-0x114c5.
   go to planes 0..3 of one Mode X address (CONFIRMED live, findings/formats.md ".PAR").
 - 0x7d00 = 32000 = the start of the third 0x3e80-byte page. The blob is a 1280x20 horizon
   panorama stored off-screen there; every race frame the asm copier 0x395dd latch-copies a
-  20-row, 80-address (320-pixel) window of it from `v7d860` to screen rows 110..129 (`pal_a +
+  20-row, 80-address (320-pixel) window of it from `v7d860` to screen rows 110..129 (`page_draw +
   0x2260`) - CONFIRMED live (findings/formats.md ".PAR").
 - Callers pass `p6a980` and guard on `v7d998` being 0 or 3 (`src/ww.c:4416-4417` where `p6a980`
   holds the `<n>.PAR` blob, `src/ww.c:17259-17260`, `src/ww.c:17479-17480`): the image is
@@ -237,41 +237,41 @@ the link still resolves (1174 externals).
 |---|---|---|---|---|
 | 0x36a4e | `textscreen_show` | f36a4e | CONFIRMED | 4000-byte text screen from [p7d714] to B800 (exit screen) |
 | 0x36cca | `getpalette` | | CONFIRMED | 256 DAC entries to [palptr] |
-| 0x36d42 | `rowtab_init` | f36d42 | CONFIRMED | [v7eb84][y] = y*80, 320 rows |
+| 0x36d42 | `rowtab_init` | f36d42 | CONFIRMED | [rowtab][y] = y*80, 320 rows |
 | 0x36e36 / 0x36e53 | `vga_latch_on` / `vga_latch_off` | L_ | CONFIRMED | write mode 1 + all planes / write mode 0 |
 | 0x36e66 | `rows_restore` | f36e66 | LIKELY | latch copy of spr_w rows from VRAM 0xcc60 to row spr_y |
 | 0x36ec2 | `band_mirror` | f36ec2 | CONFIRMED | 90-row band at spr_y mirrored vertically |
-| 0x36f14 | `page_copy` | setpalette | CONFIRMED | page pal_b -> page pal_c (above) |
+| 0x36f14 | `page_copy` | setpalette | CONFIRMED | page page_from -> page page_to (above) |
 | 0x36f55 | `horizon_upload` | fn_36f55 | STRONGLY SUPPORTED | linear [v7eb54] -> planar 0x7d00 (below) |
 | 0x36f8c | `rec_swap` | f36f8c | CONFIRMED | swap two records (the sorts) |
-| 0x36fd0 / 0x3707e / 0x37132 / 0x373ee | `spr_draw` / `_clip` / `_key` / `_opaque` | drawsprite, drawsprite2, f37132, f373ee | CONFIRMED | column-major sprite: colour 0 transparent / skip clipy per column / v88ce9 transparent / opaque |
-| 0x371e4 | `box_draw` | f371e4 | CONFIRMED | border v88ce8, fill v88ce9 |
+| 0x36fd0 / 0x3707e / 0x37132 / 0x373ee | `spr_draw` / `_clip` / `_key` / `_opaque` | drawsprite, drawsprite2, f37132, f373ee | CONFIRMED | column-major sprite: colour 0 transparent / skip clipy per column / ink transparent / opaque |
+| 0x371e4 | `box_draw` | f371e4 | CONFIRMED | border border, fill ink |
 | 0x372c7 / 0x3735c | `spr_grab` / `grab32` | getline+blit372c7 / f3735c | CONFIRMED | VRAM -> [sprptr], column-major / 32x32 row-major |
 | 0x37487 | `spr_draw_scaled` | f37487 | STRONGLY SUPPORTED | scaled sprite (formats.md .SP) |
 | 0x375cd | `pcx_blit` | f375cd | LIKELY | PCX RLE to the page (above) |
 | 0x376d7 | `pcx_tiles` | f376d7 | CONFIRMED | PCX 320x200 -> 54 tiles of 32x32 at [v7eb58] |
 | 0x377ae / 0x3784b | `buttons_poll` / `joy_poll` | f377ae / joy_detect | CONFIRMED | buttons; game-port axes -> direction keys (`joyfound` 1 = no stick) |
-| 0x37a06 | `tilemap_fill` | f37a06 | CONFIRMED | [v7d6a4] = v7d64c, 64 KB |
+| 0x37a06 | `tilemap_fill` | f37a06 | CONFIRMED | [tilemap] = tiles_base, 64 KB |
 | 0x37a21 / 0x37bb1 | `path_pt_scale` / `vec_scale` | f37a21 / f37bb1 | LIKELY / CONFIRMED | 16.16 rounded scaling |
 | 0x37b04 | `surface_at` | f37b04 | CONFIRMED | surface probe (formats.md, game-loop.md) |
-| 0x37bf0 | `pixel_plot` | f37bf0 | CONFIRMED | one pixel, colour v88ce9 |
+| 0x37bf0 | `pixel_plot` | f37bf0 | CONFIRMED | one pixel, colour ink |
 | 0x37c43 / 0x37c84 / 0x37cf1 | `dac_put5` / `dac_put8` / `dac_load` | f37c43 / f37c84 / f37cf1 | CONFIRMED | palette animation entries / a range from [palptr] |
-| 0x37de0 | `page_show` | waitretrace+f37de0 | CONFIRMED | the page flip: CRTC start = pal_a, pal_d = pal_a |
+| 0x37de0 | `page_show` | waitretrace+f37de0 | CONFIRMED | the page flip: CRTC start = page_draw, page_shown = page_draw |
 | 0x37e23 / 0x37e41 | `vram_clear` / `modex_init` | f37e23 / f37e41 | CONFIRMED | clear 256 KB / unchain to Mode X |
 | 0x37e94 / 0x3c3e9 | `floor_draw` / `floor_draw_upper` | f37e94 / f3c3e9 | STRONGLY SUPPORTED | horizon + perspective floor from row 110 / row 10 |
 | 0x40907 | `kbd_isr` | | LIKELY | keyboard IRQ handler |
 
 - **The perspective floor is three unrolled copies per entry, ~2,070 instructions each.** `floor_draw`
-  and `floor_draw_upper` pick one by `v88c20`, the detail setting (1/2/3 = the High/Medium/Low detail
+  and `floor_draw_upper` pick one by `detail_lvl`, the detail setting (1/2/3 = the High/Medium/Low detail
   menu, formats.md +0x3c). Six bodies, 33 KB of the module's 40 KB. Per pixel: a precomputed point
-  `[ebx]` times the scale `[esi]`, plus the camera `v88b0a`/`v88b0e`, gives a tile of the map
-  `v7d6a4` (32x32 tiles, 128 per map row) and one byte from it. CONFIRMED that shape (instruction
+  `[ebx]` times the scale `[esi]`, plus the camera `view_x`/`view_y`, gives a tile of the map
+  `tilemap` (32x32 tiles, 128 per map row) and one byte from it. CONFIRMED that shape (instruction
   census).
 - **The three bodies differ only in horizontal resolution** (CONFIRMED, iter 91: the bodies diffed
   with labels normalized, 2071-2097 lines each). Each body is one screen column of **70 floor rows,
   unrolled** bottom to top (`movsb; sub edi,0x51` = one row up), in a loop over columns:
 
-  | `v88c20` | label | columns | pixels per column | plane mask per column | points used (`ebx +=`) | scale entries skipped (`esi +=`) |
+  | `detail_lvl` | label | columns | pixels per column | plane mask per column | points used (`ebx +=`) | scale entries skipped (`esi +=`) |
   |---|---|---|---|---|---|---|
   | 1 High | `floor_hi` 0x37ece | 0x140 = 320 | 1 | 1,2,4,8 rotating (`shl ah,1`) | 8 (every point) | 0 |
   | 2 Medium | `floor_med` 0x395dd | 0xa0 = 160 | 2 | 3, 0xc (`shl ah,2`) | 0x10 (every 2nd) | 0x118 = 70*4 |
@@ -293,7 +293,13 @@ the link still resolves (1174 externals).
   findings/executables.md "Open"): `strips_restore` 0x36a69, `rect_overlap` 0x36d69, `pt_load` 0x379ec,
   `surface_at_7c` 0x37a6c, `tile_show` 0x37d96, `vretrace_wait` 0x37dc7. They are labelled in the asm
   and kept, because the bytes are the game's. A port can drop them.
-- `pal_a`-`pal_d` keep their old names (page offsets, above). Renaming the data is a separate step.
+- **Data renamed from the asm (iter 91c, C and asm together, 33 names; each in analysis/ww_names.txt
+  with its level and "was"):** `pal_a`/`pal_b`/`pal_c`/`pal_d` -> `page_draw`/`page_from`/`page_to`/
+  `page_shown`; `v7d6a4` -> `tilemap`, `v7d64c` -> `tiles_base`, `v88b0a`/`v88b0e` -> `view_x`/`view_y`,
+  `v88c20` -> `detail_lvl`, `v7eb84` -> `rowtab`, `v88ce8`/`v88ce9` -> `border`/`ink`, `v7e568` ->
+  `surf_class`, `v7d7a4`/`v7d7a8` -> `probe_x`/`probe_y`, plus the arguments of vec_scale, rec_swap,
+  the DAC routines and the joystick poll. The sections above were written with the old names and
+  have been renamed in place.
 
 ## Traps
 
@@ -312,7 +318,7 @@ the link still resolves (1174 externals).
   `sub [spr_w],ax` (0x34346) and reuses it for `clipy` (0x3435f). Re-reading `spr_w` after it was
   shortened gives 0. Use the local (`n = spr_w - 1 + spr_y - 0xc7; spr_w -= n; ... clipy = n * 4;`,
   the house spelling at `src/ww.c:11353`).
-- A ternary is not the game's flip: `pal_a = pal_a ? 0 : 0x3e80;` selects the value in EAX and
+- A ternary is not the game's flip: `page_draw = page_draw ? 0 : 0x3e80;` selects the value in EAX and
   stores once, which no site in the game does. Write the two-branch `if`/`else` (see above);
   that is worth 71 aligned instructions in `cars_menu` alone.
 - `page_copy` clobbers nothing the C sees (`pushal`/`popal`) but its `rep movsb` runs with all

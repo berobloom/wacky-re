@@ -44,7 +44,7 @@ dword locals 0x110-0x178: 0xf0 + 0x20 + 0x6c = 0x17c = the `sub esp` size
 | 0x110 | stage-counter of the "choice locked in" animation | 0x1b993, 0x1bbb3, 0x1bc3c | LIKELY |
 | 0x114 | = 0x2e, left margin: print_at x of the two info lines | 0x1a38c, 0x1a5cd | CONFIRMED |
 | 0x118 | idle timer; when > 4 it advances 0x160 | 0x1afb9, 0x1afe0 | LIKELY |
-| 0x11c | `pal_a` as it was on entry, restored at 0x1a61e | 0x1a3d8, 0x1a3e5, 0x1a615 | CONFIRMED |
+| 0x11c | `page_draw` as it was on entry, restored at 0x1a61e | 0x1a3d8, 0x1a3e5, 0x1a615 | CONFIRMED |
 | 0x120, 0x144 | "the other row moved first" flags (up / down) | 0x1b59f, 0x1b5a8, 0x1b5b5, 0x1b5c0, 0x1b629, 0x1b634, 0x1b63f, 0x1b64a | LIKELY |
 | 0x124 | = 0x60, caption y | 0x1a445, 0x1a5bc | CONFIRMED |
 | 0x128 | countdown 9..0 for the name-line loop | 0x1a84d, 0x1a934, 0x1a946 | CONFIRMED |
@@ -150,7 +150,7 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   and 0x1ba13-0x1ba31. CONFIRMED by the three `call spr_draw`; our C had only two of
   them until iter 60 - the middle one was missing, and fndiff hid it.
 - Info lines: buf0 at (0x2e, 0xaf) 0x1a5da, buf2 at (0x2e, 0xbc) 0x1a605.
-- `pal_a` is set to 0x7d00 at 0x1a5b3, restored from 0x11c at 0x1a61e, then
+- `page_draw` is set to 0x7d00 at 0x1a5b3, restored from 0x11c at 0x1a61e, then
   blinked 0 / 0x3e80 once per frame (0x1a744, 0x1a9ce, 0x1aec3, 0x1bb0c), with
   `page_copy` (0x36f14) and a `ticks - v7ea70` wait (8 ticks 0x1a76f, 16 /
   60 ticks 0x1aa04/0x1aa23, 0x1a ticks 0x1aeef, 10 ticks 0x1af1b/0x1bb37,

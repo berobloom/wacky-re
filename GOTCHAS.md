@@ -600,7 +600,7 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **An asm routine's prototype comes from its own prologue, not from what callers load:** pcx_blit
   0x375cd is `pushal ... popal; ret` (0x376d5) and reads p7d714, so it is `void pcx_blit(void)` (all
   registers survive). The "EAX/EDX arguments, result in DX" were the caller's `p7d714 = p` value and a
-  `short` save of pal_a held in DX across the call: `p7d714 = p; fs = pal_a; pcx_blit(); pal_a = fs;`
+  `short` save of page_draw held in DX across the call: `p7d714 = p; fs = page_draw; pcx_blit(); page_draw = fs;`
   (0x1ce57/0x1ce6c). Retired the old "16-bit EDX argument" dead end; credits_screen 44 -> 32. [generic]
 - **A ternary as a call argument blocks 9.5b's strength reduction of the loop index**; the same
   call in an `if`/`else` lets it replace `k` by stepped pointers/offsets like the game

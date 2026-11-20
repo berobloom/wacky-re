@@ -106,10 +106,10 @@
 0x088b04 save_a
 0x088b06 save_c
 0x088b12 save_b
-0x088b18 pal_d
-0x088b1a pal_c
-0x088b1c pal_b
-0x088b24 pal_a
+0x088b18 page_shown  
+0x088b1a page_to     
+0x088b1c page_from   
+0x088b24 page_draw   
 0x088b26 spr_w
 0x088b32 spr_x
 0x088b34 spr_y
@@ -280,8 +280,8 @@
 0x012724 view2_out    # SPECULATIVE: restores player 1
 0x07d5bc kart7d5bc    # SPECULATIVE
 0x07d5c0 kart7d5c0    # SPECULATIVE
-0x088b0a v88b0a       # SPECULATIVE
-0x088b0e v88b0e       # SPECULATIVE
+0x088b0a view_x             # SPECULATIVE
+0x088b0e view_y             # SPECULATIVE
 0x088c6e v88c6e       # SPECULATIVE
 0x088c72 v88c72       # SPECULATIVE
 0x088c76 v88c76       # SPECULATIVE
@@ -499,8 +499,8 @@
 0x088c10 v88c10       # SPECULATIVE: glyph width when scaled
 0x014890 stext        # LIKELY: (x, y, s) 8x8 text, one sprite per byte from sfont via f373ee
 0x06a4c8 sfont        # LIKELY: sprite pointers indexed by character code (overlaps the other sp6a... tables)
-0x088ce8 v88ce8       # SPECULATIVE: char, box colour for f371e4
-0x088ce9 v88ce9       # SPECULATIVE: char, box colour for f371e4
+0x088ce8 border             # SPECULATIVE: char, box colour for f371e4
+0x088ce9 ink                # SPECULATIVE: char, box colour for f371e4
 0x014b00 ctl_setup    # LIKELY: (which) copies six control shorts from the config (cfg7ee1c+0x1C or cfg77128+8), keymaps 1/2/3 or 4/8/12, joy_detect
 0x014c10 center_x     # LIKELY: (320 - w) / 2
 0x014c24 center_y     # LIKELY: (200 - h) / 2
@@ -516,8 +516,8 @@
 0x014cd8 joy_clear_y  # SPECULATIVE: joy88b40 = 0 when v7b6dd and v7b6dc is 0x48 or 0x50 (up/down scan codes)
 0x07b6dc v7b6dc       # SPECULATIVE: char, a scan code
 0x07b6dd v7b6dd       # SPECULATIVE: char
-0x088b5c v88b5c       # SPECULATIVE: control from the config
-0x088b5e v88b5e       # SPECULATIVE
+0x088b5c joy_cx             # SPECULATIVE: control from the config
+0x088b5e joy_cy             # SPECULATIVE
 0x088b52 v88b52       # SPECULATIVE
 0x088b3c v88b3c       # SPECULATIVE
 0x088b3e v88b3e       # SPECULATIVE
@@ -600,7 +600,7 @@
 0x07eca0 v7eca0          # SPECULATIVE: local zones ready (==3)
 0x07edb0 v7edb0          # SPECULATIVE: engines locked (forces v7ee5a=2)
 0x07ecb8 v7ecb8          # CONFIRMED: engine choice copy (0x16917, the same value records_load takes at 0x1691d); fn_1d704's " 12 HP"/" 6 HP" title tests it
-0x088c20 v88c20          # SPECULATIVE: copy of v7ee58 at screen_menu exit
+0x088c20 detail_lvl            # SPECULATIVE: copy of v7ee58 at screen_menu exit
 0x016aac pnames_init     # CONFIRMED: strcpy UNO..TIGI into pnames (0x7d228, 12-byte stride)
 0x016b38 pname_desc      # CONFIRMED: switch 0..7 copies camel name+tagline pair into mnames (jump table 0x16b18)
 0x016ca0 fn_16ca0         # SPECULATIVE: v88c20 -> v88c7c (40/36/32), /2 -> v88c7a, 200-word copy into 0x7e730 from 0x7e584 or 0x7e8c4
@@ -647,8 +647,8 @@
 0x07b6db v7b6db       # LIKELY: cfg7b6d8[4]; set -> key88cdd = 1
 0x07c658 v7c658       # LIKELY: int, the song the menus switch to (compared with cursong, passed to music_start)
 0x07e574 v7e574       # LIKELY: int, nonzero = the bonus-zone voices are allowed (0x19b88)
-0x088b10 w88b10       # LIKELY: short, set to 1 by the bonus menus (palette/ent refresh flag)
-0x088b1e w88b1e       # LIKELY: short, the sound-card/sprite index the menus show (v88c96-1, card+4)
+0x088b10 dac_count          # LIKELY: short, set to 1 by the bonus menus (palette/ent refresh flag)
+0x088b1e dac_first          # LIKELY: short, the sound-card/sprite index the menus show (v88c96-1, card+4)
 0x088c58 v88c58       # LIKELY: short, set to 1 by both bonus menus
 0x026ec4 pal_6bit     # CONFIRMED (rebuild src/ww.c): 0x300 palette bytes >> 2 in place; callers 0x18537, 0x194e7, 0x27c46
 0x0278c4 wait_release # CONFIRMED (rebuild src/ww.c): (short flag) waits until no key/joy flag is held; flag lets key88cd0 end it
@@ -716,7 +716,7 @@
 0x07712a cfg7712a           # CONFIRMED: fn_1c0f4 0x1c1d3 (player 2 device, -> vals[1])
 0x088bda v88bda             # short; set to 1 by fn_1c968 0x1c98a; menu()'s 2nd argument in trial_records_menu 0x1d662 (0 first draw, 1 after a track screen 0x1d6dd) - LIKELY "screen already up, no fade"
 0x027920 wait_input   # CONFIRMED (rebuild src/ww.c): (short mode) waits for a key/joy flag; 1 for key88cd0 with mode; mode 2 times out after 0x440 ticks
-0x088ce9 v88ce9             # char; set to 0x2c by fn_1c0f4 0x1c14b next to v88ce8 (0x26) - f371e4 box colours
+0x088ce9 ink                      # char; set to 0x2c by fn_1c0f4 0x1c14b next to v88ce8 (0x26) - f371e4 box colours
 0x01cb44 enter_name       # CONFIRMED (rebuild src/ww.c: 718 bytes at 0x1cb44, 21 aligned instruction diffs, all stack slots - QUESTIONS 9): the "PLEASE ENTER NAME.." name-entry screen; arg1 = the name buffer, arg2 = the centred heading (0x600ac empty at 0x1ce78), arg3 = the last index a character may go at (0xb at 0x1ce3f); caret sprite gn7eb2c at x 0xaa+8i y 0x5b; DOS 2509h restores the keyboard vector at 0x1cc2f-0x1cc5b; callers 0x1ce78, 0x2b6d7, 0x2e769
 0x060d8c (name entry strings) # CONFIRMED: "PLEASE ENTER NAME.." 0x60d8c (20 bytes), 16 spaces 0x60da0, 12 spaces 0x60db4 - the pads enter_name copies into its arg1 (0x1cbbf, 0x1cc81, 0x1cc8d)
 0x07d704 sprptr                # see line 102; enter_name points it at gn7eb2c (0x1cce4) for the text caret, so sprptr also names the caret source
@@ -841,46 +841,79 @@
 0x01d340 trial_records_menu  # CONFIRMED (rebuild src/ww.c, byte-identical): the TIME TRIAL record book; metal menu (BRONZE/SILVER/GOLD TRIALS) then five "<metal>TRACK n" rows through menu(6, v88bda, 0, 0) 0x1d671, a track -> f2e4b8(metal + v7ecb4, track, 0) 0x1d6ca and CHECK.PCX reload; no argument (reads v88c80 itself 0x1d349); caller 0x2107e
 # The assembler module (src/wwasm.asm, iter 91): every routine, read in the asm; UNREFERENCED = no call, jump or fixup reaches it
 0x036a4e textscreen_show  # CONFIRMED: copies 0x3e8 dwords (one 80x25 text screen) from [p7d714] to B800:0; main calls it after fread(p6a978,0xfa0) at exit (src/ww.c textscreen_show())
-0x036a69 strips_restore   # CONFIRMED: UNREFERENCED (no call, jump or fixup reaches it): latch copy of 20-byte strips from VRAM 0xbb80+0x12c0 to page pal_a +0x12c0
+0x036a69 strips_restore   # CONFIRMED: UNREFERENCED (no call, jump or fixup reaches it): latch copy of 20-byte strips from VRAM 0xbb80+0x12c0 to page page_draw +0x12c0
 0x036cca getpalette       # CONFIRMED: reads the 256 DAC entries (0x3c7, 3x 0x3c9) to [palptr], each read after a display-enable wait on 0x3da bit 0
-0x036d42 rowtab_init      # CONFIRMED: fills [v7eb84] with 320 dwords y*80: the Mode X row-offset table every blit indexes with spr_y
+0x036d42 rowtab_init      # CONFIRMED: fills [rowtab] with 320 dwords y*80: the Mode X row-offset table every blit indexes with spr_y
 0x036d69 rect_overlap     # CONFIRMED: UNREFERENCED: v88bbc = 1 if the rectangles (88bca,88bac,88bc8,88baa) and (88bba,88bbe,88bc6,88ba8) overlap
 0x036e36 vga_latch_on     # CONFIRMED: GC mode 0x41 (write mode 1: latch copy), map mask 0x0f; local, called 3x
 0x036e53 vga_latch_off    # CONFIRMED: GC mode 0x40 (write mode 0); local, called 3x
-0x036e66 rows_restore     # LIKELY: CONFIRMED the bytes: latch copy of spr_w rows (80 bytes each) from VRAM 0xcc60 to page pal_a row spr_y; LIKELY restores the background under the intro fly-in (its one caller, after floor_draw)
-0x036ec2 band_mirror      # CONFIRMED: latch copy: the 90 rows from page pal_a + spr_y, bottom row first, to VRAM 0xbb80, then back - a vertical mirror of the band; called per car in two-player when av7eb80 && v88bde
-0x036f14 page_copy        # CONFIRMED: was setpalette - NOT a palette op: latch copy 0x3e80 bytes (one page) from A000+pal_b to A000+pal_c (findings/video.md)
+0x036e66 rows_restore     # LIKELY: CONFIRMED the bytes: latch copy of spr_w rows (80 bytes each) from VRAM 0xcc60 to page page_draw row spr_y; LIKELY restores the background under the intro fly-in (its one caller, after floor_draw)
+0x036ec2 band_mirror      # CONFIRMED: latch copy: the 90 rows from page page_draw + spr_y, bottom row first, to VRAM 0xbb80, then back - a vertical mirror of the band; called per car in two-player when av7eb80 && v88bde
+0x036f14 page_copy        # CONFIRMED: was setpalette - NOT a palette op: latch copy 0x3e80 bytes (one page) from A000+page_from to A000+page_to (findings/video.md)
 0x036f55 horizon_upload   # STRONGLY SUPPORTED: CONFIRMED the bytes: 0x6400 linear bytes from [v7eb54] to planar A000:7d00, map mask 1,2,4,8 per source byte (four pixels per address); the horizon strip floor_draw copies from 0x7d00 is 1280x20 = 0x6400 (findings/video.md)
-0x036f8c rec_swap         # CONFIRMED: swaps [v7d88c] and [v7d880] through [v7d894], v7d864 dwords each (rep movsd x3); the record sorts of crecs[] and standings[] call it
-0x036fd0 spr_draw         # CONFIRMED: column-major sprite at (spr_x,spr_y) page pal_a: spr_h columns of spr_w pixels from [sprptr], colour 0 transparent
+0x036f8c rec_swap         # CONFIRMED: swaps [swap_a] and [swap_b] through [swap_tmp], swap_n dwords each (rep movsd x3); the record sorts of crecs[] and standings[] call it
+0x036fd0 spr_draw         # CONFIRMED: column-major sprite at (spr_x,spr_y) page page_draw: spr_h columns of spr_w pixels from [sprptr], colour 0 transparent
 0x03707e spr_draw_clip    # CONFIRMED: spr_draw that skips clipy source bytes after each column
-0x037132 spr_draw_key     # CONFIRMED: spr_draw with the transparent colour v88ce9 instead of 0
-0x0371e4 box_draw         # CONFIRMED: box spr_h x spr_w at (spr_x,spr_y): outer columns and top/bottom pixels v88ce8, inside v88ce9
-0x0372c7 spr_grab         # CONFIRMED: reverse of spr_draw: spr_h columns of spr_w pixels from page pal_a at (spr_x,spr_y) to [sprptr], plane by read-map select (0x3ce index 4)
-0x03735c grab32           # CONFIRMED: 32x32 pixels from page pal_a at (spr_x,spr_y) to [sprptr], row by row
+0x037132 spr_draw_key     # CONFIRMED: spr_draw with the transparent colour ink instead of 0
+0x0371e4 box_draw         # CONFIRMED: box spr_h x spr_w at (spr_x,spr_y): outer columns and top/bottom pixels border, inside ink
+0x0372c7 spr_grab         # CONFIRMED: reverse of spr_draw: spr_h columns of spr_w pixels from page page_draw at (spr_x,spr_y) to [sprptr], plane by read-map select (0x3ce index 4)
+0x03735c grab32           # CONFIRMED: 32x32 pixels from page page_draw at (spr_x,spr_y) to [sprptr], row by row
 0x0373ee spr_draw_opaque  # CONFIRMED: spr_draw with no transparent colour
 0x037487 spr_draw_scaled  # STRONGLY SUPPORTED: Mode X scaled sprite blit: per screen column (plane mask 0x3c4), source sprptr stepped by the p7d838 .INF delta table, colour 0 skipped (findings/formats.md .SP)
-0x0375cd pcx_blit         # LIKELY: CONFIRMED pushal..popal (0x376d5), no arguments, reads p7d714/pal_a/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
+0x0375cd pcx_blit         # LIKELY: CONFIRMED pushal..popal (0x376d5), no arguments, reads p7d714/page_draw/v88b4a; LIKELY the PCX RLE blit to VGA (findings/video.md)
 0x0376d7 pcx_tiles        # CONFIRMED: decodes a 320x200 PCX RLE image from [p7d714] to [v7d99c] (0xc0 = run), then cuts it into 54 tiles of 32x32 at [v7eb58], 10 tiles per row
 0x0377ae buttons_poll     # CONFIRMED: joy88b40..46 = bytes [v7d8a4]+5/7/9/11; with joyfound != 1 also game-port buttons (port 0x201 bits 4-7, pressed = 0 -> 1)
-0x03784b joy_poll         # CONFIRMED: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre v88b5c/v88b5e; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
-0x0379ec pt_load          # CONFIRMED: UNREFERENCED: v7d5f8/v7d5f4 = the two dwords at [D_7d680]
-0x037a06 tilemap_fill     # CONFIRMED: fills [v7d6a4] (the floor tile map) with v7d64c, 0x4000 dwords; called at track load
-0x037a21 path_pt_scale    # LIKELY: CONFIRMED the bytes: v7d7a4/v7d7a8 = round(16.16 product of point curpos of [v7d6a0] (8 bytes per point) and [v7d660]); LIKELY the track path
-0x037a6c surface_at_7c    # CONFIRMED: UNREFERENCED: surface_at with the point scaled by 0x7c and offset by the camera v88b0a/v88b0e
-0x037b04 surface_at       # CONFIRMED: surface-class probe - v7d6a4 tile of (v7d7a4,v7d7a8) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into v7e568 (findings/formats.md, game-loop.md)
-0x037bb1 vec_scale        # CONFIRMED: v7d610/v7d620 = round(16.16 product of v7d5f8/v7d5f4 and v7d608); src/ww.c VEC()
-0x037bf0 pixel_plot       # CONFIRMED: one pixel of colour v88ce9 at (spr_x,spr_y) on page pal_a
-0x037c43 dac_put5         # CONFIRMED: DAC 0xa1-0xa4 and 0x94 from [v7d744] (15 bytes); a palette animation steps v7d744 through v7d758
-0x037c84 dac_put8         # CONFIRMED: DAC 0xad,0xac, 0xae,0xaf from [v7d744], 0xa8-0xab from [v7d744]+0x30; a palette animation steps v7d744 through v7d6d0
-0x037cf1 dac_load         # CONFIRMED: w88b10 DAC entries from index w88b1e out of [palptr], each byte after a display-enable wait
-0x037d96 tile_show        # CONFIRMED: UNREFERENCED: a 32x32 tile from [v7d64c] to A000:0 as linear rows of 320 (a debug view?)
+0x03784b joy_poll         # CONFIRMED: was joy_detect: times the two game-port axes (0x201, masks keymap1/2, keymap3 ends the count), sets the direction keys key88cd5/cdd/cd6/cd3 past a deadzone (v88b52/v88b3c/v88b3e/v88b48) around the centre joy_cx/joy_cy; a timeout sets joyfound = 1 = no stick; skipped when v88c8a == 1
+0x0379ec pt_load          # CONFIRMED: UNREFERENCED: vec_x/vec_y = the two dwords at [D_7d680]
+0x037a06 tilemap_fill     # CONFIRMED: fills [tilemap] (the floor tile map) with tiles_base, 0x4000 dwords; called at track load
+0x037a21 path_pt_scale    # LIKELY: CONFIRMED the bytes: probe_x/probe_y = round(16.16 product of point curpos of [v7d6a0] (8 bytes per point) and [v7d660]); LIKELY the track path
+0x037a6c surface_at_7c    # CONFIRMED: UNREFERENCED: surface_at with the point scaled by 0x7c and offset by the camera view_x/view_y
+0x037b04 surface_at       # CONFIRMED: surface-class probe - tilemap tile of (probe_x,probe_y) -> tile index, mask byte at tile+0x1b000+(y&31)*32+(x&31), picks .SIN dword 0 (byte 0) or 1 (nonzero) into surf_class (findings/formats.md, game-loop.md)
+0x037bb1 vec_scale        # CONFIRMED: vec_kx/vec_ky = round(16.16 product of vec_x/vec_y and vec_k); src/ww.c VEC()
+0x037bf0 pixel_plot       # CONFIRMED: one pixel of colour ink at (spr_x,spr_y) on page page_draw
+0x037c43 dac_put5         # CONFIRMED: DAC 0xa1-0xa4 and 0x94 from [dac_src] (15 bytes); a palette animation steps dac_src through v7d758
+0x037c84 dac_put8         # CONFIRMED: DAC 0xad,0xac, 0xae,0xaf from [dac_src], 0xa8-0xab from [dac_src]+0x30; a palette animation steps dac_src through v7d6d0
+0x037cf1 dac_load         # CONFIRMED: dac_count DAC entries from index dac_first out of [palptr], each byte after a display-enable wait
+0x037d96 tile_show        # CONFIRMED: UNREFERENCED: a 32x32 tile from [tiles_base] to A000:0 as linear rows of 320 (a debug view?)
 0x037dc7 vretrace_wait    # CONFIRMED: UNREFERENCED: waits for the start of vertical retrace (0x3da bit 3)
-0x037de0 page_show        # CONFIRMED: was waitretrace: waits for display enable, pal_d = pal_a, CRTC start address (0x0c/0x0d) = pal_a, waits for vertical retrace - the page flip
+0x037de0 page_show        # CONFIRMED: was waitretrace: waits for display enable, page_shown = page_draw, CRTC start address (0x0c/0x0d) = page_draw, waits for vertical retrace - the page flip
 0x037e23 vram_clear       # CONFIRMED: all four planes, 64 KB each, to 0
 0x037e41 modex_init       # CONFIRMED: unchained 256-colour mode: GC5 odd/even off, GC6 chain off, SEQ4 chain-4 off, VRAM cleared, CRTC 0x14 dword off, 0x17 byte mode
-0x037e94 floor_draw       # STRONGLY SUPPORTED: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera v88b0a/v88b0e, tile of map v7d6a4 (32x32 tiles), one byte; three unrolled bodies by v88c20 = detail 1/2/3: floor_hi/med/lo, 320/160/80 columns of 70 rows, 1/2/4 pixels each (findings/video.md)
+0x037e94 floor_draw       # STRONGLY SUPPORTED: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera view_x/view_y, tile of map tilemap (32x32 tiles), one byte; three unrolled bodies by detail_lvl = detail 1/2/3: floor_hi/med/lo, 320/160/80 columns of 70 rows, 1/2/4 pixels each (findings/video.md)
 0x03c3e9 floor_draw_upper # STRONGLY SUPPORTED: floor_draw from screen row 10 (0x320): the second view in two-player when v88bde
 0x040907 kbd_isr          # LIKELY: keyboard interrupt handler (iretd); DS from the sel16 fixup 0x4090e
 0x0409eb disable_ints     # CONFIRMED: cli; ret
 0x0409ed enable_ints      # CONFIRMED: sti; ret
+0x07eb84 rowtab       # CONFIRMED: rowtab_init fills it with 320 dwords y*80; every blit reads [rowtab+spr_y*4] (was v7eb84; iter 91, from the asm)
+0x07d6a4 tilemap      # CONFIRMED: the floor's tile map: tilemap_fill fills it; floor_draw and surface_at read tile pointers from it (128 per map row) (was v7d6a4; iter 91, from the asm)
+0x07d64c tiles_base   # LIKELY: tilemap_fill's fill value; surface_at subtracts it from a tilemap entry before >>10 = tile index, so tilemap entries are pointers into the tile graphics at tiles_base (was v7d64c; iter 91, from the asm)
+0x088b0a view_x       # LIKELY: CONFIRMED that floor_draw adds it to every scaled floor point's x before the tile lookup (and surface_at_7c the same); LIKELY the view origin in map coordinates (was v88b0a; iter 91, from the asm)
+0x088b0e view_y       # LIKELY: the y twin of view_x (was v88b0e; iter 91, from the asm)
+0x088c20 detail_lvl   # CONFIRMED: 1/2/3 = High/Medium/Low: floor_draw's 320/160/80-column bodies (findings/video.md); copied from v7ee58 = config +0x3c, the detail menu (was v88c20; iter 91, from the asm)
+0x088ce8 border       # CONFIRMED: box_draw's outline colour (was v88ce8; iter 91, from the asm)
+0x088ce9 ink          # CONFIRMED: box_draw's fill colour, pixel_plot's colour, spr_draw_key's transparent colour (was v88ce9; iter 91, from the asm)
+0x088ccf plane_bit    # CONFIRMED: the asm blits' current plane: map-mask bit (1,2,4,8) or read-map number (0-3) of the column being drawn (was D_88ccf; iter 91, from the asm)
+0x088b58 pcx_row      # CONFIRMED: pcx_tiles' (and pcx_blit's) decoded-row counter, to 0xc8 = 200 (was D_88b58; iter 91, from the asm)
+0x088b54 joy_ax       # CONFIRMED: joy_poll's x-axis count (port 0x201 bits under keymap1) (was D_88b54; iter 91, from the asm)
+0x088b56 joy_ay       # CONFIRMED: joy_poll's y-axis count, halved after the loop (was D_88b56; iter 91, from the asm)
+0x088b5c joy_cx       # LIKELY: joy_poll compares 2*joy_ax with it: the x centre (was v88b5c; iter 91, from the asm)
+0x088b5e joy_cy       # LIKELY: joy_poll compares 2*joy_ay with it: the y centre (was v88b5e; iter 91, from the asm)
+0x07d864 swap_n       # CONFIRMED: rec_swap's dword count (was v7d864; iter 91, from the asm)
+0x07d88c swap_a       # CONFIRMED: rec_swap's first record (was v7d88c; iter 91, from the asm)
+0x07d880 swap_b       # CONFIRMED: rec_swap's second record (was v7d880; iter 91, from the asm)
+0x07d894 swap_tmp     # CONFIRMED: rec_swap's scratch record (was v7d894; iter 91, from the asm)
+0x07d744 dac_src      # CONFIRMED: dac_put5/dac_put8 read their RGB triples from it (was v7d744; iter 91, from the asm)
+0x088b10 dac_count    # CONFIRMED: dac_load: number of DAC entries (was w88b10; iter 91, from the asm)
+0x088b1e dac_first    # CONFIRMED: dac_load: first DAC index (and offset into palptr x3) (was w88b1e; iter 91, from the asm)
+0x07d608 vec_k        # CONFIRMED: vec_scale's 16.16 factor (was v7d608; iter 91, from the asm)
+0x07d5f8 vec_x        # CONFIRMED: vec_scale's input x (was v7d5f8; iter 91, from the asm)
+0x07d5f4 vec_y        # CONFIRMED: vec_scale's input y (was v7d5f4; iter 91, from the asm)
+0x07d610 vec_kx       # CONFIRMED: vec_scale's output: round(vec_x * vec_k) (was v7d610; iter 91, from the asm)
+0x07d620 vec_ky       # CONFIRMED: vec_scale's output: round(vec_y * vec_k) (was v7d620; iter 91, from the asm)
+0x07d7a4 probe_x      # CONFIRMED: surface_at's input x (path_pt_scale's output) (was v7d7a4; iter 91, from the asm)
+0x07d7a8 probe_y      # CONFIRMED: surface_at's input y (was v7d7a8; iter 91, from the asm)
+0x07e568 surf_class   # CONFIRMED: surface_at's output: .SIN dword 0 or 1 by the tile mask byte (findings/formats.md) (was v7e568; iter 91, from the asm)
+0x088b24 page_draw    # CONFIRMED: page offset (0 / 0x3e80 / ...) every blit draws to; page_show shows it (findings/video.md) (was pal_a; iter 91, from the asm)
+0x088b1c page_from    # CONFIRMED: page_copy's source page offset (was pal_b; iter 91, from the asm)
+0x088b1a page_to      # CONFIRMED: page_copy's destination page offset (was pal_c; iter 91, from the asm)
+0x088b18 page_shown   # CONFIRMED: page_show stores the shown page offset here (was pal_d; iter 91, from the asm)
