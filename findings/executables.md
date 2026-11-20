@@ -102,7 +102,17 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   in the names file). So LIKELY the game's ASS was not built with 9.5b and these flags: the gaps are
   source revisions before 1.04 (the recreation's earliest is ASSREV 19950518; Wacky Wheels is late
   1994), not the compiler. Gravis's GUSDK 2.01/2.22 are 16-bit `Ultra*` toolkits, not the 32-bit
-  gf1 library ASS links (checked iter 92e). No ASS older than 1.04 is known online (searched). That project
+  gf1 library ASS links (checked iter 92e). No ASS older than 1.04 is known online (searched).
+  **GF1OS source (iter 92f):** `gf1os.exe` in `GUS_DRIVERS_SOURCE.7z` (dk.toastednet.org/GUS/SOURCE
+  CODE/, the Utopia Sound Division release; password in its disclaimer; kept in .work only, not
+  committed) is Gravis's 32-bit GF1 library, Sept-Nov 1993 (`NEWGF1.H`, gf1note.c, digpos.c, ...,
+  `WATCOM.MAK`: `wcc386p -zq -DNOSEM -d2 -mf -oiaxt`). CONFIRMED the same source as the game's GF1
+  code (gf1_error_str: identical body and string offsets; gf1_mem_avail: same statements, `NOSEM`'s
+  `pushf; cli; call gf1_enter1`), but no build with WC 9.5/9.5a/9.5b and these flags matches a single
+  function byte for byte, and an instruction-level match (prologue/epilogue and operands ignored)
+  finds only 3: the game's GF1 code was built by a later compiler - `push ebp; mov ebp,esp` encoded
+  `55 89 E5` (9.5 writes `55 8B EC`), `push ebp` before the saved registers, `mov esp,ebp` before each
+  `pop ebp`, locals kept on the stack. LIKELY Watcom 10.0, like the original ASS LIBs it matches. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
