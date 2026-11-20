@@ -37,9 +37,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 1. The asm is named (iter 91: 36 routines + 2 helpers + 6 unreferenced, findings/video.md; the floor's
    three detail bodies are 320/160/80 columns of 70 rows; 33 data names from the asm, iter 91c:
    `page_draw`/`page_shown`/`page_from`/`page_to` were pal_a/d/b/c, `tilemap`, `view_x`/`view_y`,
-   `detail_lvl`, `rowtab`, ...: names file "was"). Next: read `kbd_isr` 0x40907 (100 insns).
-2. `L_xxxxx` -> nasm local labels (`.loop`) inside each routine; the floor bodies jump between
-   pieces (0x37e94 -> 0x395dd), so check every target stays in its routine. `asmcheck.py` after.
+   `detail_lvl`, `rowtab`, ...: names file "was"); `kbd_isr` + key map read (findings/input.md).
+   Next: the joystick calibration that sets `joy_cx`/`joy_cy` and the four deadzones.
+2. `L_xxxxx` -> nasm local labels (`.loop`) per routine; check that every target stays in its routine.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3

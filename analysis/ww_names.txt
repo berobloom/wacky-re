@@ -639,10 +639,10 @@
 0x07c890 str7c890     # CONFIRMED: 26-byte buffer, " FIND OUT HOW TO ORDER   "
 0x07c8cc str7c8cc     # CONFIRMED: 26-byte buffer, " THESE EXTRA ZONES.      " (races version in fn_1832c)
 0x088c96 v88c96       # LIKELY: short, bonus-zones menu selection, wrapped 6..0xb (0x19aa5/0x19b23), also read at 0x19591/0x197fe/0x19b91
-0x088cce v88cce       # CONFIRMED (difffn seed, iter 75): input byte set only by the stubbed asm layer (C reads 21, writes 1 = 0 at 0x32ba4); seeding 1 makes menu return through the joy arm (0x16258 -> 0x16261 joy88b40=1 -> 0x16331 -> ret 0x163df)
+0x088cce key_select         # CONFIRMED (difffn seed, iter 75): input byte set only by the stubbed asm layer (C reads 21, writes 1 = 0 at 0x32ba4); seeding 1 makes menu return through the joy arm (0x16258 -> 0x16261 joy88b40=1 -> 0x16331 -> ret 0x163df)
 0x088cec v88cec       # LIKELY: char; menu "escape/exit chosen" flag, set by the 8-tick wait and by v88cef & 0x40
-0x088cd2 key88cd2     # LIKELY: char key state, sets key88cdd in the zone menu (0x19701)
-0x088cdb key88cdb     # LIKELY: char key state, sets key88cd5 (0x1971a)
+0x088cd2 key_down         # LIKELY: char key state, sets key88cdd in the zone menu (0x19701)
+0x088cdb key_up           # LIKELY: char key state, sets key88cd5 (0x1971a)
 0x07b6d9 v7b6d9       # LIKELY: cfg7b6d8[1]; set -> key88cd5 = 1
 0x07b6db v7b6db       # LIKELY: cfg7b6d8[4]; set -> key88cdd = 1
 0x07c658 v7c658       # LIKELY: int, the song the menus switch to (compared with cursong, passed to music_start)
@@ -917,3 +917,9 @@
 0x088b1c page_from    # CONFIRMED: page_copy's source page offset (was pal_b; iter 91, from the asm)
 0x088b1a page_to      # CONFIRMED: page_copy's destination page offset (was pal_c; iter 91, from the asm)
 0x088b18 page_shown   # CONFIRMED: page_show stores the shown page offset here (was pal_d; iter 91, from the asm)
+0x088cd0 last_scan    # CONFIRMED: kbd_isr stores every raw scancode here (bit 7 = release; on an E0 prefix it re-stores the previous one), so the C's `aborted`/`key88cd0` == 1 means Esc (scancode 1) was the last key pressed. The asm's name; the C keeps aborted (char) and key88cd0 (volatile char) because the qualifier changes its code (iter 91d)
+0x088b30 kbd_busy     # CONFIRMED: kbd_isr's reentrancy guard: the handler leaves at once while it is 1, sets it, clears it at the end (was v88b30; iter 91, from the asm)
+0x07d990 keytab       # CONFIRMED: kbd_isr's table pointer: 12 (scancode, state) byte pairs; the state byte of the matching scancode = 1 on press, 0 on release (was v7d990; iter 91, from the asm)
+0x088cce key_select   # CONFIRMED: kbd_isr: 1 while Enter (0x1c) or Space (0x39) is held (was v88cce; iter 91, from the asm)
+0x088cdb key_up       # CONFIRMED: kbd_isr: 1 while Up (0x48) is held (was v88cdb; iter 91, from the asm)
+0x088cd2 key_down     # CONFIRMED: kbd_isr: 1 while Down (0x50) is held (was v88cd2; iter 91, from the asm)

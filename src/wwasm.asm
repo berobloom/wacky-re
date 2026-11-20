@@ -88,7 +88,7 @@ REG bh, 7, 0, 0
         EXT _swap_a, 0x7d88c
         EXT _swap_tmp, 0x7d894
         EXT _v7d8a4, 0x7d8a4
-        EXT _v7d990, 0x7d990
+        EXT _keytab, 0x7d990
         EXT _v7d998, 0x7d998
         EXT _v7d99c, 0x7d99c
         EXT _surf_class, 0x7e568
@@ -104,7 +104,7 @@ REG bh, 7, 0, 0
         EXT _dac_first, 0x88b1e
         EXT _page_draw, 0x88b24
         EXT _spr_w, 0x88b26
-        EXT _v88b30, 0x88b30
+        EXT _kbd_busy, 0x88b30
         EXT _spr_x, 0x88b32
         EXT _spr_y, 0x88b34
         EXT _spr_h, 0x88b36
@@ -138,14 +138,14 @@ REG bh, 7, 0, 0
         EXT _joyfound, 0x88c74
         EXT _v88c8a, 0x88c8a
         EXT _shotkey, 0x88ccd
-        EXT _v88cce, 0x88cce
+        EXT _key_select, 0x88cce
         EXT _plane_bit, 0x88ccf
-        EXT _aborted, 0x88cd0
-        EXT _v88cd2, 0x88cd2
+        EXT _last_scan, 0x88cd0
+        EXT _key_down, 0x88cd2
         EXT _key88cd3, 0x88cd3
         EXT _key88cd5, 0x88cd5
         EXT _key88cd6, 0x88cd6
-        EXT _v88cdb, 0x88cdb
+        EXT _key_up, 0x88cdb
         EXT _key88cdd, 0x88cdd
         EXT _border, 0x88ce8
         EXT _ink, 0x88ce9
@@ -15064,10 +15064,10 @@ kbd_isr_:
 %ifdef BIN
         mov bx, 2                       ; LE sel16 fixup: the image holds the data object's number
 %else
-        mov bx, seg _v88b30             ; the data object's selector (WW.EXE: sel16 fixup at 0x4090e)
+        mov bx, seg _kbd_busy             ; the data object's selector (WW.EXE: sel16 fixup at 0x4090e)
 %endif
         mov ds, ebx
-        cmp word [_v88b30], 1
+        cmp word [_kbd_busy], 1
         jne short L_40925
         nop
         nop
@@ -15075,8 +15075,8 @@ kbd_isr_:
         nop
         jmp near L_409e4
 L_40925:
-        mov word [_v88b30], 1
-        mov edi, dword [_v7d990]
+        mov word [_kbd_busy], 1
+        mov edi, dword [_keytab]
         in al, 0x60
         push ax
         in al, 0x61
@@ -15094,7 +15094,7 @@ L_40925:
         nop
         nop
         nop
-        mov al, byte [_aborted]
+        mov al, byte [_last_scan]
 L_40957:
         rr mov, ah, al
         mov bl, 1
@@ -15113,7 +15113,7 @@ L_40967:
         nop
         nop
         nop
-        mov byte [_v88cce], bl
+        mov byte [_key_select], bl
         jmp short L_409c1
         nop
         nop
@@ -15125,7 +15125,7 @@ L_4097a:
         nop
         nop
         nop
-        mov byte [_v88cce], bl
+        mov byte [_key_select], bl
         jmp short L_409c1
         nop
         nop
@@ -15149,7 +15149,7 @@ L_409a0:
         nop
         nop
         nop
-        mov byte [_v88cdb], bl
+        mov byte [_key_up], bl
         jmp short L_409c1
         nop
         nop
@@ -15161,7 +15161,7 @@ L_409b3:
         nop
         nop
         nop
-        mov byte [_v88cd2], bl
+        mov byte [_key_down], bl
 L_409c1:
         mov ecx, 0xc
 L_409c6:
@@ -15177,8 +15177,8 @@ L_409d1:
         inc edi
         loop L_409c6
 L_409d5:
-        mov byte [_aborted], ah
-        mov word [_v88b30], 0
+        mov byte [_last_scan], ah
+        mov word [_kbd_busy], 0
 L_409e4:
         pop ecx
         pop edi

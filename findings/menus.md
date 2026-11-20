@@ -317,7 +317,7 @@ at the instruction cap; `fn_193a8` 0x193a8 still crashes at the same instruction
   (d) Inside the loop the navigation is four key globals read without any wait: `key88ccd` 0x88ccd
   (screenshot, then the release wait 0x1ec85 `cmp byte [0x88ccd],0; jne 0x1ec85` - seeding that one
   parks the run there), `key88cd5` 0x88cd5 and `key88cdd` 0x88cdd (volume -5/+5 with the
-  `[esp+0x128]` clamp at 0x1ed50/0x1ed87), `key88cd3`/`key88cd2` 0x88cd3/0x88cd2 (row up/down,
+  `[esp+0x128]` clamp at 0x1ed50/0x1ed87), `key88cd3`/`key_down` 0x88cd3/0x88cd2 (row up/down,
   0x1ee73-0x1ee9d).
 
 - CONFIRMED (whole span 0x1f858-0x2130f disassembled, iter 78): **`main_menu` contains no `ret` and no
@@ -351,17 +351,17 @@ is not reached from this module either. Under `tools/wc/difffn.py` the input glo
 what `SEED=` left them, so:
 
 - `wait_release` with mode 0 skips the key test (0x278ca `test dx,dx; je 0x278d8`) and returns through
-  0x2791c **only when `v88cce` 0x88cce is 0 and `joy88b40/42/44/46` 0x88b40/42/44/46 are all 0**
-  (0x278e7 and 0x278f8-0x2791a compare them against `ebx`, which 0x278c8 zeroes). If `v88cce` is
+  0x2791c **only when `key_select` 0x88cce is 0 and `joy88b40/42/44/46` 0x88b40/42/44/46 are all 0**
+  (0x278e7 and 0x278f8-0x2791a compare them against `ebx`, which 0x278c8 zeroes). If `key_select` is
   nonzero it stores `joy88b40 = 1` at 0x278ef and then compares EBX=0 with it at 0x278f8, `jne
   0x278ca` - a pump of `call 0x377ae` per iteration that can never be seeded out of (119700 iterations
   counted in `race_records_menu` 0x1d13c).
 - `wait_input` needs one of those flags to be nonzero: with mode 1 it returns EAX=1 at 0x27984 ->
   0x2798d when `key88cd0` 0x88cd0 == 1, with mode 2 (no C-module caller) it would return at 0x2796f
   when `ticks` >= 0x440 - that loop does call `0x377ae`, so `TICK=` ends it - and otherwise it re-pumps
-  0x2795a forever. Mode 0 can be exited only by `v88cce != 0` (0x27995 -> 0x279e2, EAX=0) or a nonzero
+  0x2795a forever. Mode 0 can be exited only by `key_select != 0` (0x27995 -> 0x279e2, EAX=0) or a nonzero
   joy flag (0x279ba-0x279e2).
-- So the pair is a contradiction under one static seed: a menu needs `joy88b40` or `v88cce` set to
+- So the pair is a contradiction under one static seed: a menu needs `joy88b40` or `key_select` set to
   return (menu 0x155c0: 0x16258 -> 0x16261 -> 0x16331) and a mode-0 `wait_release` needs both clear.
   Measured stop points (a `Run.go` probe printing `done`/`calls`/EIP, iter 77): `fn_1c0f4` 0x1c0f4 with
   no seeds sits in `wait_input`'s pump - EIP 0x27969, i.e. its own call at 0x1c7ea (mode 0); with
@@ -372,7 +372,7 @@ what `SEED=` left them, so:
   `v88b9e = 1` -> 0x1d312 `cmp edi,4` -> return at 0x1d32b - is not seedable either: menu stores 0 to
   `v7ecc0` 0x7ecc0 at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77).
 - The pair is **not** a ceiling after all: `RESEED=0x88cce=1:b` (iter 81, `tools/wc/difffn.py` and
-  `hotfn.py`) writes 1 into `v88cce` on every READ of it but the first, so the mode-0
+  `hotfn.py`) writes 1 into `key_select` on every READ of it but the first, so the mode-0
   `wait_release` returns on the image's 0 and the following mode-0 `wait_input` sees 1 at 0x27995 and
   exits at 0x279e2 with EAX=0. `difffn.py fn_1c0f4` then prints **SAME with both sides returning**
   (control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same env SAME; `hotfn.py` reports 5525
@@ -415,7 +415,7 @@ what `SEED=` left them, so:
   arguments of the only call site, 0x1911f `trial_book(v88bb6 + v7ecb4, v88b88, 0)` - 43194 insns at 928
   addrs, also SAME/returned): `trial_book` 0x2e4b8's wall is its **own input pump** 0x2f2fa-0x2f395, not
   the pair. Each pass stores EBX (0, from 0x2f2f8) into `joy88b40/42/44/46` 0x88b40-0x88b46 and `v88cec`
-  0x88cec, calls `buttons_poll` 0x377ae, and re-tests `v88cce` 0x88cce (0x2f32d), `key88cd0` (0x2f337, against
+  0x88cec, calls `buttons_poll` 0x377ae, and re-tests `key_select` 0x88cce (0x2f32d), `key88cd0` (0x2f337, against
   ECX = 1 from 0x2f2f3) and `key88ccd` 0x88ccd (0x2f347, then `call screenshot` 0x2f34f and the bare wait
   0x2f35c). EDX is 0 from 0x2f305 `mov edx,ebx` unless one of those tests mismatches, which sets it to
   ECX (0x2f335, 0x2f33f, 0x2f388); `test edx,edx; je 0x2f2fa` 0x2f393 re-pumps (2841 passes at

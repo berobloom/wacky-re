@@ -336,7 +336,7 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     player at +0x30a, the baud rates, the modem strings and the joystick flags. The live
     test below is no longer needed for the slot order. Original question: what are `cfg7b6d8` 0x18 (12 words) and
     `cfg77128` 0x630 for? CONFIRMED: the CFG's 12 words are BIOS scancodes `4b 4d 38 1d 50 39 20
-    21 1e 1f 22 23`; `main` puts the block's address into `v7d8ac`/`v7d8b0`(+0xc)/`v7d8a4`/`v7d990`
+    21 1e 1f 22 23`; `main` puts the block's address into `v7d8ac`/`v7d8b0`(+0xc)/`v7d8a4`/`keytab`
     (0x35d39-0x35d57) and `cars_menu` 0x1a380 tests its bytes indexed (0x1abc2, 0x1b3db);
     `ctl_setup` 0x14b00 reads `cfg77128` +0x08..+0x12 (0x14ba6-0x14bf4) and `main` requires
     `w77430 == 0xfa` (0x36072); control names ("LEFT CURSOR", "ALT", "SPACE", ...) sit inside

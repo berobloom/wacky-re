@@ -482,7 +482,7 @@ it creates carries the zeros of its uninitialised data there.
 - `cfg7b6d8` 0x18 = 12 words; in the shipped CFG they are BIOS scancodes
   `4b 4d 38 1d 50 39 20 21 1e 1f 22 23` (Left/Right/Down cursor, Alt, Ctrl,
   space, then D F A S G H). `main` stores its address into `v7d8a4` (0x35d57),
-  `v7d8ac` (0x35d39), `v7d990` (0x35d4d) and `v7d8b0 = 0x7b6e4` = base+0xc
+  `v7d8ac` (0x35d39), `keytab` (0x35d4d) and `v7d8b0 = 0x7b6e4` = base+0xc
   (0x35d43); `cars_menu` 0x1a380 tests bytes of
   it through an index (`cmp byte [eax + 0x7b6d9], 0` 0x1abc2).
   CONFIRMED by SETUP (below): the key map, 12 bytes per player (player 1 at
@@ -491,6 +491,10 @@ it creates carries the zeros of its uninitialised data there.
   turn (button 4); the low byte of a slot is the scancode. The high byte is
   LIKELY the key's live pressed state: the game reads +1 into `key88cd5` and +3
   into `key88cdd` (names file 0x7b6d9/0x7b6db), i.e. steer left / steer right.
+  **CONFIRMED iter 91d** (the asm, findings/input.md): `kbd_isr` scans exactly these 12 slots
+  through `keytab` and writes 1/0 into the high byte of the slot whose low byte is the scancode;
+  `buttons_poll` copies player one's +5/+7/+9/+11 (accelerate, fire, brake, hand-brake) into
+  `joy88b40`/`42`/`44`/`46`, then lets the game-port buttons set them too.
 - `cfg77128` 0x630: 56 distinct addresses inside it are touched
   (`rangexref.py ww 0x77128 0x77758`); `ctl_setup` 0x14b00 reads +0x08..+0x12
   (0x14ba6-0x14bf4), `main` tests +0x308 (`w77430 == 0xfa`, 0x36072), and the

@@ -3337,8 +3337,8 @@ void chat(void)
 
 extern short v88bb0, v88b86, v88bb6, v88bb8, v88c80, v88c28, v88cf2;
 extern short v88bee, v88bf0, v88bf2, v88c00;
-extern char v88ccd, v88cd2, v88cdb, v88cd3, v88cd5, v88cd6, v88cdd, v88cce;
-extern char key88cd2, key88cdb, v7b6d9, v7b6db;
+extern char v88ccd, key_down, key_up, v88cd3, v88cd5, v88cd6, v88cdd, key_select;
+extern char key_down, key_up, v7b6d9, v7b6db;
 extern int v7ecc0, v7ecc4, v7ecac, v7ed0c, v7ea70;
 extern int v7d8ac, v7d8a4;
 extern char *v7d85c;
@@ -3515,11 +3515,11 @@ short menu(short n, short d, short mode, short c)
                 buttons_poll();
                 if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
                     joy88b40 = 0;
-                if (v88cce)
+                if (key_select)
                     joy88b40 = 1;
-                if (v88cd2)
+                if (key_down)
                     key88cd3 = 1;
-                if (v88cdb)
+                if (key_up)
                     key88cd6 = 1;
                 if (key88cd0 == 1) {
                     v7ecc0 = 1;
@@ -3687,7 +3687,7 @@ short menu(short n, short d, short mode, short c)
             buttons_poll();
             if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
                 joy88b40 = 0;
-            if (v88cce)
+            if (key_select)
                 joy88b40 = 1;
             if (key88cd0 == 1) {
                 v7ecc0 = 1;
@@ -3704,7 +3704,7 @@ short menu(short n, short d, short mode, short c)
             return cursor;
         }
         if (v88bb0 == 1) {
-            if (joy88b40 || key88cd3 || v88cd2 || v88cdb)
+            if (joy88b40 || key88cd3 || key_down || key_up)
                 v7ed0c = 0;
             else {
                 v7ed0c++;
@@ -3718,7 +3718,7 @@ short menu(short n, short d, short mode, short c)
             v88c28 = 0;
             return cursor;
         }
-        if (key88cd3 || v88cd2) {
+        if (key88cd3 || key_down) {
             cursor++;
             anim = 1;
             cnt = 0;
@@ -3726,7 +3726,7 @@ short menu(short n, short d, short mode, short c)
                 cursor = 1;
             continue;
         }
-        if (key88cd6 || v88cdb) {
+        if (key88cd6 || key_up) {
             anim = 2;
             cursor--;
             cnt = 0;
@@ -4856,22 +4856,22 @@ mainloop:
     buttons_poll();
     joy_clear_y();
     if (netgame == 0) {
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
-        if (key88cd3 || key88cd2)
+        if (key88cd3 || key_down)
             up = 1;
-        if (key88cd6 || key88cdb)
+        if (key88cd6 || key_up)
             down = 1;
         if (up || down)
             nav = 1;
         goto merged;
     }
     if (netgame == 1) {
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
-        if (key88cd3 || key88cd2)
+        if (key88cd3 || key_down)
             up = 1;
-        if (key88cd6 || key88cdb)
+        if (key88cd6 || key_up)
             down = 1;
         if (up || down)
             nav = 1;
@@ -5068,7 +5068,7 @@ joyloop:
     ctl_setup(0);
     buttons_poll();
     joy_clear_y();
-    if (v88cce)
+    if (key_select)
         joy88b40 = 1;
     for (;;) {                        /* 0x18f16: the timeout leads to the joystick navigation */
         if (ticks > eight)
@@ -5106,9 +5106,9 @@ joynav:                               /* 0x18f8a, reached only from the wait abo
     up = 0;
     down = 0;
     nav = 0;
-    if (key88cd3 || key88cd2)
+    if (key88cd3 || key_down)
         up = 1;
-    if (key88cd6 || key88cdb)
+    if (key88cd6 || key_up)
         down = 1;
     if (key88cd5 || v7b6d9)
         down = 1;
@@ -5203,7 +5203,7 @@ joyretry:
 
 extern char *pal7d848;
 extern short v88c96;
-extern char key88cd2, key88cdb;
+extern char key_down, key_up;
 void netkeys_pack(void);
 void buttons_poll(void);
 void dac_load(void);
@@ -5287,28 +5287,28 @@ mainloop:
     if (v7b6dd && (v7b6dc == 0x48 || v7b6dc == 0x50))
         joy88b40 = 0;
     if (netgame == 0) {
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (v7b6d9)
             key88cd5 = 1;
         if (v7b6db)
             key88cdd = 1;
-        if (key88cd3 || key88cd2)
+        if (key88cd3 || key_down)
             key88cdd = 1;
-        if (key88cd6 || key88cdb)
+        if (key88cd6 || key_up)
             key88cd5 = 1;
         goto joined;
     }
     if (netgame == 1) {
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (v7b6d9)
             key88cd5 = 1;
         if (v7b6db)
             key88cdd = 1;
-        if (key88cd3 || key88cd2)
+        if (key88cd3 || key_down)
             key88cdd = 1;
-        if (key88cd6 || key88cdb)
+        if (key88cd6 || key_up)
             key88cd5 = 1;
         if (netgame && v7ec9c == 1 && v88c96 > 7)
             joy88b40 = 0;
@@ -6003,7 +6003,7 @@ input:
         }
         if (joy88b42 != 0)
             joy88b40 = 1;
-        if (v88cce != 0)
+        if (key_select != 0)
             joy88b40 = 1;
         if ((&v7b6d9)[12 * n] != 0)
             key88cd5 = 1;
@@ -6229,7 +6229,7 @@ input:
         }
         if (joy88b42 != 0)
             joy88b40 = 1;
-        if (v88cce != 0)
+        if (key_select != 0)
             joy88b40 = 1;
         if ((&v7b6d9)[12 * n] != 0)
             key88cd5 = 1;
@@ -8088,12 +8088,12 @@ void volume_menu(void)
                 break;
             }
         }
-        if (key88cd6 || key88cdb) {   /* up, 0x1ee50 */
+        if (key88cd6 || key_up) {   /* up, 0x1ee50 */
             blink = 0;
             if (sel > 1)
                 sel--;
         }
-        if (key88cd3 || key88cd2) {   /* down, 0x1ee73 */
+        if (key88cd3 || key_down) {   /* down, 0x1ee73 */
             blink = 0;
             if (sel < n)
                 sel++;
@@ -8289,7 +8289,7 @@ void credits_screen(void)
             v7d8a4 = v7d8ac;
             joy88b46 = 0;
             buttons_poll();
-            if (v88cce || joy88b40 || joy88b42 || joy88b44 || joy88b46)
+            if (key_select || joy88b40 || joy88b42 || joy88b44 || joy88b46)
                 break;
             if (key88cd0 == 1)
                 return;
@@ -12598,7 +12598,7 @@ void track_pics_load(void)
     }
 }
 
-/* ---- 0x278c4, 91 bytes: waits until no input is held - keyboard (v88cce sets joy88b40) and the four
+/* ---- 0x278c4, 91 bytes: waits until no input is held - keyboard (key_select sets joy88b40) and the four
  * joy88b4x flags, polled through buttons_poll; with flag, the abort key (key88cd0 == 1) ends it early
  * (callers 0x18767, 0x18e99, 0x195c0, 0x1c7d9, 0x1cc2a). */
 void wait_release(short flag)
@@ -12608,7 +12608,7 @@ void wait_release(short flag)
             return;
         v7d8a4 = v7d8ac;
         buttons_poll();
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (joy88b40 == 0 && joy88b42 == 0 && joy88b44 == 0 && joy88b46 == 0)
             return;
@@ -12633,7 +12633,7 @@ int wait_input(short mode)
             return 0;
         if (mode && key88cd0 == 1)
             return 1;
-        if (v88cce)
+        if (key_select)
             return 0;
         if (key88ccd) {
             screenshot();
@@ -14917,7 +14917,7 @@ void race_results(void)
         v7d8a4 = v7d8ac;
         ctl_setup(0);
         buttons_poll();
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (netgame) {
             v7ed20 = 0x220;
@@ -15224,7 +15224,7 @@ void race_results(void)
         v7d8a4 = v7d8ac;
         ctl_setup(0);
         buttons_poll();
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (netgame) {
             v7ed20 = 0x220;
@@ -16411,7 +16411,7 @@ void trial_book(int a, int b, int show)
             joy88b46 = 0;
             v7d8a4 = v7d8ac;
             buttons_poll();
-            if (v88cce)
+            if (key_select)
                 done = 1;
             if (key88cd0 == 1) {
                 done = 1;
@@ -17646,13 +17646,13 @@ loop:
             }
             go = 0;
             if (v7d998 == 2) {
-                if (key88cd2 || key88cd3 || v88cce || joy88b40 || key88cdd) {
+                if (key_down || key88cd3 || key_select || joy88b40 || key88cdd) {
                     if (v88c8e < w88c9a) {
                         go = 1;
                         v88c8e++;
                     }
                 }
-                if (key88cdb || key88cd6 || key88cd5) {
+                if (key_up || key88cd6 || key88cd5) {
                     if (v88c8e > 1) {
                         go = 1;
                         v88c8e--;
@@ -18030,7 +18030,7 @@ extern char kv7b6df, kv7b6e1, kv7b6e3;
 
 void kbd_off(void)
 {
-    v88cce = 0;
+    key_select = 0;
     key88ccd = 0;
     v88cd9 = 0;
     v88ce2 = 0;
@@ -18038,8 +18038,8 @@ void kbd_off(void)
     v88cda = 0;
     v88cd4 = 0;
     v88cdc = 0;
-    key88cdb = 0;
-    key88cd2 = 0;
+    key_up = 0;
+    key_down = 0;
     key88cd1 = 0;
     v88ce1 = 0;
     v7b6d9 = 0;
@@ -18890,7 +18890,7 @@ void pic_at(int d, int lift, short x)
  * DAT means registered and upgraded (v7eca0 3), 20.GAM registered (2), neither shareware (1, and
  * v7e574 1). Shows CHECK.PCX (palette from its last 0x300 bytes into v7d858) with the release
  * lines, the copyright and PRESS FIRE; unless v7ecbc, fades in and waits up to 2000 ticks for fire
- * (or the v88cce key) or Esc.
+ * (or the key_select key) or Esc.
  * differs: only the stack slots of n and y swap (game n esp+0x190 and y esp+0x194 - fndiff's game
  * column at 0x344f5 is `mov dword [esp+0x190],2` and at 0x345f0 `mov dword [esp+0x194],0x54`; ours
  * the reverse); declaration order, placement and int/short mixes do not move them. Documented dead end: Watcom's
@@ -18968,7 +18968,7 @@ void release_check(void)
             v7d8a4 = v7d8ac;
             ctl_setup(0);
             buttons_poll();
-            if (v88cce)
+            if (key_select)
                 joy88b40 = 1;
         } while (!joy88b40 && key88cd0 != 1 && ticks < 2000);
         wait_release(0);
@@ -19087,7 +19087,7 @@ void intro(void)
                 v7d8a4 = v7d8ac;
                 ctl_setup(0);
                 buttons_poll();
-                if (v88cce)
+                if (key_select)
                     joy88b40 = 1;
                 if (joy88b40 || key88cd0 == 1)
                     break;
@@ -19170,7 +19170,7 @@ void intro(void)
         v7d8a4 = v7d8ac;
         ctl_setup(0);
         buttons_poll();
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (joy88b40 || key88cd0 == 1)
             break;
@@ -19247,7 +19247,7 @@ void intro(void)
         v7d8a4 = v7d8ac;
         ctl_setup(0);
         buttons_poll();
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
     } while (!joy88b40 && key88cd0 != 1 && ticks < 0x110);
     palptr = pal7d850;
@@ -19332,7 +19332,7 @@ void intro(void)
         v7d8a4 = v7d8ac;
         ctl_setup(0);
         buttons_poll();
-        if (v88cce)
+        if (key_select)
             joy88b40 = 1;
         if (joy88b40 || key88cd0 == 1)
             break;
@@ -19578,9 +19578,9 @@ extern struct task *t7ee00, *t7ee04;
 #pragma aux t7ee04 "_v7ee04"
 extern struct task *comtask_t;
 #pragma aux comtask_t "_comtask"
-extern int v7ecdc, v7ec78, v7d990, v7ec54, rowtab, v7d81c, v7d818, w775e6;
+extern int v7ecdc, v7ec78, keytab, v7ec54, rowtab, v7d81c, v7d818, w775e6;
 #pragma aux w775e6 "_v775e6"
-extern short v88caa, v88c78, v88c1c, v88b30;
+extern short v88caa, v88c78, v88c1c, kbd_busy;
 extern short w7d328[8];
 #pragma aux w7d328 "_arr7d328"
 extern int kfe0_684f0, kfe0_685f4;
@@ -19633,7 +19633,7 @@ int main(int argc, char **argv)
     v7ec78 = 0;
     v7d8ac = (int)cfg7b6d8;
     v7d8b0 = (int)cfg7b6d8 + 0xc;
-    v7d990 = (int)cfg7b6d8;
+    keytab = (int)cfg7b6d8;
     v7d8a4 = (int)cfg7b6d8;
     netvoices = 0;
     v7d998 = 0;
@@ -19862,7 +19862,7 @@ nomem:
     v7d860 = 0xa7d50;
     v7d840 = 0xa7d50;
     page_draw = 0x3e80;
-    v88b30 = 0;
+    kbd_busy = 0;
     key88cd5 = 0;
     key88cd6 = 0;
     key88cd3 = 0;

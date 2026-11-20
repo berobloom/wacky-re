@@ -192,7 +192,7 @@ Eight ints, indexed by car id (== ent slot here, since `id == i` at setup).
   bit2 -> `joy88b40`,
   bit3 -> `joy88b42`, bit4 -> `joy88b44`, bit5 -> `joy88b46`,
   bit6 -> `v88cec`; otherwise bit5 only, and only if `joy88b46 == 0` (0x1ad23).
-- `joy88b42 != 0 || v88cce != 0` forces `joy88b40 = 1` (0x1ab9a, 0x1b3a0,
+- `joy88b42 != 0 || key_select != 0` forces `joy88b40 = 1` (0x1ab9a, 0x1b3a0,
   0x1b3b3) — LIKELY: `joy88b40` is this screen's confirm/fire control.
 - Per-player control bytes: `v7b6d9` / `v7b6db` in 12-byte records set
   `key88cd5` / `key88cdd` (0x1abc2, 0x1abd5), and `cfg7712c == 0` picks

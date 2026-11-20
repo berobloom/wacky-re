@@ -266,7 +266,7 @@ merged).
     `mov dword [v7ec68 0x7ec68],1` -> `add esp,0x44` + pop ebp/edi/esi/edx/ecx/ebx -> `ret` 0x31eca (this
     is what `demo_mode` 0x1e61a `cmp ebx,[v7ec68]` reads back). Not equal -> 0x31ecb `xor eax,eax` +
     `cmp dword [0x7d998],2` 0x31ecd, i.e. the two non-zero non-one modes diverge there; 2 then tests
-    `key88cd2` 0x88cd2, `key88cd3` 0x88cd3, `v88cce` and `joy88b40` 0x31eda-0x31ef5.
+    `key_down` 0x88cd2, `key88cd3` 0x88cd3, `key_select` and `joy88b40` 0x31eda-0x31ef5.
 - CONFIRMED (capstone scan of every instruction naming 0x7d998 in 0x10000-0x44000, iter 83): stores of 0
   at 0x1e69f, 0x1f896, 0x31900, 0x35d6b; of 1 at 0x34b0e; from a register at 0x1e485 (`demo_mode`
   0x1e2e4) and 0x34e5c (`intro` 0x348f4, which also reads it at 0x348fd). About sixty comparisons against

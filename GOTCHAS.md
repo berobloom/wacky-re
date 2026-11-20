@@ -177,8 +177,8 @@ it can be copied back into DREA.
   times per pass grows it differently - check the read counts before calling a tick-dependent DIFF a
   bug, and prove the fast clock did not skip the body by re-running at `TICKREAD=1`; and
   `SEED=` is applied once before the run, so a press is seedable and a release never is
-  (findings/menus.md: `wait_release` 0x278c4 with mode 0 returns only when `v88cce` and all four
-  joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0) - **`RESEED=0x88cce=1:b`** now ends
+  (findings/menus.md: `wait_release` 0x278c4 with mode 0 returns only when `key_select` and all four
+  joy flags are 0, and stores joy88b40=1 itself when `key_select` != 0) - **`RESEED=0x88cce=1:b`** now ends
   that class: same syntax as `SEED=`, but it writes the value on every READ of those bytes except the
   first, which gets `fn_1c0f4` 0x1c0f4 to return on both sides (findings/menus.md, iter 81). The
   first-read exception is not decoration: the READ hook fires **before** the value is fetched and
@@ -220,7 +220,7 @@ it can be copied back into DREA.
   after it the injected 0) makes both sides return. Picking the wrong flag is its own trap:
   `RESEED=0x88cce=1:b`, which frees `fn_1c0f4`'s mode-0 pair, parks `fn_1d704` in `wait_release`'s pump
   because 0x278ef then stores `joy88b40 = 1` (19963 passes of 0x278ca-0x278ff). Worse in the other
-  direction (iter 83, `trial_book` 0x2e4b8): seeding `v88cce` to free that function's pump puts the
+  direction (iter 83, `trial_book` 0x2e4b8): seeding `key_select` to free that function's pump puts the
   seeded 1 into `wait_release`'s test 0x278e7 first - 0x278ef's `joy88b40 = 1` store survives the
   injected 0 and the pump is never entered (2844 passes of 0x278ca-0x278ff). Check the hot-address list
   for who reads the global before picking it. And the pair is wrong where a later test wants the press

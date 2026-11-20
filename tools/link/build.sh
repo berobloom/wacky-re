@@ -24,7 +24,8 @@ tools/wc/wcc.sh $wc $w WW.C -s -3r -oneatx | grep -iE ' error|errors' || true
 tools/wc/wcc.sh $wc $w EXTRA.C -s -3r -oneatx | grep -iE ' error|errors' || true
 [ -f $w/WW.OBJ ] && [ -f $w/EXTRA.OBJ ] || { echo "compile failed"; exit 1; }
 if [ "${DELINK_ASM:-1}" != 0 ]; then      # the assembler module from src/wwasm.asm (tools/asm/asmcheck.py)
-    nasm -f obj -o $w/WWASM.OBJ src/wwasm.asm && python3 tools/asm/omfsegfix.py $w/WWASM.OBJ _v88b30 >/dev/null
+    segof=$(sed -n 's/^ *mov bx, seg \([A-Za-z_0-9]*\).*/\1/p' src/wwasm.asm)   # kbd_isr's DS (omfsegfix.py)
+    nasm -f obj -o $w/WWASM.OBJ src/wwasm.asm && python3 tools/asm/omfsegfix.py $w/WWASM.OBJ "$segof" >/dev/null
     asmfile="file WWASM.OBJ"
 else
     rm -f $w/WWASM.OBJ; asmfile=""

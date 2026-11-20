@@ -6,7 +6,7 @@ nasm writes `mov bx, seg x` in a FLAT segment as a base (16-bit selector) fixup 
 message and no output file (iter 90: a bisect over the 41 FIXUPP records of src/wwasm.asm's object
 found the one record holding it; every other record links). This rewrites each such fixup to
 target = the extern EXTNAME, frame = group FLAT (fix data 0x16), the form tools/link/delink.py writes
-for the game's own sel16 fixups. WW.EXE has one: 0x4090e in kbd_isr, `mov bx, seg _v88b30`.
+for the game's own sel16 fixups. WW.EXE has one: 0x4090e in kbd_isr, `mov bx, seg _kbd_busy` (build.sh reads the name from that line).
 
 Nothing else is needed for a nasm object (iter 90, each tried alone and linked): nasm's 16-bit
 SEGDEF/LEDATA/PUBDEF forms and its own COMENT records link as they are, and the object links without
