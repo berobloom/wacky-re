@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 85 still 207 -
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 86 still 207 -
   no C change, `difffn.py`/`hotfn.py` work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
@@ -28,11 +28,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. QUESTIONS 27: seed the first branch of `kart_bump` 0x22bf4, `track_around` 0x283a4, `netkeys_in`
-   0x2d94c, `line_points` 0x21554 - their zero-argument runs return in 29-52 executed instructions, so
-   their `SAME` says nothing. Read each first `je` in the disassembly, seed what it tests (`minimap`
-   0x2a4ac worked example: gate `v88ca0` 0x88ca0, `nplayers` 0x88c40, `netgame` 0x88c0c,
-   `players[].x/y` 0x6aa90+0x16/0x18) and report the `hotfn.py` count with the verdict.
+1. `kart_bump` 0x22bf4's arms that the iter 86 seed does not reach: `sprattr` kind > 2 for the
+   `test bx,bx; jle 0x2334d` fall-through (seed 0x72998=2:w / 3:w), the entity records
+   (`ents` 0x73938 + `curkart->f6a < 0x63` 0x2324d) for 0x23503/0x235fb/0x2369f, and 0x22eb0 (the
+   `netvoices` 0x7ec74 arm, seeded 1 there and still x0). Start from that run's seed list in
+   src/nearmiss.txt and report the `hotfn.py` count with the verdict.
 2. QUESTIONS 26: seed the palette/picture pointers `main` mallocs (src/ww.c 18540-18700) into
    scratch-page blocks and re-run `difffn.py intro` - it returns on both sides now, and its 123
    remaining DIFF bytes are all in the harness's zero page.

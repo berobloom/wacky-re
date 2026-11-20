@@ -333,9 +333,37 @@ merged).
   all of them printing `SAME` with both sides returning): `netkeys_in` 0x2d94c **29** insns at 29
   addrs, `kart_bump` 0x22bf4 32, `track_around` 0x283a4 44, `line_points` 0x21554 52.
   Each is a straight line into its own first branch, taken because this run leaves the globals it
-  reads at 0 - which global per function is not read off yet, and no conclusion about those four
-  lines should be drawn from these runs (they need the race state seeded, the way `kart_draw`
-  0x24bcc's verdict line did). `minimap` 0x2a4ac belonged to that list at 15 insns until it was
+  reads at 0 - and no conclusion about those four lines should be drawn from these runs (they need
+  the race state seeded, the way `kart_draw` 0x24bcc's verdict line did). The four are read off and
+  seeded in iter 86 (`track_around` 0x283a4 is MATCH now, so it is out of the list):
+  - `kart_bump` 0x22bf4 has no single gate: its first branch is the **record count** `v88b78`
+    0x88b78 (`cmp dx, word [0x88b78]; jg 0x22c7c` 0x22c2b, dx = 1 from 0x22c1d) over the `arr79a28`
+    records at 0x79a28 + n*0x28, and behind it the per-record `f24` test
+    (`cmp word [eax+0x24],0; jle 0x231d5` 0x22d5a), `players[CR->f18].f30[v88b7e]`
+    (`cmp word [edx+ebx+0x30],0; je 0x22f2d` 0x22d88, players base 0x6aa90 stride 0x68 - the
+    `imul edx,edx,0x68` + `mov ebx,0x6aa90` pair 0x22d64/0x22d67), `curkart->f7e` 0x22c81 with
+    `v88c3c` 0x22c8c, the pickup gate CR->f1c 0x231db and `curkart->f7c` 0x231eb, and the entity
+    kind word `sprattr[28*ents[CR->f22]].+0` (`mov bx,[ebx+0x72998]` 0x2322d,
+    `test bx,bx; jle 0x2334d` 0x2323a). With
+    `SEED=0x88b78=3:w,0x79a9c=1:w,0x6aac0=1:w,0x79ac4=0xffff:w,0x79abc=1:w,0x7d5b0=0x8200:d,0x827c=1:w,0x72998=1:w`
+    the run is 336 insns at 276 addrs and SAME, control SAME (`.work/fncover.py`); unwalked at this
+    budget: 0x22eb0, 0x2334d (kind > 2), and 0x23503/0x235fb/0x2369f behind
+    `cmp word [curkart+0x6a],0x63; jge 0x23441` 0x2324d, which needs real `ents` records.
+  - `line_points` 0x21554 is gated only by its own four input globals and its output cursor: the
+    dx sign `test si,si; jge 0x2159e` 0x21590, the dy sign `cmp word [esp+0xc],0` 0x215a6, and
+    `cmp si, word [esp+0xc]; jle 0x2160d` 0x215c4 (x-major loop 0x215dd vs y-major 0x2163d).
+    `lx0` 0x88ba4, `lx1` 0x88ba6, `ly0` 0x88bc2, `ly1` 0x88bc4 and `linep` 0x7ed10 (seed to a scratch
+    block, e.g. 0x8000, so the emitted point pairs land in compared memory): 3,40 / 5,27 is 495 insns
+    at 57 addrs with 37 passes of the x-major loop, 40,10 / 60,5 is 721 insns at 69 addrs with 55
+    passes of the y-major one; both SAME, control SAME, so the two Bresenham loops and both sign arms
+    agree byte for byte in the output.
+  - `netkeys_in` 0x2d94c was on the list by mistake: 0x2d94c-0x2da7 is 29 instructions and no branch,
+    so the 29-insn run walks it all. What the zero run did not adjudicate were the seven masks, and
+    `SEED=0x88cef=0x7f:b` does: the stores at 0x2d957/0x2d960/0x2d96d/0x2d97b/0x2d989/0x2d997/0x2d9a1
+    write 1, 2, 4, 8, 0x10, 0x20, 0x40 in both builds (SAME, control SAME; EAX 0x40/0x2040 is the
+    dead void return, GOTCHAS). A thin count is only a warning sign, not a verdict - check the
+    function's own size first (`hotfn.py` insns vs the byte span).
+  `minimap` 0x2a4ac belonged to that list at 15 insns until it was
   seeded: its gate is `v88ca0` (`cmp word [0x88ca0],0; je 0x2a60b` 0x2a4b8), and with
   `SEED=0x88ca0=1:w,0x88c40=1:w` (nplayers), `0x88c0c=2:w` (netgame) and `players[].x/y` seeded
   around the 0x7ff clamp (0x6aa90+0x16/0x18 and +0x68 for player 1) it runs 106 insns at 70 addrs and

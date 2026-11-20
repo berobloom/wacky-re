@@ -423,13 +423,20 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     the writes that remain name a real bug. (The 11-call gap in between was `fade_in` stepping a
     garbage palette 19 vs 6 times - `difffn.py fade_in SEED=0x88c46=4:w ARGS=0x8000` is SAME.)
 
-27. **OPEN** (iter 85, findings/game-loop.md `## Traps`): which global does each of the four race-
-    screen near misses test first - `netkeys_in` 0x2d94c, `kart_bump` 0x22bf4, `track_around`
-    0x283a4, `line_points` 0x21554? Their `difffn.py` runs return in 29-52 executed instructions, so
-    their `SAME` covers only the entry straight line. Read the first branch of each out of the
-    disassembly, seed what it tests the way `kart_draw` 0x24bcc's verdict line does (`curkart` 0x7d5b0
-    and the `players`/`kart` records) - `minimap` 0x2a4ac is the worked example, its gate is `v88ca0`
-    0x88ca0 - and re-run: a run under ~200 executed instructions is not a verdict.
+27. **RESOLVED** iter 86 (findings/game-loop.md `## Traps`, src/nearmiss.txt): the gates are read off
+    and all four closed. `track_around` 0x283a4 is MATCH, so it dropped out. `kart_bump` 0x22bf4 has no
+    single global - its first branch is the record count `v88b78` 0x88b78 (`cmp dx,[0x88b78]` 0x22c2b),
+    then the per-record `f24` 0x22d5a, `players[CR->f18].f30[v88b7e]` 0x22d88, `curkart->f7e`/`v88c3c`
+    0x22c81/0x22c8c, the pickup gate CR->f1c + `curkart->f7c` 0x231db/0x231eb and the entity kind word
+    `sprattr[...]+0` 0x2322d: with the eight-value seed its run is 336 insns at 276 addrs and SAME
+    (control SAME), 0x2334d and the `curkart->f6a >= 0x63` block 0x23503+ stay unwalked. `line_points`
+    0x21554 is gated only by its four inputs and `linep` (`test si,si` 0x21590, `cmp word [esp+0xc],0`
+    0x215a6, `cmp si,[esp+0xc]; jle 0x2160d` 0x215c4): two seeds walk both loops (37 and 55 passes,
+    495/721 insns) and both are SAME with the emitted point pairs compared in scratch. `netkeys_in`
+    0x2d94c was on the list wrongly - its span 0x2d94c-0x2da7 is 29 branch-free instructions, so the
+    29-insn run is the whole body; `SEED=0x88cef=0x7f:b` makes the seven stores write non-zero masks and
+    both builds agree. Lesson recorded in the trap: compare the run's insn count with the function's own
+    span before calling a run thin.
 
 25. **RESOLVED** iter 73 (unrelocated literals in `fn_17928`; see the end of this entry) (iter 71, `tools/link/racetest.sh` race-grid screen, findings/video.md "The race HUD box
     loses its bright-yellow figure"): inside the race HUD box (`img7d83c`, drawn by `draw_status`

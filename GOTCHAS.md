@@ -125,6 +125,14 @@ it can be copied back into DREA.
   legal value rather than moving the base (`SEED=0x88c96=1:w` for
   `pal7d848 + 3*(v88c96-1)`, iter 79, findings/menus.md).
   Recipe and its evidence: findings/menus.md, findings/serial.md, findings/game-loop.md.
+- **A thin `hotfn.py` count is a warning, not a verdict, in both directions** (iter 86). `kart_bump`
+  0x22bf4's 32-insn SAME meant nothing (gated on the record count `v88b78` 0x88b78 first, then six
+  more globals - findings/game-loop.md `## Traps`), but `netkeys_in` 0x2d94c's 29-insn SAME was
+  *complete*: its span 0x2d94c-0x2da7 is 29 instructions with no branch, so every byte ran. Compare
+  the count with the function's own span (`(end-start)/3` is a fair floor) before seeding. Where the
+  body is walked but every store writes 0, seed the input non-zero instead (`SEED=0x88cef=0x7f:b`
+  makes `netkeys_in`'s seven stores write 1,2,4,8,0x10,0x20,0x40) - a zero run adjudicates addresses
+  only, never masks or arithmetic.
 - **A capped `difffn.py` run is only as good as the progress its cap allows**, and `hotfn.py`'s
   `capped` does not say which limit fired (instruction cap, `CALLS`, or the quiet stop at an `in`/`out`
   or a fault), so read the stop point yourself: `Run(...).go(addr)` then print `done`, `calls`,
