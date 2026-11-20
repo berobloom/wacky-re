@@ -182,7 +182,11 @@ it can be copied back into DREA.
   3M-instruction cap. `SEED=0x88cd0=1:b,RESEED=0x88cd0=0:b` (first read sees the seeded 1, every read
   after it the injected 0) makes both sides return. Picking the wrong flag is its own trap:
   `RESEED=0x88cce=1:b`, which frees `fn_1c0f4`'s mode-0 pair, parks `fn_1d704` in `wait_release`'s pump
-  because 0x278ef then stores `joy88b40 = 1` (19963 passes of 0x278ca-0x278ff).
+  because 0x278ef then stores `joy88b40 = 1` (19963 passes of 0x278ca-0x278ff). Worse in the other
+  direction (iter 83, `trial_book` 0x2e4b8): seeding `v88cce` to free that function's pump puts the
+  seeded 1 into `wait_release`'s test 0x278e7 first - 0x278ef's `joy88b40 = 1` store survives the
+  injected 0 and the pump is never entered (2844 passes of 0x278ca-0x278ff). Check the hot-address list
+  for who reads the global before picking it.
 - **A stub cannot fake a return from a noreturn clib entry: `exit_` ends the run** (iter 82): `main`
   0x35ca4 tail-jumps to clib `exit_` (game 0x42c11, hybrid 0x1c1d3) at 0x35e10, and the call stub's
   "return" pops the slot at ESP - inside main's live frame one of its own locals - so the game jumped to

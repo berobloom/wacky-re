@@ -382,6 +382,35 @@ what `SEED=` left them, so:
   this function - it parks the run in `wait_release`'s pump, because 0x278ef then stores joy88b40 = 1
   (19963 passes of 0x278ca-0x278ff).
 
+- CONFIRMED (iter 83: `SEED=0x88cd0=1:b,RESEED=0x88cd0=0:b CALLS=3000 tools/wc/difffn.py trial_book`
+  prints **SAME with both sides returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same
+  env SAME; `hotfn.py` 42703 insns at 919 addrs and `returned`; with `ARGS=3,1000,0` - the three
+  arguments of the only call site, 0x1911f `trial_book(v88bb6 + v7ecb4, v88b88, 0)` - 43194 insns at 928
+  addrs, also SAME/returned): `trial_book` 0x2e4b8's wall is its **own input pump** 0x2f2fa-0x2f395, not
+  the pair. Each pass stores EBX (0, from 0x2f2f8) into `joy88b40/42/44/46` 0x88b40-0x88b46 and `v88cec`
+  0x88cec, calls `f377ae` 0x377ae, and re-tests `v88cce` 0x88cce (0x2f32d), `key88cd0` (0x2f337, against
+  ECX = 1 from 0x2f2f3) and `key88ccd` 0x88ccd (0x2f347, then `call screenshot` 0x2f34f and the bare wait
+  0x2f35c). EDX is 0 from 0x2f305 `mov edx,ebx` unless one of those tests mismatches, which sets it to
+  ECX (0x2f335, 0x2f33f, 0x2f388); `test edx,edx; je 0x2f2fa` 0x2f393 re-pumps (2841 passes at
+  CALLS=3000), and 0x2f38a `cmp dword [ticks],0x22` only redirects a **zero** EDX to the page redraw
+  0x2f098 - the exit needs an input flag, never a clock. `key88cd0 = 1` sets EDX at 0x2f33f (measured x1
+  there, 0x2f335 x0) and this function's own release wait 0x2f3a3 `cmp byte [0x88cd0],1; je 0x2f3a3`
+  needs the 0 back, so it takes the same `SEED=`/`RESEED=` pair as `fn_1d704`. Walked return chain
+  (address counts, `.work/fncover.py`, each x1): 0x2f38a -> 0x2f39b -> 0x2f3a3 -> `wait_release` mode 0
+  at 0x2f3ae (its 0x278e7 test sees 0 and 0x2f307-0x2f31c has just zeroed the joy flags) -> `getpalette`
+  0x2f3bd -> `fade_out` 0x2f3c7 -> `f37de0` 0x2f3d5 -> 0x2f3da `cmp byte [key88ccd],0` -> `add esp,0x15c`
+  + 5 pops -> the **only `ret`** 0x2f404 (whole-range disasm of 0x2e4b8-0x2f407: one `ret`, one jump-table
+  jump 0x2e533). Not walked: the record block behind 0x2f193 `cmp dword [esp+0x144],0; je 0x2f2d5` (0x2f1d9
+  and its three call-free ticks waits 0x2f1fe/0x2f25e/0x2f2b8 measured x0 - `TICKREAD=` is the knob for a
+  wait whose body calls nothing) and the laptimes block 0x2e681-0x2e960, which the game's own call skips
+  (`arg3` = 0, 0x2e689 `je 0x2e973`).
+- CONFIRMED (iter 83): the wrong-flag trap again, by a new route - `SEED=0x88cce=1:b` instead of
+  `key88cd0` puts the seeded 1 into `wait_release`'s test 0x278e7 **before** the pump's own read of it:
+  0x278ef runs and its `joy88b40 = 1` store is never undone by the injected 0, so the hot loop becomes
+  0x278ca-0x278ff (2844 passes at CALLS=3000) and the pump is not entered at all. Read the hot-address
+  list before choosing the flag: seeding a global a library wait loop also tests can be worse than
+  seeding the one the function's own loop tests.
+
 - CONFIRMED (iter 80: `SEED=0x88cd0=1:b,0x7ebc0=1:d tools/wc/difffn.py fn_1832c` prints **SAME with
   both sides returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same seeds SAME;
   `hotfn.py` with those seeds reports 45646 insns at 617 addrs and `returned`): the races menu's wait
