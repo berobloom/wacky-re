@@ -89,7 +89,12 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   more pin on 9.5b.
 - Still unidentified: 38,489 bytes, mostly inside the ASS range (0x41504 3 KB before
   `MUSIC_SetVolume`, 0x49260 2 KB in multivoc, 0x4b47c 2 KB in midi.c): the ASS modules no released
-  LIB matches exactly. That project
+  LIB matches exactly. By module (1.04 functions >= 24 bytes still unplaced; some may be unlinked):
+  multivoc.c 8.4 KB, al_midi.c 5.7, sndscape.c 5.0, guswave.c 4.5, blaster.c 4.1, midi.c 3.9,
+  fx_man.c 3.5; the GF1 modules only ~2.4 KB (gf1sound, gf1note1, digpos, gf1pat1, gf1mixer, gf1isr).
+  LIKELY not Gravis's GUSDK 2.22 low-level toolkit (`Ultra*`, github RobertSundling/Annotated-GUSDK,
+  checked iter 92): ASS's GUS code is its own `C:\PRG\NEWGF1\GF1NEW\gf1*.c` library (module names
+  in the LIBs), already matched there, and the gaps are in ASS's own modules. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
