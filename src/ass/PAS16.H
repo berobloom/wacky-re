@@ -64,7 +64,9 @@ int   PAS_SetMixMode( int mode );
 void  PAS_StopPlayback( void );
 int   PAS_GetCurrentPos( void );
 int   PAS_BeginBufferedPlayback( char *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 int   PAS_BeginBufferedRecord( char *BufferStart, int BufferSize, int NumDivisions, unsigned SampleRate, int MixMode, void ( *CallBackFunc )( void ) );
+#endif
 int   PAS_SetPCMVolume( int volume );
 int   PAS_GetPCMVolume( void );
 void  PAS_SetFMVolume( int volume );

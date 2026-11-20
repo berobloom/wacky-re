@@ -73,7 +73,11 @@ static int PAS_OriginalFMLeftVolume  = 75;
 static int PAS_OriginalFMRightVolume = 75;
 
 unsigned int PAS_DMAChannel;
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static unsigned PAS_Irq;
+#else
 static int PAS_Irq;
+#endif
 
 static MVState *PAS_State = NULL;
 static MVFunc  *PAS_Func  = NULL;
@@ -96,7 +100,11 @@ volatile int   PAS_SoundPlaying;
 void ( *PAS_CallBack )( void );
 
 // adequate stack size
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+#define kStackSize 1024
+#else
 #define kStackSize 2048
+#endif
 
 static unsigned short StackSelector = NULL;
 static unsigned long  StackPointer;
@@ -106,7 +114,9 @@ static unsigned long  oldStackPointer;
 
 // This is defined because we can't create local variables in a
 // function that switches stacks.
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 static int irqstatus;
+#endif
 
 // These declarations are necessary to use the inline assembly pragmas.
 
@@ -115,12 +125,24 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
 
 // This function will get the current stack selector and pointer and save
 // them off.
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+// The Watcom 10.0 prerelease assembles "mov ax,ss" without the operand-size
+// prefix the game has: spelled out here.
+#pragma aux GetStack =  \
+   "mov  [edi],esp"     \
+   "db   66h"           \
+   "mov  ax,ss"         \
+   "mov  [esi],ax"      \
+   parm [esi] [edi]     \
+   modify [eax esi edi];
+#else
 #pragma aux GetStack =  \
    "mov  [edi],esp"     \
    "mov  ax,ss"         \
    "mov  [esi],ax"      \
    parm [esi] [edi]     \
    modify [eax esi edi];
+#endif
 
 // This function will set the stack selector and pointer to the specified
 // values.
@@ -378,11 +400,14 @@ int PAS_GetCardSettings
       return( PAS_Error );
       }
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    if ( !VALID_IRQ( PAS_Irq ) )
       {
       PAS_SetErrorCode( PAS_InvalidIrq );
       return( PAS_Error );
       }
+
+#endif
 
    if ( PAS_Interrupts[ PAS_Irq ] == INVALID )
       {
@@ -505,6 +530,10 @@ void interrupt far PAS_ServiceInterrupt
    )
 
    {
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   int irqstatus;
+
+#endif
    #ifdef USESTACK
    // save stack
    GetStack( &oldStackSelector, &oldStackPointer );
@@ -678,12 +707,18 @@ void PAS_SetSampleBufferCount
       count >>= 1;
       }
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   // Program the Sample Buffer Count
+   PAS_Write( SampleBufferCount, lobyte( count ) );
+   PAS_Write( SampleBufferCount, hibyte( count ) );
+#else
    LoByte = lobyte( count );
    HiByte = hibyte( count );
 
    // Program the Sample Buffer Count
    PAS_Write( SampleBufferCount, LoByte );
    PAS_Write( SampleBufferCount, HiByte );
+#endif
    PAS_State->samplecnt = count;
 
    RestoreInterrupts( flags );
@@ -799,11 +834,18 @@ void PAS_StopPlayback
 
    // Turn off 16-bit unsigned data
    data = PAS_Read( SampleSizeConfiguration );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   data &= PAS_SignedSampleMask;
+#else
    data &= PAS_SampleSizeMask;
+#endif
    PAS_Write( SampleSizeConfiguration, data );
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    // Disable the DMA channel
    DMA_EndTransfer( PAS_DMAChannel );
+
+#endif
 
    PAS_SoundPlaying = FALSE;
 
@@ -820,8 +862,12 @@ void PAS_StopPlayback
 int PAS_SetupDMABuffer
    (
    char *BufferPtr,
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   int   BufferSize
+#else
    int   BufferSize,
    int   mode
+#endif
    )
 
    {
@@ -958,6 +1004,64 @@ int PAS_GetFilterSetting
    Starts playback of digitized sound on the sound card.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+void PAS_BeginTransfer
+   (
+   void
+   )
+
+   {
+   int data;
+
+   PAS_SetSampleRateTimer();
+
+   PAS_SetSampleBufferCount();
+
+   PAS_EnableInterrupt();
+
+   // Get sample size configuration
+   data = PAS_Read( SampleSizeConfiguration );
+   data &= PAS_SignedSampleMask;
+
+   // Check board revision.  Revision # 0 can't play 16-bit data.
+   if ( PAS_State->intrctlr & 0xe0 )
+      {
+      // set sample size bit
+      if ( PAS_MixMode & SIXTEEN_BIT )
+         {
+         data |= PAS_16BitSampleFlag | PAS_UnsignedSampleFlag;
+         }
+      }
+
+   // set oversampling rate
+   data &= PAS_OverSamplingMask;
+   data |= PAS_4xOverSampling;
+
+   // Set sample size configuration
+   PAS_Write( SampleSizeConfiguration, data );
+
+   // Get Cross channel setting
+   data  = PAS_State->crosschannel;
+   data &= PAS_ChannelConnectMask;
+   data |= PAS_PCMStartDAC;
+
+   // set stereo mode bit
+   if ( !( PAS_MixMode & STEREO ) )
+      {
+      data |= PAS_StereoFlag;
+      }
+
+   PAS_Write( CrossChannelControl, data );
+   PAS_State->crosschannel = data;
+
+   // Get the filter appropriate filter setting
+   data = PAS_GetFilterSetting( PAS_SampleRate ) |
+      SampleRateTimerGateFlag | SampleBufferCountGateFlag | PAS_AudioMuteFlag;
+
+   PAS_Write( AudioFilterControl, data );
+   PAS_State->audiofilt = data;
+   }
+#else
 void PAS_BeginTransfer
    (
    int mode
@@ -1032,6 +1136,7 @@ void PAS_BeginTransfer
 
    PAS_SoundPlaying = TRUE;
    }
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -1061,18 +1166,27 @@ int PAS_BeginBufferedPlayback
    PAS_TransferLength = BufferSize / NumDivisions;
    PAS_SetCallBack( CallBackFunc );
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   DmaStatus = PAS_SetupDMABuffer( BufferStart, BufferSize );
+#else
    DmaStatus = PAS_SetupDMABuffer( BufferStart, BufferSize, DMA_AutoInitRead );
+#endif
    if ( DmaStatus == PAS_Error )
       {
       return( PAS_Error );
       }
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   PAS_BeginTransfer();
+#else
    PAS_BeginTransfer( PLAYBACK );
+#endif
 
    return( PAS_Ok );
    }
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: PAS_BeginBufferedRecord
 
@@ -1124,6 +1238,7 @@ int PAS_CallInt( int ebx, int ecx, int edx );
    parm [ ebx ] [ ecx ] [ edx ] modify exact [ eax ebx ecx edx esi edi ] value [ ebx ];
 
 
+#endif
 /*---------------------------------------------------------------------
    Function: PAS_CallMVFunction
 
@@ -1824,7 +1939,11 @@ void PAS_Shutdown
          OUTPUTMIXER, R_PCM );
 
 // DEBUG
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+      PAS_RestoreState();
+#else
 //      PAS_RestoreState();
+#endif
 
       PAS_UnlockMemory();
 
@@ -1876,7 +1995,9 @@ void PAS_UnlockMemory
    DPMI_Unlock( PAS_SoundPlaying );
    DPMI_Unlock( PAS_CallBack );
    DPMI_Unlock( PAS_ErrorCode );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    DPMI_Unlock( irqstatus );
+#endif
    }
 
 
@@ -1922,7 +2043,9 @@ int PAS_LockMemory
    status |= DPMI_Lock( PAS_SoundPlaying );
    status |= DPMI_Lock( PAS_CallBack );
    status |= DPMI_Lock( PAS_ErrorCode );
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    status |= DPMI_Lock( irqstatus );
+#endif
 
    if ( status != DPMI_Ok )
       {

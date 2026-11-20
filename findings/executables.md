@@ -224,6 +224,15 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   check. The prerelease assembles the pragma's `mov ax,ss` without the 0x66 prefix the game has;
   the port spells it out with `db 66h` (LIKELY: the original's spelling is unknown). 0x43F11
   "SOUNDSCAPE_Interrupts" was BLASTER_Interrupts' identical table seen at a wrong offset: removed.
+  PAS16 (iter 93l, 0x458B0-0x470B1, same length, 44 bytes differ: flags register in
+  SetSampleBufferCount, one store's scheduling in StopPlayback): **Watcom 10.0 prerelease** too
+  (CheckForDriver, GetStateTable and GetFunctionTable match only with it), the same `db 66h` pragma
+  spelling as BLASTOLD. Older than 1.04: no recording (BeginTransfer takes no mode and plays only;
+  it sets no PAS_SoundPlaying), SetupDMABuffer(ptr, size), StopPlayback without DMA_EndTransfer;
+  16-bit data is sent unsigned (PAS_SignedSampleMask 0xE3 and PAS_16BitSampleFlag |
+  PAS_UnsignedSampleFlag 0x14); PAS_Irq is unsigned and there is no VALID_IRQ check; the interrupt
+  status is a register local, not the locked global `irqstatus`; Shutdown calls PAS_RestoreState
+  (commented out in 1.04); a 1 KB interrupt stack.
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate

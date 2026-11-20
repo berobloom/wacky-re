@@ -910,8 +910,6 @@
 0x057e2c emu387               # CONFIRMED (iter 92): Watcom 9.5b LIB386/DOS/EMU387.LIB module emu387, 12838 bytes: every byte from +0x77 on equals the LIB (10002 of its 10070 unmasked bytes); the 68 that differ are all in +0xa..+0x76, zero in the LIB and filled in the game (a table, not code). The 9.5/9.5a EMU387 shares 432 bytes. libmatch.py misses it because it needs every byte equal
 # Iter 92e: the ASS 1.04 recreation source (gamesrc-ver-recreation/audiolib, ASSREV=19950518) compiled with
 # Watcom 9.5b and 1.04's production flags; these four occur exactly once and match no original (10.0b) LIB.
-0x045f64 PAS_SetMixMode           # CONFIRMED: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
-0x0464b4 PAS_GetCardInfo          # CONFIRMED: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
 # ---- ASS port (src/ass, tools/ass/asscheck.py): functions and data of modules rebuilt byte for byte
 0x040a80 TS_FreeTaskList          # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); takes the list by value (its NULL stores hit the copy); inlined in TS_Shutdown
 0x040ab0 TS_SetClockSpeed         # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93)
@@ -1021,6 +1019,47 @@
 0x0454d8 deallocateTimerStack     # CONFIRMED: src/ass BLASTOLD.C builds it byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
 0x045518 BLASTER_Init             # STRONGLY SUPPORTED: src/ass BLASTOLD.C builds it identical except one register (esi/ebx) in the inlined GetDSPVersion
 0x045788 BLASTER_Shutdown         # CONFIRMED: src/ass BLASTOLD.C builds this function byte-identical; the module 0x43F20-0x458A9 differs only in GetEnv and Init (48 bytes)
+0x0458b0 PAS_Interrupts           # CONFIRMED: src/ass PAS16.C builds it byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045920 PAS_ErrorString          # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x04598c PAS_CheckForDriver       # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045a0c PAS_GetStateTable        # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045a58 PAS_GetFunctionTable     # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045aa4 PAS_GetCardSettings      # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045b68 PAS_EnableInterrupt      # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045c0c PAS_DisableInterrupt     # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045ce0 PAS_ServiceInterrupt     # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045dc0 PAS_Write                # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045dd0 PAS_Read                 # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045de0 PAS_SetSampleRateTimer   # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045e68 PAS_SetSampleBufferCount # STRONGLY SUPPORTED: src/ass PAS16.C builds it the same length, flags in ecx instead of esi (6 bytes)
+0x045ef4 PAS_SetPlaybackRate      # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045f5c PAS_GetPlaybackRate      # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x045f64 PAS_SetMixMode           # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes); earlier: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
+0x045f90 PAS_StopPlayback         # STRONGLY SUPPORTED: src/ass PAS16.C builds it the same length, one store scheduled differently (38 bytes)
+0x045ff0 PAS_SetupDMABuffer       # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046060 PAS_GetCurrentPos        # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0460cc PAS_GetFilterSetting     # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046114 PAS_BeginTransfer        # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0461c4 PAS_BeginBufferedPlayback # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x04627c PAS_CallMVFunction       # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0462dc PAS_SetPCMVolume         # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x04634c PAS_GetPCMVolume         # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0463d4 PAS_SetFMVolume          # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046440 PAS_GetFMVolume          # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0464b4 PAS_GetCardInfo          # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes); earlier: byte-identical (fixups masked) to pas16.c built with wcc386 9.5b (iter 92e)
+0x046504 PAS_SetCallBack          # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x04650c PAS_FindCard             # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0465ec PAS_SaveMusicVolume      # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0466e4 PAS_RestoreMusicVolume   # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046728 PAS_SaveState            # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x04677c PAS_RestoreState         # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046894 PAS_LockEnd              # CONFIRMED: src/ass PAS16.C builds it byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046898 allocateTimerStack       # CONFIRMED: src/ass PAS16.C builds it byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x0468f4 deallocateTimerStack     # CONFIRMED: src/ass PAS16.C builds it byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046934 PAS_Init                 # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046bd4 PAS_Shutdown             # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046d0c PAS_UnlockMemory         # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
+0x046eb4 PAS_LockMemory           # CONFIRMED: src/ass PAS16.C builds this function byte-identical; the module 0x458B0-0x470B1 differs only in SetSampleBufferCount and StopPlayback (44 bytes)
 0x0470d8 PCFX_ErrorString         # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x04712c PCFX_Stop                # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x0471a0 PCFX_Service             # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
@@ -1170,6 +1209,20 @@
 0x0642e4 BLASTER_OriginalVoiceVolumeRight # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
 0x0642e8 StackSelector            # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
 0x0642ec BLASTER_ErrorCode        # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x0642f0 PAS_Installed            # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x0642f4 PAS_TranslateCode        # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x0642f8 PAS_OriginalPCMLeftVolume # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x0642fc PAS_OriginalPCMRightVolume # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064300 PAS_OriginalFMLeftVolume # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064304 PAS_OriginalFMRightVolume # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064308 PAS_State                # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x06430c PAS_Func                 # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064310 PAS_TransferLength       # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064314 PAS_MixMode              # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064318 PAS_SampleRate           # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x06431c PAS_TimeInterval         # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064320 StackSelector            # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x064324 PAS_ErrorCode            # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
 0x064328 PCFX_Sound               # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x06432c PCFX_CallBackFunc        # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x064330 PCFX_TotalVolume         # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
@@ -1223,6 +1276,22 @@
 0x088e48 BLASTER_TotalDMABufferSize # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
 0x088e50 BLASTER_OldInt           # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
 0x088e56 oldStackSelector         # CONFIRMED: referenced as such by the byte-identical functions of src/ass BLASTOLD.C (module 0x43F20)
+0x088e60 PAS_DMAChannel           # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e64 StackPointer             # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e68 PAS_TotalDMABufferSize   # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e6c PAS_CurrentDMABuffer     # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e70 PAS_OriginalState        # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e94 PAS_DMABufferEnd         # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e98 PAS_DMABuffer            # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088e9c PAS_SampleSizeConfig     # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088ea0 PAS_CallBack             # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088ea4 PAS_Irq                  # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088ea8 PAS_SoundPlaying         # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088eac oldStackPointer          # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088eb0 PAS_IntController1Mask   # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088eb4 PAS_IntController2Mask   # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088eba PAS_OldInt               # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
+0x088ec0 oldStackSelector         # CONFIRMED: referenced as such by the byte-identical functions of src/ass PAS16.C (module 0x458B0; PAS_LockMemory locks them in source order)
 0x0890d8 VoiceStatus              # CONFIRMED: src/ass GUSWAVE.C builds byte-identical to the whole module 0x47650-0x47FD2
 0x0891d8 VoiceList                # CONFIRMED: src/ass GUSWAVE.C builds byte-identical to the whole module 0x47650-0x47FD2
 0x0891e0 GUSWAVE_Voices           # CONFIRMED: src/ass GUSWAVE.C builds byte-identical to the whole module 0x47650-0x47FD2
@@ -1243,31 +1312,6 @@
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
-0x045920 PAS_ErrorString          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
-0x045b68 PAS_EnableInterrupt      # LIKELY: ASS 104 pas16.c near match 0.99 (164 bytes), anchored by its module's exact hits
-0x045c0c PAS_DisableInterrupt     # LIKELY: ASS 104 pas16.c near match 0.99 (212 bytes), anchored by its module's exact hits
-0x045dc0 PAS_Write                # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 16 bytes
-0x045dd0 PAS_Read                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 16 bytes
-0x045de0 PAS_SetSampleRateTimer   # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 136 bytes
-0x045e68 PAS_SetSampleBufferCount # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 140 bytes
-0x045ef4 PAS_SetPlaybackRate      # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 104 bytes
-0x045f90 PAS_StopPlayback         # LIKELY: ASS 104 pas16.c near match 0.81 (104 bytes), anchored by its module's exact hits
-0x046060 PAS_GetCurrentPos        # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
-0x0460cc PAS_GetFilterSetting     # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 72 bytes
-0x04627c PAS_CallMVFunction       # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 96 bytes
-0x0462dc PAS_SetPCMVolume         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 112 bytes
-0x04634c PAS_GetPCMVolume         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 136 bytes
-0x0463d4 PAS_SetFMVolume          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
-0x046440 PAS_GetFMVolume          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 116 bytes
-0x04650c PAS_FindCard             # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 224 bytes
-0x0465ec PAS_SaveMusicVolume      # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 248 bytes
-0x0466e4 PAS_RestoreMusicVolume   # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 68 bytes
-0x046728 PAS_SaveState            # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 84 bytes
-0x04677c PAS_RestoreState         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 280 bytes
-0x046898 allocateTimerStack       # LIKELY: ASS 104 pas16.c near match 1.00 (92 bytes), anchored by its module's exact hits
-0x046934 PAS_Init                 # LIKELY: ASS 104 pas16.c near match 0.91 (680 bytes), anchored by its module's exact hits
-0x046d0c PAS_UnlockMemory         # LIKELY: ASS 104 pas16.c near match 0.95 (440 bytes), anchored by its module's exact hits
-0x046eb4 PAS_LockMemory           # LIKELY: ASS 104 pas16.c near match 0.88 (526 bytes), anchored by its module's exact hits
 0x048e05 MV_GetVoice              # LIKELY: ASS 104 multivoc.c near match 0.97 (47 bytes), anchored by its module's exact hits
 0x048e34 MV_VoicePlaying          # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 41 bytes
 0x048f3a MV_VoicesPlaying         # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 61 bytes

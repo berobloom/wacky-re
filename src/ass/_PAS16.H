@@ -216,9 +216,17 @@ void    PAS_Write( int Register, int Data );
 int     PAS_Read( int Register );
 void    PAS_SetSampleRateTimer( void );
 void    PAS_SetSampleBufferCount( void );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int     PAS_SetupDMABuffer( char *BufferPtr, int BufferSize );
+#else
 int     PAS_SetupDMABuffer( char *BufferPtr, int BufferSize, int mode );
+#endif
 int     PAS_GetFilterSetting( int rate );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+void    PAS_BeginTransfer( void );
+#else
 void    PAS_BeginTransfer( int mode );
+#endif
 int     PAS_TestAddress( int address );
 int     PAS_FindCard( void );
 int     PAS_CallMVFunction( unsigned long function, int ebx, int ecx, int edx );
