@@ -1310,13 +1310,20 @@ int MIDI_SongPlaying
    Selects the routines that send the MIDI data to the music device.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int MIDI_SetMidiFuncs
+#else
 void MIDI_SetMidiFuncs
+#endif
    (
    midifuncs *funcs
    )
 
    {
    _MIDI_Funcs = funcs;
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   return( MIDI_Ok );
+#endif
    }
 
 

@@ -63,8 +63,10 @@ static int GUS_Installed = 0;
 extern VoiceNode   GUSWAVE_Voices[ VOICES ];
 extern int GUSWAVE_Installed;
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision (LIKELY: its GUS_Init sizes no memory; 0x8B904/0x8B908, once named so, are the FM song player's)
 unsigned long GUS_TotalMemory;
 int           GUS_MemConfig;
+#endif
 
 int GUS_AuxError  = 0;
 

@@ -75,7 +75,11 @@ void MIDI_ResetUserChannelVolume( void );
 int  MIDI_Reset( void );
 int  MIDI_SetVolume( int volume );
 int  MIDI_GetVolume( void );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int  MIDI_SetMidiFuncs( midifuncs *funcs );
+#else
 void MIDI_SetMidiFuncs( midifuncs *funcs );
+#endif
 void MIDI_SetContext( int context );
 int  MIDI_GetContext( void );
 void MIDI_SetLoopFlag( int loopflag );

@@ -112,8 +112,6 @@
 0x088b36 spr_h
 0x0110d4 net_end      # LIKELY: ends a link game (messages, modem hang-up, port closed), builds the CRC/timeout/overrun/noise lines
 0x02a268 showlines    # SPECULATIVE: shows netstats lines (count, ?, ?)
-0x042174 music_resume # SPECULATIVE: library; called when musicpaused is cleared
-0x042188 music_pause  # SPECULATIVE: library; before "MUSIC PAUSED"
 0x0425f9 itoa         # LIKELY: clib itoa module (0x4258E) entry; (value, buf, 10)
 0x07c818 netstats     # LIKELY: 5 lines of 60 chars
 0x07ec8c musicpaused  # LIKELY: set after "MUSIC PAUSED"
@@ -146,12 +144,6 @@
 0x011884 music_jingle # LIKELY: plays a song once, waits, restarts menusong (music_start inlined twice)
 0x0118f8 input_clear1 # SPECULATIVE: zeroes four key bytes and four joystick shorts
 0x01193c input_clear2 # SPECULATIVE: zeroes six key bytes
-0x041f4c MUSIC_ErrorString # SPECULATIVE: Apogee Sound System; called with -1, result printed
-0x042160 MUSIC_SongPlaying # SPECULATIVE: Apogee Sound System; polled until 0
-0x04219c MUSIC_StopSong # SPECULATIVE: Apogee Sound System
-0x0421e0 MUSIC_PlaySong # SPECULATIVE: Apogee Sound System; (song, loop), non-zero = error
-0x042064 MUSIC_Shutdown # LIKELY: Apogee Sound System; main 0x3696b at exit after MUSIC_StopSong when musicon
-0x042488 MUSIC_FadeVolume # LIKELY: Apogee Sound System MUSIC_FadeVolume(tovolume, milliseconds): called (0, 4000) from fade_out when music is on, clamps arg1 to 0..255 (0x424aa-0x424bb) after checking a handle 0x63ff8
 0x042bec printf       # CONFIRMED: clib (libmatch)
 0x042c11 exit         # LIKELY: clib exit module (0x42C10) entry
 0x07c648 menusong     # SPECULATIVE: restarted by music_jingle
@@ -233,8 +225,6 @@
 0x088c74 joyfound     # SPECULATIVE: short, cleared before joy_detect, tested after
 0x07ee4a v7ee4a       # SPECULATIVE: short config flag cleared when joyfound
 0x07ee44 v7ee44       # SPECULATIVE: short config flag
-0x041fc8 MUSIC_Init   # LIKELY: ASS; returns MUSIC_Ok (0) or an error for MUSIC_ErrorString
-0x0420dc MUSIC_SetVolume # LIKELY: ASS
 0x011f98 voices_load  # LIKELY: reads AUDIOHED.FX (offsets) and AUDIOT.FX (samples) from the data file into voices
 0x01418c datfind      # LIKELY: strupr(name), finds it in datdir (sets datidx), seeks to offset+2; returns found
 0x065080 datdir       # LIKELY: 0x16-byte entries {name[14], size, ?}; a 0 first byte ends it
@@ -956,6 +946,24 @@
 0x041dd4 FX_SoundActive           # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System; non-zero while the handle plays (sfx_busy) (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x041e24 FX_StopSound             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System; takes the engine handle, which is then set to -1 (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x041ec8 FX_StopAllSounds         # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23; earlier: Apogee Sound System (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
+0x041f4c MUSIC_ErrorString        # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: Apogee Sound System; called with -1, result printed
+0x041fc8 MUSIC_Init               # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: ASS; returns MUSIC_Ok (0) or an error for MUSIC_ErrorString
+0x042064 MUSIC_Shutdown           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: Apogee Sound System; main 0x3696b at exit after MUSIC_StopSong when musicon
+0x0420dc MUSIC_SetVolume          # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: ASS
+0x04211c MUSIC_GetVolume          # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x042144 MUSIC_SetLoopFlag        # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x042160 MUSIC_SongPlaying        # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: Apogee Sound System; polled until 0
+0x042174 MUSIC_Continue           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: library; called when musicpaused is cleared
+0x042188 MUSIC_Pause              # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: library; before "MUSIC PAUSED"
+0x04219c MUSIC_StopSong           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: Apogee Sound System
+0x0421e0 MUSIC_PlaySong           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: Apogee Sound System; (song, loop), non-zero = error
+0x042238 MUSIC_InitFM             # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x0422f8 MUSIC_InitMidi           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x042398 MUSIC_InitGUS            # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x042420 MUSIC_FadeRoutine        # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x042488 MUSIC_FadeVolume         # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E; earlier: Apogee Sound System MUSIC_FadeVolume(tovolume, milliseconds): called (0, 4000) from fade_out when music is on, clamps arg1 to 0..255 (0x424aa-0x424bb) after checking a handle 0x63ff8
+0x042560 MUSIC_FadeActive         # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x042570 MUSIC_StopFade           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
 0x0434b0 LL_AddNode               # CONFIRMED: src/ass LL_MAN.C builds byte-identical to the whole module 0x434B0-0x43569
 0x0434d8 LL_RemoveNode            # CONFIRMED: src/ass LL_MAN.C builds byte-identical to the whole module 0x434B0-0x43569
 0x043534 LL_LockEnd               # CONFIRMED: src/ass LL_MAN.C builds byte-identical to the whole module 0x434B0-0x43569
@@ -1021,6 +1029,7 @@
 0x04a2f1 GUS_Init                 # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x04a3d7 GUS_Shutdown             # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 0x04a420 GUSWAVE_Shutdown         # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
+0x04af6c MIDI_SetLoopFlag         # STRONGLY SUPPORTED: MUSIC_SetLoopFlag (CONFIRMED, whole MUSIC module) calls it for the MIDI cards; stores its argument, as 1.04 midi.c MIDI_SetLoopFlag (was MIDI_GetPosition, a 0.75 near match)
 0x04bc20 MPU_SendMidi             # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
 0x04bc58 MPU_NoteOff              # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
 0x04bc6c MPU_NoteOn               # CONFIRMED: src/ass MPU401.C builds byte-identical to the whole module 0x4BC20-0x4BE7D
@@ -1061,6 +1070,9 @@
 0x063fad TS_ExitHooked            # CONFIRMED: src/ass TASK_MAN.C builds byte-identical to the whole module 0x40A80-0x411AC (iter 93); name ours (SPECULATIVE): set once atexit(TS_Shutdown) is registered
 0x063fe8 FX_SoundDevice           # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
 0x063fec FX_ErrorCode             # CONFIRMED: src/ass FX_MAN.C builds byte-identical to the whole module 0x41510-0x41F23
+0x063ff0 MUSIC_SoundDevice        # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x063ff4 MUSIC_ErrorCode          # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
+0x063ff8 MUSIC_FadeTask           # CONFIRMED: src/ass MUSIC.C builds byte-identical to the whole module 0x41F30-0x4258E
 0x064328 PCFX_Sound               # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x06432c PCFX_CallBackFunc        # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
 0x064330 PCFX_TotalVolume         # CONFIRMED: src/ass PCFX.C builds byte-identical to the whole module 0x470C0-0x4764B
@@ -1105,15 +1117,10 @@
 0x08949c SS_CurrentBuffer         # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x0894a0 SS_BufferEnd             # CONFIRMED: src/ass SNDSRC.C builds byte-identical to the whole module 0x47FE0-0x4872E
 0x08b8fc GUS_HoldBuffer           # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
-0x08b904 GUS_MemConfig            # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
-0x08b908 GUS_TotalMemory          # CONFIRMED: src/ass GUS.C builds byte-identical to the whole module 0x4A28A-0x4A487
 # ---- ASS port end
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
-0x042420 MUSIC_FadeRoutine        # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 104 bytes
-0x042560 MUSIC_FadeActive         # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 16 bytes
-0x042570 MUSIC_StopFade           # CONFIRMED: byte-identical (fixups masked) to ASS 109 music.c, 30 bytes
 0x043f11 SOUNDSCAPE_Interrupts    # LIKELY: ASS 104 sndscape.c near match 0.78 (64 bytes), anchored by its module's exact hits
 0x043f60 BLASTER_SampleSize       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 16 bytes; the same bytes are SOUNDSCAPE_SampleSize
 0x043f70 BLASTER_CardConfig       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 224 bytes
@@ -1177,7 +1184,6 @@
 0x04ae04 MIDI_SendChannelVolumes  # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 36 bytes
 0x04aec0 MIDI_SetVolume           # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 128 bytes
 0x04af40 MIDI_GetVolume           # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 44 bytes
-0x04af6c MIDI_GetPosition         # LIKELY: ASS 104 midi.c near match 0.75 (36 bytes), anchored by its module's exact hits
 0x04af74 MIDI_ContinueSong        # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 20 bytes
 0x04b398 MIDI_UnlockMemory        # LIKELY: ASS 104 midi.c near match 0.87 (216 bytes), anchored by its module's exact hits
 0x04dd30 dig_init                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 232 bytes

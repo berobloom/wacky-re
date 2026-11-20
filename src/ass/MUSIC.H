@@ -40,9 +40,13 @@ enum MUSIC_ERRORS
    MUSIC_Warning = -2,
    MUSIC_Error   = -1,
    MUSIC_Ok      = 0,
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    MUSIC_ASSVersion,
+#endif
    MUSIC_SoundCardError,
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    MUSIC_MPU401Error,
+#endif
    MUSIC_InvalidCard,
    MUSIC_MidiError,
    MUSIC_TaskManError,

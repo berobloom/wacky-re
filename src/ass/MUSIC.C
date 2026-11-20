@@ -56,6 +56,722 @@ void TextMode( void );
     "int    10h"        \
     modify [ ax ];
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+// The whole module at this revision: SoundBlaster, ProAudioSpectrum and Adlib
+// play the game's FM songs through an older FM song player (game 0x4A490 and
+// 0x50280; not in any released ASS), the MIDI cards through MIDI.C.  The
+// player's names below are placeholders until it is ported.
+int  FMSONG_Init( int card );
+void FMSONG_Shutdown( void );
+void FMSONG_StopSong( void );
+void FMSONG_PlaySong( unsigned char *song, int loopflag );
+void FMSONG_SetLoopFlag( int loopflag );
+int  FMSONG_SongPlaying( void );
+void FMSONG_Continue( void );
+void FMSONG_Pause( void );
+void FMSONG_SetVolume( int volume );
+int  FMSONG_GetVolume( void );
+
+int MUSIC_SoundDevice = -1;
+int MUSIC_ErrorCode = MUSIC_Ok;
+
+static midifuncs MUSIC_MidiFunctions;
+
+static int       MUSIC_FadeLength;
+static int       MUSIC_FadeRate;
+static unsigned  MUSIC_CurrentFadeVolume;
+static unsigned  MUSIC_LastFadeVolume;
+static int       MUSIC_EndingFadeVolume;
+static task     *MUSIC_FadeTask = NULL;
+
+int MUSIC_InitFM( int card, midifuncs *Funcs );
+int MUSIC_InitMidi( int card, midifuncs *Funcs, int Address );
+int MUSIC_InitGUS( midifuncs *Funcs );
+
+#define MUSIC_SetErrorCode( status ) \
+   MUSIC_ErrorCode = ( status );
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_ErrorString
+
+   Returns a pointer to the error message associated with an error
+   number.  A -1 returns a pointer the current error.
+---------------------------------------------------------------------*/
+
+char *MUSIC_ErrorString
+   (
+   int ErrorNumber
+   )
+
+   {
+   char *ErrorString;
+
+   switch( ErrorNumber )
+      {
+      case MUSIC_Warning :
+      case MUSIC_Error :
+         ErrorString = MUSIC_ErrorString( MUSIC_ErrorCode );
+         break;
+
+      case MUSIC_Ok :
+         ErrorString = "Music ok.";
+         break;
+
+      case MUSIC_SoundCardError :
+         ErrorString = "Music sound card error.";
+         break;
+
+      case MUSIC_InvalidCard :
+         ErrorString = "Invalid Music device.";
+         break;
+
+      case MUSIC_MidiError :
+         ErrorString = "Error playing MIDI file.";
+         break;
+
+      case MUSIC_TaskManError :
+         ErrorString = "TaskMan error.";
+         break;
+
+      default :
+         ErrorString = "Unknown Music error code.";
+         break;
+      }
+
+   return( ErrorString );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_Init
+
+   Selects which sound device to use.
+---------------------------------------------------------------------*/
+
+int MUSIC_Init
+   (
+   int SoundCard,
+   int Address
+   )
+
+   {
+   int status;
+
+   status = LL_LockMemory();
+   if ( status != LL_Ok )
+      {
+      MUSIC_SetErrorCode( MUSIC_DPMI_Error );
+      return( MUSIC_Error );
+      }
+
+   MUSIC_SoundDevice = SoundCard;
+
+   switch( SoundCard )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         status = MUSIC_InitFM( SoundCard, &MUSIC_MidiFunctions );
+         break;
+
+      case GenMidi :
+      case SoundCanvas :
+         status = MUSIC_InitMidi( SoundCard, &MUSIC_MidiFunctions, Address );
+         break;
+
+      case UltraSound :
+         status = MUSIC_InitGUS( &MUSIC_MidiFunctions );
+         break;
+
+      case SoundSource :
+      case PC :
+      default :
+         MUSIC_SetErrorCode( MUSIC_InvalidCard );
+         status = MUSIC_Error;
+      }
+
+   if ( status != MUSIC_Ok )
+      {
+      LL_UnlockMemory();
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_Shutdown
+
+   Terminates use of sound device.
+---------------------------------------------------------------------*/
+
+int MUSIC_Shutdown
+   (
+   void
+   )
+
+   {
+   int status;
+
+   status = MUSIC_Ok;
+
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         FMSONG_StopSong();
+         break;
+
+      default :
+         MIDI_StopSong();
+      }
+
+   if ( MUSIC_FadeTask != NULL )
+      {
+      MUSIC_StopFade();
+      }
+
+   switch ( MUSIC_SoundDevice )
+      {
+      case Adlib :
+         FMSONG_Shutdown();
+         break;
+
+      case SoundBlaster :
+         BLASTER_RestoreMidiVolume();
+         FMSONG_Shutdown();
+         break;
+
+      case SoundCanvas :
+         BLASTER_RestoreMidiVolume();
+         break;
+
+      case ProAudioSpectrum :
+         PAS_RestoreMusicVolume();
+         FMSONG_Shutdown();
+         break;
+
+      case UltraSound :
+         GUSMIDI_Shutdown();
+         break;
+      }
+
+   LL_UnlockMemory();
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_SetVolume
+
+   Sets the volume of music playback.
+---------------------------------------------------------------------*/
+
+void MUSIC_SetVolume
+   (
+   int volume
+   )
+
+   {
+   volume = max( 0, volume );
+   volume = min( volume, 255 );
+
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         MUSIC_MidiFunctions.SetVolume( volume );
+         break;
+
+      default :
+         if ( MUSIC_SoundDevice != -1 )
+            {
+            MIDI_SetVolume( volume );
+            }
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_GetVolume
+
+   Returns the volume of music playback.
+---------------------------------------------------------------------*/
+
+int MUSIC_GetVolume
+   (
+   void
+   )
+
+   {
+   if ( MUSIC_SoundDevice == -1 )
+      {
+      return( 0 );
+      }
+
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         return( MUSIC_MidiFunctions.GetVolume() );
+      }
+
+   return( MIDI_GetVolume() );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_SetLoopFlag
+
+   Set whether the music will loop or end when it reaches the end of
+   the song.
+---------------------------------------------------------------------*/
+
+void MUSIC_SetLoopFlag
+   (
+   int loopflag
+   )
+
+   {
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         FMSONG_SetLoopFlag( loopflag );
+         break;
+
+      default :
+         MIDI_SetLoopFlag( loopflag );
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_SongPlaying
+
+   Returns whether there is a song playing.
+---------------------------------------------------------------------*/
+
+int MUSIC_SongPlaying
+   (
+   void
+   )
+
+   {
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         return( FMSONG_SongPlaying() );
+      }
+
+   return( MIDI_SongPlaying() );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_Continue
+
+   Continues playback of a paused song.
+---------------------------------------------------------------------*/
+
+void MUSIC_Continue
+   (
+   void
+   )
+
+   {
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         FMSONG_Continue();
+         break;
+
+      default :
+         MIDI_ContinueSong();
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_Pause
+
+   Pauses playback of a song.
+---------------------------------------------------------------------*/
+
+void MUSIC_Pause
+   (
+   void
+   )
+
+   {
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         FMSONG_Pause();
+         break;
+
+      default :
+         MIDI_PauseSong();
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_StopSong
+
+   Stops playback of current song.
+---------------------------------------------------------------------*/
+
+int MUSIC_StopSong
+   (
+   void
+   )
+
+   {
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         FMSONG_StopSong();
+         break;
+
+      default :
+         MIDI_StopSong();
+      }
+
+   MUSIC_SetErrorCode( MUSIC_Ok );
+   return( MUSIC_Ok );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_PlaySong
+
+   Begins playback of MIDI song.
+---------------------------------------------------------------------*/
+
+int MUSIC_PlaySong
+   (
+   unsigned char *song,
+   int loopflag
+   )
+
+   {
+   int status;
+
+   switch( MUSIC_SoundDevice )
+      {
+      case SoundBlaster :
+      case Adlib :
+      case ProAudioSpectrum :
+         FMSONG_PlaySong( song, loopflag );
+         break;
+
+      case GenMidi :
+      case SoundCanvas :
+      case UltraSound :
+         MIDI_StopSong();
+         status = MIDI_PlaySong( song, loopflag );
+         if ( status != MIDI_Ok )
+            {
+            MUSIC_SetErrorCode( MUSIC_MidiError );
+            return( MUSIC_Warning );
+            }
+         break;
+
+      case SoundSource :
+      case PC :
+      default :
+         MUSIC_SetErrorCode( MUSIC_InvalidCard );
+         return( MUSIC_Warning );
+         break;
+      }
+
+   return( MUSIC_Ok );
+   }
+
+
+int MUSIC_InitFM
+   (
+   int card,
+   midifuncs *Funcs
+   )
+
+   {
+   int status;
+   int passtatus;
+
+   if ( FMSONG_Init( card ) != MUSIC_Ok )
+      {
+      MUSIC_SetErrorCode( MUSIC_DPMI_Error );
+      return( MUSIC_Error );
+      }
+
+   status = MIDI_Ok;
+
+   Funcs->NoteOff           = NULL;
+   Funcs->NoteOn            = NULL;
+   Funcs->PolyAftertouch    = NULL;
+   Funcs->ControlChange     = NULL;
+   Funcs->ProgramChange     = NULL;
+   Funcs->ChannelAftertouch = NULL;
+   Funcs->PitchBend         = NULL;
+   Funcs->ReleasePatches    = NULL;
+   Funcs->LoadPatch         = NULL;
+   Funcs->SetVolume         = FMSONG_SetVolume;
+   Funcs->GetVolume         = FMSONG_GetVolume;
+
+   switch( card )
+      {
+      case SoundBlaster :
+         if ( BLASTER_CardHasMixer() )
+            {
+            BLASTER_SaveMidiVolume();
+            Funcs->SetVolume = BLASTER_SetMidiVolume;
+            Funcs->GetVolume = BLASTER_GetMidiVolume;
+            }
+         else
+            {
+            Funcs->SetVolume = FMSONG_SetVolume;
+            Funcs->GetVolume = FMSONG_GetVolume;
+            }
+         break;
+
+      case Adlib :
+         Funcs->SetVolume = FMSONG_SetVolume;
+         Funcs->GetVolume = FMSONG_GetVolume;
+         break;
+
+      case ProAudioSpectrum :
+         Funcs->SetVolume = FMSONG_SetVolume;
+         Funcs->GetVolume = FMSONG_GetVolume;
+         passtatus = PAS_SaveMusicVolume();
+         if ( passtatus == PAS_Ok )
+            {
+            Funcs->SetVolume = PAS_SetFMVolume;
+            Funcs->GetVolume = PAS_GetFMVolume;
+            }
+         break;
+      }
+
+   return( status );
+   }
+
+
+int MUSIC_InitMidi
+   (
+   int        card,
+   midifuncs *Funcs,
+   int        Address
+   )
+
+   {
+   int status;
+
+   status = MUSIC_Ok;
+
+   if ( MPU_Init( Address ) != MPU_Ok )
+      {
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      return( MUSIC_Error );
+      }
+
+   Funcs->NoteOff           = MPU_NoteOff;
+   Funcs->NoteOn            = MPU_NoteOn;
+   Funcs->PolyAftertouch    = MPU_PolyAftertouch;
+   Funcs->ControlChange     = MPU_ControlChange;
+   Funcs->ProgramChange     = MPU_ProgramChange;
+   Funcs->ChannelAftertouch = MPU_ChannelAftertouch;
+   Funcs->PitchBend         = MPU_PitchBend;
+   Funcs->ReleasePatches    = NULL;
+   Funcs->LoadPatch         = NULL;
+   Funcs->SetVolume         = NULL;
+   Funcs->GetVolume         = NULL;
+
+   if ( card == SoundCanvas )
+      {
+      if ( BLASTER_CardHasMixer() )
+         {
+         BLASTER_SaveMidiVolume();
+         Funcs->SetVolume = BLASTER_SetMidiVolume;
+         Funcs->GetVolume = BLASTER_GetMidiVolume;
+         }
+      }
+
+   if ( MIDI_SetMidiFuncs( Funcs ) != MIDI_Ok )
+      {
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      status = MUSIC_Error;
+      }
+
+   return( status );
+   }
+
+
+int MUSIC_InitGUS
+   (
+   midifuncs *Funcs
+   )
+
+   {
+   int status;
+
+   status = MUSIC_Ok;
+
+   if ( GUSMIDI_Init() != GUS_Ok )
+      {
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      return( MUSIC_Error );
+      }
+
+   Funcs->NoteOff           = GUSMIDI_NoteOff;
+   Funcs->NoteOn            = GUSMIDI_NoteOn;
+   Funcs->PolyAftertouch    = NULL;
+   Funcs->ControlChange     = GUSMIDI_ControlChange;
+   Funcs->ProgramChange     = GUSMIDI_ProgramChange;
+   Funcs->ChannelAftertouch = NULL;
+   Funcs->PitchBend         = GUSMIDI_PitchBend;
+   Funcs->ReleasePatches    = GUSMIDI_ReleasePatches;
+   Funcs->LoadPatch         = GUSMIDI_LoadPatch;
+   Funcs->SetVolume         = GUSMIDI_SetVolume;
+   Funcs->GetVolume         = GUSMIDI_GetVolume;
+
+   if ( MIDI_SetMidiFuncs( Funcs ) != MIDI_Ok )
+      {
+      MUSIC_SetErrorCode( MUSIC_SoundCardError );
+      status = MUSIC_Error;
+      }
+
+   return( status );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_FadeRoutine
+
+   Fades music volume from current level to another over a specified
+   period of time.
+---------------------------------------------------------------------*/
+
+static void MUSIC_FadeRoutine
+   (
+   task *Task
+   )
+
+   {
+   int volume;
+
+   MUSIC_CurrentFadeVolume += MUSIC_FadeRate;
+   if ( MUSIC_FadeLength == 0 )
+      {
+      MIDI_SetVolume( MUSIC_EndingFadeVolume );
+      TS_Terminate( Task );
+      MUSIC_FadeTask = NULL;
+      }
+   else
+      {
+      MUSIC_FadeLength--;
+
+      volume = MUSIC_CurrentFadeVolume >> 7;
+      if ( MUSIC_LastFadeVolume != volume )
+         {
+         MUSIC_LastFadeVolume = volume;
+         MIDI_SetVolume( volume );
+         }
+      }
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_FadeVolume
+
+   Fades music volume from current level to another over a specified
+   period of time.
+---------------------------------------------------------------------*/
+
+int MUSIC_FadeVolume
+   (
+   int tovolume,
+   int milliseconds
+   )
+
+   {
+   int fromvolume;
+
+   if ( MUSIC_FadeTask != NULL )
+      {
+      MUSIC_StopFade();
+      }
+
+   tovolume = max( 0, tovolume );
+   tovolume = min( 255, tovolume );
+   fromvolume = MUSIC_GetVolume();
+
+   MUSIC_FadeLength = milliseconds / 25;
+   MUSIC_FadeRate   = ( ( tovolume - fromvolume ) << 7 ) / MUSIC_FadeLength;
+   MUSIC_LastFadeVolume = fromvolume;
+   MUSIC_CurrentFadeVolume = fromvolume << 7;
+   MUSIC_EndingFadeVolume = tovolume;
+
+   MUSIC_FadeTask = TS_ScheduleTask( MUSIC_FadeRoutine, 40, 1, NULL );
+   if ( MUSIC_FadeTask == NULL )
+      {
+      MUSIC_SetErrorCode( MUSIC_TaskManError );
+      return( MUSIC_Warning );
+      }
+
+   TS_Dispatch();
+   return( MUSIC_Ok );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_FadeActive
+
+   Returns whether the fade routine is active.
+---------------------------------------------------------------------*/
+
+int MUSIC_FadeActive
+   (
+   void
+   )
+
+   {
+   return( MUSIC_FadeTask != NULL );
+   }
+
+
+/*---------------------------------------------------------------------
+   Function: MUSIC_StopFade
+
+   Stops fading the music.
+---------------------------------------------------------------------*/
+
+void MUSIC_StopFade
+   (
+   void
+   )
+
+   {
+   if ( MUSIC_FadeTask != NULL )
+      {
+      TS_Terminate( MUSIC_FadeTask );
+      MUSIC_FadeTask = NULL;
+      }
+   }
+#else
 int MUSIC_SoundDevice = -1;
 int MUSIC_ErrorCode = MUSIC_Ok;
 
@@ -1105,3 +1821,4 @@ void MUSIC_RegisterTimbreBank
    {
    AL_RegisterTimbreBank( timbres );
    }
+#endif

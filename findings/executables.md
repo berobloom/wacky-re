@@ -178,6 +178,20 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   SetupCard, Init, Shutdown (`#pragma aux frame`, as the other drivers' Shutdowns), SetCallBack,
   Set/GetVolume, SetPan (uncalled; 0x41AD8), SetPitch (tests the handle, not the status, after
   `GUSWAVE_SetPitch`), PlayVOC, PlayVOC3D, Pan3D, SoundActive, StopSound, StopAllSounds.
+  MUSIC (iter 93h, whole module 0x41F30-0x4258E, 10.0a): Blaster, PAS and Adlib (cards 0-2) do not
+  play MIDI through AL_MIDI: every MUSIC call switches between MIDI.C (cards 3-5) and an **FM song
+  player that no released ASS has** (CONFIRMED by the identical build). MUSIC_InitFM fills no note
+  functions, only the FM volume pair (BLASTER/PAS mixer when present), and calls no
+  MIDI_SetMidiFuncs; MIDI_SetMidiFuncs returns MIDI_Ok, which InitMidi/InitGUS test. No ASSVER
+  switch, no MIDI_PatchMap, no MPU_Reset or WaveBlaster/SoundScape/AWE32 paths; card 4
+  (SoundCanvas) gets the Blaster MIDI volume; errors 1 sound card, 2 invalid card, 3 MIDI, 4
+  TaskMan, 6 DPMI or FM init (no strings for 5 and 6). The player: module 0x4A490-0x4A886 (song
+  task 0x4A4A4, StopSong 0x4A5FC, PlaySong 0x4A620, Init 0x4A7B0, Shutdown 0x4A710) over an FM
+  chip layer at 0x50280-0x50A9C. Song format (LIKELY, from the task): word 0 = task rate (Hz),
+  word at +3 = offset of the events, 11-byte instruments from +5; event bytes 0xFD n / 0xFE nn =
+  delay, 0xFF = end (restart when looping), else high nibble = command 0-4 (3 with an 11-byte
+  instrument index), low nibble = channel. The names 0x8B904 GUS_MemConfig / 0x8B908
+  GUS_TotalMemory were wrong: they are this player's (task rate, song start).
   Kill, KillAllVoices, SetPitch and SetPan3D do not mask interrupts; the old code does so only
   in GetVoice, VoicesPlaying, AllocVoice and around the start of playback. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
