@@ -3618,7 +3618,11 @@ int MV_Init
       #ifndef SOUNDSOURCE_OFF
       case SoundSource :
       case TandySoundSource :
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+         status = SS_Init();
+#else
          status = SS_Init( soundcard );
+#endif
          if ( status != SS_Ok )
             {
             MV_SetErrorCode( MV_SoundSourceError );

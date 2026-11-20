@@ -132,7 +132,12 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   `USESTACK` on with a 1 KB timer stack, the ISR calling a separate task loop, no `TS_InInterrupt`,
   `atexit(TS_Shutdown)` registered once from TS_Startup, and `TS_FreeTaskList(tasklist list)` taking
   the list by value (its NULL stores hit the copy). 1.04 still carries the unused `tasklist` typedef.
-  `volatile` was found by its codegen: without it the loop's first load is scheduled earlier. That project
+  `volatile` was found by its codegen: without it the loop's first load is scheduled earlier.
+  PCFX (iter 93c, whole module identical): `PCFX_Service`'s sample `value` is an `int` (1.04:
+  `unsigned`; `sar` vs `shr`), and `PCFX_VoiceAvailable` does not exist yet. SNDSRC (whole module):
+  `SS_Init(void)` (1.04 takes the sound card number; Tandy only via the command line), the service
+  task runs at 500 Hz (1.04: 510), and `SS_ServiceInterrupt` has no 14-samples-per-tick limit and
+  calls the callback once after the loop when a buffer finished (`bufferdone == TRUE`). That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,

@@ -62,7 +62,11 @@ int   SS_GetPlaybackRate( void );
 int   SS_SetMixMode( int mode );
 int   SS_SetPort( int port );
 void  SS_SetCallBack( void ( *func )( void ) );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int   SS_Init( void );
+#else
 int   SS_Init( int soundcard );
+#endif
 void  SS_Shutdown( void );
 void  SS_UnlockMemory( void );
 int   SS_LockMemory( void );

@@ -297,7 +297,11 @@ int FX_SetupCard
 
       case SoundSource :
       case TandySoundSource :
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+         DeviceStatus = SS_Init();
+#else
          DeviceStatus = SS_Init( SoundCard );
+#endif
          if ( DeviceStatus != SS_Ok )
             {
             FX_SetErrorCode( FX_SoundCardError );

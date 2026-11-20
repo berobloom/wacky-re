@@ -140,6 +140,48 @@ char *SS_ErrorString
    transfer.  Calls the user supplied callback function.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+static void SS_ServiceInterrupt
+   (
+   task *Task
+   )
+
+   {
+   int port = SS_Port;
+   int bufferdone;
+
+   bufferdone = FALSE;
+   while( ( inp( port + 1 ) & 0x40 ) == 0 )
+      {
+      outp( port, *SS_SoundPtr++ );
+      outp( port + 2, SS_OffCommand );
+      outp( port + 2, 4 );
+
+      SS_CurrentLength--;
+      if ( SS_CurrentLength == 0 )
+         {
+         // Keep track of current buffer
+         SS_CurrentBuffer += SS_TransferLength;
+         SS_BufferNum++;
+         if ( SS_BufferNum >= SS_NumBuffers )
+            {
+            SS_BufferNum = 0;
+            SS_CurrentBuffer = SS_BufferStart;
+            }
+
+         SS_CurrentLength = SS_TransferLength;
+         SS_SoundPtr = SS_CurrentBuffer;
+         bufferdone = TRUE;
+         }
+      }
+
+   // Call the caller's callback function
+   if ( ( bufferdone == TRUE ) && ( SS_CallBack != NULL ) )
+      {
+      SS_CallBack();
+      }
+   }
+#else
 static void SS_ServiceInterrupt
    (
    task *Task
@@ -186,6 +228,7 @@ static void SS_ServiceInterrupt
          }
       }
    }
+#endif
 
 
 /*---------------------------------------------------------------------
@@ -292,7 +335,11 @@ int SS_BeginBufferedPlayback
    SS_SoundPlaying = TRUE;
 
 //   SS_Timer = TS_ScheduleTask( SS_ServiceInterrupt, 438, 1, NULL );
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   SS_Timer = TS_ScheduleTask( SS_ServiceInterrupt, 500, 1, NULL );
+#else
    SS_Timer = TS_ScheduleTask( SS_ServiceInterrupt, 510, 1, NULL );
+#endif
    TS_Dispatch();
 
    return( SS_Ok );
@@ -501,10 +548,17 @@ int SS_DetectSoundSource
    sounds.
 ---------------------------------------------------------------------*/
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+int SS_Init
+   (
+   void
+   )
+#else
 int SS_Init
    (
    int soundcard
    )
+#endif
 
    {
    int status;
@@ -514,8 +568,12 @@ int SS_Init
       SS_Shutdown();
       }
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   if ( USER_CheckParameter( SELECT_TANDY_SOUNDSOURCE ) )
+#else
    if ( ( soundcard == TandySoundSource ) ||
       ( USER_CheckParameter( SELECT_TANDY_SOUNDSOURCE ) ) )
+#endif
       {
       // Tandy
       SS_OffCommand = 0x0e;

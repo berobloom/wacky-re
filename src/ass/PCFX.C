@@ -178,7 +178,11 @@ static void PCFX_Service
    )
 
    {
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   int value;
+#else
    unsigned value;
+#endif
 
    if ( PCFX_Sound )
       {
@@ -216,6 +220,7 @@ static void PCFX_Service
    }
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: PCFX_VoiceAvailable
 
@@ -235,6 +240,7 @@ int PCFX_VoiceAvailable
 
    return( TRUE );
    }
+#endif
 
 
 /*---------------------------------------------------------------------
