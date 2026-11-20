@@ -21,7 +21,7 @@
 | 0x10000-0x1000F | `BEGTEXT` (`int3; jmp $-1`, nops) | CONFIRMED: the same 16 bytes head our own WLINK 9.5b link (`.work/linktest`) |
 | 0x10010-0x1025F | initialisers of **local arrays** of the game module (Watcom 9.5 keeps them at the start of the module's `_TEXT`, in function order, and copies them with `rep movsd`): 0x10010 (27 names x 12: drivers then sounds) for 0x12124, 0x10154 (months) for the function around 0x1C9A0, then class names, screen names, and so on. Contents: 12-byte driver names (UNO, SULTAN, MORRIS, PEGGLES, RAZER, RINGO, BLOMBO, TIGI), sound names, months, class names ("AMATEUR CLASS"), screen names | CONFIRMED: 0x12124 `mov ecx,0x51; mov esi,0x10010; rep movsd` to its stack frame; Watcom 9.5b also puts initialised `const` arrays there (probe `D.C`); string literals go to CONST in the data object (no `-zc`: "Press any key when ready.." is at 0x61E80) |
 | 0x10260-0x36A4D | **the game's C: one module**, about 222 functions, all 4-aligned | STRONGLY SUPPORTED: WLINK starts every compiled module on 16 bytes (`_TEXT` SEGDEF align = paragraph) and fills the gap with zeros (seen in our link); the whole range has no `ret`-then-zeros gap, where separate modules would leave one in 15 of 16 cases. Also no duplicated string literal in the game's strings (Watcom pools literals per module). Probably one source file or a unity build (`#include` of the .c files); not told apart |
-| 0x36A4E-0x409EE | **assembler**, about 40 KB, starts not 4-aligned, `xor ecx,ecx` as `33 c9` (the C compiler emits `31`); the 12 `pushad` routines (VGA port writes to 0x3C4/0x3CE, two unrolled routines of 11 and 18 KB), interrupt handlers (`iret`; the one at about 0x409C0 sets the abort flag 0x88CD0), `cli; ret` / `sti; ret` at 0x409EB / 0x409ED | LIKELY: alignment and encoding; directly after the C (0x36A49 `jmp exit` ends `main`?), no gap, so its segment is byte-aligned. Assembler (TASM, WASM, MASM) not known |
+| 0x36A4E-0x409EE | **assembler**, about 40 KB, starts not 4-aligned, `xor ecx,ecx` as `33 c9` (the C compiler emits `31`); the 12 `pushad` routines (VGA port writes to 0x3C4/0x3CE, two unrolled routines of 11 and 18 KB), interrupt handlers (`iret`; the one at about 0x409C0 sets the abort flag 0x88CD0), `cli; ret` / `sti; ret` at 0x409EB / 0x409ED | LIKELY: alignment and encoding; directly after the C (0x36A49 `jmp exit` ends `main`?), no gap, so its segment is byte-aligned. Assembler (TASM, WASM, MASM) not known. **Rebuilt (iter 90): `src/wwasm.asm`** reassembles to these 40,865 bytes exactly and links in their place (below) |
 | 0x409EF- | libraries, in WLINK's resolve order: clib modules (byte-aligned, no gaps: `int386` 0x409EF, `_dos_getvect`, `_dos_setvect`, `strncmp` 0x41450, ...) mixed with paragraph-aligned compiled modules (zero gaps at 0x40A80, 0x41510, 0x41F30, ...) | CONFIRMED for the 93 clib modules (`libmatch.py -l`); the paragraph modules include the **Apogee Sound System** (GUSWAVE, Multivoc strings at 0x62890 / 0x62A1B, used from 0x47726 / 0x48782) |
 
 For the rebuild: one C file in address order (tables first), one asm file, then the libraries, which WLINK
@@ -74,7 +74,15 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   LIKELY: the game has an ASS release before 1.04 (Wacky Wheels is 1994, ROTT 1.3 later). That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
-- The assembler of 0x36A4E-0x409EE, and whether it is one module.
+- The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
+  `tools/asm/asmcheck.py`) settled: CONFIRMED that it is **self-contained code** - 14,700 instructions
+  decode in one linear sweep with no undecodable byte; none of its calls or jumps leaves the range; its
+  1567 LE fixups all point into the data object (1566 off32, one sel16 at 0x4090e: `mov bx, seg` for DS
+  in kbd_isr 0x40907); nothing outside reaches it but the C module's 35 call targets and two off32s to
+  kbd_isr (0x32b66/0x32b7d). STRONGLY SUPPORTED that the assembler was **MASM-compatible** (MASM, TASM or
+  WASM, not nasm-style): all 3083 register-register ALU/mov ops use the direction-bit form (`8B C8`
+  mov ecx,eax; `33 C9` xor ecx,ecx; `66 03 FA` add di,dx), and `cmp ax,1` is the accumulator form
+  `66 3D 01 00`, never `83 /7`. Still open: which one, and how many source modules.
 
 ## Probe functions (the option evidence)
 

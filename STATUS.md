@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 89 still 207 -
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 90 still 207 -
   no C change, `difffn.py`/`fncov.py` behaviour work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
@@ -15,6 +15,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
   game's point (`tools/wc/fixsites.py`, 0 disagreements; `test_fixsites.py`). C covers
   all of 0x10260-0x36a4d (no gaps left, iter 56c); 0x36a4e on is the
   hand-written asm module.
+- **Assembler module 0x36A4E-0x409EE rebuilt (iter 90)**: `src/wwasm.asm` (nasm, bootstrapped by
+  `tools/asm/genasm.py`) assembles to the game's 40,865 bytes exactly; `tools/asm/asmcheck.py` (in
+  `src/check.sh`; mutations in `test_asmcheck.py`) checks the bytes with -DBIN and the 1567 fixup sites
+  of the OMF build. `tools/link/build.sh` links it instead of the game's bytes (`DELINK_ASM=0` = old
+  way); RACETEST OK, and the linked asm in WWNEW.EXE is the game's bytes. Raw disassembly so far
+  (39 entry names, the rest `L_xxxxx`); facts in findings/executables.md "Open".
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
   column MATCH / SKIP: cause / LAYOUT / empty = open). Each function's causes and tried spellings
   are in its `differs:` note in `src/ww.c`.
@@ -28,21 +34,22 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
+1. Read `src/wwasm.asm` routine by routine, smallest C-called entry first: name it (C name `name_`
+   kept as an alias while ww.c uses it), comment what it does, record it in findings/video.md (or
+   input/serial); `tools/asm/asmcheck.py` after every edit (GOTCHAS: what can change a byte).
+2. The routine boundaries inside 0x36A4E-0x409EE: 35 entries are called from C, 211 labels in all;
+   which labels are separate routines (a `ret`/`iret` before them) and which are local branches. Then
+   `L_xxxxx` -> routine-local names (`.loop`), so the file reads as functions.
+3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3
    stops eating the instruction budget.
-2. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
+4. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
    wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be); 0x23746 reads the
    **live** pickup record's `f20`, so print `[0x7d86c]` at the gate before seeding (`.work/kbprobe.py`).
-3. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
+5. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
    CALLS=6000), plus `fncov.py` for its coverage number. Do NOT add `RESEED=0x88cd0=0:b` - the abort arm
    0x31eae needs the press value on every read.
-4. `race_run` 0x2fd8c: the seeds reach 784 of 2028 instruction starts (iter 89). Try frame count rather
-   than seeds: `KEY=`/`IN=`/`TICKREAD=` to keep the frame loop alive, or accept it and say so on the line.
-5. A DIFF whose addresses look like garbage: bucket the differing bytes by 0x1000 block and print the last
-   write of each byte on both sides (this pass' one-off `/tmp/introdiff.py`, described in
-   findings/game-loop.md) before touching our C - `intro`'s 123 bytes were three stubbed reads, not code.
 
 ## BLOCKED
 

@@ -69,6 +69,25 @@ it can be copied back into DREA.
   runs the driver: exit 144, no output (iter 74, three times). Put such steps in a script file
   written beforehand and run that; never name the driver in the same command as a cleanup.
 
+- **nasm `seg x` in a FLAT segment kills WLINK 9.5b silently** [generic]. nasm writes it as a base
+  fixup whose target is *group FLAT* (fix data `0x55`); WLINK page-faults with an empty LINK.OUT and
+  no EXE. It cost a bisect over the object's 41 FIXUPP records (iter 90). `tools/asm/omfsegfix.py OBJ
+  name` rewrites it to target the extern `name`, frame FLAT, as delink.py does; `tools/link/build.sh`
+  runs it. nasm's 16-bit record forms and its own COMENTs link fine, and a nasm object needs no
+  OS220/3fOp COMENTs. Each of those was tried alone.
+
+- **nasm never emits the MASM form of a register-register op, and 2.16 has no `{load}`** [generic].
+  `mov ecx,eax` is `89 C1` in nasm but `8B C8` in the game's asm (3083 such lines). `src/wwasm.asm`
+  writes them as `rr mov, ecx, eax`, a macro emitting opcode|d plus ModRM from register tables. Use
+  `strict word/dword` for the accumulator immediates (`66 3D 01 00` cmp ax,1). In a nasm listing
+  (`-l`), macro-expansion lines carry the *macro's* line numbers (marked `<1>`): credit their bytes to
+  the caller's line, or every `rr` looks wrong.
+
+- **Edit `src/wwasm.asm`, then run `tools/asm/asmcheck.py`.** Renaming a label or adding a comment
+  cannot change a byte. Rewriting an operand by hand can: a dropped `short`/`near` lets nasm pick
+  another jump size, and a literal address in place of an `EXT` name keeps the bytes but loses the
+  fixup (the OBJ half of the check catches that).
+
 - **An absolute operand with no fixup is a bug, however identical its bytes.** Our
   `WI(0x6e6e0 + edx)` in `fn_17928` was byte-for-byte the game's `mov [edx+0x6e6e0],eax` 0x17a3a,
   and iter 65's globrefs pass read exactly that ("an absolute disp32 with no fixup on it") as SAME.

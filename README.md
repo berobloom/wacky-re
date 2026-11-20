@@ -31,9 +31,9 @@ changes or redistributes the original files.
 
 <a href="docs/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
 
-**202 of the game's 285 C functions compile to the original's exact bytes.**
-83 more are near misses and 4 are not written yet. The game's assembler
-module and the libraries are outside that count.
+**207 of the game's 285 C functions compile to the original's exact bytes.**
+The other 78 are near misses. The game's assembler module (`src/wwasm.asm`) reassembles
+to the original's bytes exactly; the libraries are outside that count.
 
 [`docs/WWPROGRESS.HTML`](docs/WWPROGRESS.HTML) lists every function: search it,
 filter it by status or subsystem, and click a near miss to see its instruction
@@ -98,9 +98,11 @@ there.
 ## Status
 
 The game's C is all written (fn_1c068 and fn_1c0ac stay out on purpose: the compiler would
-inline them where the game calls them), and 202 of its functions match. The next near misses to work on are listed in
-`STATUS.md`. Not started: the assembler module (VGA drawing, interrupt
-handlers), the sound library, and a build that links into a playable program.
+inline them where the game calls them), and 207 of its functions match. The assembler module
+(VGA drawing, interrupt handlers) is reassembled byte for byte from `src/wwasm.asm`, still as raw
+disassembly. The hybrid link (`tools/link/build.sh`) uses our C and our asm with the game's library
+bytes and runs to the first race. Not started: the sound library from source, and a link that
+reproduces WW.EXE's layout.
 
 ## License
 

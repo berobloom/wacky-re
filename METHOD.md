@@ -144,6 +144,13 @@ LE program, wacky-re's `MATCHING.md` (one C module compared as an object
 function by function, near misses checked by the addresses they use, a
 source permuter whose winners are verified in place). Hand-written
 assembly games cannot be matched from C/Pascal: port them by behaviour.
+A hand-written asm module *inside* a compiled program can be reassembled
+byte for byte instead: one source line per original instruction, every
+relocation site an external name (`equ` its address in a `-f bin` build at
+the original `org`, `extern` in the OMF build), and a check that the bin is
+the original's bytes and the OMF fixup sites are the original's (wacky-re
+`tools/asm/genasm.py`, `asmcheck.py`: 40 KB exact in one session). Then
+read and name it with that check running.
 Once it matches, port by translation (section 10), not by rewriting.
 
 ## 10. From a matching rebuild to a port: translate, don't rewrite [SAM3]

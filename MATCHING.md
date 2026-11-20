@@ -27,7 +27,7 @@ Layout of the code object (`findings/executables.md`, "Code layout"):
 |---|---|---|
 | 0x10000-0x1025F | `BEGTEXT`, then the initialisers of local arrays | the compiler, from `src/ww.c` |
 | 0x10260-0x36A4D | **the game's C: one module**, about 222 functions | `src/ww.c` (this file's subject) |
-| 0x36A4E-0x409EE | hand-written assembler, about 40 KB | not started; cannot be matched from C |
+| 0x36A4E-0x409EE | hand-written assembler, about 40 KB | `src/wwasm.asm` (nasm) reassembles to it byte for byte (`tools/asm/asmcheck.py`, run by `src/check.sh`) and is linked instead of the game's bytes; raw disassembly, names still to come |
 | 0x409EF- | libraries: Watcom clib and other modules, in WLINK's order | the libraries themselves |
 
 ## 1. The toolchain
@@ -216,7 +216,7 @@ code, not the name.
 - The LAYOUT entries in `nearmiss.txt`: code that is instruction-identical but whose cross-region
   jumps or calls differ because the code between is not yet the game's size (fade_out's head at
   0x1bf94 and tail at 0x32cc1). They turn into MATCHes with a link that reproduces the layout.
-- The assembler module 0x36A4E-0x409EE: reassemble it (WASM), or port it by
-  behaviour; it cannot be matched from C.
+- The assembler module 0x36A4E-0x409EE is reassembled (`src/wwasm.asm`, iter 90): what is left is
+  reading it - routine boundaries, names, comments - while `tools/asm/asmcheck.py` keeps it exact.
 - A WLINK link of C, asm and libraries that reproduces `WW.EXE`'s layout: the
   step that turns per-function matches into a shipped file.

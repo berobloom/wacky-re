@@ -6,11 +6,14 @@ usage: tools/link/delink.py [EXE] [SYMMAP] [OUT]
 
 Segments (each holds the original bytes of its range):
   BEGTEXT    0x10000-0x10010   class CODE  (the clib null-call trap)
-  BLOBTEXT   0x36A4E-end of obj1  class CODE  (the asm module and the libraries)
+  BLOBTEXT   0x409EF-end of obj1  class CODE  (the libraries; with DELINK_ASM=0 from 0x36A4E, the
+             game's assembler module too - by default src/wwasm.asm's object takes its place)
   BLOBDATA   0x60000-STACKLO   class DATA, DGROUP  (all of the data object: every module's data and BSS)
   BLOBSTACK  STACKLO-end of obj2  class STACK, DGROUP  (above `_end` 0x920f4: the 4 KB the LE header's
              ESP points to the top of)
-The C module (0x10010-0x36A4D) is left out: our src/ww.c object takes its place.
+The C module (0x10010-0x36A4D) is left out: our src/ww.c object takes its place; so is the assembler
+module (0x36A4E-0x409EE): src/wwasm.asm (tools/asm/asmcheck.py) is linked instead, and every data name
+it declares with EXT is published here.
 
 References:
   - every LE fixup whose source lies in these ranges becomes an OMF fixup to the segment holding the
@@ -32,6 +35,7 @@ from lefix import fixups                # noqa: E402
 import objmatch as M                    # noqa: E402
 
 CSTART, CEND = 0x10010, 0x36A4E
+ASMEND = 0x409EF                        # end of the assembler module (src/wwasm.asm)
 STACKLO = 0x92100
 
 
@@ -76,11 +80,13 @@ def main(argv):
         return bytearray(b) + bytearray(hi - lo - len(b))
 
     whole = bool(os.environ.get('DELINK_WHOLE'))   # control: the game's own C too, one code segment
+    asm = not whole and os.environ.get('DELINK_ASM', '1') != '0'
     if whole:
         code = [Seg('BLOBTEXT', 'CODE', 0x10000, end1, bytes_of(0x10000, end1), None)]
     else:
         code = [Seg('BEGTEXT', 'CODE', 0x10000, CSTART, bytes_of(0x10000, CSTART), None),
-                Seg('BLOBTEXT', 'CODE', CEND, end1, bytes_of(CEND, end1), None)]
+                Seg('BLOBTEXT', 'CODE', ASMEND if asm else CEND, end1,
+                    bytes_of(ASMEND if asm else CEND, end1), None)]
     TI = len(code) - 1                               # the segment holding the entry point
 
     # C functions taken from the game instead of our object (DELINK_ORIG=name,name; build.sh ORIG=):
@@ -256,6 +262,18 @@ def main(argv):
             continue                       # a game function from DELINK_ORIG, already public
         segs[si].pubs.append((n, a - segs[si].lo))
         count += 1
+    if asm:                                # the data names src/wwasm.asm uses (EXT name, addr)
+        import re
+        have = {n for sg in segs for n, _ in sg.pubs}
+        for n, a in re.findall(r'^\s+EXT (\w+), (0x[0-9a-f]+)', open('src/wwasm.asm').read(), re.M):
+            a = int(a, 16)
+            si = seg_of(a)
+            if si is None:
+                raise SystemExit('src/wwasm.asm: EXT %s 0x%x is in no BLOB segment' % (n, a))
+            if n not in have:
+                segs[si].pubs.append((n, a - segs[si].lo))
+                have.add(n)
+                count += 1
     if not any(n == '_cstart_' for s in segs for n, _ in s.pubs):
         segs[TI].pubs.append(('_cstart_', le.eip + o1['base'] - segs[TI].lo))
     # __argc: pulled in by Watcom for main(argc, argv), never addressed by our code (symmap

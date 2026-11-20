@@ -224,8 +224,17 @@ def main():
 
     w('| The game\'s C, `src/ww.c` | 0x%05X-0x%05X, %s bytes | %d of %d functions byte-identical (%s), %d near misses, %d not written yet |'
       % (C_START, ASM_START - 1, num(ASM_START - C_START), done, total, pct(done, total), near, total - done - near))
-    w('| The game\'s assembler (VGA blitters, interrupt handlers) | 0x%05X-0x%05X, %s bytes | not started: %d routines found, none rebuilt |'
-      % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), asm_found))
+    asmok = run([PY, 'tools/asm/asmcheck.py']).startswith('OK')
+    if asmok:
+        src = open(os.path.join(ROOT, 'src', 'wwasm.asm')).read()
+        ents = set(re.findall(r'^\s+global (\w+)', src, re.M))
+        w('| The game\'s assembler (VGA blitters, interrupt handlers), `src/wwasm.asm` | 0x%05X-0x%05X, %s bytes | '
+          'reassembled byte for byte (nasm; `tools/asm/asmcheck.py`) and linked in place of the game\'s bytes; '
+          'still raw disassembly: %d entry names, the rest `L_xxxxx` labels |'
+          % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), len(ents)))
+    else:
+        w('| The game\'s assembler (VGA blitters, interrupt handlers) | 0x%05X-0x%05X, %s bytes | not rebuilt: %d routines found |'
+          % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), asm_found))
     if clib_mods is not None:
         w('| Watcom C library (`CLIB3R.LIB` 9.5b) | inside 0x%05X-0x%05X | %d modules, %s bytes, identified byte for byte; linked from the library, nothing to rewrite |'
           % (LIB_START, CODE_END - 1, clib_mods, num(clib_bytes)))

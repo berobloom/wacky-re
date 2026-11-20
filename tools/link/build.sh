@@ -5,6 +5,7 @@
 #   tools/link/build.sh            build; prints WLINK's messages and the map's summary
 #   ORIG=fn_173c4,track_load tools/link/build.sh   the same, with those C functions taken from
 #                                  the game's bytes (stripfn.py + delink.py DELINK_ORIG)
+#   DELINK_ASM=0 tools/link/build.sh   the assembler module from the game's bytes, not src/wwasm.asm
 #
 # Steps: compile -> symmap.py (address of every external) -> cpublics.py -> delink.py -> WW.LNK -> WLINK.
 set -eu
@@ -22,6 +23,12 @@ rm -f $w/WW.OBJ $w/EXTRA.OBJ $w/WWNEW.EXE
 tools/wc/wcc.sh $wc $w WW.C -s -3r -oneatx | grep -iE ' error|errors' || true
 tools/wc/wcc.sh $wc $w EXTRA.C -s -3r -oneatx | grep -iE ' error|errors' || true
 [ -f $w/WW.OBJ ] && [ -f $w/EXTRA.OBJ ] || { echo "compile failed"; exit 1; }
+if [ "${DELINK_ASM:-1}" != 0 ]; then      # the assembler module from src/wwasm.asm (tools/asm/asmcheck.py)
+    nasm -f obj -o $w/WWASM.OBJ src/wwasm.asm && python3 tools/asm/omfsegfix.py $w/WWASM.OBJ _v88b30 >/dev/null
+    asmfile="file WWASM.OBJ"
+else
+    rm -f $w/WWASM.OBJ; asmfile=""
+fi
 python3 tools/link/symmap.py $w/WW.OBJ --out $w/symmap.txt
 python3 tools/link/cpublics.py $w/WW.OBJ $w/EXTRA.OBJ > $w/cpublics.txt
 DELINK_ORIG="${ORIG:-}" python3 tools/link/delink.py original/WW.EXE $w/symmap.txt $w/BLOB.OBJ
@@ -40,6 +47,7 @@ alias f29e0c_=hud_draw_
 file BLOB.OBJ
 file WW.OBJ
 file EXTRA.OBJ
+$asmfile
 LNK
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 300 dosbox -noconsole -exit \
     -c "mount c \"$(cd $wc && pwd)\"" -c "mount d \"$(cd $w && pwd)\"" -c "set WATCOM=C:\\" \
