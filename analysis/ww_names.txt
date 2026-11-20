@@ -62,7 +62,7 @@
 0x010d04 engine_start # SPECULATIVE: FX_PlayVOC of the engine sample per player, priority 0x28, pitch -1800
 0x010d80 makepath     # LIKELY: strcpy + strcat of the global suffix 0x80ADC
 0x041bc8 FX_PlayVOC   # LIKELY: Apogee Sound System; 7 arguments (ptr, pitchoffset, vol, left, right, priority, callbackval)
-0x041dd4 FX_SoundActive # SPECULATIVE: Apogee Sound System; non-zero while the handle plays (sfx_busy)
+0x041dd4 FX_SoundActive # LIKELY: Apogee Sound System; non-zero while the handle plays (sfx_busy) (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x0414e0 free         # CONFIRMED: clib nfree (libmatch)
 0x041450 strncmp      # CONFIRMED: clib (libmatch)
 0x041475 malloc       # CONFIRMED: clib nmalloc (libmatch)
@@ -83,7 +83,7 @@
 0x010be8 tick_task    # LIKELY: task-manager callback: ++*task->data
 0x010bf0 engine_stop  # SPECULATIVE: FX_StopSound of a car's engine handle, then -1
 0x010c20 sfx_play2    # SPECULATIVE: FX_PlayVOC of the sample at 0x7EAEC, priority 0x20
-0x041e24 FX_StopSound # LIKELY: Apogee Sound System; takes the engine handle, which is then set to -1
+0x041e24 FX_StopSound # LIKELY: Apogee Sound System; takes the engine handle, which is then set to -1 (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x07eaec sfx2data     # SPECULATIVE: sample for sfx_play2
 0x07eda8 comopen      # LIKELY: set while the serial port is open
 0x07ee5a v7ee5a          # CONFIRMED: the save slot = the engine choice (1 " FAST 12 HP ENGINES ", 2 " SLOW 6 HP ENGINES "); keys <savedir>WACKY<n>.HI/.TIM (records_load 0x1691d, scores_write 0x1d0d0, trial_write 0x2f01b)
@@ -199,7 +199,7 @@
 0x035bb0 end_screen   # CONFIRMED (rebuild src/ww.c): DOS end screen from the DAT (0xfa0 bytes via p6a978, f36a4e), or "Cannot find DOS end screen"
 0x035ca4 main         # CONFIRMED (rebuild src/ww.c): start-up, command line (TURBO/JUMP/HOG/ICE/FIRE cheats, NOW, /1 /2 /3, /DEBUG), config checks, allocation, tasks, data, intro, main menu, shutdown
 0x07c158 savedir      # LIKELY: directory prefix of the .TIM / .HI save files
-0x041ec8 FX_StopAllSounds # SPECULATIVE: Apogee Sound System
+0x041ec8 FX_StopAllSounds # LIKELY: Apogee Sound System (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x042c36 kbhit        # CONFIRMED: clib (libmatch)
 0x042c4d getch        # CONFIRMED: clib (libmatch)
 0x0774e4 ctl774e4
@@ -247,7 +247,7 @@
 0x041820 FX_Init      # LIKELY: ASS (card, voices, channels, bits, rate 11000)
 0x041550 FX_ErrorString # LIKELY: ASS
 0x041a0c FX_SetVolume # LIKELY: ASS
-0x041b44 FX_SetPitch  # SPECULATIVE: ASS, (handle, f26 * 0x14 - 0x708) per frame from overlay_draw; position between FX_SetVolume and FX_PlayVOC
+0x041b44 FX_SetPitch  # LIKELY: ASS, (handle, f26 * 0x14 - 0x708) per frame from overlay_draw; position between FX_SetVolume and FX_PlayVOC (iter 92: the assmatch.py free match in the ASSMATCH block puts the same name here)
 0x011f98 voices_load  # LIKELY: reads AUDIOHED.FX (offsets) and AUDIOT.FX (samples) from the data file into voices
 0x01418c datfind      # LIKELY: strupr(name), finds it in datdir (sets datidx), seeks to offset+2; returns found
 0x065080 datdir       # LIKELY: 0x16-byte entries {name[14], size, ?}; a 0 first byte ends it
@@ -930,6 +930,7 @@
 0x088b3c joy_lim_r    # LIKELY: the same for steer right (key88cdd), 2*joy_ax - joy_cx + 1 >= it (cfg +0x22 / +0xe) (was v88b3c; iter 91, from the asm)
 0x088b3e joy_lim_u    # LIKELY: the same for the y axis below the centre (key88cd6) (cfg +0x24 / +0x10) (was v88b3e; iter 91, from the asm)
 0x088b48 joy_lim_d    # LIKELY: the same for the y axis above the centre (key88cd3) (cfg +0x26 / +0x12) (was v88b48; iter 91, from the asm)
+0x057e2c emu387               # CONFIRMED (iter 92): Watcom 9.5b LIB386/DOS/EMU387.LIB module emu387, 12838 bytes: every byte from +0x77 on equals the LIB (10002 of its 10070 unmasked bytes); the 68 that differ are all in +0xa..+0x76, zero in the LIB and filled in the game (a table, not code). The 9.5/9.5a EMU387 shares 432 bytes. libmatch.py misses it because it needs every byte equal
 # ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
 # Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
 # byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
@@ -938,6 +939,10 @@
 0x040ff0 TS_SetTaskRate           # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 56 bytes
 0x04102c TS_UnlockMemory          # LIKELY: ASS 104 task_man.c near match 0.89 (96 bytes), anchored by its module's exact hits
 0x0410d4 TS_LockMemory            # LIKELY: ASS 104 task_man.c near match 0.72 (124 bytes), anchored by its module's exact hits
+0x041b44 FX_SetPitch              # LIKELY: ASS 104 fx_man.c free near match 0.94 (148 bytes), no anchor; next best start 0.10 lower or more
+0x041dd4 FX_SoundActive           # LIKELY: ASS 109 fx_man.c free near match 0.96 (96 bytes), no anchor; next best start 0.10 lower or more
+0x041e24 FX_StopSound             # LIKELY: ASS 109 fx_man.c free near match 0.95 (184 bytes), no anchor; next best start 0.10 lower or more
+0x041ec8 FX_StopAllSounds         # LIKELY: ASS 104 fx_man.c free near match 0.92 (140 bytes), no anchor; next best start 0.10 lower or more
 0x042420 MUSIC_FadeRoutine        # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 104 bytes
 0x042560 MUSIC_FadeActive         # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 16 bytes
 0x042570 MUSIC_StopFade           # CONFIRMED: byte-identical (fixups masked) to ASS 109 music.c, 30 bytes
@@ -1086,6 +1091,7 @@
 0x04ed1c dig_voice_handler        # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 344 bytes
 0x04ee74 gf1_play_next_buffer     # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 112 bytes
 0x04eee4 gf1_play_digital         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 465 bytes
+0x04f1ec PITCH_UnlockMemory       # SPECULATIVE: ASS 104 pitch.c free near match 0.75 (36 bytes), no anchor; next best start 0.10 lower or more
 0x04f290 gf1_write_block          # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 56 bytes
 0x04f2c8 gf1_read_block           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 52 bytes
 0x04f2fc gf1_mem_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 180 bytes
@@ -1141,6 +1147,7 @@
 0x053728 gf1_midi_parameter       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1midi.c, 645 bytes
 0x0550c0 gf1_isr_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 92 bytes
 0x05511c add_handler              # LIKELY: ASS 104 gf1isr.c near match 1.00 (40 bytes), anchored by its module's exact hits
+0x055144 add_far_handler          # LIKELY: ASS 104 gf1isr.c free near match 1.00 (40 bytes), no anchor; next best start 0.10 lower or more
 0x05516c gf1_add_dma_handler      # LIKELY: ASS 104 gf1isr.c near match 1.00 (56 bytes), anchored by its module's exact hits
 0x055214 gf1_add_timer_handler    # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 68 bytes
 0x0552b8 process_midi_interrupt   # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 124 bytes
@@ -1194,4 +1201,3 @@
 0x056edc gf1_disable_timer1       # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 108 bytes
 0x056f48 gf1_disable_timer2       # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 106 bytes
 # ---- ASSMATCH end
-0x057e2c emu387               # CONFIRMED (iter 92): Watcom 9.5b LIB386/DOS/EMU387.LIB module emu387, 12838 bytes: every byte from +0x77 on equals the LIB (10002 of its 10070 unmasked bytes); the 68 that differ are all in +0xa..+0x76, zero in the LIB and filled in the game (a table, not code). The 9.5/9.5a EMU387 shares 432 bytes. libmatch.py misses it because it needs every byte equal

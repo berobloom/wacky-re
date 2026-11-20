@@ -11,7 +11,9 @@ every library version:
      0x409EF-0x5BE2D -> CONFIRMED (byte-identical to <version> <module>);
   2. near: a function of a module that has an exact hit, searched at the function starts
      (tools/le/funcs.py) within 0x400 of where that hit puts it, scored by the share of equal
-     unmasked bytes; the best start at >= 0.6 that no exact hit took -> LIKELY (score, version).
+     unmasked bytes; the best start at >= 0.6 that no exact hit took -> LIKELY (score, version);
+  3. free: every function still unplaced against the starts nothing covers, no anchor; best >= 0.7
+     and 0.1 ahead of the next start -> LIKELY at >= 0.85, else SPECULATIVE.
 Where two names fit one address (code shared by two drivers), the name whose module has the most
 other hits within 0x2000 wins; the other is listed in the comment.
 Prints names-file lines; --write replaces the block between the ASSMATCH markers in
@@ -29,6 +31,7 @@ from lelib import Image                 # noqa: E402
 
 LO, HI = 0x409EF, 0x5BE2E
 NEAR_MIN, NEAR_WIN = 0.6, 0x400
+FREE_MIN, FREE_GAP = 0.7, 0.1
 BEGIN = '# ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)'
 END = '# ---- ASSMATCH end'
 
@@ -147,10 +150,58 @@ def main(argv):
     near = {a: x for a, x in near.items() if byname[x[1]] == a}
     exactnames = {n for d in exact.values() for n in d}
     near = {a: x for a, x in near.items() if x[1] not in exactnames}
+    # 3. free: functions still unplaced against the function starts nothing covers yet, no anchor;
+    # a candidate's extent (to the next start) must be 1/2..2x the function's size, the best score
+    # must be >= FREE_MIN and beat the second best start by FREE_GAP
+    span = []
+    for a, d in exact.items():
+        span.append((a, a + max(x[2] for x in d.values())))
+    for a, x in near.items():
+        span.append((a, a + x[4]))
+    placed = exactnames | {x[1] for x in near.values()}
+    free_starts = [a for a in starts if not any(s <= a < e for s, e in span)]
+    nxt = {a: (starts[k + 1] if k + 1 < len(starts) else HI) for k, a in enumerate(starts)}
+    free = {}
+    for v, fs in vers.items():
+        for f in fs:
+            n = len(f['buf'])
+            nm = plain(f['name'])
+            if nm in placed or n < 24:
+                continue
+            scores = []
+            for a in free_starts:
+                ext = nxt[a] - a
+                if not n // 2 <= ext <= 2 * n or a + n > HI:
+                    continue
+                o = a - base
+                tot = eq = 0
+                for i in range(n):
+                    if not f['mask'][i]:
+                        tot += 1
+                        eq += code[o + i] == f['buf'][i]
+                scores.append((eq / tot if tot else 0, a))
+            scores.sort(reverse=True)
+            if not scores or scores[0][0] < FREE_MIN:
+                continue
+            if len(scores) > 1 and scores[0][0] - scores[1][0] < FREE_GAP:
+                continue
+            r, a = scores[0]
+            if a not in free or free[a][0] < r:
+                free[a] = (r, nm, v, f['mod'], n)
+    byname = {}
+    for a, x in free.items():
+        if x[1] not in byname or free[byname[x[1]]][0] < x[0]:
+            byname[x[1]] = a
+    free = {a: x for a, x in free.items() if byname[x[1]] == a}
     lines = [BEGIN,
              '# Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =',
              '# byte-identical (fixups masked) to that version\'s function, LIKELY = anchored near match (score).']
-    for a in sorted(set(exact) | set(near)):
+    for a in sorted(set(exact) | set(near) | set(free)):
+        if a in free:
+            r, n, v, mod, ln = free[a]
+            lines.append('0x%06x %-24s # %s: ASS %s %s free near match %.2f (%d bytes), no anchor; next best start %.2f lower or more'
+                         % (a, n, 'LIKELY' if r >= 0.85 else 'SPECULATIVE', v, mod, r, ln, FREE_GAP))
+            continue
         if a in exact:
             d = exact[a]
             ranked = sorted(d, key=lambda n: -sum(1 for b in modat[d[n][1]] if b != a and abs(b - a) < 0x2000))
@@ -166,7 +217,7 @@ def main(argv):
                          % (a, n, v, mod, r, ln))
     lines.append(END)
     nb = sum(max(x[2] for x in d.values()) for d in exact.values())
-    summary = '%d exact (%d bytes), %d near' % (len(exact), nb, len(near))
+    summary = '%d exact (%d bytes), %d near, %d free' % (len(exact), nb, len(near), len(free))
     if '--write' in argv:
         p = os.path.join(ROOT, 'analysis', 'ww_names.txt')
         s = open(p).read()
