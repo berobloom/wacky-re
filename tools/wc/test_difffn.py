@@ -30,6 +30,8 @@ def main():
     assert D.parse_seed('0x76=0x8c800:d,0x7e728=1:d,0x8c800=3:b') == [
         (0x76, bytes.fromhex('00c80800')), (0x7e728, bytes.fromhex('01000000')),
         (0x8c800, b'\x03')], D.parse_seed('0x76=0x8c800:d,0x7e728=1:d,0x8c800=3:b')
+    # ARGS= beyond four lands on the stack (iter 87): arg5 at [esp+4], blanks keep the position
+    assert D.stack_args(0x9f00, ['0x8040', '', '0x8050']) == [(0x9f04, 0x8040), (0x9f0c, 0x8050)]
 
     u = Uc(UC_ARCH_X86, UC_MODE_32)
     u.mem_map(0x1000, 0x1000)

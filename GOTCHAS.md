@@ -265,6 +265,19 @@ it can be copied back into DREA.
   ever sets in `main`** is its own trap: `v88c46` (the fade step) is 4 from 0x36334, and with 0 the
   fade loop 0x1c017/0x32ce2 marks every pass "changed" and repeats forever - seed it from the store's
   address, and say so in the note.
+- **`ARGS=` with only the four Watcom register arguments makes an eight-pointer function's `SAME`
+  mean nothing** [generic] (iter 87): `leaderboard` 0x2b270 takes eight `short *` (`src/ww.c:14439`);
+  EAX/EDX/EBX/ECX carry the first four (0x2b276-0x2b280 stores them into frame slots) and the caller
+  **pushed the rest**, so at entry they are at `[esp+4]`, `[esp+8]`, `[esp+0xc]`, `[esp+0x10]` - the
+  game reads them back at `[esp+0x78]`/`0x7c`/`0x80`/`0x84` after its three pushes and `sub esp,0x68`
+  (0x2b4c7, 0x2b4d4, 0x2b4e1, 0x2b4ef). With the old four-register `ARGS=` the last four were 0, both
+  sides scribbled on the mapped zero page and printed `SAME` while testing nothing. `difffn.py` now
+  places `ARGS=` 5..8 on the stack (`stack_args`, checked by `tools/wc/test_difffn.py`). Judge such a
+  run by its **executed instruction starts** (`tools/wc/fncov.py`: capstone-decode the function's range,
+  subtract the union of the seeded runs), not by the byte comparison. Related ceiling: an arm whose
+  test reads what a **library** call should have written is unreachable under the stub-everything-
+  above-`CMOD_END` policy - `cmp byte [esp+1],0` 0x2b382 tests the buffer `itoa` 0x425f9 never filled -
+  so print `CALLSEQ=1` before writing "no seed reaches it".
 - **`SEED=` a global that a callee clears is no seed at all**: `SEED=0x7ecc0=1:d` makes
   `race_records_menu` 0x1d13c take its exit arm at 0x1d2f1 only if it is still nonzero there, and
   `menu` 0x155c0 stores 0 to it at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77). Name the

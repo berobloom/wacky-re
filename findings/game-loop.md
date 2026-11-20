@@ -367,8 +367,8 @@ merged).
     *Traps*, and GOTCHAS' dead-pointer list). Six seeded `difffn.py` runs, each SAME with both sides
     returning and the control SAME, cover kind >= 2 (377 insns at 301 addrs), kind <= 0 -> `0x233a4`
     -> `FX_StopSound` 0x233e0 (441/354), the `f24 > 0` tail 0x2345b-0x2369f (503/373), netvoices
-    (455/347), the sfx arm (391/303) and kind == 1 (iter 86): 488 of the 606 instruction starts in
-    0x22bf4-0x237a8 (`.work/fncov2.py`, capstone decode minus the union of the runs). Unwalked: the
+    (455/347), the sfx arm (391/303) and kind == 1 (iter 86): 489 of the 606 instruction starts in
+    0x22bf4-0x237a8 (`tools/wc/fncov.py`, capstone decode minus the union of the runs). Unwalked: the
     largest blocks 0x22fdf-0x2303d, 0x23600-0x23699, 0x2374c-0x2376c, 0x234b1-0x234d2, 0x22ef5-0x22f10,
     0x231b8-0x231cf (SPECULATIVE that they need a second player, `twoplayer`/`splitscreen` and real
     `faces[]`/spark records - each is behind such a test in the neighbours that *are* walked).
@@ -396,3 +396,19 @@ merged).
   pointer-as-0 arguments into the compared zero page) and `time_str` 0x2a618 given a real buffer and
   a real count (`ARGS=<t>,0x8000`: 75 insns at 75 addrs = the whole fixed-width digit routine, and
   eight `t` values 0/59/60/3599/3600/4660/65535/100000 all SAME, control SAME).
+- `leaderboard` 0x2b270 walked with real arguments (iter 87, CONFIRMED): it takes **eight** `short *`
+  (`src/ww.c:14439`, called with eight locals at 0x14868), and Watcom gives the first four the
+  registers EAX/EDX/EBX/ECX (0x2b276-0x2b280 stores them to frame slots) while **arg5-8 are on the
+  stack**: `[esp+0x78/0x7c/0x80/0x84]` after the three pushes and `sub esp,0x68` - 0x2b4c7, 0x2b4d4,
+  0x2b4e1, 0x2b4ef. `ARGS=0x8000,0x8010,...,0x8070` now covers both (difffn's `stack_args`, arg5 at
+  `[esp+4]`); the same env is SAME on the control, and the loop's gates are `nplayers` 0x88c40
+  (`cmp ecx,eax+1; jle 0x2b361` 0x2b547, so it runs i = 1..nplayers+1 over the place/points table
+  `0x799d8 + i*8`), `myplayer` 0x88b96 (0x2b478 `cmp dx, word [0x88b96]; jne 0x2b4b0` - the
+  not-my-player arm keeps EAX=1 from 0x2b467 and that is what makes 0x2b4ff `test ax,ax` fall through
+  to the face draw 0x2b504: `faces[pl*0x98]` 0x73c08 -> `sprptr` 0x7d704 -> `drawsprite` 0x36fd0), and
+  `splitscreen` 0x88bdc + `v88c6a` (0x2b4b0/0x2b4c5) for the second-viewer stores of args 5-8. With
+  those the three runs reach **211 of the 215 instruction starts** in 0x2b270-0x2b558, all SAME, all
+  controls SAME; the four left (0x2b389-0x2b395, the `itoa` single-digit pad `mov byte [esp],0x30`)
+  are **not reachable at all in the harness** - `itoa` 0x425f9 is a clib call above `CMOD_END` so it is
+  stubbed and never writes the buffer, and `cmp byte [esp+1],0` 0x2b382 reads that buffer: CONFIRMED,
+  `CALLSEQ=1` lists `itoa` in both sides' stub-call sequences (call indices 34, 42, 50, ...).

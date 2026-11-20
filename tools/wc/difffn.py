@@ -127,6 +127,13 @@ RESEED = parse_seed(os.environ.get('RESEED', ''))
 # not always a legal call: com_open's `div ecx` at 0x103b1 is a divide error when baud is 0, and both
 # runs then die at the same instruction, which is inconclusive (iter 76).
 ARGREGS = os.environ.get('ARGS', '').split(',')
+
+
+def stack_args(esp, vals):
+    """ARGS= beyond the four Watcom register args: the caller pushed the rest left to right, so arg5
+    is at [esp+4] and arg8 at [esp+0x10] (leaderboard 0x2b270 takes eight `short *`, iter 87)."""
+    return [(esp + 4 + 4 * i, int(v, 0)) for i, v in enumerate(vals) if v.strip()]
+
 # IN=0x3fa=0xc0: the value IN reads from one port (default 0). com_open's `iir = inp(comport + 2) &
 # 0xf8 == 0xc0` test at 0x1044e picks the 16550 FIFO branch, so a zero IN only ever runs the other one
 # (iter 76).
@@ -279,6 +286,8 @@ class Run:
         for r, v in zip(('eax', 'edx', 'ebx', 'ecx'), ARGREGS):
             if v.strip():
                 self.e.reg(r, int(v, 0))
+        for a, v in stack_args(esp, ARGREGS[4:]):      # stack arguments, see stack_args
+            self.e.put32(a, v)
         self.events = []
         # a re-run in the same Run inherits the first run's counters, and the CALLS cap then fires on
         # the first stubbed call: the watch pass of a CALLCAP function stopped at once and printed no
