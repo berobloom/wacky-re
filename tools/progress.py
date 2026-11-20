@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, 'tools', 'le'))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'wc'))
 PY = os.path.join(ROOT, '.work', 'venv', 'bin', 'python')
 CLIB = os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B', 'LIB386', 'DOS', 'CLIB3R.LIB')
+MATHLIB = os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B', 'LIB386', 'MATH387R.LIB')
 
 # WW.EXE's code object, findings/executables.md "Code layout (obj1)"
 C_START, ASM_START, LIB_START, CODE_END = 0x10260, 0x36A4E, 0x409EF, 0x10000 + 0x4BE2E
@@ -231,7 +232,7 @@ def main():
         named = len(re.findall(r'^; ---- 0x', src, re.M))
         w('| The game\'s assembler (VGA blitters, interrupt handlers), `src/wwasm.asm` | 0x%05X-0x%05X, %s bytes | '
           'reassembled byte for byte (nasm; `tools/asm/asmcheck.py`) and linked in place of the game\'s bytes; '
-          '%d routines read and named (%d used by the C), branch targets still `L_xxxxx` |'
+          '%d routines read and named (%d used by the C) |'
           % (ASM_START, LIB_START - 1, num(LIB_START - ASM_START), named, len(ents)))
     else:
         w('| The game\'s assembler (VGA blitters, interrupt handlers) | 0x%05X-0x%05X, %s bytes | not rebuilt: %d routines found |'
@@ -239,8 +240,20 @@ def main():
     if clib_mods is not None:
         w('| Watcom C library (`CLIB3R.LIB` 9.5b) | inside 0x%05X-0x%05X | %d modules, %s bytes, identified byte for byte; linked from the library, nothing to rewrite |'
           % (LIB_START, CODE_END - 1, clib_mods, num(clib_bytes)))
-        w('| Other library code (the Apogee Sound System and the rest) | inside 0x%05X-0x%05X | %s bytes not identified yet |'
-          % (LIB_START, CODE_END - 1, num(CODE_END - LIB_START - clib_bytes)))
+        mth = run([PY, 'tools/wc/libmatch.py', 'ww', MATHLIB], timeout=1200)
+        m = re.search(r'found\s+(\d+) \((\d+) bytes\)', mth)
+        math_mods, math_bytes = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+        w('| Watcom math library (`MATH387R.LIB` 9.5b) | inside 0x%05X-0x%05X | %d modules, %s bytes, identified byte for byte |'
+          % (LIB_START, CODE_END - 1, math_mods, num(math_bytes)))
+        nf = open(os.path.join(ROOT, 'analysis', 'ww_names.txt')).read()
+        ass_ok = [int(x) for x in re.findall(r'# CONFIRMED: byte-identical \(fixups masked\) to ASS \S+ \S+, (\d+) bytes', nf)]
+        ass_near = len(re.findall(r'# LIKELY: ASS \S+ \S+ near match', nf))
+        w('| The Apogee Sound System and its Gravis UltraSound SDK | inside 0x%05X-0x%05X | %d functions (%s bytes) '
+          'byte-identical to a released ASS library (`tools/wc/assmatch.py`), %d more named by near match |'
+          % (LIB_START, CODE_END - 1, len(ass_ok), num(sum(ass_ok)), ass_near))
+        w('| Not identified yet (the rest of the sound library; a 14 KB block at 0x57E2A, possibly the 387 emulator) '
+          '| inside 0x%05X-0x%05X | %s bytes |'
+          % (LIB_START, CODE_END - 1, num(CODE_END - LIB_START - clib_bytes - math_bytes - sum(ass_ok))))
     w('')
     w('## src/ww.c by subsystem')
     w('')

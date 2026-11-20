@@ -76,7 +76,7 @@ void __interrupt __far com_isr(void);
 void __interrupt __far com_isr_fifo(void);
 void disable_ints(void);
 void enable_ints(void);
-void lib_40ff0(int, int);
+void TS_SetTaskRate(int, int);
 
 /* differs (11 rows, 1 = the masked `[ecx*2 +/- @]` fixup): iter 39 made `rate` one unsigned variable
  * for the rate and the divisor (the game compares ECX = rate, not baud, with 0x3840 at 0x1039a and puts
@@ -159,7 +159,7 @@ void com_close(void)
     outp(0x21, inp(0x21) | (1 << comirq));
     _dos_setvect(comvec, oldcomvec);
     if (comdelay)
-        lib_40ff0(comtask, 1);
+        TS_SetTaskRate(comtask, 1);
 }
 
 short com_getc(void)
@@ -7460,7 +7460,7 @@ void fn_1dac0(void)
 /* The game calls com_getc at 0x1dc7f (not inlined): com_getc_x. */
 /* ---- 0x1dae8, 437 bytes: opens the serial link (caller 0x20943 in fn_1f858). Pauses the music with
  * a "MUSIC PAUSED" box, shows "INTERBYTE DELAY IS SET TO n" when comdelay is set (then
- * lib_40ff0(comtask, 1000)), opens COM v7ec50 with the port/IRQ of its comports[] record and the
+ * TS_SetTaskRate(comtask, 1000)), opens COM v7ec50 with the port/IRQ of its comports[] record and the
  * baud v7ebd4, waits 0x88 ticks (wait_or_key, inlined), drains the receiver and sets comopen. */
 struct comport { int port; int irq; int f08; };   /* 12 bytes, 0x77240 (0x1db4b-0x1db61) */
 extern struct comport comports[];
@@ -7498,7 +7498,7 @@ void link_open(void)
         while (ticks <= 300)
             ;
         fn_1c0ac();
-        lib_40ff0(comtask, 1000);     /* 0x1dc1f */
+        TS_SetTaskRate(comtask, 1000);     /* 0x1dc1f */
     }
     com_open(port, irq, v7ebd4, v7ec50);   /* 0x1dc3c: WCC passes arg3 in EBX (baud = v7ebd4) and arg4 in ECX (0x1dc2e/0x1dc35) */
     wait_or_key(0x88);                /* 0x1dc41-0x1dc7d, inlined */

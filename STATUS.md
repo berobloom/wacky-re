@@ -34,12 +34,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. The asm is named (iter 91: 36 routines + 2 helpers + 6 unreferenced, findings/video.md; the floor's
-   three detail bodies are 320/160/80 columns of 70 rows; 33 data names from the asm, iter 91c:
-   `page_draw`/`page_shown`/`page_from`/`page_to` were pal_a/d/b/c, `tilemap`, `view_x`/`view_y`,
-   `detail_lvl`, `rowtab`, ...: names file "was"); `kbd_isr` + key map read (findings/input.md).
-   Joystick poll + calibration read too (iter 91e). Next: item 2.
-2. Done iter 91f: branch targets are nasm locals `.Lxxxxx`; next, names for the loops worth naming.
+1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
+   "was"). Left: names for the loops worth naming.
+2. Sound library (iter 92): 228 ASS/GUS functions byte-identical + 32 near, MATH387R 21 modules
+   (findings/executables.md "Open"); 51 KB still unnamed. Next: the 14 KB block at 0x57E2A (emulator?),
+   then the ASS modules with no exact hit (fx_man, guswave, multivoc, music) against 1.04 source.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3

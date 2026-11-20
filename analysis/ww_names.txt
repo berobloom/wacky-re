@@ -26,7 +26,6 @@
 0x0409ef int386       # CONFIRMED: clib module (libmatch)
 0x040a0d _dos_getvect # CONFIRMED: clib module d_getvec (libmatch)
 0x040a44 _dos_setvect # CONFIRMED: clib module d_setvec (libmatch)
-0x040ff0 lib_40ff0    # SPECULATIVE: library function in the module at 0x40A80
 0x07d380 crctbl       # STRONGLY SUPPORTED: filled by mk_crctbl
 0x07ede0 comregs      # LIKELY: union REGS for int386(0x14)
 0x080aee oldcomvec    # LIKELY: _dos_getvect result (6-byte far pointer)
@@ -37,8 +36,8 @@
 0x084afc rxtail       # LIKELY: read index of rxbuf (com_getc)
 0x084afe rxcount      # LIKELY: bytes in rxbuf (com_getc)
 0x084b00 rxbuf        # LIKELY: 16 KB receive ring buffer
-0x07edbc comdelay     # LIKELY: ticks of 0x7EA74 com_putc waits after each byte; com_close calls lib_40ff0 when set
-0x07ee08 comtask      # SPECULATIVE: first argument of lib_40ff0 in com_close (a timer task?)
+0x07edbc comdelay     # LIKELY: ticks of 0x7EA74 com_putc waits after each byte; com_close calls TS_SetTaskRate when set
+0x07ee08 comtask      # LIKELY: a TS_ task handle: first argument of TS_SetTaskRate (CONFIRMED name, assmatch.py) in com_close
 0x088cba comport      # LIKELY: UART base port
 0x088cbc uarttype     # LIKELY: 1 = 16550 with FIFO, 2 = without
 0x088cbe comirq       # LIKELY: IRQ number
@@ -931,3 +930,267 @@
 0x088b3c joy_lim_r    # LIKELY: the same for steer right (key88cdd), 2*joy_ax - joy_cx + 1 >= it (cfg +0x22 / +0xe) (was v88b3c; iter 91, from the asm)
 0x088b3e joy_lim_u    # LIKELY: the same for the y axis below the centre (key88cd6) (cfg +0x24 / +0x10) (was v88b3e; iter 91, from the asm)
 0x088b48 joy_lim_d    # LIKELY: the same for the y axis above the centre (key88cd3) (cfg +0x26 / +0x12) (was v88b48; iter 91, from the asm)
+# ---- ASSMATCH begin (tools/wc/assmatch.py --write; do not edit by hand)
+# Apogee Sound System / GUS SDK functions named from the original ASS LIBs (iter 92): CONFIRMED =
+# byte-identical (fixups masked) to that version's function, LIKELY = anchored near match (score).
+0x040ab0 TS_SetClockSpeed         # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 76 bytes
+0x040afc TS_SetTimer              # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 36 bytes
+0x040ff0 TS_SetTaskRate           # CONFIRMED: byte-identical (fixups masked) to ASS 104 task_man.c, 56 bytes
+0x04102c TS_UnlockMemory          # LIKELY: ASS 104 task_man.c near match 0.89 (96 bytes), anchored by its module's exact hits
+0x0410d4 TS_LockMemory            # LIKELY: ASS 104 task_man.c near match 0.72 (124 bytes), anchored by its module's exact hits
+0x042420 MUSIC_FadeRoutine        # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 104 bytes
+0x042560 MUSIC_FadeActive         # CONFIRMED: byte-identical (fixups masked) to ASS 104 music.c, 16 bytes
+0x042570 MUSIC_StopFade           # CONFIRMED: byte-identical (fixups masked) to ASS 109 music.c, 30 bytes
+0x0434b0 LL_AddNode               # CONFIRMED: byte-identical (fixups masked) to ASS 104 ll_man.c, 40 bytes
+0x0434d8 LL_RemoveNode            # CONFIRMED: byte-identical (fixups masked) to ASS 104 ll_man.c, 92 bytes
+0x043538 LL_UnlockMemory          # CONFIRMED: byte-identical (fixups masked) to ASS 104 ll_man.c, 20 bytes
+0x04354c LL_LockMemory            # CONFIRMED: byte-identical (fixups masked) to ASS 104 ll_man.c, 29 bytes
+0x043570 DPMI_GetRealModeVector   # CONFIRMED: byte-identical (fixups masked) to ASS 104 dpmi.c, 68 bytes
+0x0435b4 DPMI_SetRealModeVector   # CONFIRMED: byte-identical (fixups masked) to ASS 104 dpmi.c, 60 bytes
+0x0435f0 DPMI_CallRealModeFunction # CONFIRMED: byte-identical (fixups masked) to ASS 104 dpmi.c, 100 bytes
+0x043658 DPMI_LockMemory          # CONFIRMED: byte-identical (fixups masked) to ASS 104 dpmi.c, 88 bytes
+0x0436b4 DPMI_UnlockMemory        # CONFIRMED: byte-identical (fixups masked) to ASS 104 dpmi.c, 86 bytes
+0x043f11 SOUNDSCAPE_Interrupts    # LIKELY: ASS 104 sndscape.c near match 0.78 (64 bytes), anchored by its module's exact hits
+0x043f60 BLASTER_SampleSize       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 16 bytes; the same bytes are SOUNDSCAPE_SampleSize
+0x043f70 BLASTER_CardConfig       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 224 bytes
+0x0440c4 BLASTER_EnableInterrupt  # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 80 bytes
+0x044114 BLASTER_DisableInterrupt # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 120 bytes
+0x0442bc BLASTER_ReadDSP          # LIKELY: ASS 104 blaster.c near match 0.98 (76 bytes), anchored by its module's exact hits
+0x044308 BLASTER_ResetDSP         # LIKELY: ASS 104 blaster.c near match 0.82 (96 bytes), anchored by its module's exact hits
+0x0443a0 BLASTER_SpeakerOn        # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 8 bytes
+0x0443a8 BLASTER_SpeakerOff       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 8 bytes
+0x0443b0 BLASTER_WriteDSP         # LIKELY: ASS 104 blaster.c near match 0.75 (56 bytes), anchored by its module's exact hits
+0x0443f0 BLASTER_SetPlaybackRate  # LIKELY: ASS 104 blaster.c near match 0.90 (304 bytes), anchored by its module's exact hits
+0x044510 BLASTER_SetMixMode       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 148 bytes
+0x0446c4 BLASTER_DSP1xx_BeginPlayback # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 64 bytes
+0x044704 BLASTER_DSP2xx_BeginPlayback # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 132 bytes
+0x0448cc BLASTER_WriteMixer       # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 28 bytes; the same bytes are ga_write
+0x0448e8 BLASTER_ReadMixer        # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 28 bytes; the same bytes are ga_read
+0x0449a8 BLASTER_SetVoiceVolume   # LIKELY: ASS 104 blaster.c near match 0.99 (172 bytes), anchored by its module's exact hits
+0x044ba4 BLASTER_CardHasMixer     # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 108 bytes
+0x044c10 BLASTER_SaveVoiceVolume  # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 132 bytes
+0x044c94 BLASTER_RestoreVoiceVolume # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 120 bytes
+0x044d0c BLASTER_SaveMidiVolume   # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 132 bytes
+0x044d90 BLASTER_RestoreMidiVolume # CONFIRMED: byte-identical (fixups masked) to ASS 104 blaster.c, 120 bytes
+0x045080 BLASTER_GetCardInfo      # LIKELY: ASS 104 blaster.c near match 0.99 (108 bytes), anchored by its module's exact hits
+0x0450f8 BLASTER_UnlockMemory     # LIKELY: ASS 104 blaster.c near match 0.91 (440 bytes), anchored by its module's exact hits
+0x045290 BLASTER_LockMemory       # LIKELY: ASS 104 blaster.c near match 0.85 (528 bytes), anchored by its module's exact hits
+0x045920 PAS_ErrorString          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
+0x045b68 PAS_EnableInterrupt      # LIKELY: ASS 104 pas16.c near match 0.99 (164 bytes), anchored by its module's exact hits
+0x045c0c PAS_DisableInterrupt     # LIKELY: ASS 104 pas16.c near match 0.99 (212 bytes), anchored by its module's exact hits
+0x045dc0 PAS_Write                # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 16 bytes
+0x045dd0 PAS_Read                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 16 bytes
+0x045de0 PAS_SetSampleRateTimer   # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 136 bytes
+0x045e68 PAS_SetSampleBufferCount # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 140 bytes
+0x045ef4 PAS_SetPlaybackRate      # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 104 bytes
+0x045f90 PAS_StopPlayback         # LIKELY: ASS 104 pas16.c near match 0.81 (104 bytes), anchored by its module's exact hits
+0x046060 PAS_GetCurrentPos        # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
+0x0460cc PAS_GetFilterSetting     # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 72 bytes
+0x04627c PAS_CallMVFunction       # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 96 bytes
+0x0462dc PAS_SetPCMVolume         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 112 bytes
+0x04634c PAS_GetPCMVolume         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 136 bytes
+0x0463d4 PAS_SetFMVolume          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 108 bytes
+0x046440 PAS_GetFMVolume          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 116 bytes
+0x04650c PAS_FindCard             # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 224 bytes
+0x0465ec PAS_SaveMusicVolume      # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 248 bytes
+0x0466e4 PAS_RestoreMusicVolume   # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 68 bytes
+0x046728 PAS_SaveState            # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 84 bytes
+0x04677c PAS_RestoreState         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pas16.c, 280 bytes
+0x046898 allocateTimerStack       # LIKELY: ASS 104 pas16.c near match 1.00 (92 bytes), anchored by its module's exact hits
+0x046934 PAS_Init                 # LIKELY: ASS 104 pas16.c near match 0.91 (680 bytes), anchored by its module's exact hits
+0x046d0c PAS_UnlockMemory         # LIKELY: ASS 104 pas16.c near match 0.95 (440 bytes), anchored by its module's exact hits
+0x046eb4 PAS_LockMemory           # LIKELY: ASS 104 pas16.c near match 0.88 (526 bytes), anchored by its module's exact hits
+0x0470d8 PCFX_ErrorString         # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 84 bytes; the same bytes are ADLIBFX_ErrorString
+0x04712c PCFX_Stop                # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 116 bytes
+0x047248 PCFX_Play                # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 132 bytes
+0x0472cc PCFX_SoundPlaying        # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 36 bytes; the same bytes are ADLIBFX_SoundPlaying
+0x0472f0 PCFX_SetTotalVolume      # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 64 bytes
+0x04733c PCFX_UseLookup           # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 52 bytes
+0x047378 PCFX_Init                # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 172 bytes
+0x047424 PCFX_Shutdown            # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 64 bytes
+0x047464 PCFX_UnlockMemory        # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 216 bytes
+0x04753c PCFX_LockMemory          # CONFIRMED: byte-identical (fixups masked) to ASS 104 pcfx.c, 271 bytes
+0x047650 GUSWAVE_PanTable         # CONFIRMED: byte-identical (fixups masked) to ASS 104 guswave.c, 172 bytes
+0x0476f0 GUSWAVE_ErrorString      # LIKELY: ASS 104 guswave.c near match 0.75 (104 bytes), anchored by its module's exact hits
+0x047804 GUSWAVE_GetVoice         # LIKELY: ASS 104 guswave.c near match 0.95 (52 bytes), anchored by its module's exact hits
+0x047838 GUSWAVE_VoicePlaying     # LIKELY: ASS 104 guswave.c near match 0.92 (16 bytes), anchored by its module's exact hits
+0x047a60 GUSWAVE_GetVolume        # CONFIRMED: byte-identical (fixups masked) to ASS 104 guswave.c, 40 bytes
+0x047ff4 SS_ErrorString           # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 80 bytes
+0x048118 SS_StopPlayback          # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 76 bytes
+0x048164 SS_GetCurrentPos         # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 40 bytes
+0x048190 SS_BeginBufferedPlayback # LIKELY: ASS 104 sndsrc.c near match 0.98 (132 bytes), anchored by its module's exact hits
+0x048214 SS_GetPlaybackRate       # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 8 bytes
+0x048220 SS_SetPort               # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 80 bytes
+0x048278 SS_TestTimer             # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 8 bytes
+0x048280 SS_TestSoundSource       # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 144 bytes
+0x048310 SS_DetectSoundSource     # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 212 bytes
+0x0484b0 SS_Shutdown              # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 56 bytes
+0x0484e8 SS_UnlockMemory          # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 260 bytes
+0x0485ec SS_LockMemory            # CONFIRMED: byte-identical (fixups masked) to ASS 104 sndsrc.c, 322 bytes
+0x048e05 MV_GetVoice              # LIKELY: ASS 104 multivoc.c near match 0.97 (47 bytes), anchored by its module's exact hits
+0x048e34 MV_VoicePlaying          # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 41 bytes
+0x048f3a MV_VoicesPlaying         # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 61 bytes
+0x0491f5 MV_Pan3D                 # LIKELY: ASS 104 multivoc.c near match 0.98 (107 bytes), anchored by its module's exact hits
+0x049ac2 MV_SetVolume             # CONFIRMED: byte-identical (fixups masked) to ASS 104 multivoc.c, 54 bytes
+0x049e9b MV_UnlockMemory          # LIKELY: ASS 104 multivoc.c near match 0.75 (593 bytes), anchored by its module's exact hits
+0x04a065 MV_LockMemory            # LIKELY: ASS 104 multivoc.c near match 0.71 (702 bytes), anchored by its module's exact hits
+0x04a28a D32DosMemAlloc           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gus.c, 103 bytes
+0x04a3d7 GUS_Shutdown             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gus.c, 73 bytes
+0x04a890 MIDI_CommandLengths      # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 64 bytes
+0x04a8d0 MIDI_ReadNumber          # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 40 bytes
+0x04ad38 MIDI_RerouteMidiChannel  # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 20 bytes
+0x04ae04 MIDI_SendChannelVolumes  # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 36 bytes
+0x04aec0 MIDI_SetVolume           # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 128 bytes
+0x04af40 MIDI_GetVolume           # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 44 bytes
+0x04af6c MIDI_GetPosition         # LIKELY: ASS 104 midi.c near match 0.75 (36 bytes), anchored by its module's exact hits
+0x04af74 MIDI_ContinueSong        # CONFIRMED: byte-identical (fixups masked) to ASS 104 midi.c, 20 bytes
+0x04b398 MIDI_UnlockMemory        # LIKELY: ASS 104 midi.c near match 0.87 (216 bytes), anchored by its module's exact hits
+0x04bc20 MPU_SendMidi             # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 56 bytes
+0x04bc58 MPU_NoteOff              # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 20 bytes
+0x04bc6c MPU_NoteOn               # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 20 bytes
+0x04bc80 MPU_PolyAftertouch       # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 20 bytes
+0x04bce4 MPU_SendCommand          # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 48 bytes
+0x04bd14 MPU_Reset                # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 68 bytes
+0x04bd58 MPU_EnterUART            # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 68 bytes
+0x04bd9c MPU_Init                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 60 bytes
+0x04bddc MPU_UnlockMemory         # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 48 bytes
+0x04be0c MPU_LockMemory           # CONFIRMED: byte-identical (fixups masked) to ASS 104 mpu401.c, 113 bytes
+0x04d5c0 DMA_PortInfo             # CONFIRMED: byte-identical (fixups masked) to ASS 104 dma.c, 272 bytes
+0x04d6d0 DMA_ErrorString          # CONFIRMED: byte-identical (fixups masked) to ASS 104 dma.c, 72 bytes
+0x04d718 DMA_VerifyChannel        # CONFIRMED: byte-identical (fixups masked) to ASS 104 dma.c, 72 bytes
+0x04d828 DMA_GetCurrentPos        # CONFIRMED: byte-identical (fixups masked) to ASS 104 dma.c, 92 bytes
+0x04d884 DMA_GetTransferCount     # CONFIRMED: byte-identical (fixups masked) to ASS 104 dma.c, 107 bytes
+0x04d970 D32DosMemAlloc           # CONFIRMED: byte-identical (fixups masked) to ASS 104 irq.c, 72 bytes
+0x04d9b8 rmcallback               # CONFIRMED: byte-identical (fixups masked) to ASS 104 irq.c, 56 bytes
+0x04da4c IRQ_SetVector            # CONFIRMED: byte-identical (fixups masked) to ASS 104 irq.c, 536 bytes
+0x04dc64 IRQ_RestoreVector        # CONFIRMED: byte-identical (fixups masked) to ASS 104 irq.c, 200 bytes
+0x04dd30 dig_init                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 232 bytes
+0x04de18 set_addr_regs            # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 84 bytes
+0x04de6c dig_change_voice         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 340 bytes
+0x04dfc0 gf1_restart_digital      # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 144 bytes
+0x04e050 set_pan                  # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1sound.c, 88 bytes
+0x04e0a8 set_vol                  # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 516 bytes
+0x04e2ac gf1_dig_set_vol          # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 96 bytes
+0x04e30c gf1_dig_set_pan          # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 68 bytes
+0x04e350 set_freq                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 220 bytes
+0x04e42c gf1_dig_set_freq         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 68 bytes
+0x04e470 gf1_stop_digital         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 200 bytes
+0x04e538 init_digital             # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 176 bytes
+0x04e5e8 gf1_update_digital       # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 328 bytes
+0x04e730 gf1_start_digital        # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 140 bytes
+0x04e7bc preformat                # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 128 bytes
+0x04e83c gf1_dig_set_dma_rate     # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 16 bytes
+0x04e84c dig_dma_next_buffer      # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 760 bytes
+0x04eb44 dig_check_db             # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 236 bytes
+0x04ec30 dig_terminal_count       # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 236 bytes
+0x04ed1c dig_voice_handler        # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 344 bytes
+0x04ee74 gf1_play_next_buffer     # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 112 bytes
+0x04eee4 gf1_play_digital         # CONFIRMED: byte-identical (fixups masked) to ASS 104 digital.c, 465 bytes
+0x04f290 gf1_write_block          # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 56 bytes
+0x04f2c8 gf1_read_block           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 52 bytes
+0x04f2fc gf1_mem_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 180 bytes
+0x04f3b0 gf1_malloc               # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 312 bytes
+0x04f4e8 gf1_free                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 228 bytes
+0x04f5cc gf1_mem_avail            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 116 bytes
+0x04f640 gf1_mem_largest_avail    # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1mem.c, 134 bytes
+0x04f7e0 GetUltraCfg              # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1utils.c, 256 bytes
+0x04f8e0 clear_gf1_ints           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 224 bytes
+0x04f9c0 gf1_reset_irq            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 32 bytes
+0x04f9e0 gf1_set_irq              # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 48 bytes
+0x04fa10 gf1_initialize           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 172 bytes
+0x04fabc gf1_ramp_down            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 428 bytes
+0x04fc68 gf1_load_os              # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 236 bytes
+0x04fd54 gf1_unload_os            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 100 bytes
+0x04fdb8 gf1_set_interface        # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 404 bytes
+0x04ff4c reset_ultra              # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init.c, 806 bytes
+0x050a9c gf1_error_str            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1error.c, 201 bytes
+0x050be0 gf1_get_patch_info       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1patch.c, 232 bytes
+0x050cc8 gf1_load_patch           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1patch.c, 1172 bytes
+0x05115c gf1_unload_patch         # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1patch.c, 140 bytes
+0x0511e8 gf1_detune_patch         # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1patch.c, 11 bytes
+0x051200 gf1_note_init            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 200 bytes
+0x0512c8 change_voice_volume      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 1056 bytes
+0x0516e8 gf1_midi_change_volume   # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 136 bytes
+0x051770 gf1_channel_pitch_bend   # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 220 bytes
+0x05184c gf1_midi_synth_volume    # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 172 bytes
+0x0518f8 gf1_midi_set_vibrato     # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 364 bytes
+0x051a64 do_note_vibrato          # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 320 bytes
+0x051ba4 enable_vibrato           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 28 bytes
+0x051bc0 disable_vibrato          # LIKELY: ASS 104 gf1note.c near match 1.00 (12 bytes), anchored by its module's exact hits
+0x051bcc calculate_vibrato        # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 364 bytes
+0x051d38 calculate_tremolo        # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 304 bytes
+0x051e68 gf1_calc_fc              # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 64 bytes
+0x051ea8 calculate_scaled_frequency # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 120 bytes
+0x051f20 gf1_midi_stop_voice      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 324 bytes
+0x052064 gf1_midi_status_voice    # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 160 bytes
+0x052104 gf1_midi_status_note     # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 80 bytes
+0x052154 gf1_midi_wait_voice      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 252 bytes
+0x052250 gf1_midi_stop_note       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 116 bytes
+0x0522c4 gf1_midi_note_on         # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 1672 bytes
+0x05294c gf1_midi_note_off        # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 1284 bytes
+0x052e50 gf1_midi_channel_sustain # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 148 bytes
+0x052ee4 note_voice_handler       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 152 bytes
+0x052f7c note_volume_handler      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 1008 bytes
+0x05336c gf1_midi_silence_patch_notes # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 272 bytes
+0x05347c gf1_midi_patch_removed   # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 44 bytes
+0x0534a8 gf1_midi_change_program  # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 28 bytes
+0x0534c4 gf1_midi_set_balance     # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 172 bytes
+0x053570 gf1_midi_all_sounds_off  # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 120 bytes
+0x0535e8 gf1_midi_all_notes_off   # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1note.c, 76 bytes
+0x053640 gf1_midi_pitch_bend      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1midi.c, 232 bytes
+0x053728 gf1_midi_parameter       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1midi.c, 645 bytes
+0x0550c0 gf1_isr_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 92 bytes
+0x05511c add_handler              # LIKELY: ASS 104 gf1isr.c near match 1.00 (40 bytes), anchored by its module's exact hits
+0x05516c gf1_add_dma_handler      # LIKELY: ASS 104 gf1isr.c near match 1.00 (56 bytes), anchored by its module's exact hits
+0x055214 gf1_add_timer_handler    # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 68 bytes
+0x0552b8 process_midi_interrupt   # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 124 bytes
+0x055334 check_irq_status         # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 60 bytes
+0x055370 process_interrupt        # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1isr.c, 661 bytes
+0x055610 convert_to_16bit         # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1addr.c, 28 bytes
+0x05562c make_physical_address    # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1addr.c, 92 bytes
+0x055688 gf1_set_addr_regs        # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1addr.c, 137 bytes
+0x055719 gf1_delay                # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init2.asm, 20 bytes
+0x05572d gf1_init_ports           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1init2.asm, 74 bytes
+0x055778 gf1_init_semaphores      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1sem.asm, 19 bytes
+0x055793 gf1_enter                # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1sem.asm, 31 bytes
+0x0557b2 gf1_leave                # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1sem.asm, 54 bytes
+0x055810 gf1_set_channel_out      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 36 bytes
+0x055834 gf1_set_channel_in       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 40 bytes
+0x05585c gf1_dma_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 92 bytes
+0x0558b8 dram_xfer                # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 180 bytes
+0x05596c gf1_dram_xfer            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 272 bytes
+0x055a7c gf1_dma_next_buffer      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 300 bytes
+0x055ba8 gf1_wait_dma             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 132 bytes
+0x055c2c gf1_dma_ready            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 24 bytes
+0x055c44 gf1_stop_dma             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dma.c, 149 bytes
+0x055ce0 gf1_voice_init           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1voice.c, 76 bytes
+0x055d2c gf1_allocate_voice       # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1voice.c, 344 bytes
+0x055e84 gf1_free_voice           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1voice.c, 56 bytes
+0x055ebc gf1_adjust_priority      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1voice.c, 49 bytes
+0x055ef0 gf1_peek                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dram.c, 124 bytes
+0x055f6c gf1_poke                 # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dram.c, 128 bytes
+0x055fec gf1_poke_block           # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dram.c, 236 bytes
+0x0560d8 gf1_good_dram            # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1dram.c, 427 bytes
+0x0565d0 os_init_channel          # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 140 bytes
+0x05665c os_pgm_dma               # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 292 bytes
+0x056780 os_stop_dma              # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 40 bytes
+0x0567a8 os_dma_count             # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 104 bytes
+0x056810 os_file_read             # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 48 bytes
+0x056840 os_file_close            # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 28 bytes
+0x05685c os_file_seek             # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 28 bytes
+0x056878 os_file_open             # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 44 bytes
+0x0568a4 os_setvect               # LIKELY: ASS 104 os.c near match 1.00 (12 bytes), anchored by its module's exact hits
+0x0568bc os_set_irq               # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 152 bytes
+0x056954 os_unset_irq             # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 132 bytes
+0x0569d8 os_eoi                   # CONFIRMED: byte-identical (fixups masked) to ASS 104 os.c, 43 bytes
+0x056a10 gf1_irq_service          # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1wisr.c, 124 bytes
+0x056a8c midi_irq_service         # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1wisr.c, 126 bytes
+0x056b10 gf1_detect_card          # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1detct.c, 95 bytes
+0x056b70 gf1_asm_init             # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1ainit.asm, 107 bytes
+0x056be0 gf1_update_waveform      # CONFIRMED: byte-identical (fixups masked) to ASS 104 gf1wave.c, 333 bytes
+0x056d30 gf1_timer_init           # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 36 bytes
+0x056d54 gf1_enable_timer2        # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 196 bytes
+0x056e18 gf1_enable_timer1        # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 196 bytes
+0x056edc gf1_disable_timer1       # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 108 bytes
+0x056f48 gf1_disable_timer2       # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 106 bytes
+# ---- ASSMATCH end

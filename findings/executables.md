@@ -71,7 +71,21 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   functions for 1.04, 198 for 1.09, 181 for 1.1 and 1.12; ASS's own code (without the GUS SDK) 96 of 341
   for 1.04 - whole `mpu401.c`, `dpmi.c`, `ll_man.c`, most of `pcfx.c`, `sndsrc.c`, `blaster.c` 16/46,
   but `fx_man.c`, `guswave.c`, `multivoc.c` 2/33 and `music.c` 1/14 differ (CONFIRMED counts, iter 56c).
-  LIKELY: the game has an ASS release before 1.04 (Wacky Wheels is 1994, ROTT 1.3 later). That project
+  LIKELY: the game has an ASS release before 1.04 (Wacky Wheels is 1994, ROTT 1.3 later).
+  **Iter 92, function by function over all six original LIBs** (`tools/wc/assmatch.py`, which also
+  writes the names): exact hits per version - 1.04 231 functions (37,365 bytes), 1.09 229, ROTTB 211,
+  1.1/1.12 212, ROTTD 153 - so the two ROTT pre-release LIBs are *further* from the game than 1.04
+  (CONFIRMED counts); the union over all six is 228 distinct addresses after resolving shared bodies
+  (e.g. `BLASTER_ReadMixer` = `ga_read`, the module with more neighbours wins) plus 32 anchored near
+  matches at `funcs.py` starts (LIKELY, score >= 0.6). All are in analysis/ww_names.txt's ASSMATCH
+  block. `lib_40ff0` was `TS_SetTaskRate` (CONFIRMED, renamed in src/ww.c).
+- **Watcom `MATH387R.LIB` 9.5b**: 21 modules, 4,745 bytes byte for byte (`libmatch.py`; pow387,
+  exp387, strtod, ftos, log387, ...); the other 9.5b LIBs add nothing (GRAPH, CPLX*, PLIB*, MATH3*,
+  EMU387 12 bytes, CLIB3S). CONFIRMED.
+- Still unidentified after both: 51,327 bytes, the largest a 14,331-byte block at 0x57E2A between
+  clib `hook387` and `fputs` with no readable strings - SPECULATIVE the 387 emulator from another
+  build than EMU387.LIB; the next largest are inside the ASS range (0x41504 3 KB before
+  `MUSIC_SetVolume`, 0x49260 2 KB in multivoc, 0x4b47c 2 KB in midi.c). That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
