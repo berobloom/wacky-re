@@ -346,9 +346,32 @@ merged).
     kind word `sprattr[28*ents[CR->f22]].+0` (`mov bx,[ebx+0x72998]` 0x2322d,
     `test bx,bx; jle 0x2334d` 0x2323a). With
     `SEED=0x88b78=3:w,0x79a9c=1:w,0x6aac0=1:w,0x79ac4=0xffff:w,0x79abc=1:w,0x7d5b0=0x8200:d,0x827c=1:w,0x72998=1:w`
-    the run is 336 insns at 276 addrs and SAME, control SAME (`.work/fncover.py`); unwalked at this
-    budget: 0x22eb0, 0x2334d (kind > 2), and 0x23503/0x235fb/0x2369f behind
-    `cmp word [curkart+0x6a],0x63; jge 0x23441` 0x2324d, which needs real `ents` records.
+    the run is 336 insns at 276 addrs and SAME, control SAME (`.work/fncover.py`).
+  - `kart_bump`'s pickup chain is entered through **`p7d86c` 0x7d86c, the current pickup record**
+    (CONFIRMED iter 87: `mov edx,[0x7d86c]` 0x231d5 then `cmp word [edx+0x1c],0` 0x231db - with the
+    pointer 0 that gate reads the DPMI scratch page, so an `SEED=` of the record fields at 0x79a28+n*0x28
+    does nothing until the pointer is seeded too: `SEED=0x7d86c=0x79aa0:d` = record 3). Same for
+    **`v7d800` 0x7d800**, the per-player pointer the f2c/f30/f34/f56 stores go through
+    (`mov edx,[0x7d800]` 0x22ebc + `add eax,edx` with eax = `v88b7e`*2): `SEED=0x7d800=0x6aa90:d`
+    moves those stores from page 0 into compared data. The voice/horn arm needs
+    `v88c44` == 2 (0x22df1 `cmp word [0x88c44],2; jne 0x22eb5`); inside it `netvoices` 0x7ec74 picks
+    `voice_check` 0x22e11 + `jmp 0x22eb0` 0x22e2d (network play) or, when `s7a9dc[pl->f26*0x18]` >= 4
+    (0x22e56 `cmp dword [edx+0x7a9dc],4; jl 0x22eb0`), `sfx_busy` 0x22e5f + `sfx_play` 0x22e78 + the
+    `s7b100`/`s7a9dc` reset 0x22e93/0x22ea4.
+  - **The entity-kind dispatch has three arms, not the two iter 86 read off** (CONFIRMED iter 87, by
+    taking each one): `test bx,bx; jle 0x2334d` 0x2323a is **kind <= 0** -> 0x2334d, `cmp bx,1;
+    je 0x232d6` 0x23247 is kind == 1, and only kind >= 2 falls through to 0x2324d. `0x7d7f4` is not
+    dead on this path: 0x23234 `mov [v7d7f4],edi` caches the `ents` record (base 0x73938, stride 0xc,
+    from the record's `f22` index) that 0x2329c then writes (`mov word [eax+2],0xffff`), so with a real
+    `ents` index the store is in compared data, not the page-0 scribble (findings/game-loop.md
+    *Traps*, and GOTCHAS' dead-pointer list). Six seeded `difffn.py` runs, each SAME with both sides
+    returning and the control SAME, cover kind >= 2 (377 insns at 301 addrs), kind <= 0 -> `0x233a4`
+    -> `FX_StopSound` 0x233e0 (441/354), the `f24 > 0` tail 0x2345b-0x2369f (503/373), netvoices
+    (455/347), the sfx arm (391/303) and kind == 1 (iter 86): 488 of the 606 instruction starts in
+    0x22bf4-0x237a8 (`.work/fncov2.py`, capstone decode minus the union of the runs). Unwalked: the
+    largest blocks 0x22fdf-0x2303d, 0x23600-0x23699, 0x2374c-0x2376c, 0x234b1-0x234d2, 0x22ef5-0x22f10,
+    0x231b8-0x231cf (SPECULATIVE that they need a second player, `twoplayer`/`splitscreen` and real
+    `faces[]`/spark records - each is behind such a test in the neighbours that *are* walked).
   - `line_points` 0x21554 is gated only by its own four input globals and its output cursor: the
     dx sign `test si,si; jge 0x2159e` 0x21590, the dy sign `cmp word [esp+0xc],0` 0x215a6, and
     `cmp si, word [esp+0xc]; jle 0x2160d` 0x215c4 (x-major loop 0x215dd vs y-major 0x2163d).
