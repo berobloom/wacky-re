@@ -38,7 +38,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), built with
    Watcom 10.0a/10.0 prerelease, `tools/ass/asscheck.py` 228 of 236 named functions, 15 modules whole (TASK_MAN, PCFX, SNDSRC, DMA, GUS, GUSWAVE, PITCH, FX_MAN, MUSIC, MULTIVOC
-   rewritten: findings/executables.md; `tools/ass/portnames.py` names their symbols). Near misses: MIDI 324 bytes, GUSMIDI 140, BLASTOLD 48, PAS16 44 (register choices, scheduling). Next: the FM song player (0x4A490, no source: reconstruct).
+   rewritten: findings/executables.md; `tools/ass/portnames.py` names their symbols). Near misses: MIDI 324 bytes, GUSMIDI 140, BLASTOLD 48, PAS16 44 (register choices, scheduling). Next: the FM song player (0x4A490, KLM format; no known source, chip layer 0x50280 AL_MIDI-like).
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3
