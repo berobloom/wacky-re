@@ -6,8 +6,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 75 re-ran
-  check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
+- **207 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 80 still 207 -
+  no C change, `difffn.py`/`hotfn.py` work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
   compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
   compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
   MATCH, `tools/wc/test_objmatch.py`), and iter
@@ -28,17 +28,22 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `fn_1832c` 0x1832c (instruction cap, 545 rows): `SEED=0x88c96=1:w` clears the crash the two builds
-   shared in its helper `fn_182d0` and `TICKREAD=8` clears its `ticks` waits (iter 79) - one run with
-   both plus `CALLS=3000`, then the `SEEDED:` line.
-2. The still-open CALLCAP set - `screenshot`, `enter_name`, `trial_book`, `demo_mode`, `fn_17928`,
-   `fn_1be3c`, `fn_1d704`, `race_run`, `fn_1c0f4` - one run each with `TICK=8 TICKREAD=8 CALLS=3000
-   SEED=0x88cce=1:b`, plus the volume_menu recipe: seed the *branch test* of a `ticks = 0; while
-   (ticks <= N)` wait (0x7ed4c for 0x1e7af), not `ticks`.
-3. `showlines` 0x2a268 and `intro` 0x348f4: their waits poll `ticks` with no call in the body
-   (0x2a3bd, 0x34cb4), which `TICKREAD=` reaches - re-run both and write the verdicts.
+1. `demo_mode` 0x1e2e4 and `fn_1be3c` 0x1be3c (CALLCAP): iter 80's recipe - `FREAD=13` (the new fread
+   stub byte, `read_line` 0x26ff0) `SEED=0x88cd0=1:b,0x7ebc0=1:d,0x88c46=4:w CALLS=200000
+   COUNT=20000000` - made `fn_17928` return with both sides agreeing; `hotfn.py` takes those knobs too
+   and says which loop it lands in (`screenshot` 0x114c8, `fn_1832c` 0x1832c done, iter 80).
+2. `fade_in` 0x32cf8 reads the fade step `v88c46` at 0x32d78/0x32d95, and a direct call leaves it 0
+   (the game stores 4 at 0x36334) - `difffn.py fade_in FREAD=13 SEED=0x88c46=4:w` may return.
+3. The press-and-release class - `main_menu` 0x1f858, `race_records_menu` 0x1d13c, `volume_menu`
+   0x1e760 - needs `RESEED=` (seeds re-written at every stubbed call/interrupt, GOTCHAS): a static
+   seed can press but never release, so `wait_release` 0x278c4 spins (iter 78/80).
 4. `menu` 0x155c0 with `ARGS=` (iter 76's register arguments): zero arguments leave after 604 insns,
    so its frame wait 0x16004/0x1604c and its input arm are still untested (findings/menus.md).
+5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
+   first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
+   {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
+   and compare the DIFFs against the recorded verdicts in `src/nearmiss.txt`; the known uncapped DIFFs
+   are the dead `v7d7f4`/`v7d874` pointers (findings/game-loop.md).
 5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
    first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
    {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)

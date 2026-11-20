@@ -150,6 +150,17 @@ it can be copied back into DREA.
   `TICK=`/`TICKREAD=` on reports the injected clock 0x7e720 itself as its only DIFF byte (game 08, ours
   10/0x18, `fn_1832c` at CALLS=3000/5000, iter 80): that value is where each side's cap fell, not a
   behaviour difference - a verdict needs a seed that makes both sides *return*.
+- **A `SEED=` cannot reach a stack buffer, and a read stub that returns nothing makes a byte-wise
+  parser loop forever** (iter 80): `read_line` 0x26ff0 stops on the byte it read, so with the clib
+  `fread` stub delivering nothing it walks off `gam_load` 0x2717c's frame into unmapped memory; the
+  buffer is a local (`mov eax, esp` 0x2724a) and the two builds' frames sit at different addresses,
+  so no single seed fixes both sides. The knob is `FREAD=<byte>` in `tools/wc/difffn.py`: the stub
+  writes that byte at its destination when the Watcom size register `edx == 1` (the byte-wise pattern;
+  bulk reads of 0x80/0x300 stay untouched), and both `fread` addresses come out of the maps
+  (`fread_` offset + that image's code base), never typed. Same run, a **zero global the game only
+  ever sets in `main`** is its own trap: `v88c46` (the fade step) is 4 from 0x36334, and with 0 the
+  fade loop 0x1c017/0x32ce2 marks every pass "changed" and repeats forever - seed it from the store's
+  address, and say so in the note.
 - **`SEED=` a global that a callee clears is no seed at all**: `SEED=0x7ecc0=1:d` makes
   `race_records_menu` 0x1d13c take its exit arm at 0x1d2f1 only if it is still nonzero there, and
   `menu` 0x155c0 stores 0 to it at 0x15613 and 0x16291 (write hook on 0x7ecc0, iter 77). Name the

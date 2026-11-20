@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""test_difffn.py: the iter-76 additions to difffn.py - the IN/OUT hooks and the IN value.
+"""test_difffn.py: the iter-76 additions to difffn.py - the IN/OUT hooks and the IN value - and the
+iter-80 FREAD= stub byte.
 
     .work/venv/bin/python tools/wc/test_difffn.py
 
@@ -13,8 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'tools', 'le'))
 try:
     from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_INSN                  # noqa: E402
-    from unicorn.x86_const import (UC_X86_REG_EDX, UC_X86_REG_EAX, UC_X86_INS_IN,  # noqa: E402
-                                   UC_X86_INS_OUT)
+    from unicorn.x86_const import (UC_X86_REG_EDX, UC_X86_REG_EAX, UC_X86_REG_ECX,      # noqa: E402
+                                   UC_X86_REG_ESP, UC_X86_INS_IN, UC_X86_INS_OUT)
     import difffn as D                                                             # noqa: E402
 except ImportError as err:                        # overnight/check.sh runs the tests with plain
     print('SKIP: %s (run: .work/venv/bin/python tools/wc/test_difffn.py)' % err)
@@ -56,6 +57,40 @@ def main():
     assert D.Run._pio_in(Fake, u, 0x3fb, 1, None) == 0     # a port with no IN= entry reads 0
     assert D.Run._pio_in(Fake, u, 0x3f8, 1, None) == 0xc0
     assert [(s[0], s[1], s[2]) for s in Fake.stubs] == [('$in 0x3fb', 0, 1), ('$in 0x3f8', 0xc0, 1)], Fake.stubs
+
+    # ---- FREAD= (iter 80): the fread stub leaves one byte at the buffer when size == 1 (EDX), and
+    # only there: read_line 0x26ff0 calls fread(ptr,1,1,fp) per byte, and nothing else may be touched.
+    class FE:                                       # the three Emu methods _stub uses
+        def __init__(self, uc): self.uc = uc
+        def reg(self, n, v=None):
+            r = {'eax': UC_X86_REG_EAX, 'ecx': UC_X86_REG_ECX, 'edx': UC_X86_REG_EDX}[n]
+            if v is None:
+                return self.uc.reg_read(r)
+            self.uc.reg_write(r, v & 0xffffffff)
+        def u32(self, a): return int.from_bytes(bytes(self.uc.mem_read(a, 4)), 'little')
+        def put32(self, a, v): self.uc.mem_write(a, v.to_bytes(4, 'little'))
+
+    class FS:                                       # a fake Run for Run._stub
+        def __init__(self, uc):
+            self.e, self.stubs, self.ncalls, self.calls, self.fread = FE(uc), [], 0, False, 0x2000
+
+    u.mem_map(0x2000, 0x2000)                       # the fread stub, its frame and the buffer
+    u.mem_write(0x2000, bytes(8))                   # the "fread" entry and the return address
+    u.mem_write(0x3000, bytes(6))                   # the caller's buffer
+    u.reg_write(UC_X86_REG_ESP, 0x2100)
+    u.mem_write(0x2100, (0x1234).to_bytes(4, 'little'))
+    D.FREAD = 13
+    for addr, size, want in ((0x2000, 1, 13), (0x2000, 0x300, 0), (0x2010, 1, 0)):
+        u.mem_write(0x3000, bytes(6))               # a clean buffer per case (case 1 wrote 13)
+        u.reg_write(UC_X86_REG_ESP, 0x2100)         # and a clean frame: _stub pops the return address
+        u.reg_write(UC_X86_REG_EAX, 0x3000)
+        u.reg_write(UC_X86_REG_EDX, size)
+        fs = FS(u)
+        D.Run._stub(fs, u, addr, 5, None)
+        assert bytes(u.mem_read(0x3000, 1))[0] == want, (hex(addr), size, want)
+        assert fs.stubs[0][0] == addr and fs.ncalls == 1
+        # the stub returns like Watcom's: EAX = 0 and the caller's frame popped past the return address
+        assert u.reg_read(UC_X86_REG_EAX) == 0 and u.reg_read(UC_X86_REG_ESP) == 0x2104
     print('OK')
 
 

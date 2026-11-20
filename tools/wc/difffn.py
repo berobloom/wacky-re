@@ -58,6 +58,14 @@ CALLS = int(os.environ.get('CALLS', '300'))   # stop after this many stubbed cal
 TICK = int(os.environ.get('TICK', '0'))       # ticks (0x7e720) added per stubbed call; 0 = off
 TICKREAD = int(os.environ.get('TICKREAD', '0'))   # ticks += this per READ of TICKADDR; 0 = off
 TICKADDR = int(os.environ.get('TICKADDR', '0x7e720'), 0)   # hex, so base 0
+# FREAD=13: the byte the clib `fread` stub leaves at its destination when it is asked for ONE element
+# (`fread(ptr, 1, n, fp)` - Watcom passes ptr in EAX and size in EDX). The stub delivers nothing, so a
+# byte-wise line reader never sees its terminator: `read_line` 0x26ff0 loops on `cmp byte [esi],0xd`
+# until ESI walks off the stack into unmapped memory - that is why gam_load 0x2717c, and with it
+# fn_17928, could not return (iter 80). Bulk reads (size != 1) are left untouched. 13 = CR is what
+# read_line tests; the buffer is a local of the callee, so SEED= cannot reach it (the two builds' frames
+# sit at different addresses).
+FREAD = int(os.environ.get('FREAD', '0'), 0)
 
 
 def parse_seed(text):
@@ -98,6 +106,7 @@ class Run:
         self.lo, self.hi = lo, max(hi, lo)              # the stub range (asm module + clib)
         self.stubs, self.crash, self.watch, self.calls = [], None, set(), False
         self.ncalls = 0        # stubbed calls and interrupts only - not the port traffic below
+        self.fread = None      # this image's clib fread, set by main() (map offset + code base)
         o = self.e.img.meta['objects']
         self.cend = o[0]['base'] + o[0]['vsize']
         # the DPMI zero page: half these functions run with a pointer global still 0, so give the
@@ -136,6 +145,8 @@ class Run:
         self.stubs.append((addr, self.e.reg('eax'), self.e.reg('ecx'), self.e.reg('edx'),
                            [self.e.u32(esp + 4 * i) for i in range(3)]))
         self.ncalls += 1
+        if FREAD and addr == self.fread and self.e.reg('edx') == 1:
+            self.e.uc.mem_write(self.e.reg('eax'), bytes([FREAD]))   # before EAX is zeroed
         self.e.reg('eax', 0)
         if TICK:                                  # the timer ISR that drives ticks lives above the C
             self.e.put32(TICKADDR, self.e.u32(TICKADDR) + TICK)   # module (0x10a15 et al only zero it),
@@ -257,6 +268,21 @@ def json_base(name):
     return [o['base'] for o in m['objects']]
 
 
+def fread_addr(img):
+    """one image's clib `fread` (the FREAD= stub hook needs the address, and the two images differ):
+    the WLINK map offset + that image's code object base. The original's symbols come from the
+    relinked map WWORIG.MAP - 0x10000 + 0x32c68 = 0x42c68, the `call 0x42c68` of the disassembly -
+    the hybrid's from its own map (MAP=), 0x10000 + 0xc22a = 0x1c22a, whose first bytes are identical
+    to the game's (iter 80)."""
+    mapf = (os.path.join(ROOT, '.work', 'link', 'WWORIG.MAP') if img == 'ww'
+            else os.environ.get('MAP', os.path.join(ROOT, '.work', 'link', 'WWNEW.MAP')))
+    _, p, _s = map_publics(mapf, os.path.join(ROOT, '.work', 'link', 'WW.LNK'))
+    for cand in ('fread', 'fread_', '_fread'):
+        if cand in p:
+            return json_base(img)[0] + p[cand][1]
+    return None
+
+
 def one(eip, r):
     try:
         buf = bytes(r.e.uc.mem_read(eip, 12))
@@ -284,6 +310,8 @@ def main():
                 return (nb[0] if cls[s] == 'CODE' else nb[1]) + off
         return None
 
+    ofread = fread_addr(orig)
+    nfread = fread_addr(new)
     names = M.names(orig)
     todo = []
     for a in sys.argv[1:]:
@@ -299,9 +327,13 @@ def main():
         if not addr or naddr is None:
             print('%-20s not in %s names or not a hybrid public' % (name, orig))
             continue
-        a = Run(orig, CMOD_END, 1 << 32).go(addr)
-        b = Run(new, CMOD_END, 1 << 32).go(naddr) if text is None \
-            else Run(new, nb[0], text).go(naddr)     # BLOBTEXT below our code is asm + clib
+        a = Run(orig, CMOD_END, 1 << 32)
+        a.fread = ofread
+        a = a.go(addr)
+        b = Run(new, CMOD_END, 1 << 32) if text is None \
+            else Run(new, nb[0], text)               # BLOBTEXT below our code is asm + clib
+        b.fread = nfread
+        b = b.go(naddr)
         dif = diff_bytes(a.init, a.fin, b.init, b.fin)
         notes = []
         if a.crash or b.crash:

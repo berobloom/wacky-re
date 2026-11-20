@@ -598,3 +598,55 @@ sources img[8],9,8,4,10,11,10,4). 0x7b238 is the base stored into `curkart+0x4e`
 walked by 0x2bff0 (`tools/le/xref.py 0x7b238`); no instruction in the image mentions 0x7b230.
 Our port had all three addresses wrong (table written at 0x7b230, fans reading +0x44/+0x60) until
 iter 59 - the byte diff never moved (src/ww.c fn_173c4 note, `BEHAV:` row in src/nearmiss.txt).
+
+## The PCX writer `screenshot` 0x114c8 (CONFIRMED, iter 80)
+
+`difffn.py screenshot CALLS=20000 COUNT=12000000` runs the whole function in both images: it
+**returns** (807,314 insns at 184 addrs under `hotfn.py`, 65,200 passes of the RLE inner loop =
+200 rows x ~326) and the two sides end with every compared byte equal (control
+`NEW=wworig MAP=.work/link/WWORIG.MAP` SAME). No global seed is needed - the old "CALLCAP 300/300"
+was only the `fputc` count: 200 rows of the screen emit ~2 `fputc` each plus the header writes, so
+300 stubs is not enough to reach the `ret` 0x11805.
+
+- CONFIRMED (0x11700-0x117c3): the body is 200 rows - `inc edi; cmp di,0xc7; jle 0x11700` - and each
+  row pulls itself into the local buffer at `[esp+0x320]` through `call blit372c7` 0x11730, after
+  0x11700-0x1172b set `spr_x` 0x88b32 = 0, `spr_h` 0x88b36 = 0x140, `spr_w` 0x88b26 = 1,
+  `spr_y` 0x88b34 = the row counter and `sprptr` 0x7d704 = `[esp+0x508]`. So the writer captures a
+  320 x 200 window, not the whole 0x140x0x1e0 screen.
+- CONFIRMED (0x11735-0x117b7): PCX run-length encoding with the run capped twice -
+  0x1174f `cmp eax,0x140` (a run may not pass the end of the row) and 0x11756 `cmp bx,0x3f`
+  (max run 63); a run of n > 0 is written as `n | 0xc0` then the byte (0x11764 `or al,0xc0`,
+  `fputc` 0x1176b, `fputc` 0x1177d, `add ecx,ebx` 0x11782), a single literal byte is escaped when its
+  top two bits are set - 0x11790 `and al,0xc0; cmp al,0xc0` then `fputc(ebp)` 0x1179a with
+  **`ebp` = 0xc1** (loaded at 0x116df, not 0xc0) - before the byte itself (0x117a4-0x117ad).
+- CONFIRMED (0x117d0-0x117f4): the tail is `fputc(0xc)` (the standard PCX palette selector),
+  `fwrite` of 0x300 bytes from `[esp+0x50c]`, `fclose`, then `call nosound` 0x117f4 - taking a
+  screenshot silences the sound - and the epilogue `add esp,0x514` + 6 pops + `ret` 0x11805.
+
+## `gam_load` 0x2717c's line reader and the fade step (CONFIRMED, iter 80)
+
+- CONFIRMED (`tools/wc/difffn.py fn_17928 FREAD=13 SEED=0x88cd0=1:b,0x7ebc0=1:d,0x88c46=4:w` prints
+  SAME with both sides returning; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same env
+  SAME; `hotfn.py` with those seeds: 303784 insns at 1579 addrs, `returned`): `read_line` 0x26ff0 is a
+  **CR-terminated** reader - it calls `fread(ptr, 1, 1, fp)` once per byte and stops when the byte it
+  just read is 0x0d (0x27008 `cmp byte ptr [esi],0xd`), then does one more 1-byte read to eat the LF
+  and NUL-terminates (0x27020 `mov byte ptr [esi],0`). `gam_load` 0x2717c reads five lines into the
+  globals 0x7eabc, 0x7eaca, 0x7eaa0, 0x7eaae and 0x6a4e0 (0x271fa-0x27245), then the record count into
+  a **local** buffer at its own frame base (0x2724a `mov eax, esp`, parsed at 0x2725f
+  `movsx edx, word [esp+0x60]`, `imul edx,edx,0xe` 0x27264 - so a .GAM record is 14 bytes).
+- CONFIRMED (`difffn.Run` stub, `tools/wc/difffn.py`, new `FREAD=<byte>`): with the fread stub
+  returning 0 and writing nothing, `read_line`'s loop never sees 0x0d and ESI walks up through the
+  callee's saved registers until it faults (`write_prot at 0xf00000`), which is what kept
+  `gam_load` - and with it `fn_17928` - from ever returning. `FREAD=13` makes the stub write 13 at its
+  destination **only for one-element reads** (`edx == 1`, the Watcom size register), so the bulk reads
+  of palettes and PCX bodies (size 0x80 / 0x300) stay untouched and every .GAM line reads as empty.
+  The two `fread` addresses are taken from the maps, not typed: `WWORIG.MAP` `0001:00032c68 fread_` +
+  code base 0x10000 = 0x42c68 (the `call 0x42c68` in the disassembly) and `WWNEW.MAP`
+  `0001:0000c22a fread_` + 0x10000 = 0x1c22a, whose first six bytes equal the game's.
+- CONFIRMED (0x36334 `mov word ptr [0x88c46], 4` in `main`): `v88c46` is the palette-fade step, and an
+  emulator that starts a function directly never runs `main`, so it reads 0. `fade_out` 0x1bf94 then
+  never converges: its per-entry test 0x1c03d `cmp byte ptr [esp+eax],0` / 0x1c04d `xor edi,edi` marks
+  the pass "changed" for every entry above 0, `sub byte ptr [esp+eax], cl` 0x1c05d subtracts the step
+  (0), and `call f37cf1; test di,di; je 0x1c017` 0x32cdd-0x32ce5 repeats the 768-entry pass forever
+  (1,190,831 passes of 0x1c03a before the instruction cap). Seed `0x88c46=4:w` and the fade finishes
+  in 14 passes. `fade_in` 0x32cf8 reads the same global (0x32d78, 0x32d95).
