@@ -1194,3 +1194,4 @@
 0x056edc gf1_disable_timer1       # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 108 bytes
 0x056f48 gf1_disable_timer2       # CONFIRMED: byte-identical (fixups masked) to ASS 104 timer.c, 106 bytes
 # ---- ASSMATCH end
+0x057e2c emu387               # CONFIRMED (iter 92): Watcom 9.5b LIB386/DOS/EMU387.LIB module emu387, 12838 bytes: every byte from +0x77 on equals the LIB (10002 of its 10070 unmasked bytes); the 68 that differ are all in +0xa..+0x76, zero in the LIB and filled in the game (a table, not code). The 9.5/9.5a EMU387 shares 432 bytes. libmatch.py misses it because it needs every byte equal

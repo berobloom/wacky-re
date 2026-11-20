@@ -251,9 +251,14 @@ def main():
         w('| The Apogee Sound System and its Gravis UltraSound SDK | inside 0x%05X-0x%05X | %d functions (%s bytes) '
           'byte-identical to a released ASS library (`tools/wc/assmatch.py`), %d more named by near match |'
           % (LIB_START, CODE_END - 1, len(ass_ok), num(sum(ass_ok)), ass_near))
-        w('| Not identified yet (the rest of the sound library; a 14 KB block at 0x57E2A, possibly the 387 emulator) '
+        m = re.search(r'emu387 +# CONFIRMED \(iter 92\): Watcom 9.5b \S+ module emu387, (\d+) bytes', nf)
+        emu = int(m.group(1)) if m else 0
+        if emu:
+            w('| Watcom 387 emulator (`EMU387.LIB` 9.5b, module emu387) | 0x57E2C | %s bytes, the code byte for byte '
+              '(a 0x77-byte table at its start is filled in the game, zero in the LIB) |' % num(emu))
+        w('| Not identified yet (most of it the sound library\'s modules with no exact match) '
           '| inside 0x%05X-0x%05X | %s bytes |'
-          % (LIB_START, CODE_END - 1, num(CODE_END - LIB_START - clib_bytes - math_bytes - sum(ass_ok))))
+          % (LIB_START, CODE_END - 1, num(CODE_END - LIB_START - clib_bytes - math_bytes - sum(ass_ok) - emu)))
     w('')
     w('## src/ww.c by subsystem')
     w('')

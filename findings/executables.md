@@ -82,10 +82,14 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
 - **Watcom `MATH387R.LIB` 9.5b**: 21 modules, 4,745 bytes byte for byte (`libmatch.py`; pow387,
   exp387, strtod, ftos, log387, ...); the other 9.5b LIBs add nothing (GRAPH, CPLX*, PLIB*, MATH3*,
   EMU387 12 bytes, CLIB3S). CONFIRMED.
-- Still unidentified after both: 51,327 bytes, the largest a 14,331-byte block at 0x57E2A between
-  clib `hook387` and `fputs` with no readable strings - SPECULATIVE the 387 emulator from another
-  build than EMU387.LIB; the next largest are inside the ASS range (0x41504 3 KB before
-  `MUSIC_SetVolume`, 0x49260 2 KB in multivoc, 0x4b47c 2 KB in midi.c). That project
+- **The 14 KB block at 0x57E2A is Watcom 9.5b's 387 emulator** (`EMU387.LIB` module `emu387`, 12,838
+  bytes at 0x57E2C): CONFIRMED for the code - every byte from +0x77 equals the LIB; the 68 that
+  differ (+0xa..+0x76) are zero in the LIB and filled in the game, a table. `libmatch.py` cannot see
+  it because it needs every byte equal. The 9.5/9.5a EMU387 shares only 432 bytes, so this is one
+  more pin on 9.5b.
+- Still unidentified: 38,489 bytes, mostly inside the ASS range (0x41504 3 KB before
+  `MUSIC_SetVolume`, 0x49260 2 KB in multivoc, 0x4b47c 2 KB in midi.c): the ASS modules no released
+  LIB matches exactly. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,
