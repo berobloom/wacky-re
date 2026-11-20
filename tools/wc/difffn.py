@@ -145,6 +145,7 @@ class Run:
         self.fread = None      # this image's clib fread, set by main() (map offset + code base)
         self.rand = None       # ditto for clib rand (RAND=)
         self.getch = None      # ditto for clib getch (KEY=)
+        self.exit = None       # ditto for clib exit_ (the run ends there; see _stub)
         self.nkey = 0          # getch calls so far: which KEY= entry to return
         self.rseed = 0x1234    # the rand stub's own seed; the clib's slot is never written
         self.reseed = dict(RESEED)   # RESEED= address -> bytes (written after every READ but the first)
@@ -188,6 +189,15 @@ class Run:
         self.stubs.append((addr, self.e.reg('eax'), self.e.reg('ecx'), self.e.reg('edx'),
                            [self.e.u32(esp + 4 * i) for i in range(3)]))
         self.ncalls += 1
+        if addr == self.exit:      # the clib `exit_` (game 0x42c11, hybrid 0x1c1d3): the program is
+            # over and its stub cannot return - popping the slot at ESP jumps into the C module's 0xcc
+            # padding at 0x10000 (`int3; jmp 0x10000`, 289 int3 records in a `main` run), while our
+            # build, whose copy of the same entry sits in BLOBTEXT, is itself stubbed there and returns
+            # to whatever the stack holds. End the run at the call instead: `main` 0x35ca4 tail-jumps to
+            # it at 0x35e10 and ours at 0x5ae18, so both sides stop at the same point (iter 82).
+            uc.reg_write(UC_X86_REG_EIP, SENTINEL)   # go() reads EIP == SENTINEL as `returned`
+            uc.emu_stop()
+            return
         ret = 0
         if KEY and addr == self.getch:
             ret = KEY[min(self.nkey, len(KEY) - 1)]
@@ -356,6 +366,10 @@ def getch_addr(img):
     return lib_addr(img, ('getch_', 'getch', '_getch'))
 
 
+def exit_addr(img):
+    return lib_addr(img, ('exit_', 'exit', '_exit'))
+
+
 def one(eip, r):
     try:
         buf = bytes(r.e.uc.mem_read(eip, 12))
@@ -385,6 +399,7 @@ def main():
 
     ofread, orand, ogetch = fread_addr(orig), rand_addr(orig), getch_addr(orig)
     nfread, nrand, ngetch = fread_addr(new), rand_addr(new), getch_addr(new)
+    oexit, nexit = exit_addr(orig), exit_addr(new)
     names = M.names(orig)
     todo = []
     for a in sys.argv[1:]:
@@ -402,10 +417,12 @@ def main():
             continue
         a = Run(orig, CMOD_END, 1 << 32)
         a.fread, a.rand, a.getch = ofread, orand, ogetch
+        a.exit = oexit
         a = a.go(addr)
         b = Run(new, CMOD_END, 1 << 32) if text is None \
             else Run(new, nb[0], text)               # BLOBTEXT below our code is asm + clib
         b.fread, b.rand, b.getch = nfread, nrand, ngetch
+        b.exit = nexit
         b = b.go(naddr)
         dif = diff_bytes(a.init, a.fin, b.init, b.fin)
         notes = []

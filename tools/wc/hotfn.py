@@ -30,7 +30,8 @@ if FN not in names:
 r = D.Run('ww', D.CMOD_END, 1 << 32)
 r.fread = D.fread_addr('ww')          # so FREAD= works here too (difffn.py sets this in main())
 r.rand = D.rand_addr('ww')            # ... and RAND=
-r.getch = D.getch_addr('ww')          # ... and KEY= (iter 82)
+r.getch = D.getch_addr('ww')          # ... and KEY=
+r.exit = D.exit_addr('ww')            # ... and clib exit_ ends the run (iter 82)
 cnt = collections.Counter()
 
 

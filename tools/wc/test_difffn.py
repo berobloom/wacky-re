@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 try:
     from unicorn import Uc, UC_ARCH_X86, UC_MODE_32, UC_HOOK_INSN                  # noqa: E402
     from unicorn.x86_const import (UC_X86_REG_EDX, UC_X86_REG_EAX, UC_X86_REG_ECX,      # noqa: E402
-                                   UC_X86_REG_ESP, UC_X86_INS_IN, UC_X86_INS_OUT)
+                                   UC_X86_REG_ESP, UC_X86_REG_EIP, UC_X86_INS_IN, UC_X86_INS_OUT)
     import difffn as D                                                             # noqa: E402
 except ImportError as err:                        # overnight/check.sh runs the tests with plain
     print('SKIP: %s (run: .work/venv/bin/python tools/wc/test_difffn.py)' % err)
@@ -75,6 +75,7 @@ def main():
             self.e, self.stubs, self.ncalls, self.calls, self.fread = FE(uc), [], 0, False, 0x2000
             self.rand, self.rseed = None, 0x1234    # RAND= needs these too (iter 81)
             self.getch, self.nkey = None, 0         # KEY= needs these too (iter 82)
+            self.exit = None                        # the exit_ stop needs this too (iter 82)
 
     u.mem_map(0x2000, 0x2000)                       # the fread stub, its frame and the buffer
     u.mem_write(0x2000, bytes(8))                   # the "fread" entry and the return address
@@ -123,6 +124,18 @@ def main():
         got.append(u.reg_read(UC_X86_REG_EAX))
     assert got == [0x61, 0x08, 0x0d, 0x0d], [hex(g) for g in got]
     assert fs.nkey == 4, fs.nkey            # one index per getch call, repeats included
+
+    # ---- the clib `exit_` stub (iter 82): the program is over, so the run ends at the call. A faked
+    # return pops the slot at ESP, which is one of main's own locals -> a jump into the module's 0xcc
+    # padding; `main` 0x35ca4 tail-jumps to exit_ at 0x35e10, so this is the only sane stop.
+    D.KEY = []
+    fs = FS(u)
+    fs.exit = 0x2000
+    u.reg_write(UC_X86_REG_ESP, 0x2100)
+    u.mem_write(0x2100, (0x1234).to_bytes(4, 'little'))   # a garbage "return address" to prove it is not used
+    D.Run._stub(fs, u, 0x2000, 5, None)
+    assert u.reg_read(UC_X86_REG_EIP) == D.SENTINEL, hex(u.reg_read(UC_X86_REG_EIP))
+    assert fs.stubs[-1][0] == 0x2000 and fs.ncalls == 1   # the call is still recorded and compared
 
     # ---- RESEED= (iter 81): the read that arms the flag still sees the old byte, the next one sees
     # the new value (unicorn 2.1.4 has no READ_AFTER and the READ hook fires before the load). A value

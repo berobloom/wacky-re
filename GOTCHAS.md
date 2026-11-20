@@ -183,6 +183,15 @@ it can be copied back into DREA.
   after it the injected 0) makes both sides return. Picking the wrong flag is its own trap:
   `RESEED=0x88cce=1:b`, which frees `fn_1c0f4`'s mode-0 pair, parks `fn_1d704` in `wait_release`'s pump
   because 0x278ef then stores `joy88b40 = 1` (19963 passes of 0x278ca-0x278ff).
+- **A stub cannot fake a return from a noreturn clib entry: `exit_` ends the run** (iter 82): `main`
+  0x35ca4 tail-jumps to clib `exit_` (game 0x42c11, hybrid 0x1c1d3) at 0x35e10, and the call stub's
+  "return" pops the slot at ESP - inside main's live frame one of its own locals - so the game jumped to
+  the code object's filler at 0x10000 (`cc eb fd` = `int3` + `jmp 0x10000`) and `int3` was recorded as a
+  stubbed call 289 times. What `difffn.py` printed was `CALLCAP 300/70` and `one side never returned
+  (game False ours True)`, which reads as "our main exits early" and is pure artefact: the counts are the
+  number of int3 records each side racked up. The fix is to stop at the call (EIP = the run's sentinel,
+  `emu_stop`), which makes `main` print SAME with 11 calls on each side; resolve the entry's address from
+  each image's map (`exit_`) and re-wire it in `hotfn.py`.
 - **A `SEED=` cannot reach a stack buffer, and a read stub that returns nothing makes a byte-wise
   parser loop forever** (iter 80): `read_line` 0x26ff0 stops on the byte it read, so with the clib
   `fread` stub delivering nothing it walks off `gam_load` 0x2717c's frame into unmapped memory; the

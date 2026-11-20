@@ -238,6 +238,21 @@ where our build emits 5, so nmrefs' `game more 4x 0x7b518` and `5x v88b7e` are W
 not a missing reset (same for `anitimer`: 7 stores/reads in the game, 6 in ours, 0x294bc and 0x29543
 merged).
 
+## `main` 0x35ca4 ends in a tail call to clib `exit_`, not a return (CONFIRMED, iter 82)
+
+- CONFIRMED (0x35e06 `call 0x341d8` (waitkey), 0x35e0b `mov eax,1`, 0x35e10 `jmp 0x42c11`; `exit_` is
+  public at WWORIG.MAP `0001:00032c11` = 0x42c11 and in the hybrid map at `0001:0000c1d3`): the entry
+  function's last act is a tail jump into the clib with EAX = 1, so a single-function run of `main` can
+  only ever end at that call, never at a `ret` - and `waitkey` 0x341d8 is itself a tail call to `getch`
+  (0x34202 `jmp 0x42c4d`). `tools/wc/difffn.py main` now ends the run at that call and prints **SAME,
+  both sides stopping there, with equal stub-call counts (11 each)**: signal 0x43231 x2, 0x42826, 0x409ef,
+  fputs 0x42bec x4, kbhit 0x42c36, getch 0x42c4d, exit 0x42c11 - our build's mirrors are 0x1c7f3 x2,
+  0x1bde8, 0x19fb1, 0x1c1ae x4, 0x1c1f8, 0x1c20f, 0x1c1d3.
+- CONFIRMED (the first bytes at 0x10000 in the game image, iter 82; the code object's base is 0x10000 and
+  the data object's 0x60000, `.work/le/ww.json`): the image's code object starts with the Watcom
+  filler `cc eb fd 90` (`int3`, `jmp 0x10000`, `nop`), the address a run lands on when a stub's faked
+  return pops the wrong stack slot - it is not code and not a jump table.
+
 ## Traps
 
 - The first race's grid is not one screen: under `tools/link/racetest.sh`'s fixed key path the
