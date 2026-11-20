@@ -19,7 +19,8 @@ import dosrun
 from dos_re_harness.remote_capture import RspClient
 DELTA = 0x9a0000   # linear = image address + DELTA (one flat base for code and data)
 BP = {0x44ac3: 'presort', 0x44a5b: 'assign', 0x444dd: 'given',
-      0x44176: 'cand', 0x441a3: 'greed', 0x441bb: 'saves'}   # GiveBestReg 0x440b4's candidate loop
+      0x44176: 'cand', 0x441a3: 'greed', 0x441bb: 'saves',
+      0x2c323: 'addconf'}   # AddConflictNode(name): creation order, caller   # GiveBestReg 0x440b4's candidate loop
 REG = {0x01000003: 'EAX', 0x0200000c: 'EBX', 0x04000030: 'ECX', 0x080000c0: 'EDX', 0x00000003: 'AX',
        0x0000000c: 'BX', 0x00000030: 'CX', 0x000000c0: 'DX', 0x10000100: 'ESI', 0x20000200: 'EDI',
        0x00000100: 'SI', 0x00000200: 'DI', 0: '-'}
@@ -55,7 +56,7 @@ def main():
         except OSError: return False
     with dosrun.Dos() as d:
         d.type_line('WCC386 %s -s -3r -oneatx -d1 > OUT.TXT' % f)
-    t0 = time.time(); n = 0; cur = -1; on = False
+    t0 = time.time(); n = 0; cur = -1; on = False; pend = []
     try:
         while time.time() - t0 < secs:
             try: r.wait_for_stop(5.0)
@@ -63,14 +64,20 @@ def main():
                 if done(): break                     # the compiler has written its summary
                 continue
             g = r.registers(); eip = g['eip'] - DELTA; n += 1
-            if eip == 0x44ac3:
+            if eip == 0x2c323:
+                nm = g['eax']; ra = d32(g['esp'])
+                pend.append('ADDCONF %s from %x' % (name(nm), ra - DELTA))
+                if len(pend) > 400: pend.pop(0)
+            elif eip == 0x44ac3:
                 c = g['eax']; cur = line(c) if c else -1
                 on = which(cur) is not None
                 if on:
+                    out.write(''.join(x + '\n' for x in pend))
                     lst = []
                     while c and len(lst) < 400:
                         lst.append('c%x s%d %s' % (c, d32(c + 0x14), name(d32(c + 8)))); c = d32(c)
                     out.write('PRESORT %s line %d n %d\n' % (which(cur), cur, len(lst)) + ''.join('    %s\n' % x for x in lst))
+                pend.clear()
             elif eip == 0x44a5b and on:
                 c = g['ebx']; out.write('ASSIGN c%x s%d st%04x %s\n' % (c, d32(c + 0x14), struct.unpack('<H', rd(c + 0x54, 2))[0], name(d32(c + 8))))
             elif eip == 0x444dd and on:

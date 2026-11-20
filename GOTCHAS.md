@@ -715,7 +715,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   tail: game EDX, ours [esp+8]; `short` wins EDX but every op turns 16-bit). Check the width rule and
   the levers above first. 9.5b has NO explicit register variables (`@ edx` is E1009 in a function,
   E1059 at file scope), and declaration order of globals or comma-`for` initializers is not a lever.
-  A loop-invariant literal argument is the one exception that moved a home (fn_16f24, 39 -> 26). [generic]
+  A loop-invariant literal argument is the one exception that moved a home (fn_16f24, 39 -> 26).
+  Before calling it a flip, ask whether the original had the local at all: netkeys_out/pack/in
+  (DL) were the compiler's own temp for a global the source read or built in place (`v88cf0 = 0;
+  if (..) v88cf0 += 2;`, `x = v88cef & 1;` each line), iter 93s: 3 matches. The allocator traces
+  in findings/compiler.md show a real tie: equal savings, and the order is the unstable Shell
+  sort's over creation order (`tools/wcc95/shellsort.py`). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group

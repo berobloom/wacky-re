@@ -81,6 +81,12 @@ wins; our build also keeps a second 16-bit temp (id25, DX) as crc's copy for the
 the loop, which the game does not have (its crc is CX from the zeroing to the compare). The
 difference is the split, so the source shape around the loop, not the register order.
 
+**netkeys_out/pack/in (fixed, iter 93s)**: the one-local functions (`unsigned char c` in AL, the
+game DL with `push edx`) were no tie of locals: the trace has a single temp (`c`, savings 18). The
+game's DL is the code generator's temp for a global used in place: writing the body on `v88cf0`
+(and `v88cef & N` per statement in netkeys_in) builds all three byte-identical (208 matches).
+CONFIRMED by the full check.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

@@ -15543,23 +15543,18 @@ void kart_buttons(void)
 }
 
 /* ---- 0x2d94c, 92 bytes: the received key byte v88cef as the second set of controls (caller
- * 0x31fb9): bits 1/2 keys cd5/cdd, 4..0x20 buttons b40..b46, 0x40 v88cec.
- * differs: registers only: the game holds c in DL and masks in AL (ours c in AL, masks in AH);
- * char / short / int / unsigned c tried. Same in netkeys_out. Same cause as netkeys_pack (0x2da28,
- * 10 spellings) and netkeys_out (0x2d9e4, 21 spellings, plus 9.5/9.5a give the same AL): the one-local
- * register home plus the game's `push edx`. SKIP at once, 0 variants (iter 32). */
+ * 0x31fb9): bits 1/2 keys cd5/cdd, 4..0x20 buttons b40..b46, 0x40 v88cec. Reads v88cef in every
+ * statement, no local (iter 93s: the local-c spellings put c in AL; the game's DL is the compiler's
+ * own temp for the global, findings/compiler.md). */
 void netkeys_in(void)
 {
-    unsigned char c;
-
-    c = v88cef;
-    key88cd5 = c & 1;
-    key88cdd = c & 2;
-    joy88b40 = c & 4;
-    joy88b42 = c & 8;
-    joy88b44 = c & 0x10;
-    joy88b46 = c & 0x20;
-    v88cec = c & 0x40;
+    key88cd5 = v88cef & 1;
+    key88cdd = v88cef & 2;
+    joy88b40 = v88cef & 4;
+    joy88b42 = v88cef & 8;
+    joy88b44 = v88cef & 0x10;
+    joy88b46 = v88cef & 0x20;
+    v88cec = v88cef & 0x40;
 }
 
 /* ---- 0x2d9a8, 57 bytes (no caller found): the same byte as keys cd6/cd3, button b40, v7ecc0. */
@@ -15573,61 +15568,44 @@ void netkeys_in1(void)
 
 /* ---- 0x2d9e4, 65 bytes (no caller found): packs keys cd6/cd3, button b40 and v7ecc0 into the
  * byte v88cf0 to send (v88cf3 cleared).
- * differs: the game keeps c in DL (push/pop edx) where ours uses AL; an unused int parameter,
- * other types and store orders keep AL. 21 spellings (register, an unused second local int/char in
- * both orders, non-void return with and without `return c`, an `unsigned char ca[1]`, `|=`,
- * `c = c + N`, store order) score 10 in .work/probe_nko + .work/probe_nk2, and 9.5/9.5a/9.5b give
- * the same AL: the one-local case of the EAX coin flip (GOTCHAS), same in netkeys_pack/netkeys_in. */
+ * Builds the byte in v88cf0 itself, no local (iter 93s: every local-c spelling put c in AL; the
+ * game's DL is the compiler's temp for the global, findings/compiler.md). */
 void netkeys_out(void)
 {
-    unsigned char c;
-
-    c = 0;
-    v88cf3 = c;
+    v88cf0 = 0;
+    v88cf3 = v88cf0;
     if (key88cd6)
-        c = 1;
+        v88cf0 = 1;
     if (key88cd3)
-        c += 2;
+        v88cf0 += 2;
     if (joy88b40)
-        c += 4;
+        v88cf0 += 4;
     if (v7ecc0)
-        c += 0x40;
-    v88cf0 = c;
+        v88cf0 += 0x40;
 }
 
 /* ---- 0x2da28, 104 bytes: packs all local controls (keys cd5/cdd, buttons b40..b46, v88cec)
  * into the byte v88cf0 to send (callers 0x19811, 0x1ac3f); v88cf3 cleared.
- * differs: like netkeys_out, c in DL in the game, AL in ours. That one register choice is all 13 rows
- * and the whole size gap (game 104 bytes 0x2da28-0x2da90, ours 94 of code + 2 of padding): the game's
- * `push edx` 0x2da28 + `pop edx` 0x2da8e, six `add dl,imm8` at 3 bytes where AL has the 2-byte short
- * form, and two `mov [disp32],dl` at 6 bytes where AL has the 5-byte A2 form (0x2da2b, 0x2da88) - no
- * statement is missing. 10 more spellings score 13 or worse in .work/probe_nkp (declaration
- * initializer, reversed branch order, braces, signed char, short - stays in EAX and widens every op to
- * 116 bytes - `register`, a mask local reassigned before each `|=`, plain `|=`, the v88cf3 store last).
- * Watcom 9.5b WCC386 has no explicit register variables in any scope: function scope is E1009 and file
- * scope E1059 ("Invalid storage class for non-local variable"), so a local's register cannot be pinned
- * at all. */
+ * Builds the byte in v88cf0 itself, no local (iter 93s: every local-c spelling put c in AL; the
+ * game's DL is the compiler's temp for the global, findings/compiler.md). */
 void netkeys_pack(void)
 {
-    unsigned char c;
-
-    c = 0;
-    v88cf3 = c;
+    v88cf0 = 0;
+    v88cf3 = v88cf0;
     if (key88cd5)
-        c = 1;
+        v88cf0 = 1;
     if (key88cdd)
-        c += 2;
+        v88cf0 += 2;
     if (joy88b40)
-        c += 4;
+        v88cf0 += 4;
     if (joy88b42)
-        c += 8;
+        v88cf0 += 8;
     if (joy88b44)
-        c += 0x10;
+        v88cf0 += 0x10;
     if (joy88b46)
-        c += 0x20;
+        v88cf0 += 0x20;
     if (v88cec)
-        c += 0x40;
-    v88cf0 = c;
+        v88cf0 += 0x40;
 }
 
 /* ---- 0x2da90, 111 bytes: com_getc (inlined) retried until a byte comes or timeout ticks
