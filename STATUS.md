@@ -28,27 +28,23 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-1. `menu` 0x155c0 and `race_results` 0x2bff0: each prints SAME at full return with
-   `TICK=8 SEED=0x88cce=1:b` (iter 75) - run each control (`NEW=wworig MAP=.work/link/WWORIG.MAP`,
-   same seed) and write the two `SEEDED:` lines.
-2. `chat` 0x14d00 (instruction cap, it sits at 0x150ec `cmp eax,0x18`): `FN=chat N=60000 TICK=8
-   .work/venv/bin/python tools/wc/hotfn.py` names the loop and the global; seed that.
-3. `fn_193a8` 0x193a8 still crashes at 0x182fd `mov cl, [edx]` (write_prot 0xfffffffd): seed that
-   pointer as `kart_draw`'s was - the block must be zero in both images (findings/game-loop.md Traps).
-4. The functions ending in a key press+release pair - `fn_1c0f4`, `race_records_menu`, `fn_1832c`,
-   `main_menu` (iter 78: its only return is jt_1f824 slot 8 -> 0x16978, needs selection 9,
-   findings/menus.md) - need a difffn knob re-asserting a global at every stubbed call (a press set
-   only after the mode-0 `wait_release` returned); cheapest test: `RESEED=`, try `fn_1c0f4`.
-5. The still-open CALLCAP set - `screenshot`, `enter_name`, `trial_book`, `demo_mode`, `fn_17928`,
-   `fn_1be3c`, `fn_1d704`, `race_run`, `fn_1c0f4` - one run each with `TICK=8 CALLS=3000
+1. `fn_1832c` 0x1832c (instruction cap, 545 rows): `SEED=0x88c96=1:w` clears the crash the two builds
+   shared in its helper `fn_182d0` and `TICKREAD=8` clears its `ticks` waits (iter 79) - one run with
+   both plus `CALLS=3000`, then the `SEEDED:` line.
+2. The still-open CALLCAP set - `screenshot`, `enter_name`, `trial_book`, `demo_mode`, `fn_17928`,
+   `fn_1be3c`, `fn_1d704`, `race_run`, `fn_1c0f4` - one run each with `TICK=8 TICKREAD=8 CALLS=3000
    SEED=0x88cce=1:b`, plus the volume_menu recipe: seed the *branch test* of a `ticks = 0; while
    (ticks <= N)` wait (0x7ed4c for 0x1e7af), not `ticks`.
-6. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
+3. `showlines` 0x2a268 and `intro` 0x348f4: their waits poll `ticks` with no call in the body
+   (0x2a3bd, 0x34cb4), which `TICKREAD=` reaches - re-run both and write the verdicts.
+4. `menu` 0x155c0 with `ARGS=` (iter 76's register arguments): zero arguments leave after 604 insns,
+   so its frame wait 0x16004/0x1604c and its input arm are still untested (findings/menus.md).
+5. After every `tools/link/build.sh`: `tools/link/fixcensus.py` must print `0 unexplained` (GOTCHAS,
    first trap). After a C change, also re-run the behaviour sweep (`awk '$2 ~ /^0x/ && $4 !~ /^MATCH/
    {print $3}' src/nearmiss.txt | while read n; do .work/venv/bin/python tools/wc/difffn.py $n; done`)
    and compare the DIFFs against the recorded verdicts in `src/nearmiss.txt`; the known uncapped DIFFs
    are the dead `v7d7f4`/`v7d874` pointers (findings/game-loop.md).
-7. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
+6. Register homes (QUESTIONS 2): most of the 78 near misses differ only in which register or stack
    slot 9.5b picks; permute.py runs of 15 min gave 0-1 rows (iter 74). Not an overnight item.
 
 ## BLOCKED

@@ -141,7 +141,9 @@ it can be copied back into DREA.
   bug, and prove the fast clock did not skip the body by re-running at `TICKREAD=1`; and
   `SEED=` is applied once before the run, so a press is seedable and a release never is
   (findings/menus.md: `wait_release` 0x278c4 with mode 0 returns only when `v88cce` and all four
-  joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0). `CALLS=` is the useful lever for
+  joy flags are 0, and stores joy88b40=1 itself when `v88cce` != 0) - the knob for that class would be
+  `RESEED=`, re-writing the seeds at every stubbed call and interrupt; not written (iter 78; the lines
+  it blocks are `fn_1c0f4`, `race_records_menu`, `fn_1832c`, `main_menu`). `CALLS=` is the useful lever for
   a screen that prints a lot: `credits_screen` returns between CALLS=2000 and 20000. For an argument
   register use `ARGS=` (eax, edx, ebx, ecx): `showlines` prints its three lines with `ARGS=3,1,0` and
   its mode argument decides which tail runs (findings/menus.md).
