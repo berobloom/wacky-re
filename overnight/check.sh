@@ -8,7 +8,10 @@ REV=${1:-HEAD}
 WT=$(mktemp -d "${TMPDIR:-/tmp}/wackycheck.XXXXXX")
 trap 'git -C "$ROOT" worktree remove --force "$WT" >/dev/null 2>&1; rm -rf "$WT"' EXIT
 git -C "$ROOT" worktree add --detach -q "$WT" "$REV" || { echo "FAIL: cannot check out $REV"; exit 1; }
-ln -s "$ROOT/original" "$WT/original"
+# original/ has tracked files (README.md, SHA256SUMS), so the worktree already holds the directory:
+# link the untracked game files into it one by one (a directory symlink would land inside it).
+mkdir -p "$WT/original"
+for f in "$ROOT"/original/*; do [ -e "$WT/original/${f##*/}" ] || ln -s "$f" "$WT/original/"; done
 ln -s "$ROOT/.work" "$WT/.work"
 cd "$WT"
 fail=0
