@@ -308,6 +308,12 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `lim = (short)(a3*3)`, a `long n = a3` read by `if (n == a3)`, a `long t = a3` as both loop
     bounds, an `int` counter, two limit locals). Test that would settle it: any build option or
     front-end (WPP386 vs WCC386, `-ox`?) that makes one of these copies appear.
+    Iter 93p: Watcom **9.5c** ruled out (findings/executables.md: fewer library modules, 2 fewer
+    functions). **WPP386** (9.5b's C++ front end) unlikely: the game links no C++ runtime (PLIB3R.LIB:
+    1 module of 15 bytes, noise), `src/ww.c` does not compile as C++ (21 type errors in the first
+    2,649 lines), and a `net_recv` probe as C++ (`extern "C"`) changes the frame (`push ebp`) and the
+    loop registers, not just the crc home. Not conclusive: the same probe as C is already 45 rows off
+    (4 in the full file), so a one-function probe cannot judge a front end.
 
 15. **OPEN** (src/ww.c `pal_shift`, findings/video.md): who calls `pal_shift` 0x114a8, and what is
     in the 768 bytes it scales? CONFIRMED: the function is byte-identical to `v = *p; v <<= 2;
