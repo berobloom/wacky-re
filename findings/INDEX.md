@@ -5,6 +5,7 @@ check, do not re-derive; **OPEN** = work remains (say what).
 
 | Question | File | Status |
 |---|---|---|
+| Outside sources: the author's posted Dopefish code (compiles byte-identical: original names), his comments on design | `sources.md` | CLOSED (the code); the design notes are leads, check each |
 | Executables: format, size, sha256, entry, compiler, source file names, calling convention | `executables.md` | OPEN (compiler pinned to 9.5b; options open) |
 | File formats and archives on the disc | `formats.md` | OPEN (WACKY.DAT's container and the 577-entry census CONFIRMED; PCX blob layout, `.GAM` text (field list CONFIRMED: 25 or 28 lines), `WACKY.DTT` records pinned; the `WACKY.ING`/`WACKY.CFG` config block layout CONFIRMED (0x42 header + 24 records of 0x2e, the records never read by the exe); the per-track payloads CONFIRMED field-wise - `.POS` 64x64 zone map + `ncells`, `.SIN` 108 x 12-byte tile surface classes, `.M` 64x64 tile indices, `.RD`/`.SPW` count + records, `SPRITE.ATR`'s 40-byte records (kind/w/h/size class/nframes/DAT name/data, `w*h*nframes` = the DAT entry size in all 36), `.PAR` a 1280x20 horizon panorama (CONFIRMED live); the `cfg7b6d8`/`cfg77128` fields open; the `WACKY1.HI`/`.TIM` names are pinned and the shipped copies equal the DAT defaults `WAC1.HTT`/`WAC1.OTT`; the twelve zone-less slots are six duplicate art pairs and only tracks 1..15 and 22..36 can ever be loaded (CONFIRMED live)) |
 | Memory map: segments / LE objects, globals, tables | `memory.md` | OPEN |

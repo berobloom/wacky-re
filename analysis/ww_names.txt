@@ -2,10 +2,10 @@
 0x0105fc com_putc     # LIKELY: byte into the transmit ring, sent at once when the UART is empty, then the comdelay wait
 0x0109d8 sendstr      # STRONGLY SUPPORTED: matching C in analysis/optpin/T6.C; sends a string, CR, LF with tick waits
 0x010b74 xalloc       # LIKELY: malloc (clib nmalloc 0x41475), -1 on failure, else the block through a pointer
-0x012490 since2       # LIKELY: matching C (T1.C as fromscroll); ticks2 minus the argument
+0x012490 since2       # LIKELY: matching C (T1.C as fromscroll); ticks2 minus the argument; original name `rtdif` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x014218 seekdat      # LIKELY: matching C (T1.C); fseek on the FILE* at 0x7D584
 0x01422c telldat      # LIKELY: matching C (T2.C); ftell on the same FILE*
-0x01424c readdat      # LIKELY: matching C (T1.C); fread(buf, n, 1, datfile); game CALLS it at 24 sites (e.g. 0x18215); our 9.5b -oe build always inlines it (unresolved compiler mystery, findings/executables.md Open)
+0x01424c readdat      # LIKELY: matching C (T1.C); fread(buf, n, 1, datfile); game CALLS it at 24 sites (e.g. 0x18215); our 9.5b -oe build always inlines it (unresolved compiler mystery, findings/executables.md Open); original name `lib_read` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x014238 datsize      # LIKELY: matching C (T2.C as get22); datdir[datidx].size; inlined into its callers
 0x016a7c find12       # SPECULATIVE: matching C (T2.C); name is a placeholder
 0x0248ac setvmode     # LIKELY: matching C (T1.C); int386 0x10, AH=0
@@ -70,7 +70,7 @@
 0x07d890 sfxvol       # LIKELY: volume for FX_PlayVOC in sfx_play
 0x07eae0 sfxdata      # LIKELY: the sample sfx_play plays
 0x07eb10 enginedata   # SPECULATIVE: the sample engine_start plays
-0x07ecf8 soundon      # LIKELY: sound calls are skipped when 0
+0x07ecf8 soundon      # LIKELY: sound calls are skipped when 0; original name `playeng` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x080adc pathext      # LIKELY: the suffix makepath appends
 0x088bd6 datfind_found  # CONFIRMED (tools/le/xref.py ww 0x88bd6: every write is `mov [0x88bd6], ax` right after a datfind call - 0x17e60, 0x2149d, 0x27c9b; callers test `== 0` at 0x12135): datfind's 1/0 result, not the index (that is datidx 0x88b00)
 0x088bdc splitscreen  # SPECULATIVE: with 0x88BE2, makes engine_start start a second engine
@@ -80,8 +80,8 @@
 0x010bcc com_shutdown # LIKELY: com_close when 0x7EDA8 is set, then clears it
 0x010be8 tick_task    # LIKELY: task-manager callback: ++*task->data
 0x010bf0 engine_stop  # SPECULATIVE: FX_StopSound of a car's engine handle, then -1
-0x010c20 sfx_play2    # SPECULATIVE: FX_PlayVOC of the sample at 0x7EAEC, priority 0x20
-0x07eaec sfx2data     # SPECULATIVE: sample for sfx_play2
+0x010c20 sfx_play2    # SPECULATIVE: FX_PlayVOC of the sample at 0x7EAEC, priority 0x20; original name `play_my_voc` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07eaec sfx2data     # SPECULATIVE: sample for sfx_play2; original name `my_voc` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x07eda8 comopen      # LIKELY: set while the serial port is open
 0x07ee5a v7ee5a          # CONFIRMED: the save slot = the engine choice (1 " FAST 12 HP ENGINES ", 2 " SLOW 6 HP ENGINES "); keys <savedir>WACKY<n>.HI/.TIM (records_load 0x1691d, scores_write 0x1d0d0, trial_write 0x2f01b)
 0x07eca8 v7eca8
@@ -92,10 +92,10 @@
 0x01c0ac fn_1c0ac
 0x02a414 msgbox       # LIKELY: draws a message box (string, arg2); fn_1d704 0x1d865 titles the record table with it, arg2 = 0x32
 0x07c0a4 faceimgs     # SPECULATIVE: pointer table indexed by car.face
-0x07d704 sprptr       # SPECULATIVE: image pointer for drawsprite
+0x07d704 sprptr       # SPECULATIVE: image pointer for drawsprite; original name `bsp` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x07eb80 playing      # SPECULATIVE: short per player
 0x07ebc0 connected    # LIKELY: set by modem() on success
-0x07ec64 ticks2       # SPECULATIVE: zeroed with ticks
+0x07ec64 ticks2       # SPECULATIVE: zeroed with ticks; original name `tickframes` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x07ed30 p2offset     # SPECULATIVE: subtracted from spr_y for player 2
 0x07717c modeminit    # LIKELY: string sent by modem() before waiting for OK
 0x0771fc modemhangup  # LIKELY: string sent after "+++"
@@ -106,10 +106,10 @@
 0x088b1a page_to     
 0x088b1c page_from   
 0x088b24 page_draw   
-0x088b26 spr_w
-0x088b32 spr_x
-0x088b34 spr_y
-0x088b36 spr_h
+0x088b26 spr_w  # original name `dep` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x088b32 spr_x  # original name `scx` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x088b34 spr_y  # original name `scy` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x088b36 spr_h  # original name `wid` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x0110d4 net_end      # LIKELY: ends a link game (messages, modem hang-up, port closed), builds the CRC/timeout/overrun/noise lines
 0x02a268 showlines    # SPECULATIVE: shows netstats lines (count, ?, ?)
 0x0425f9 itoa         # LIKELY: clib itoa module (0x4258E) entry; (value, buf, 10)
@@ -126,7 +126,7 @@
 0x088c0c netgame      # LIKELY: short; net_end does nothing when 0
 0x088c14 net88c14
 0x088c22 net88c22
-0x011404 drawsprite_clip # SPECULATIVE: clips spr_w rows at line 199 into clipy, then drawsprite2
+0x011404 drawsprite_clip # SPECULATIVE: clips spr_w rows at line 199 into clipy, then drawsprite2; original name `plotclip` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x011480 frame_wait   # SPECULATIVE: waitretrace, then pausemenu while 'paused'
 0x0114a8 pal_shift    # CONFIRMED (rebuild src/ww.c byte-identical, src/check.sh): 768 palette bytes << 2 in place; no caller found (QUESTIONS 15)
 0x0114c8 screenshot   # LIKELY: writes WACKnnn.PCX (first free number); frame_wait calls it while 0x88CCD is set
@@ -226,7 +226,7 @@
 0x07ee4a v7ee4a       # SPECULATIVE: short config flag cleared when joyfound
 0x07ee44 v7ee44       # SPECULATIVE: short config flag
 0x011f98 voices_load  # LIKELY: reads AUDIOHED.FX (offsets) and AUDIOT.FX (samples) from the data file into voices
-0x01418c datfind      # LIKELY: strupr(name), finds it in datdir (sets datidx), seeks to offset+2; returns found
+0x01418c datfind      # LIKELY: strupr(name), finds it in datdir (sets datidx), seeks to offset+2; returns found; original name `lib_find` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x065080 datdir       # LIKELY: 0x16-byte entries {name[14], size, ?}; a 0 first byte ends it
 0x088b00 datidx       # LIKELY: short, the entry datfind found
 0x07eb14 voicedata    # LIKELY: AUDIOT.FX in memory
@@ -379,22 +379,22 @@
 0x032cf8 f32cf8       # SPECULATIVE: called from frame_draw
 0x0136f8 ani_giggles  # LIKELY: loads GIGGLES.SP (0xB6E0) and QUACK.VOC into anidata/sfx2data, clears anidope
 0x01375c ani_tick     # SPECULATIVE: every 0x36 of anitimer: anikick = 1, ani_dope
-0x013780 ani_dope     # LIKELY: loads DOPE.SP (0x2E77) and BELCH.VOC unless loaded, starts the animation
-0x07ea90 anidata      # LIKELY: buffer of the .SP animation
-0x07ead8 anidope      # LIKELY: 1 while DOPE.SP is loaded (0 after GIGGLES.SP)
+0x013780 ani_dope     # LIKELY: loads DOPE.SP (0x2E77) and BELCH.VOC unless loaded, starts the animation; original name `load_dope` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ea90 anidata      # LIKELY: buffer of the .SP animation; original name `gigdat` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ead8 anidope      # LIKELY: 1 while DOPE.SP is loaded (0 after GIGGLES.SP); original name `dope_loaded` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x07ed24 anitimer     # SPECULATIVE
-0x07ed40 anikick      # SPECULATIVE
-0x07eaf4 aniphase     # LIKELY: ani_draw switch 0..3: slide in, wait, frame 1 + sfx_play2, slide out
-0x07eb18 aniframe     # LIKELY: 72x80 frame index into anip1
-0x07eb0c ani7eb0c     # SPECULATIVE: 0xC7
-0x07ea98 ani7ea98     # SPECULATIVE: 0x78
-0x07ea8c ani7ea8c     # SPECULATIVE
-0x07ea94 ani7ea94     # SPECULATIVE: 0xB0
-0x07eb34 anip1        # SPECULATIVE: anidata
-0x07eb30 anip2        # SPECULATIVE: anidata + 0x2D00
-0x07ea80 anistart     # SPECULATIVE: ticks2 at the start
-0x013858 ani_draw     # LIKELY: draws the 72x80 animation frame and a 15x25 sprite (anip2) bobbing, then steps aniphase
-0x07ea9c ani7ea9c     # SPECULATIVE: y of the small sprite, down to 0x6E
+0x07ed40 anikick      # SPECULATIVE; original name `dopefish` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07eaf4 aniphase     # LIKELY: ani_draw switch 0..3: slide in, wait, frame 1 + sfx_play2, slide out; original name `dope_stage` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07eb18 aniframe     # LIKELY: 72x80 frame index into anip1; original name `dope_frame` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07eb0c ani7eb0c     # SPECULATIVE: 0xC7; original name `dope_y` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ea98 ani7ea98     # SPECULATIVE: 0x78; original name `dope_x` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ea8c ani7ea8c     # SPECULATIVE; original name `bubble_on` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ea94 ani7ea94     # SPECULATIVE: 0xB0; original name `bubble_x` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07eb34 anip1        # SPECULATIVE: anidata; original name `dope_ptr` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07eb30 anip2        # SPECULATIVE: anidata + 0x2D00; original name `bubble_ptr` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ea80 anistart     # SPECULATIVE: ticks2 at the start; original name `dope_time` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x013858 ani_draw     # LIKELY: draws the 72x80 animation frame and a 15x25 sprite (anip2) bobbing, then steps aniphase; original name `plot_dope` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
+0x07ea9c ani7ea9c     # SPECULATIVE: y of the small sprite, down to 0x6E; original name `bubble_y` (CONFIRMED: the author's posted load_dope/plot_dope, findings/sources.md)
 0x042e91 fseek        # LIKELY: clib (seekdat)
 0x043039 ftell        # LIKELY: clib (telldat)
 0x013a74 sprites_load # LIKELY: reads the .SP sprite files and SPRITE.ATR, then points the sprite tables into them
