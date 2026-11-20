@@ -74,6 +74,7 @@ int GUS_ErrorCode = GUS_Ok;
    GUS_ErrorCode   = ( status );
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: GUS_ErrorString
 
@@ -141,6 +142,7 @@ char *GUS_ErrorString
 
    return( ErrorString );
    }
+#endif
 
 
 
@@ -201,11 +203,13 @@ int GUS_Init
 
    GetUltraCfg( &os );
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    if ( os.forced_gf1_irq > 7 )
       {
       GUS_SetErrorCode( GUS_InvalidIrq );
       return( GUS_Error );
       }
+#endif
 
    if ( !HoldBufferAllocated )
       {
@@ -229,9 +233,11 @@ int GUS_Init
       return( GUS_Error );
       }
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
    GUS_TotalMemory = gf1_mem_avail();
    GUS_MemConfig   = ( GUS_TotalMemory - 1 ) >> 18;
 
+#endif
    GUS_Installed = 1;
    return( GUS_Ok );
    }

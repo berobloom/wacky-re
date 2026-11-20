@@ -13,7 +13,7 @@ Wacky Wheels links a revision of the Apogee Sound System (ASS) older than any re
   build is untouched: `tools/ass/asscheck.py --lib` rebuilds 1.04 and must stay identical to the
   original 1.04 LIB, module by module.
 - **Build**: `tools/ass/build.sh` (one DOSBox run, AUDIO.MAK's 1.04 production flags). The compiler
-  is per module: Watcom 10.0a, except USER (9.5b: the game's object predates the switch to 10.0);
+  is per module: Watcom 10.0a, except USER and GUS (9.5b: the game's objects predate the switch to 10.0);
   10.0b for the 1.04 rebuild.
 - **Check**: `tools/ass/asscheck.py` compares every function with the game at its address in
   analysis/ww_names.txt (`tools/wc/objmatch.py`): `ASS: N of M named functions byte-identical`.

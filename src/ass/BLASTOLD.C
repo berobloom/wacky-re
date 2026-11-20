@@ -909,7 +909,11 @@ int BLASTER_SetupDMABuffer
       return( BLASTER_Error );
       }
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   DmaStatus = DMA_SetupTransfer( DmaChannel, BufferPtr, BufferSize );
+#else
    DmaStatus = DMA_SetupTransfer( DmaChannel, BufferPtr, BufferSize, mode );
+#endif
    if ( DmaStatus == DMA_Error )
       {
       BLASTER_SetErrorCode( BLASTER_DmaError );

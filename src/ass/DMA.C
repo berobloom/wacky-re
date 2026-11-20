@@ -161,8 +161,12 @@ int DMA_SetupTransfer
    (
    int  channel,
    char *address,
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   int  length
+#else
    int  length,
    int  mode
+#endif
    )
 
    {
@@ -214,6 +218,10 @@ int DMA_SetupTransfer
       // Clear flip-flop to lower byte with any data
       outp( Port->Clear, 0 );
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+      // Set DMA mode
+      outp( Port->Mode, 0x58 | ChannelSelect );
+#else
       // Set DMA mode
       switch( mode )
          {
@@ -233,6 +241,7 @@ int DMA_SetupTransfer
             outp( Port->Mode, 0x54 | ChannelSelect );
             break;
          }
+#endif
 
       // Send address
       outp( Port->Address, LoByte );
@@ -253,6 +262,7 @@ int DMA_SetupTransfer
    }
 
 
+#if (LIBVER_ASSREV >= 19950518L) // not in Wacky Wheels' revision
 /*---------------------------------------------------------------------
    Function: DMA_EndTransfer
 
@@ -284,6 +294,7 @@ int DMA_EndTransfer
 
    return( status );
    }
+#endif
 
 
 /*---------------------------------------------------------------------

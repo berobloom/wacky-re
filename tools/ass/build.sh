@@ -15,7 +15,7 @@
 set -eu
 cd "$(dirname "$0")/../.."
 rev=${1:-19941101}
-WW95B="USER"
+WW95B="USER GUS"
 inst=$PWD/.work/toolchains/inst
 out=.work/ass/$rev${ASSWC:+-$ASSWC}
 mkdir -p "$out"

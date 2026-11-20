@@ -679,7 +679,11 @@ static int SOUNDSCAPE_SetupDMABuffer
    {
    int DmaStatus;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   DmaStatus = DMA_SetupTransfer( SOUNDSCAPE_Config.DMAChan, BufferPtr, BufferSize );
+#else
    DmaStatus = DMA_SetupTransfer( SOUNDSCAPE_Config.DMAChan, BufferPtr, BufferSize, mode );
+#endif
    if ( DmaStatus == DMA_Error )
       {
       SOUNDSCAPE_SetErrorCode( SOUNDSCAPE_DmaError );

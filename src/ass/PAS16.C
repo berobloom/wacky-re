@@ -834,7 +834,11 @@ int PAS_SetupDMABuffer
    PAS_Write( CrossChannelControl, data );
    PAS_State->crosschannel = data;
 
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   DmaStatus = DMA_SetupTransfer( PAS_DMAChannel, BufferPtr, BufferSize );
+#else
    DmaStatus = DMA_SetupTransfer( PAS_DMAChannel, BufferPtr, BufferSize, mode );
+#endif
    if ( DmaStatus == DMA_Error )
       {
       PAS_SetErrorCode( PAS_DmaError );

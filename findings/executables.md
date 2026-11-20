@@ -137,7 +137,13 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   `unsigned`; `sar` vs `shr`), and `PCFX_VoiceAvailable` does not exist yet. SNDSRC (whole module):
   `SS_Init(void)` (1.04 takes the sound card number; Tandy only via the command line), the service
   task runs at 500 Hz (1.04: 510), and `SS_ServiceInterrupt` has no 14-samples-per-tick limit and
-  calls the callback once after the loop when a buffer finished (`bufferdone == TRUE`). That project
+  calls the callback once after the loop when a buffer finished (`bufferdone == TRUE`).
+  DMA (iter 93d, whole module): `DMA_SetupTransfer(channel, address, length)` always programs
+  auto-init read (mode 0x58; 1.04 takes a mode), and `DMA_EndTransfer` does not exist yet. GUS:
+  its object is 9.5b's like USER's (GUS_Init's stack slots only come out right with 9.5b), it has no
+  `GUS_ErrorString`, and `GUS_Init` neither checks the IRQ nor sizes GUS memory; `GUSWAVE_Shutdown`
+  frees every voice unconditionally from a 0x54-byte VoiceNode (1.04's GUS.C, built without /zp4,
+  sees 0x65 bytes): left until GUSWAVE pins the struct. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,

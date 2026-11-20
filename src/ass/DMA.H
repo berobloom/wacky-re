@@ -61,8 +61,12 @@ int DMA_SetupTransfer
    (
    int  channel,
    char *address,
+#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
+   int  length
+#else
    int  length,
    int  mode
+#endif
    );
 
 int DMA_EndTransfer
