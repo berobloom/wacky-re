@@ -750,6 +750,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### General rebuild facts
 
+- **Open Watcom is no model of 9.5b's register choices** (iter 93q): of the 205 functions 9.5b
+  builds byte-identical, WC 10.0 prerelease gives 99, 10.0a 74, Open Watcom 2.0 19 (median 23 rows
+  off; native `.work/toolchains/ow2`, 9.5b headers lower-cased in `.work/toolchains/h95b`). Use
+  its source for the rules below, not for tie-breaks. [generic]
 - **9.5b frame and evaluation-order rules, measured (iter 73 probes, Open Watcom cg source as the
   map: `temps.c` AssignOtherLocals, `x86temps.c` TempAllocBefore, `dataflo.c` RoughSortTemps):**
   (a) address-taken locals and arrays are sorted by SIZE, smallest highest in the frame (char, short,
