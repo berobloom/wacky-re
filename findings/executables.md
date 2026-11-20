@@ -112,7 +112,13 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   function byte for byte, and an instruction-level match (prologue/epilogue and operands ignored)
   finds only 3: the game's GF1 code was built by a later compiler - `push ebp; mov ebp,esp` encoded
   `55 89 E5` (9.5 writes `55 8B EC`), `push ebp` before the saved registers, `mov esp,ebp` before each
-  `pop ebp`, locals kept on the stack. LIKELY Watcom 10.0, like the original ASS LIBs it matches. That project
+  `pop ebp`, locals kept on the stack. LIKELY Watcom 10.0, like the original ASS LIBs it matches.
+  **Iter 92g, with Watcom 10.0b** (`.work/toolchains/inst/WC100B` = WinWorld's 10.0a ISO tree + the
+  Jan 1995 `.b` patch, os2site.com `c_b.zip`): it rebuilds ASS 1.04's task_man/pcfx/dpmi/mpu401 from
+  the recreation source byte for byte against the original 1.04 LIB, so it is the ASS LIBs' compiler
+  (CONFIRMED). Yet GF1OS 1993 built with it (`-d2`, `-of`, plain) still matches 0-1 game functions:
+  the 1993 GF1OS is an older revision than ASS's `NEWGF1\GF1NEW` (CONFIRMED by the misses, the
+  compiler being right). 10.0a matches 1, the 10.0 prerelease (3/1994) 3. Dead end for byte matching. That project
   builds with Watcom C 10.0b + TASM 3.1 and selects a version by `LIBVER_ASSREV`: the way to recreate
   the game's release. A start for matching the sound library from source.
 - The assembler of 0x36A4E-0x409EE, and whether it is one module. What the rebuild (iter 90, `src/wwasm.asm`,

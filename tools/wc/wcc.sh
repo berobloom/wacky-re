@@ -10,10 +10,12 @@ set -eu
 [ $# -ge 3 ] || { sed -n 2,9p "$0"; exit 2; }
 wc=$(cd "$1" && pwd); src=$(cd "$2" && pwd); file=$3; shift 3
 base=${file%.*}
+exe=${WCC:-WCC386}; bin=BIN
+[ -f "$wc/BIN/$exe.EXE" ] || bin=BINB          # 10.0a keeps the DOS-hosted compilers in BINB only
 stamp=$(mktemp); trap 'rm -f "$stamp"' EXIT
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 300 dosbox -noconsole -exit \
     -c "mount c \"$wc\"" -c "mount d \"$src\"" -c "set WATCOM=C:\\" -c "set INCLUDE=C:\\H" \
     -c "set PATH=C:\\BIN;C:\\BINB" -c "set DOS4G=QUIET" -c "d:" \
-    -c "C:\\BIN\\${WCC:-WCC386}.EXE $* $file > WCC.OUT" -c exit >/dev/null 2>&1 || true
+    -c "C:\\$bin\\$exe.EXE $* $file > WCC.OUT" -c exit >/dev/null 2>&1 || true
 tr -d '\r' < "$src/WCC.OUT" | grep -v '^$' | tail -8
 [ "$src/$base.OBJ" -nt "$stamp" ] || [ "$src/$(echo "$base" | tr a-z A-Z).OBJ" -nt "$stamp" ]
