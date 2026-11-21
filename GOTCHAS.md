@@ -710,7 +710,7 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   local also lets 9.5b CSE every derived `index * stride` address out of the loops, which is how it
   hid 3 array references and 6 jump blocks from nmrefs there (0x173c4, 189 -> 100). [generic]
 - **Which of two locals gets EAX, or which of two pushed registers** (QUESTIONS 1/2, the "coin
-  flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc, shots_clear,
+  flip"): fn_19db8, pcx_load ESI/EDI, fade_in, netkeys_out/pack/in (c in DL), net_recv crc,
   com_wait_byte, com_expect, self_project, drawsprite_clip, engines_menu (the int that reaches a shared
   tail: game EDX, ours [esp+8]; `short` wins EDX but every op turns 16-bit). Check the width rule and
   the levers above first. 9.5b has NO explicit register variables (`@ edx` is E1009 in a function,
@@ -718,7 +718,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   A loop-invariant literal argument is the one exception that moved a home (fn_16f24, 39 -> 26).
   Before calling it a flip, ask whether the original had the local at all: netkeys_out/pack/in
   (DL) were the compiler's own temp for a global the source read or built in place (`v88cf0 = 0;
-  if (..) v88cf0 += 2;`, `x = v88cef & 1;` each line), iter 93s: 3 matches. The allocator traces
+  if (..) v88cf0 += 2;`, `x = v88cef & 1;` each line), iter 93s: 3 matches. Same for a global that is
+  a POINTER walked in place: shots_clear 0x2d4fc 11 -> 0 with `v7d874 = shots; ... (v7d874++)->f04 = 0;`
+  and no `struct shot *p` - the local is what handed EBX to the loop counter (iter 94). The allocator traces
   in findings/compiler.md show a real tie: equal savings, and the order is the unstable Shell
   sort's over creation order (`tools/wcc95/shellsort.py`). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
