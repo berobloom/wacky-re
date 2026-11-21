@@ -15877,12 +15877,19 @@ short net_key(unsigned char key, unsigned char flag, int x)
  * after 0x110 ticks (net88c14 = 1), with esc when key 0xcd0 is 1 (net88c14 = 2); 0 then. The
  * start time is left in v7ea68.
  * differs: registers only (game esc in EDX, t0 in EBX; ours the reverse); local order, the d
- * temp, do/goto form and short / char esc tried. All 9 rows are those three homes: esc EBX/EDX,
+ * temp, do/goto form and short / char esc tried. All 8 rows are those three homes: esc EBX/EDX,
  * t0 EDX/EBX and the `d` temp EAX/ECX (the tail `lea eax,[eax]` vs `nop` row is the 1-byte size
  * gap of the EAX-only `mov eax,[abs]` (A1, 5 bytes) vs `mov ecx,[abs]` (8B 0D, 6), not a fourth
  * thing). 16 probe spellings (types, orders, register, an esc copy, while, no d, swapped arms)
  * and `unsigned d` whole-file change nothing; a standalone probe of this function scores 24 for
- * the control where src/ww.c scores 9, so probe ranks do not transfer here. */
+ * the control where src/ww.c scores 9, so probe ranks do not transfer here.
+ * iter 96 register-home batch (.work/vbatch/com_wait_byte.py + cwb_w1.py + cwb_nod.py, 11
+ * spellings: no-d, d-in-condition, decl-c-first, decl-d-first, short-d, unsigned-d-declsep, d-two-steps,
+ * esc-arm-first, while-1, lim-local, esc-copy-local) stays at 8 - only unsigned-d-declsep (9) and
+ * esc-arm-first (18) move, both worse. The netkeys lever (no local, the value is a compiler temp)
+ * is disproved for the `d` temp: `if (ticks - t0 >= 0x110)` with `d` declared nowhere still emits
+ * `mov eax,[0x7e720]` / `sub eax,edx` / `cmp eax,0x110`, and esc/t0 keep EBX/EDX, so 9.5b chooses
+ * those three homes itself. */
 extern int v7ea68;
 
 int com_wait_byte(int esc)
