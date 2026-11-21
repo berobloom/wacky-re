@@ -35,7 +35,11 @@ pointer to the finding, and leave it here so the number stays valid.
    ours `movsx eax,[vec_kx]; mov [esp],eax; mov edx,[esp]` in the slot the next sum reuses; 30
    spellings (both operand orders, statement order, casts, temps for the sum and for each first
    operand) leave it, and every local grows the frame to `sub esp,8` where the game has one slot, so
-   no C form is left there. Data point (fade_in 0x32CF8, iter 97): a swapped counter PAIR does move
+   no C form is left there. Data point (screenshot 0x114C8, iter 102): with two explicit pointer
+   locals on adjacent slots neither order helps at all - swapping their declarations leaves the whole
+   function byte-identical and swapping their two assignments only swaps the order in which the two
+   addresses are stored (6 -> 8 rows), so our pal [esp+0x508] / lineptr [esp+0x50c] binding (the game
+   has the reverse, findings/formats.md) never moves. Data point (fade_in 0x32CF8, iter 97): a swapped counter PAIR does move
    with the FORM of the loop - `for (i = 0, k = 0; i <= 0x2ff; i++)` keeps i EBX / k EDX, while
    `k = 0; i = 0; do { ... i++; } while (i <= 0x2ff);` gives the game's i EDX / k EBX and fade_in is
    byte-identical (13 rows -> 0); the order of the two initial assignments alone only swaps the two
