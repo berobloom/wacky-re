@@ -16464,7 +16464,11 @@ void trial_book(int a, int b, int show)
  * order, casts, a temp for the sum, temps for the first operands, and an `int y = view_y`
  * local - none drops the spill; every local costs a SECOND frame slot (`sub esp,8`) so the game
  * really has no locals, and the isolated 4-statement block spills the same way (`wd` in
- * .work/tp4/TW.C loads EDX fine with the second sum left out, so it is pure allocation). */
+ * .work/tp4/TW.C loads EDX fine with the second sum left out, so it is pure allocation).
+ * iter 97 whole-file batch (.work/vbatch/view_at_curpos.py, 8 spellings: the two assignments
+ * swapped, each store written right after its sum, both operand orders, an `int x` / `int y`
+ * local) stays at 6 - the operand orders compile byte-identical, the swap scores 8, interleaving
+ * the stores 15, and each local takes a second frame slot (164 -> 168 bytes, 10-12 rows). */
 extern short w6aaa6, w6aaa8;
 #pragma aux w6aaa6 "_v6aaa6"
 #pragma aux w6aaa8 "_v6aaa8"
