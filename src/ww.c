@@ -89,7 +89,13 @@ void TS_SetTaskRate(int, int);
  * local, `~(1 << comirq) & inp(0x21)`, the mask in `rate`; permute.py 20 rounds x 30: no gain.
  * Before: `rate == 14400` alone (18), `baud == 14400L` and `signed char mcr` (no change), an
  * `int imask` local (23), and parameters (port, irq, comnum, baud): 4 slot rows disappear but INT 14h
- * DX and the divisor swap (link_open's fixups flag it - findings/serial.md). */
+ * DX and the divisor swap (link_open's fixups flag it - findings/serial.md).
+ * Iter 103 whole-file vbatch (.work/vbatch/com_open.py, control 10) of the two extending moves -
+ * the divisor byte (`mov al,cl` 0x103d4 vs the game's `movzx eax,cl`) and the MCR write (`movzx
+ * eax,al` vs the game's `cwde` 0x1045d, which reads as a short -> int conversion): `short mcr` 21,
+ * `int mcr` 17, `unsigned short rate` 16, both together 18, and a `short cv` local written between
+ * _dos_getvect and _dos_setvect (to move the `movsx eax,[comvec]` 0x104ae below the isr choice) 26.
+ * Neither extension follows from the type of our local; all three rows are allocation. */
 void com_open(short port, short irq, short baud, short comnum)
 {
     unsigned rate;
