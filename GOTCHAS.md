@@ -685,6 +685,15 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 
 ### Dead ends: SKIP at once (0 variants) unless you bring a new idea
 
+- **nearmiss.txt's smallest row counts are not the cheapest wins** (iter 104). The eight 2-row lines are
+  each *one instruction* of Watcom's emission order: `xor edx,edx`/`mov word [music88bcc],0` around an
+  inlined `music_start(x, 0)` (music_jingle 0x11884, duck_screen 0x2b5e8), the order of three independent
+  loads at a block head (track_setup 0x124e8, shot_step 0x25e6c), one store's or copy's slot (classes_menu
+  0x19eac, demo_play 0x2e348), a `movsx` slot (shot_hit 0x218a4), one compare operand order (car_laps
+  0x12b44). Six carry a `VB:` record with control best; duck_screen's row is the same class as
+  music_jingle's (vbatched there, iter 100, 8 variants) and classes_menu's got 72 store placements. Read the row before taking the line: if it is one instruction
+  out of order with every operand, register and address equal, it is the scheduling class.
+
 - **Stack-slot permutation of scalar locals** (QUESTIONS 9, 10), unless one of the swapped slots
   is a compiler-made pointer (lever above) or the group is written as one `volatile` array (Levers,
   wtext 0x146d4): neither declaration nor first-use

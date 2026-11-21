@@ -30,24 +30,26 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight: `src/nearmiss.txt` is fully marked and every never-vbatched line has a `VB:` record -
-   iter 103 added ents_show 0x14380 (the `volatile` array needs a frame with no parameter spill),
-   kart_move 0x237e4 (the `curkart->f54` countdown compare) and com_open 0x102f4 (its two extending
-   moves): control best in all three. The rest of the C module is the coin-flip / scheduling class.
-1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
-   "was"). Left: names for the loops worth naming.
-2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
+0. Iter 104 named all 61 loop headers of the asm module (`.kind_<address>`, findings/video.md; bytes and
+   fixups unchanged). The C module's offline near-miss work is closed: the 15-function register-home list
+   is every one `MATCH` or `VB:`, and the eight 2-row lines are the emission-order class (GOTCHAS).
+1. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
    10.0a/10.0 prerelease, `tools/ass/asscheck.py` 276 of 285 named functions, 16 modules whole
-   (findings/executables.md). Near misses: MIDI 324 bytes, GUSMIDI 140, BLASTOLD 48, PAS16 44,
-   FMCHIP's FM_SetChannelTimbre.
-3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
+   (findings/executables.md). Near misses: MIDI 324, GUSMIDI 140, BLASTOLD 48, PAS16 44, FMCHIP's
+   FM_SetChannelTimbre; take the smallest first, and check the module's compiler in src/ass/README.md
+   (BLASTOLD and PAS16 use the 10.0 **prerelease**) before blaming the C.
+2. `src/wwasm.asm` still holds 104 `.Lxxxxx` labels - the branch targets inside the loops named in iter
+   104. Leave `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, whose labels are arms of a compare chain.
+3. `pcx_blit` 0x375cd keeps its state in `plane_bit` 0x88ccf and `pcx_row` 0x88b58 and lets a PCX run
+   cross a row end (findings/video.md): check our C's loader against the row order it leaves.
+4. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3
    stops eating the instruction budget.
-4. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
+5. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
    wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be); 0x23746 reads the
    **live** pickup record's `f20`, so print `[0x7d86c]` at the gate before seeding (`.work/kbprobe.py`).
-5. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
+6. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
    CALLS=6000), plus `fncov.py` for its coverage number. Do NOT add `RESEED=0x88cd0=0:b` - the abort arm
    0x31eae needs the press value on every read.
 
