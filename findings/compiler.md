@@ -175,6 +175,30 @@ survives only in the second case.
   written 4,1,2,3 is the closest of the four tried - do not "tidy" case labels into numeric order.
   Caching `v7ee5a` in a local above the switch: 26 rows; `switch ((unsigned short)v88bb2)`: 18.
 
+### iter 99: the compare-destination rule survives the whole file; `register` is not a lever (CONFIRMED, two vbatch runs)
+
+- `car_laps` 0x12ee0 (2 rows: ours `cmp eax,edi; jle`, the game `cmp edi,eax; jge`, same two loads and
+  the same `add eax,edx`): the rule was previously read off probe compiles, which GOTCHAS says do not
+  rank every function, so iter 99 re-ran it whole-file (`.work/vbatch/car_laps.py`). The probe's count
+  reproduces exactly: `players[i].lap < nlaps + 1`, `players[i].lap < (nlaps + 1)` and
+  `!(players[i].lap >= nlaps + 1)` all emit the game's `cmp edi,eax` + `jge` and cost 4 rows (the two
+  `movsx` homes and the `add` move), every sum-left form keeps the game's homes and emits our own
+  `cmp`/`jle` (2). A `short cap = nlaps + 1` local compared on the left 17, a `short lp` copy of the
+  lap 21, `while (nlaps + 1 > lap)` 80. CONFIRMED: with two loaded operands, 9.5b's choice of `cmp`
+  destination and of the first-loaded home are one decision tied to the source comparison's left side,
+  so a 2-row compare-direction pair is unreachable by spelling (DREA harness/TRAPS.md "Watcom gives a
+  comparison's source-LEFT operand both the `cmp` destination and the first register home").
+- `net_recv` 0x2db00 (4 rows, `crc` home EAX vs the game's ECX; `.work/vbatch/net_recv2.py`):
+  `register unsigned short crc` 4 and `crc` declared after `int n, t, c, k;` 4 - neither the keyword
+  nor the declaration position biases a home (as iter 98 found for the split declarations);
+  `rcrc != crc` is **byte-identical** to `crc != rcrc` - when one side of an `!=` is a stack slot,
+  9.5b compares register-with-memory whichever way the C is written, so operand order there is not
+  even a lever; `register int crc` 9; `unsigned short crc = 0;` in the declaration with the
+  statement deleted 21; a hand-unrolled `for (k = 0; k < 4; k += 2)` with both calls written out 8,
+  i.e. the game's x2 unroll of the crc loop (0x2dbb4-0x2dbd5: two calls, `add ebx,8`,
+  `cmp ebx,0x10`, `jne`) is 9.5b's own expansion of a `k++` loop and a source-level unroll of the
+  same two calls does not reproduce it.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

@@ -1784,7 +1784,12 @@ void car_finished(int i);
    and permute.py 20 rounds: dead end (GOTCHAS "coin flip"). The game's `add eax,edx` is no evidence
    its source added `c`: 9.5b proves c == 1 at 0x12eba and reuses EDX for our literal 1.
    The game inlines since2(cars[i].f82) (argument in EAX, ticks2 - t in EDX) where our -oe keeps
-   the call: written out with a temp, `(t = cars[i].f82, ticks2 - t)`, that site matches. */
+   the call: written out with a temp, `(t = cars[i].f82, ticks2 - t)`, that site matches.
+   iter 99 vbatch (.work/vbatch/car_laps.py, 6 variants, whole file, so the probe rule is confirmed
+   outside the probe): `players[i].lap < nlaps + 1` [4], `(nlaps + 1)` [4], `!(lap >= nlaps + 1)` [4]
+   - each emits the game's `cmp edi,eax; jge` and pays two swapped `movsx` homes plus the `add` -
+   `while (nlaps + 1 > lap)` [80], a `short cap = nlaps + 1` local compared on the left [17], and a
+   `short lp` copy of the lap [21]. Nothing under 2. */
 void car_laps(void)
 {
     int n;
@@ -15675,7 +15680,12 @@ int com_getc_wait(int timeout)
  * iter 98 vbatch (.work/vbatch/net_recv.py, 8 variants, rows in brackets): `p` declared with its
  * initialiser [4], `p` assigned late (just before the byte stores) [15], `unsigned char *p` [4],
  * `short crc` [13], `unsigned crc` [9], an explicit `got = crc` before the compare [4], `int n, t,
- * c, k;` split into four declarations [4], `crc` declared before `rcrc` and `p` [4]. */
+ * c, k;` split into four declarations [4], `crc` declared before `rcrc` and `p` [4].
+ * iter 99 vbatch (.work/vbatch/net_recv2.py, 6 variants): `rcrc != crc` [4 - byte-identical to the
+ * control, the compare is emitted the same whichever side is left when the other is a stack slot],
+ * `register unsigned short crc` [4], `crc` declared after `int n, t, c, k` [4], `register int crc`
+ * [9], `unsigned short crc = 0;` with the `crc = 0;` statement deleted [21], and a source-level
+ * `for (k = 0; k < 4; k += 2)` with both calls written out [8]. `register` does not bias the home. */
 extern int v7ed60;
 extern unsigned char v88cf6, v88cf5;
 extern short v88cb0;
