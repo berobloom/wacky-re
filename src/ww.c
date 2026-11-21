@@ -12394,7 +12394,11 @@ void read_line(char *s, FILE *f)
  * and split declarations, register, n copied into a local, a pointer temp at the definition and at
  * the use, a struct-pointer and a datidx temp, two-statement size, the sub at the use, whence 0,
  * unsigned and long n, and the global externs declared in the other order - all give the same five
- * rows, so the ESI/EDI pairing is a 9.5b tie-break (GOTCHAS "coin flip"), not a missing stmt. */
+ * rows, so the ESI/EDI pairing is a 9.5b tie-break (GOTCHAS "coin flip"), not a missing stmt.
+ * iter 98 vbatch (.work/vbatch/pcx_load.py, 8 variants, rows in brackets): no-t `fseek(datfile,
+ * ftell(datfile), SEEK_SET)` [11], no-size `- 0x380` in the fread arg [14], both deleted [14],
+ * size before ftell [11], t reused as size [12], `char *dst = p6a978s[n]` at the top [9],
+ * `int t` [5], `unsigned long size` [5]. Neither local is a compiler temp; the pairing stands. */
 extern char *p6a978s[];
 #pragma aux p6a978s "_p6a978"
 
