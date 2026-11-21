@@ -301,6 +301,46 @@ the link still resolves (1174 externals).
   the DAC routines and the joystick poll. The sections above were written with the old names and
   have been renamed in place.
 
+## Every loop of the module named (iter 104) - CONFIRMED (read in the asm)
+
+The 61 loop headers of 0x36A4E-0x409EE (every label a `loop`, `jcc` or `jmp` branches back to) are now
+named `.<kind>_<address>` in `src/wwasm.asm`; the address stays in the name so a name still greps back
+to the bytes. Renaming labels changes no byte and no fixup: `tools/asm/asmcheck.py` after the rename is
+still "40865 bytes, 1567 fixup sites agree", and `src/check.sh` stays at 213. `genasm.py` writes
+`L_%05x` at every branch target, so these names are hand-applied after a generation (said in the asm
+header). Loop names by routine (the label's own address is its suffix):
+
+| Routine | Loops | Counter and bound, as read from the bytes |
+|---|---|---|
+| `getpalette` 0x36cca | `.entry_36cd9`, `.dly_set_36cf3`/`.dly_clr_36cf8` (x3) | `ecx = 0x100` entries; per colour byte a 0x3DA bit-0 delay, then `in al,0x3c9` + `stosb` (a DAC **read**) |
+| `rowtab_init` 0x36d42 | `.row_36d54` | `ecx = 320`, `[esi] = ebx * 0x50` |
+| `band_mirror` 0x36ec2 | `.row_36eef` | `ecx = 0x50` bytes per row, `rep movsb`, 90 rows (`dec ax; jne`) |
+| `horizon_upload` 0x36f55 | `.byte_36f72` | `ecx = 0x6400` bytes, plane mask `shl ah,1` wraps past 8 by `inc di` |
+| `spr_draw` 0x36fd0, `spr_draw_clip` 0x3707e, `spr_draw_key` 0x37132, `spr_draw_opaque` 0x373ee | `.col_*`, `.px_*` | outer `loop` = `spr_h` columns, inner `dec bh` = `spr_w` bytes (`add di,0x50` per byte, the column-major trap below); the transparent test is `cmp al,0` (also `_ink` in `_key`) |
+| `box_draw` 0x371e4 | `.col_37240`, `.fill_px_37285`, `.edge_px_37299` | the first and last column (`cmp cx,[_spr_h]`, `cmp cx,1`) run the whole column in `_border`; a middle column is border pixel, `sub bh,2` fill pixels in `.fill_px`, border pixel |
+| `spr_grab` 0x372c7 | `.col_37325`, `.px_3732d` | VRAM -> `[sprptr]`, `add si,0x4f` per byte |
+| `grab32` 0x3735c | `.row_373aa`, `.px_373b7` | 32 rows x 32 bytes; the plane index runs 0..3 across a row (`cmp ah,3`), so one screen byte is read from each of the four planes |
+| `spr_draw_scaled` 0x37487 | `.col_374fd`/`.px_37513` and `.col_clip_37561`/`.px_clip_37577` | two arms: the clipped one advances the step table index `edx` by `[clipy]` entries per column (0x375a4 `add edx,[0x7d878]`); the unclipped arm does not (0x3753d) |
+| `pcx_blit` 0x375cd | `.row_375fb`, `.px_375ff`, `.run_px_37674` | `bx` = 0..0x13f bytes of a row, `pcx_row` 0..0xc7; a run's `ecx` survives a row end: at 0x376a2-0x376ce the run loop closes the row and resets `bx` without leaving `.run_px` |
+| `pcx_tiles` 0x376d7 | `.row_376ef`, `.px_376f3`, `.run_px_37738` then `.tile_row_37779`, `.tile_qword_3777b` | decode pass as above (no planes, linear `[v7d99c]`); tiling pass 54 tiles, `.tile_qword` copies 8 dwords = one 32-byte tile row, `add esi,0x120` to the next screen row |
+| `joy_poll` 0x3784b | `.sample_3789c` | sums port 0x201 until every `joy_bits` axis bit is low; `si` is the timeout and its sign bit is the timeout flag (0x378e4 `or si,si`, 0x378e7 `jge`) |
+| `dac_put5` 0x37c43, `dac_put8` 0x37c84 | `.wr_a1_a4_37c56`, `.wr_ad_ac_37c98`, `.wr_ae_af_37cb5`, `.wr_a8_ab_37cd6` | the DAC index register `bl` per loop: 0xa1..0xa4 (+ one 0x94), 0xad,0xac (`dec bl`), 0xae,0xaf, 0xa8..0xab |
+| `dac_load` 0x37cf1 | `.entry_37d16`, `.dly_set_37d2f`/`.dly_clr_37d34` (x3) | `dac_count` entries from `palptr + 3*dac_first`; the same 0x3DA bit-0 delay, but before each **write** to 0x3c9 |
+| `tile_show` 0x37d96 | `.row_37db0` | 8 dwords (`rep movsd`) per row, `add edi,0x120` |
+| `vretrace_wait` 0x37dc7 | `.w3da8_clr_37dd0`, `.w3da8_set_37dd5` | 0x3DA bit 3 clear, then set |
+| `page_show` 0x37de0 | `.w3da1_clr_37dee`, `.w3da8_set_37e17` | 0x3DA bit 0 clear before the CRTC 0x0c/0x0d write, bit 3 set after it |
+| the six floor bodies | `.col_hi_37ff1`, `.col_med_3971c`, `.col_lo_3ae1e`, `.col_upper_hi_3c538`, `.col_upper_med_3dc3a`, `.col_upper_lo_3f33c` | one unrolled 70-row column per pass; the back edge is a `jmp near` (rel32) ~2,000 lines up |
+| `kbd_isr` 0x40907 | `.keytab_409c6` | `ecx = 0xc` pairs at `[keytab]` (findings/input.md) |
+
+- New while naming (CONFIRMED, bytes): the DAC palette routines wait on **0x3DA bit 0** around every
+  DAC data access, `getpalette` reading 0x3c9 (0x36d01 `in al,dx`, 0x36d02 `stosb`) and `dac_load`
+  writing 0x3c9 (0x37d43 `out dx,al`) - the delay is the same six-iteration `loopne` + spin pair in all
+  six places, so palette writes are paced by the display, not by a fixed count.
+- `pcx_blit` preserves every register (`pushal`/`popal`) and takes no argument, so `pcx_row` 0x88b58 and
+  `plane_bit` 0x88ccf are its only state; a PCX run longer than the rest of a row crosses the row
+  boundary inside `.run_px_37674` (the row close 0x376a2-0x376ca sits in the loop, before its `loop`
+  at 0x376ce).
+
 ## Traps
 
 - The drawer is column-major: `spr_draw`/`spr_draw_opaque` put `spr_w` bytes in a *column* and iterate
