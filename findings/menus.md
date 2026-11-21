@@ -518,6 +518,21 @@ what `SEED=` left them, so:
   game and 6 in our build over garbage, because `fade_in` itself is SAME run on its own
   (`SEED=0x88c46=4:w ARGS=0x8000`, both sides return, control SAME).
 
+- CONFIRMED (iter 105): **`demo_mode` 0x1e2e4 behaves as the game in all three modes.** Iter 84b's run
+  passed no argument, so it ran mode 0: the `switch` 0x1e304 has no case for it and the set-name loop
+  0x1e397-0x1e44a runs zero times (117 of 221 instruction starts). `ARGS=1`, `2` and `3` (the "OR"/11,
+  "INT"/8 and "OR"/1 picture sets) with iter 84b's env (`RAND=8 FREAD=13
+  SEED=0x88cd0=1:b,0x7ec58=5:d,0x88c46=4:w,0x7d998=2:d CALLS=6000 COUNT=150000000`) are each SAME
+  with both sides returning, control `NEW=wworig` SAME. `tools/wc/fncov.py` over modes 0-3: **189 of 221
+  starts**. The 32 left: 0x1e310 (the `switch` default jump), 0x1e400-0x1e40e (the two-digit branch of the
+  set-name `itoa`, 10 and 11 in mode 1, which the stubbed `itoa` never takes), 0x1e5ef (the `v7ec60`
+  wrap past 7), 0x1e6d9 (padding), and the second-race path 0x1e626-0x1e69a. That path needs a race
+  that ends **without** the abort, because the abort sets `v7ec68` = 1 and 0x1e61a leaves the loop.
+  It is not reachable under the harness: `RESEED=0x7ec68=0:d` does nothing, since `v7ec68` is read only once
+  per pass (at 0x1e61a), and the arming read sees the real value. `RESEED=0x88b9c=1:w` (`nlaps` = 1 after the
+  0x1e4f8 store) without the abort key ran 55 minutes (`CALLS=3000000 COUNT=2e9`) and did not finish
+  the race.
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands

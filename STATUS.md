@@ -46,9 +46,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 3. `trial_book` 0x2e4b8 is walked (iter 105: 1006 of 1034 starts, every record outcome SAME; findings/menus.md).
    Since iter 105 `tools/wc/difffn.py` stubs the hybrid's `WWASM_TEXT` too (GOTCHAS).
 4. `kart_bump` 0x22bf4 is walked (iter 105: 603 of 606 starts, the 3 left unreachable; findings/game-loop.md).
-5. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
-   CALLS=6000), plus `fncov.py` for its coverage number. Do NOT add `RESEED=0x88cd0=0:b` - the abort arm
-   0x31eae needs the press value on every read.
+5. `demo_mode` 0x1e2e4 is walked (iter 105: modes 1-3 SAME, 189 of 221 starts; the second-race path needs a
+   race that ends without the abort, out of the harness's reach; findings/menus.md).
 
 ## BLOCKED
 
