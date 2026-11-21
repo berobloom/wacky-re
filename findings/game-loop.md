@@ -322,6 +322,25 @@ merged).
   from "both sides return" to `CALLCAP`. The knob stays as it was; the `intro` verdict is "same-shape
   (stubbed-read garbage)" rather than SAME.
 
+- CONFIRMED (iter 105, the DIFF-bucket pass): `tools/wc/difffn.py` over all 72 functions that are not a
+  byte match, default env, after the iter-105 `WWASM_TEXT` stub fix: **68 SAME** and 4 not. Of the 68 SAME,
+  41 return on both sides; 9 stop at the call cap and 16 at the instruction cap, and those have deeper
+  seeded verdicts in `src/nearmiss.txt`. The 4, each run with `BUCKET=1` (new: every DIFF byte by 0x1000
+  block with its last writer on each side):
+  - `shots_project` 0x2632c: 3 bytes, `v7d874` 0x7d874, written only by the game (0x26697
+    `mov [0x7d874],ecx`): the known dead past-the-end pointer.
+  - `ents_project` 0x25a78: 3 bytes, `v7d7f4` 0x7d7f4, written only by the game (0x25e5b): the known
+    dead iterator global.
+  - `scores_screen` 0x1ce14: 1 byte, `palptr` 0x7d760 holding a stack address (fade_in 0x32d4c, game
+    ...e8, ours ...e4): the known frame-size difference.
+  - `net_input` 0x2f4a8: no verdict before this pass. Both sides fault at the same instruction,
+    `kart_draw` 0x24ef0 `cmp byte [edx+eax-1],3` with `p7e728` 0x7e728 null. With
+    `TICKREAD=8 SEED=0x7e728=0x8000:d,0x7d89c=1:d` both sides return, the control `NEW=wworig` is SAME, and
+    the 3 DIFF bytes are `shots_project`'s dead `v7d874` store again (0x26697, reached through the frame
+    callees). `tools/wc/fncov.py`: 55 of 203 starts. The network-key arms need `net_key`'s answer, which is
+    not seeded here.
+  No DIFF in the sweep is a code difference.
+
 ## Traps
 
 - `tab6e470` 0x6e470's row bases and the two header words in each row come from `kartsets_load`'s 2-byte

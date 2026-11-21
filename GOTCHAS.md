@@ -63,6 +63,9 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **A write watch keyed on the store's start address misses stores that cover the byte from below**
+  [generic] (iter 105). `difffn.py`'s `_watch` tested `address in watch`, so a dword store at 0x7d874 was seen for byte
+  0x7d874 and never for 0x7d875-0x7d877. Test every byte of `[address, address+size)`. `BUCKET=1` relies on it.
 - **`difffn.py` must stub every non-C range of the hybrid, wherever the link puts it** (iter 105). Since
   iter 90 `tools/link/build.sh` links `src/wwasm.asm` as `WWASM_TEXT` ABOVE our `_TEXT`, while
   `difffn.py` stubbed only `BLOBTEXT` below it, so our side ran the real asm: `out 0x3c7`, then a

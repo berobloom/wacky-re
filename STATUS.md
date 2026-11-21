@@ -48,6 +48,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 4. `kart_bump` 0x22bf4 is walked (iter 105: 603 of 606 starts, the 3 left unreachable; findings/game-loop.md).
 5. `demo_mode` 0x1e2e4 is walked (iter 105: modes 1-3 SAME, 189 of 221 starts; the second-race path needs a
    race that ends without the abort, out of the harness's reach; findings/menus.md).
+6. DIFF-bucket pass done (iter 105): of the 72 non-matching functions, 68 are SAME with the default
+   env. The 4 DIFFs are the dead `v7d874`/`v7d7f4` stores and `palptr`'s stack address; `net_input`
+   needed a seed for `p7e728`. `difffn.py BUCKET=1` buckets any DIFF (findings/game-loop.md). Open:
+   `net_input` coverage (55 of 203 starts), `race_run` (784 of 2028).
 
 ## BLOCKED
 

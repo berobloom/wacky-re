@@ -15,6 +15,7 @@ input. Compared: every byte of the data segment, EAX on return, and the sequence
     TICKREAD=8 ...   # ticks += 8 per READ of the clock, for a wait loop whose body has no call
     RESEED=0x88cce=1:b ...   # value written after every READ of that global (press+release waits)
     KEY=0x61,0x62,0x0d ...   # the characters the clib `getch` stub returns, in order (last repeats)
+    BUCKET=1 ...    # on a DIFF: every byte by 0x1000 block with its last writer on each side
     CALLSEQ=1 ...   # on a DIFF: both stub-call sequences, named, so a `calls 370/345` shows which
                      # call our build skipped (the two images' raw call addresses do not say)
     NEW=wworig MAP=.work/link/WWORIG.MAP .work/venv/bin/python tools/wc/difffn.py NAME
@@ -123,6 +124,7 @@ SEED = parse_seed(os.environ.get('SEED', ''))
 # wait_release instead - it parks the run one wait earlier (iter 81). Reads are counted, so both builds
 # must poll the flag the same number of times: check the byte DIFF before believing one.
 RESEED = parse_seed(os.environ.get('RESEED', ''))
+BUCKET = os.environ.get('BUCKET')    # on a DIFF: bucket_table (every byte, by block, last writers)
 # ARGS=0x3f8,4,0x3840,1 -> the Watcom argument registers (eax, edx, ebx, ecx, ...). Zero arguments are
 # not always a legal call: com_open's `div ecx` at 0x103b1 is a divide error when baud is 0, and both
 # runs then die at the same instruction, which is inconclusive (iter 76).
@@ -265,7 +267,9 @@ class Run:
         return False
 
     def _watch(self, uc, access, address, size, value, _):
-        if address in self.watch:
+        # any byte of the store, not only its first: a dword written from below a watched byte
+        # decides that byte too (iter 105, BUCKET=)
+        if any(address + k in self.watch for k in range(size)):
             self.events.append((uc.reg_read(UC_X86_REG_EIP), address, size, value))
 
     def _read(self):
@@ -425,6 +429,37 @@ def one(eip, r):
     return '?'
 
 
+def bucket_table(a, b, dif, addr, naddr):
+    """BUCKET=1: every DIFF byte, grouped by 0x1000 block, with the instructions that last wrote it on
+    each side (count of bytes per writer). A block whose writers are a stubbed read's destination, a
+    null-pointer store or a stack-garbage copy is harness, not code (findings/game-loop.md iter 89)."""
+    a.watch = b.watch = {lin(a, i) for i in dif}
+    a.go(addr), b.go(naddr)
+    last = {}
+    for side, r in (('game', a), ('ours', b)):
+        w = {}
+        for eip, ad, sz, _ in r.events:
+            for k in range(sz):
+                w[ad + k] = eip
+        last[side] = w
+    blocks = {}
+    for i in dif:
+        blocks.setdefault(lin(a, i) & ~0xfff, []).append(lin(a, i))
+    out = ['    BUCKET %d byte(s) in %d block(s)' % (len(dif), len(blocks))]
+    for blk in sorted(blocks):
+        bs = blocks[blk]
+        out.append('    %#07x  %4d byte(s)  %#x..%#x' % (blk, len(bs), bs[0], bs[-1]))
+        for side, r in (('game', a), ('ours', b)):
+            cnt = {}
+            for x in bs:
+                e = last[side].get(x)
+                cnt[e] = cnt.get(e, 0) + 1
+            for e, n in sorted(cnt.items(), key=lambda t: -t[1])[:4]:
+                out.append('        %s %4d  %s' % (side, n, 'not written (init differs?)' if e is None
+                                                    else '%#x  %s' % (e, one(e, r))))
+    return '\n'.join(out)
+
+
 def main():
     new = os.environ.get('NEW', 'wwnew')
     orig = os.environ.get('ORIG_IMG', 'ww')
@@ -517,6 +552,8 @@ def main():
                           % (k, hex(sa[0]) if isinstance(sa[0], int) else sa[0], sa[1:],
                              hex(sb[0]) if isinstance(sb[0], int) else sb[0], sb[1:]))
                     break
+        if dif and BUCKET:
+            print(bucket_table(a, b, diff_bytes(a.init, a.fin, b.init, b.fin), addr, naddr))
         if os.environ.get('CALLSEQ'):      # why do the two call counts differ? name both sequences
             print(seq_table(a.stubs, b.stubs, names, pubs, cls, nb[0]))
 
