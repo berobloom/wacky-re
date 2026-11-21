@@ -11789,7 +11789,14 @@ void shot_step(short move)
  * Iter 28: 20 more whole-file spellings (see nearmiss.txt) - the a6a0 int alias index-first/index-last
  * that makes track_here match, `int *p`/`*q`/`*b` locals, `t = dir`, `*p` + `[1]` instead of `*p++`,
  * `short sp`, every store order - leave this block byte-identical except for that home, so it is a
- * Watcom colouring coin-flip like net_recv's crc accumulator, not a spelling. */
+ * Watcom colouring coin-flip like net_recv's crc accumulator, not a spelling.
+ * Iter 94 (tools/wcc95/vbatch.py, 10 spellings): the INDEXED pair `vec_x = v7d690[0]; vec_y =
+ * v7d690[1]; v7d690++;` names the walked global's home EBX as the game has it - 12 -> 7 rows, whole
+ * check unchanged at 211. Left: the p+1 copy (game `mov edx,ebx` + `add edx,4` 0x2612e/0x26136, ours
+ * `lea eax,[ebx+4]` 0x26136) and the two load homes, plus the 2 tail rows. Not taken: `vec_k` moved
+ * above the pointer or below the loads (79 - its position feeds the imul), `*++v7d690` and
+ * `v7d690 = v7d690 + 1` (13), `*v7d690++` with `v7d690[0]` (13), `(int *)((char *)v7d6a0 + dir*8)`
+ * (16, +8 bytes), a local `int *q` (22, -4 bytes). */
 void shots_move(void)
 {
     short i;
@@ -11820,9 +11827,10 @@ void shots_move(void)
                 if (v7d874->dir >= 0x780)
                     v7d874->dir -= 0x780;
                 v7d690 = (int *)v7d6a0 + v7d874->dir * 2;
-                vec_x = *v7d690++;
                 vec_k = v7d874->speed;
-                vec_y = *v7d690;
+                vec_x = v7d690[0];
+                vec_y = v7d690[1];
+                v7d690++;
                 vec_scale();
                 v7d874->x = v7d874->x + vec_kx;
                 v7d874->y = v7d874->y + vec_ky;
