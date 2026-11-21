@@ -30,10 +30,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): no vbatch pass yet for pcx_load
-   0x27060 (5 rows), net_recv 0x2db00 (4), car_laps 0x12b44 (2, nearest), fn_19db8 0x19db8 (18).
-   First variant for each: merge two locals that share a register, and for a swapped loop-counter
-   pair write the loop as a `do {} while` (both iter 97, findings/compiler.md).
+0. Overnight (register-home night, overnight/prompt.md step 2): `car_laps` 0x12b44 (2 rows, nearest:
+   the compare operand order at 0x12ee0) is the only name on that list left without a VB status after
+   iter 98. The levers are in findings/compiler.md (iter 97-98) and each differs note, not here.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
