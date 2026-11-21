@@ -30,10 +30,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight: `src/nearmiss.txt` is fully marked; iter 102 vbatched the last three never-vbatched
-   small lines (screenshot 0x114c8 slot binding, fn_16d68 store order, shot_step 0x25e6c two loads) -
-   best = control in all three; see their differs notes. Open: QUESTIONS 28 - `fn_182d0`'s dead
-   `mov esi,ebx` - and the same dead copy in `crcstep` 0x10260 (QUESTIONS 1): one vbatch each.
+0. Overnight: `src/nearmiss.txt` is fully marked and every never-vbatched line has a `VB:` record -
+   iter 103 added ents_show 0x14380 (the `volatile` array needs a frame with no parameter spill),
+   kart_move 0x237e4 (the `curkart->f54` countdown compare) and com_open 0x102f4 (its two extending
+   moves): control best in all three. The rest of the C module is the coin-flip / scheduling class.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
