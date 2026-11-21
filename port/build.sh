@@ -18,10 +18,12 @@ GAME="-O0 -g -w -fno-pie -fno-stack-protector -fno-strict-aliasing -fwrapv -funs
 RT="-O1 -g -Wall -Wextra -Wno-unused-parameter -fno-pie -fno-stack-protector -fno-strict-aliasing -Iport/include -I$SDLINC"
 
 python3 port/tools/prep.py src/ww.c "$out/ww.c"
+python3 port/tools/asm2c.py src/wwasm.asm "$out/wwasm.c"
 $CC $GAME -Dmain=game_main -c "$out/ww.c" -o "$out/obj/ww.o"
 $CC $GAME -c tools/link/extra.c -o "$out/obj/extra.o"
-for f in image vga machine clib sound glue main asmstub; do
+for f in image vga machine clib sound glue main cpu; do
     $CC $RT -c port/src/$f.c -o "$out/obj/$f.o"
 done
+$CC $RT -Wno-unused-label -Iport/src -c "$out/wwasm.c" -o "$out/obj/wwasm.o"
 $CC -no-pie -g -o "$out/wacky" "$out"/obj/*.o port/gen/syms.ld "$SDLLIB" -lpthread -lm
 echo "$out/wacky"
