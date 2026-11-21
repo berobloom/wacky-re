@@ -35,7 +35,11 @@ pointer to the finding, and leave it here so the number stays valid.
    ours `movsx eax,[vec_kx]; mov [esp],eax; mov edx,[esp]` in the slot the next sum reuses; 30
    spellings (both operand orders, statement order, casts, temps for the sum and for each first
    operand) leave it, and every local grows the frame to `sub esp,8` where the game has one slot, so
-   no C form is left there. screen_menu 0x16984 MATCHED only when the loop result got a second single-block
+   no C form is left there. Data point (fade_in 0x32CF8, iter 97): a swapped counter PAIR does move
+   with the FORM of the loop - `for (i = 0, k = 0; i <= 0x2ff; i++)` keeps i EBX / k EDX, while
+   `k = 0; i = 0; do { ... i++; } while (i <= 0x2ff);` gives the game's i EDX / k EBX and fade_in is
+   byte-identical (13 rows -> 0); the order of the two initial assignments alone only swaps the two
+   zeroing `xor`s. screen_menu 0x16984 MATCHED only when the loop result got a second single-block
    variable (`m = menu(...); sel = m;` then switch on m) — switching on the loop-carried variable made Watcom
    reload from the slot instead of using EAX. Tree shape: `if (m == 3) break;` before `switch (m)` with two
    cases gives cmp3/je + cmp1/jb/jbe; a 3-case switch probes 2 first (game probes 3 first, so 3 is NOT a case).

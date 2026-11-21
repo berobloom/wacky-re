@@ -6,8 +6,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **211 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 94 +1
-  shots_clear; iter 93s +3; iter 90 +2 with no C change (`difffn.py`/`fncov.py` behaviour work);
+- **212 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 97 +1
+  fade_in; iter 94 +1 shots_clear; iter 93s +3; iter 90 +2 with no C change (`difffn.py`/`fncov.py` behaviour work);
   iter 74 started counting `tools/link/extra.c`; objmatch compares rel32 branches between our own
   functions by target, `tools/wc/test_objmatch.py`). Iter 66 checked what a MATCH masks: all 4556
   linker-filled operands point where the game's do (`tools/wc/fixsites.py`, 0 disagreements). C
@@ -30,10 +30,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): no vbatch pass yet for com_expect
-   0x2e008, fade_in 0x32cf8, view_at_curpos 0x2f408, pcx_load 0x27060, net_recv 0x2db00,
-   fn_19db8 0x19db8, car_laps 0x12b44 (2 rows, nearest). First variant for each: delete the local
-   the differing register holds (findings/compiler.md iter 96) - it says at once if it is a home.
+0. Overnight (register-home night, overnight/prompt.md step 2): no vbatch pass yet for pcx_load
+   0x27060 (5 rows), net_recv 0x2db00 (4), car_laps 0x12b44 (2, nearest), fn_19db8 0x19db8 (18).
+   First variant for each: merge two locals that share a register, and for a swapped loop-counter
+   pair write the loop as a `do {} while` (both iter 97, findings/compiler.md).
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
