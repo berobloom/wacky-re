@@ -746,7 +746,11 @@ void screenshot(void);
  * round (0x11416/0x11419); declaration orders of h/k/last/c, `k = last; k = k - 1;` and `k + spr_y`
  * tried (GOTCHAS "two locals' register pairing"). The frame is the game's: a `volatile int last`
  * written once gives `sub esp,4` + `mov [esp],eax` + `mov ebx,[esp]`, and `k = last - 1` as its own
- * statement puts the `dec` in the reloaded register (16 rows -> 3). */
+ * statement puts the `dec` in the reloaded register (16 rows -> 3).
+ * Iter 95 (vbatch, 8 spellings: cache-sy, cache-cond-sy, no-k-last, no-k-h, assign-in-k, vol-k,
+ * k-from-h, sum-h): nothing flips the pair. Caching the twice-read spr_y in a local costs the game's
+ * `add ax,[spr_y]` 0x11437 as well as the pair (11); deleting `k` and folding the -1 into the compare
+ * loses the slot reload and its `dec` (8, and 4 bytes of length); `k = (last = h) - 1` keeps 3. */
 void drawsprite_clip(void)
 {
     short h;
