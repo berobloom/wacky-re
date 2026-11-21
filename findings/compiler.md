@@ -279,6 +279,14 @@ operation the optimizer removes only after allocation, other types in the extern
 options). The guided search works as a filter - one trace says whether a variant reaches the list at
 all - but it cannot produce the variant.
 
+Callee knowledge, tried after other Watcom decomp projects reported it (iter 105, 51 probe compiles,
+CONFIRMED for 9.5b): `datfind`'s body defined before pcx_load, after it, or only declared gives the same
+5 rows, and so do `short datfind();`, `int`/`void`/`char`/`long` returns and no declaration at all - 9.5b
+uses nothing it knows about a callee in the same file (KKND-Decomp and ReverseApoc see that effect with
+10.x/Open Watcom). A `#pragma aux <callee> modify ...` does reach the allocator (on `datfind`, `fread`,
+`fseek`, `ftell`: 5 -> 8..17 rows, never fewer), so callee clobber sets are an input, but the game's are
+the defaults: no clobber set tried gives the game's pairing.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

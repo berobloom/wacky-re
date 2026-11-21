@@ -12458,7 +12458,8 @@ void read_line(char *s, FILE *f)
  * `int t` [5], `unsigned long size` [5]. Neither local is a compiler temp; the pairing stands.
  * iter 105: 25 more, each traced (findings/compiler.md "iter 105"): every spelling, K&R parameters,
  * inner blocks, do/while(0) give the same allocator input; flipsim.py: n must gain savings, size lose
- * some, or one temp appear at list positions 2..9 / id27 vanish. */
+ * some, or one temp appear at list positions 2..9 / id27 vanish. Callee knowledge (datfind defined
+ * before/after, its declaration, modify pragmas on the four callees): never under 5 rows. */
 extern char *p6a978s[];
 #pragma aux p6a978s "_p6a978"
 
