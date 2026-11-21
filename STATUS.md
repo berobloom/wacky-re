@@ -41,8 +41,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
    FM_SetChannelTimbre (22 rows, DL/EDX vs AL/EAX; the tried spellings are in its FMCHIP.C note).
    The game's own C is 9.5b beyond doubt: iter 105 built it with every Watcom here (9.5, 9.5a, 10.0
    prerelease, release, 10.0a, 10.0b; 9.5c in iter 93p) and none matches a function 9.5b misses.
-2. `src/wwasm.asm` still holds 104 `.Lxxxxx` labels - the branch targets inside the loops named in iter
-   104. Leave `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, whose labels are arms of a compare chain.
+2. `src/wwasm.asm` branch targets are all named (iter 105, findings/video.md), except the compare-chain
+   arms of `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, which keep `.L<address>` on purpose.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3

@@ -332,6 +332,22 @@ header). Loop names by routine (the label's own address is its suffix):
 | the six floor bodies | `.col_hi_37ff1`, `.col_med_3971c`, `.col_lo_3ae1e`, `.col_upper_hi_3c538`, `.col_upper_med_3dc3a`, `.col_upper_lo_3f33c` | one unrolled 70-row column per pass; the back edge is a `jmp near` (rel32) ~2,000 lines up |
 | `kbd_isr` 0x40907 | `.keytab_409c6` | `ecx = 0xc` pairs at `[keytab]` (findings/input.md) |
 
+The other forward branch targets (iter 105, 95 labels; `asmcheck.py` unchanged: 40865 bytes, 1567
+fixup sites) follow the same `.kind_<address>` scheme. CONFIRMED by reading each target in the asm:
+
+| Name | Where | What the branch skips or reaches |
+|---|---|---|
+| `.plane_ok_` | sprite, box, grab, `horizon_upload`, the floor bodies | the plane mask did not wrap (`shl ah,1; cmp ah,8; jle`, `cmp ah,3` in the grabs, `shl ah,2; cmp ah,0xc` in the medium floors), so no `mov ah,1; inc di` |
+| `.skip_px_`, `.col_end_` | `spr_draw*` | a transparent pixel (`cmp al,0`, `cmp al,[_ink]` in `_key`) skips the store; `.col_end` is the jump out of a column's pixel loop |
+| `.not_last_col_`, `.mid_col_` | `box_draw` | the first/last column test; a middle column (border, fill, border) |
+| `.plane_shift_`/`.plane_set_`, `.run_`, `.run_in_row_`, `.tiles_` | `pcx_blit`, `pcx_tiles` | the plane step (`ah` 8 -> 1), a byte >= 0xC0 is an RLE run, a run that has not reached x 0x13F, the decode pass done -> the tiling pass |
+| `.same_tile_row_` | `pcx_tiles` | 10 tiles per row (`inc bl; cmp bl,0xb`), then `add esi,0x26c0` |
+| `.chk_btn2_`..`.chk_btn4_` | `buttons_poll` | port 0x201 bits 0x10/0x20/0x40/0x80: a bit set is a button **up** |
+| `.poll_`, `.axes_busy_`, `.axes_flag_`, `.no_timeout_`, `.timeout_flag_`, `.found_`, `.left_done_`, `.right_`, `.y_axis_`, `.up_done_`, `.down_` | `joy_poll` | the sampling loop's two exit flags (axis bits low, `si` sign = timeout) and the four direction tests against `joy_cx`/`joy_cy` and the `joy_lim_*` dead zones |
+| `.y_hi_ok_`..`.x_lo_ok_`, `.class_b_` | `surface_at` | probe_x/probe_y clamped to 0..0xFFF; a non-zero map pixel takes the second class word (`ecx`), zero the first |
+| `.lo_`, `.bg_done_`, `.bg_rows_`, `.pos_ok_`, `.wrap_ok_`, `.next_col_` | `floor_draw`, `floor_draw_upper` | the detail-level dispatch; the horizon band copy skipped when `v7d998` is 1 (hi) / copied whole from 0xA7D00 when 2 (med); `curpos - 0xA0` wrapped by +0x780; the `[ebx]` pointer wrapped from `v7d698` to `v7d6a0`; `loop` cannot reach the column head, so it lands on a `jmp near` |
+| `.enter_`, `.not_e0_`, `.scan_`, `.not_enter_`..`.not_up_`, `.keytab_`, `.next_key_`, `.last_scan_`, `.leave_` | `kbd_isr` | re-entry guard (`kbd_busy`); an 0xE0 prefix replaced by `last_scan`; a scan code above 0x52 is a release (`bl` 0, -0x80); Enter and Space set `key_select`, F10 `shotkey` (and skips the table), Up/Down `key_up`/`key_down`, then the 12-pair `keytab` |
+
 - New while naming (CONFIRMED, bytes): the DAC palette routines wait on **0x3DA bit 0** around every
   DAC data access, `getpalette` reading 0x3c9 (0x36d01 `in al,dx`, 0x36d02 `stosb`) and `dac_load`
   writing 0x3c9 (0x37d43 `out dx,al`) - the delay is the same six-iteration `loopne` + spin pair in all

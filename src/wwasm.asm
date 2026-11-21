@@ -3,7 +3,9 @@
 ;
 ; Routine names come from symmap (the C side's `name_`); the loop labels are hand-named after
 ; generation - genasm.py writes L_%05x at every branch target, so a regeneration loses them. A loop
-; label is `.kind_<address>` (the address stays in the name: it greps back to the bytes). nasm local
+; label is `.kind_<address>` (the address stays in the name: it greps back to the bytes), and so is
+; every other branch target (`.plane_ok_`, `.skip_px_`, `.done_`, ...; findings/video.md) except the
+; compare-chain arms of rect_overlap and surface_at_7c, which keep `.L<address>`. nasm local
 ; labels are not exported, so renaming one changes no byte and no fixup (asmcheck proves both).
 
 %ifdef BIN
@@ -754,14 +756,14 @@ horizon_upload_:
         mov byte [edi], al
         shl ah, 1
         cmp ah, 8
-        jle short .L36f88
+        jle short .plane_ok_36f88
         nop
         nop
         nop
         nop
         inc di
         mov ah, 1
-.L36f88:
+.plane_ok_36f88:
         loop .byte_36f72
         popad
         ret
@@ -827,7 +829,7 @@ spr_draw_:
 .px_3703a:
         lodsb
         cmp al, 0
-        je short .L37051
+        je short .skip_px_37051
         nop
         nop
         nop
@@ -836,27 +838,27 @@ spr_draw_:
         add di, 0x4f
         dec bh
         jne short .px_3703a
-        jmp short .L37059
+        jmp short .col_end_37059
         nop
         nop
         nop
-.L37051:
+.skip_px_37051:
         add di, 0x50
         dec bh
         jne short .px_3703a
-.L37059:
+.col_end_37059:
         pop di
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L3706f
+        jle short .plane_ok_3706f
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L3706f:
+.plane_ok_3706f:
         mov byte [_plane_bit], ah
         loop .col_37032
         pop esi
@@ -905,7 +907,7 @@ spr_draw_clip_:
 .px_370e8:
         lodsb
         cmp al, 0
-        je short .L370ff
+        je short .skip_px_370ff
         nop
         nop
         nop
@@ -914,28 +916,28 @@ spr_draw_clip_:
         add di, 0x4f
         dec bh
         jne short .px_370e8
-        jmp short .L37107
+        jmp short .col_end_37107
         nop
         nop
         nop
-.L370ff:
+.skip_px_370ff:
         add di, 0x50
         dec bh
         jne short .px_370e8
-.L37107:
+.col_end_37107:
         pop di
         add esi, dword [_clipy]
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L37123
+        jle short .plane_ok_37123
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L37123:
+.plane_ok_37123:
         mov byte [_plane_bit], ah
         loop .col_370e0
         pop esi
@@ -984,7 +986,7 @@ spr_draw_key_:
 .px_3719c:
         lodsb
         cmp al, byte [_ink]
-        je short .L371b7
+        je short .skip_px_371b7
         nop
         nop
         nop
@@ -993,27 +995,27 @@ spr_draw_key_:
         add di, 0x4f
         dec bh
         jne short .px_3719c
-        jmp short .L371bf
+        jmp short .col_end_371bf
         nop
         nop
         nop
-.L371b7:
+.skip_px_371b7:
         add di, 0x50
         dec bh
         jne short .px_3719c
-.L371bf:
+.col_end_371bf:
         pop di
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L371d5
+        jle short .plane_ok_371d5
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L371d5:
+.plane_ok_371d5:
         mov byte [_plane_bit], ah
         loop .col_37194
         pop esi
@@ -1059,7 +1061,7 @@ box_draw_:
         mov al, 2
         out dx, ax
         cmp cx, word [_spr_h]
-        jne short .L3725f
+        jne short .not_last_col_3725f
         nop
         nop
         nop
@@ -1069,9 +1071,9 @@ box_draw_:
         nop
         nop
         nop
-.L3725f:
+.not_last_col_3725f:
         cmp cx, 1
-        jne short .L37273
+        jne short .mid_col_37273
         nop
         nop
         nop
@@ -1081,7 +1083,7 @@ box_draw_:
         nop
         nop
         nop
-.L37273:
+.mid_col_37273:
         mov al, byte [_border]
         stosb
         add di, 0x4f
@@ -1094,7 +1096,7 @@ box_draw_:
         jne short .fill_px_37285
         mov al, byte [_border]
         stosb
-        jmp short .L372a2
+        jmp short .col_end_372a2
         nop
         nop
         nop
@@ -1103,19 +1105,19 @@ box_draw_:
         add di, 0x4f
         dec bh
         jne short .edge_px_37299
-.L372a2:
+.col_end_372a2:
         pop di
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L372b8
+        jle short .plane_ok_372b8
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L372b8:
+.plane_ok_372b8:
         mov byte [_plane_bit], ah
         loop .col_37240
         pop esi
@@ -1169,14 +1171,14 @@ spr_grab_:
         mov ah, byte [_plane_bit]
         inc ah
         cmp ah, 3
-        jle short .L3734d
+        jle short .plane_ok_3734d
         nop
         nop
         nop
         nop
         inc esi
         mov ah, 0
-.L3734d:
+.plane_ok_3734d:
         mov byte [_plane_bit], ah
         loop .col_37325
         pop esi
@@ -1227,14 +1229,14 @@ grab32_:
         mov ah, byte [_plane_bit]
         inc ah
         cmp ah, 3
-        jle short .L373d2
+        jle short .plane_ok_373d2
         nop
         nop
         nop
         nop
         inc esi
         mov ah, 0
-.L373d2:
+.plane_ok_373d2:
         mov byte [_plane_bit], ah
         loop .px_373b7
         pop ax
@@ -1295,14 +1297,14 @@ spr_draw_opaque_:
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L37477
+        jle short .plane_ok_37477
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L37477:
+.plane_ok_37477:
         mov byte [_plane_bit], ah
         loop .col_3744f
         pop esi
@@ -1367,7 +1369,7 @@ spr_draw_scaled_:
 .px_37513:
         mov al, byte [esi]
         cmp al, 0
-        je short .L37530
+        je short .skip_px_37530
         nop
         nop
         nop
@@ -1378,33 +1380,33 @@ spr_draw_scaled_:
         add edx, 4
         dec bh
         jne short .px_37513
-        jmp short .L3753d
+        jmp short .col_end_3753d
         nop
         nop
         nop
-.L37530:
+.skip_px_37530:
         add di, 0x50
         add esi, dword [edx]
         add edx, 4
         dec bh
         jne short .px_37513
-.L3753d:
+.col_end_3753d:
         pop esi
         pop di
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L37554
+        jle short .plane_ok_37554
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L37554:
+.plane_ok_37554:
         mov byte [_plane_bit], ah
         loop .col_374fd
-        jmp short .L375c6
+        jmp short .done_375c6
         nop
         nop
         nop
@@ -1422,7 +1424,7 @@ spr_draw_scaled_:
 .px_clip_37577:
         mov al, byte [esi]
         cmp al, 0
-        je short .L37594
+        je short .skip_px_clip_37594
         nop
         nop
         nop
@@ -1433,34 +1435,34 @@ spr_draw_scaled_:
         add edx, 4
         dec bh
         jne short .px_clip_37577
-        jmp short .L375a1
+        jmp short .col_end_clip_375a1
         nop
         nop
         nop
-.L37594:
+.skip_px_clip_37594:
         add di, 0x50
         add esi, dword [edx]
         add edx, 4
         dec bh
         jne short .px_clip_37577
-.L375a1:
+.col_end_clip_375a1:
         pop esi
         pop di
         add edx, dword [_clipy]
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L375be
+        jle short .plane_ok_clip_375be
         nop
         nop
         nop
         nop
         inc edi
         mov ah, 1
-.L375be:
+.plane_ok_clip_375be:
         mov byte [_plane_bit], ah
         loop .col_clip_37561
-.L375c6:
+.done_375c6:
         pop esi
         pop edi
         pop edx
@@ -1492,7 +1494,7 @@ pcx_blit_:
         mov ah, 0
         and ax, 0xc0
         cmp ax, 0xc0
-        je short .L37669
+        je short .run_37669
         nop
         nop
         nop
@@ -1502,7 +1504,7 @@ pcx_blit_:
         push ax
         mov ah, byte [_plane_bit]
         cmp ah, 8
-        jne short .L37634
+        jne short .plane_shift_37634
         nop
         nop
         nop
@@ -1510,14 +1512,14 @@ pcx_blit_:
         inc di
         mov ah, 1
         mov al, 2
-        jmp short .L37638
+        jmp short .plane_set_37638
         nop
         nop
         nop
-.L37634:
+.plane_shift_37634:
         mov al, 2
         shl ah, 1
-.L37638:
+.plane_set_37638:
         out dx, ax
         mov byte [_plane_bit], ah
         pop ax
@@ -1528,11 +1530,11 @@ pcx_blit_:
         inc word [_pcx_row]
         cmp word [_pcx_row], 0xc8
         jl short .row_375fb
-        jmp short .L376d5
+        jmp short .done_376d5
         nop
         nop
         nop
-.L37669:
+.run_37669:
         pop ax
         and al, 0x3f
         rr mov, cl, al
@@ -1544,7 +1546,7 @@ pcx_blit_:
         push ax
         mov ah, byte [_plane_bit]
         cmp ah, 8
-        jne short .L37692
+        jne short .run_plane_shift_37692
         nop
         nop
         nop
@@ -1552,20 +1554,20 @@ pcx_blit_:
         inc di
         mov ah, 1
         mov al, 2
-        jmp short .L37696
+        jmp short .run_plane_set_37696
         nop
         nop
         nop
-.L37692:
+.run_plane_shift_37692:
         mov al, 2
         shl ah, 1
-.L37696:
+.run_plane_set_37696:
         out dx, ax
         mov byte [_plane_bit], ah
         pop ax
         inc bx
         cmp bx, 0x13f
-        jle short .L376ce
+        jle short .run_in_row_376ce
         nop
         nop
         nop
@@ -1573,16 +1575,16 @@ pcx_blit_:
         add di, word [_v88b4a]
         inc word [_pcx_row]
         cmp word [_pcx_row], 0xc8
-        je short .L376d5
+        je short .done_376d5
         nop
         nop
         nop
         nop
         mov bx, 0
-.L376ce:
+.run_in_row_376ce:
         loop .run_px_37674
         jmp near .px_375ff
-.L376d5:
+.done_376d5:
         popad
         ret
 
@@ -1603,7 +1605,7 @@ pcx_tiles_:
         mov ah, 0
         and ax, 0xc0
         cmp ax, 0xc0
-        je short .L3772d
+        je short .run_3772d
         nop
         nop
         nop
@@ -1617,11 +1619,11 @@ pcx_tiles_:
         inc word [_pcx_row]
         cmp word [_pcx_row], 0xc8
         jl short .row_376ef
-        jmp short .L37766
+        jmp short .tiles_37766
         nop
         nop
         nop
-.L3772d:
+.run_3772d:
         pop ax
         and al, 0x3f
         rr mov, cl, al
@@ -1633,23 +1635,23 @@ pcx_tiles_:
         inc edi
         inc bx
         cmp bx, 0x13f
-        jle short .L37762
+        jle short .run_in_row_37762
         nop
         nop
         nop
         nop
         inc word [_pcx_row]
         cmp word [_pcx_row], 0xc8
-        je short .L37766
+        je short .tiles_37766
         nop
         nop
         nop
         nop
         mov bx, 0
-.L37762:
+.run_in_row_37762:
         loop .run_px_37738
         jmp short .px_376f3
-.L37766:
+.tiles_37766:
         cld
         rr xor, ecx, ecx
         mov esi, dword [_v7d99c]
@@ -1668,14 +1670,14 @@ pcx_tiles_:
         add esi, 0x20
         inc bl
         cmp bl, 0xb
-        jne short .L377a8
+        jne short .same_tile_row_377a8
         nop
         nop
         nop
         nop
         add esi, 0x26c0
         mov bl, 1
-.L377a8:
+.same_tile_row_377a8:
         dec bh
         jne short .tile_row_37779
         popad
@@ -1700,7 +1702,7 @@ buttons_poll_:
         mov al, byte [edx]
         mov word [_joy88b46], ax
         cmp word [_joyfound], 1
-        je short .L37847
+        je short .done_37847
         nop
         nop
         nop
@@ -1713,37 +1715,37 @@ buttons_poll_:
         in al, dx
         sti
         test al, 0x10
-        jne short .L37814
+        jne short .chk_btn2_37814
         nop
         nop
         nop
         nop
         mov word [_joy88b40], 1
-.L37814:
+.chk_btn2_37814:
         test al, 0x20
-        jne short .L37825
+        jne short .chk_btn3_37825
         nop
         nop
         nop
         nop
         mov word [_joy88b42], 1
-.L37825:
+.chk_btn3_37825:
         test al, 0x40
-        jne short .L37836
+        jne short .chk_btn4_37836
         nop
         nop
         nop
         nop
         mov word [_joy88b44], 1
-.L37836:
+.chk_btn4_37836:
         test al, 0x80
-        jne short .L37847
+        jne short .done_37847
         nop
         nop
         nop
         nop
         mov word [_joy88b46], 1
-.L37847:
+.done_37847:
         pop ax
         pop edx
         ret
@@ -1762,13 +1764,13 @@ joy_poll_:
         mov byte [_key88cd3], al
         mov bx, word [_joy_skip]
         cmp bx, 1
-        jne short .L3787d
+        jne short .poll_3787d
         nop
         nop
         nop
         nop
-        jmp near .L379e6
-.L3787d:
+        jmp near .done_379e6
+.poll_3787d:
         rr xor, ebx, ebx
         rr xor, eax, eax
         rr xor, edx, edx
@@ -1794,28 +1796,28 @@ joy_poll_:
         mov dx, 0x201
         in al, dx
         test byte [_joy_bits], al
-        jne short .L378df
+        jne short .axes_busy_378df
         nop
         nop
         nop
         nop
         mov ax, 1
-        jmp short .L378e2
-.L378df:
+        jmp short .axes_flag_378e2
+.axes_busy_378df:
         rr xor, ax, ax
-.L378e2:
+.axes_flag_378e2:
         push ax
         rr or, si, si
-        jge short .L378f3
+        jge short .no_timeout_378f3
         nop
         nop
         nop
         nop
         mov ax, 1
-        jmp short .L378f6
-.L378f3:
+        jmp short .timeout_flag_378f6
+.no_timeout_378f3:
         rr xor, ax, ax
-.L378f6:
+.timeout_flag_378f6:
         pop dx
         rr or, dx, ax
         je short .sample_3789c
@@ -1826,20 +1828,20 @@ joy_poll_:
         idiv bx
         mov word [_joy_ay], ax
         rr or, si, si
-        jge short .L3792a
+        jge short .found_3792a
         nop
         nop
         nop
         nop
         mov word [_joyfound], 1
-        jmp near .L379e6
-.L3792a:
+        jmp near .done_379e6
+.found_3792a:
         mov cl, 1
         mov bx, word [_joy_cx]
         mov ax, word [_joy_ax]
         shl ax, 1
         rr cmp, ax, bx
-        jge short .L37965
+        jge short .right_37965
         nop
         nop
         nop
@@ -1848,20 +1850,20 @@ joy_poll_:
         rr sub, dx, ax
         inc dx
         cmp dx, word [_joy_lim_l]
-        jl short .L37960
+        jl short .left_done_37960
         nop
         nop
         nop
         nop
         mov byte [_key88cd5], cl
-.L37960:
-        jmp short .L37989
+.left_done_37960:
+        jmp short .y_axis_37989
         nop
         nop
         nop
-.L37965:
+.right_37965:
         rr cmp, ax, bx
-        jl short .L37989
+        jl short .y_axis_37989
         nop
         nop
         nop
@@ -1870,18 +1872,18 @@ joy_poll_:
         rr sub, dx, bx
         inc dx
         cmp dx, word [_joy_lim_r]
-        jl short .L37989
+        jl short .y_axis_37989
         nop
         nop
         nop
         nop
         mov byte [_key88cdd], cl
-.L37989:
+.y_axis_37989:
         mov bx, word [_joy_cy]
         mov ax, word [_joy_ay]
         shl ax, 1
         rr cmp, ax, bx
-        jge short .L379c2
+        jge short .down_379c2
         nop
         nop
         nop
@@ -1890,20 +1892,20 @@ joy_poll_:
         rr sub, dx, ax
         inc dx
         cmp dx, word [_joy_lim_u]
-        jl short .L379bd
+        jl short .up_done_379bd
         nop
         nop
         nop
         nop
         mov byte [_key88cd6], cl
-.L379bd:
-        jmp short .L379e6
+.up_done_379bd:
+        jmp short .done_379e6
         nop
         nop
         nop
-.L379c2:
+.down_379c2:
         rr cmp, ax, bx
-        jle short .L379e6
+        jle short .done_379e6
         nop
         nop
         nop
@@ -1912,13 +1914,13 @@ joy_poll_:
         rr sub, dx, bx
         inc dx
         cmp dx, word [_joy_lim_d]
-        jl short .L379e6
+        jl short .done_379e6
         nop
         nop
         nop
         nop
         mov byte [_key88cd3], cl
-.L379e6:
+.done_379e6:
         pop esi
         pop edx
         pop ecx
@@ -2048,37 +2050,37 @@ surface_at_:
         mov eax, dword [_probe_y]
         mov ecx, dword [_probe_x]
         cmp eax, 0xfff
-        jle short .L37b20
+        jle short .y_hi_ok_37b20
         nop
         nop
         nop
         nop
         mov eax, 0xfff
-.L37b20:
+.y_hi_ok_37b20:
         cmp eax, 0
-        jge short .L37b2e
+        jge short .y_lo_ok_37b2e
         nop
         nop
         nop
         nop
         mov eax, 0
-.L37b2e:
+.y_lo_ok_37b2e:
         cmp ecx, 0xfff
-        jle short .L37b3f
+        jle short .x_hi_ok_37b3f
         nop
         nop
         nop
         nop
         mov ecx, 0xfff
-.L37b3f:
+.x_hi_ok_37b3f:
         cmp ecx, 0
-        jge short .L37b4d
+        jge short .x_lo_ok_37b4d
         nop
         nop
         nop
         nop
         mov ecx, 0
-.L37b4d:
+.x_lo_ok_37b4d:
         rr mov, esi, eax
         and esi, 0x1f
         shl esi, 5
@@ -2104,19 +2106,19 @@ surface_at_:
         add esi, 0x1b000
         lodsb
         cmp al, 0
-        jne short .L37ba9
+        jne short .class_b_37ba9
         nop
         nop
         nop
         nop
         mov dword [_surf_class], ebx
-        jmp short .L37baf
+        jmp short .done_37baf
         nop
         nop
         nop
-.L37ba9:
+.class_b_37ba9:
         mov dword [_surf_class], ecx
-.L37baf:
+.done_37baf:
         popad
         ret
 
@@ -2511,7 +2513,7 @@ modex_init_:
         ret
 
 ; floor_done 0x3c3e7 / floor_upper_done 0x40905: the shared popad; ret of the three bodies.
-; Branch targets inside a routine are nasm local labels .Lxxxxx (the address).
+; Branch targets inside a routine are nasm local labels named .kind_<address>.
 ; ---- 0x37e94 floor_draw: horizon latch copy from [v7d860] to row 110 (0x2260), then the perspective floor: per pixel a [ebx] point scaled by [esi] plus the camera view_x/view_y, tile of map tilemap (32x32 tiles), one byte; three unrolled bodies by detail_lvl = detail 1/2/3 (High/Medium/Low)
 floor_draw_:
         pushad
@@ -2530,20 +2532,20 @@ floor_draw_:
         nop
         nop
         cmp ax, strict word 2
-        jne short .L37ec9
+        jne short .lo_37ec9
         nop
         nop
         nop
         nop
         jmp near floor_med
-.L37ec9:
+.lo_37ec9:
         jmp near floor_lo
 floor_hi:
         mov edi, 0xa0000
         add edi, 0x2260
         add di, word [_page_draw]
         cmp dword [_v7d998], 1
-        je near .L37f9d
+        je near .bg_done_37f9d
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         mov ax, 0x50
@@ -2608,7 +2610,7 @@ floor_hi:
         rr mov, cx, ax
         rep movsb
         rr add, si, dx
-.L37f9d:
+.bg_done_37f9d:
         mov dx, 0x3ce
         mov ax, 0x4005
         out dx, ax
@@ -2616,13 +2618,13 @@ floor_hi:
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
-        jge short .L37fc9
+        jge short .pos_ok_37fc9
         nop
         nop
         nop
         nop
         add ebx, 0x780
-.L37fc9:
+.pos_ok_37fc9:
         shl ebx, 3
         add ebx, dword [_v7d6a0]
         mov esi, dword [_v7d660]
@@ -4600,29 +4602,29 @@ floor_hi:
         pop ecx
         add ebx, 8
         cmp ebx, dword [_v7d698]
-        jle short .L395b0
+        jle short .wrap_ok_395b0
         nop
         nop
         nop
         nop
         mov ebx, dword [_v7d6a0]
-.L395b0:
+.wrap_ok_395b0:
         add edi, 0x15e0
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L395cb
+        jle short .plane_ok_395cb
         nop
         nop
         nop
         nop
         mov ah, 1
         inc di
-.L395cb:
+.plane_ok_395cb:
         xchg byte [_plane_bit], ah
-        loop .L395d8
+        loop .next_col_395d8
         jmp near floor_done
-.L395d8:
+.next_col_395d8:
         jmp near .col_hi_37ff1
 floor_med:
         mov edi, 0xa0000
@@ -4631,7 +4633,7 @@ floor_med:
         mov esi, dword [_v7d860]
         rr xor, ecx, ecx
         cmp dword [_v7d998], 2
-        jne short .L39620
+        jne short .bg_rows_39620
         nop
         nop
         nop
@@ -4641,8 +4643,8 @@ floor_med:
         add esi, 0x7d00
         mov cx, 0x28a0
         rep movsb
-        jmp near .L396c8
-.L39620:
+        jmp near .bg_done_396c8
+.bg_rows_39620:
         mov ax, 0x50
         mov dx, 0xf0
         rr mov, cx, ax
@@ -4705,7 +4707,7 @@ floor_med:
         rr mov, cx, ax
         rep movsb
         rr add, si, dx
-.L396c8:
+.bg_done_396c8:
         mov dx, 0x3ce
         mov ax, 0x4005
         out dx, ax
@@ -4713,13 +4715,13 @@ floor_med:
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
-        jge short .L396f4
+        jge short .pos_ok_396f4
         nop
         nop
         nop
         nop
         add ebx, 0x780
-.L396f4:
+.pos_ok_396f4:
         shl ebx, 3
         add ebx, dword [_v7d6a0]
         mov esi, dword [_v7d660]
@@ -6698,29 +6700,29 @@ floor_med:
         add esi, 0x118
         add ebx, 0x10
         cmp ebx, dword [_v7d698]
-        jle short .L3ace1
+        jle short .wrap_ok_3ace1
         nop
         nop
         nop
         nop
         mov ebx, dword [_v7d6a0]
-.L3ace1:
+.wrap_ok_3ace1:
         add edi, 0x15e0
         mov ah, byte [_plane_bit]
         shl ah, 2
         cmp ah, 0xc
-        jle short .L3acfd
+        jle short .plane_ok_3acfd
         nop
         nop
         nop
         nop
         mov ah, 3
         inc di
-.L3acfd:
+.plane_ok_3acfd:
         xchg byte [_plane_bit], ah
-        loop .L3ad0a
+        loop .next_col_3ad0a
         jmp near floor_done
-.L3ad0a:
+.next_col_3ad0a:
         jmp near .col_med_3971c
 floor_lo:
         mov edi, 0xa0000
@@ -6796,13 +6798,13 @@ floor_lo:
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
-        jge short .L3adf6
+        jge short .pos_ok_3adf6
         nop
         nop
         nop
         nop
         add ebx, 0x780
-.L3adf6:
+.pos_ok_3adf6:
         shl ebx, 3
         add ebx, dword [_v7d6a0]
         mov esi, dword [_v7d660]
@@ -8777,20 +8779,20 @@ floor_lo:
         add esi, 0x348
         add ebx, 0x20
         cmp ebx, dword [_v7d698]
-        jle short .L3c3d5
+        jle short .wrap_ok_3c3d5
         nop
         nop
         nop
         nop
         mov ebx, dword [_v7d6a0]
-.L3c3d5:
+.wrap_ok_3c3d5:
         add edi, 0x15e1
-        loop .L3c3e2
+        loop .next_col_3c3e2
         jmp short floor_done
         nop
         nop
         nop
-.L3c3e2:
+.next_col_3c3e2:
         jmp near .col_lo_3ae1e
 floor_done:
         popad
@@ -8813,13 +8815,13 @@ floor_draw_upper_:
         nop
         nop
         cmp ax, strict word 2
-        jne short .L3c41d
+        jne short .lo_3c41d
         nop
         nop
         nop
         nop
         jmp near floor_upper_med
-.L3c41d:
+.lo_3c41d:
         jmp near floor_upper_lo
 floor_upper_hi:
         mov edi, 0xa0000
@@ -8896,13 +8898,13 @@ floor_upper_hi:
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
-        jge short .L3c510
+        jge short .pos_ok_3c510
         nop
         nop
         nop
         nop
         add ebx, 0x780
-.L3c510:
+.pos_ok_3c510:
         shl ebx, 3
         add ebx, dword [_v7d6a0]
         mov esi, dword [_v7d660]
@@ -10880,29 +10882,29 @@ floor_upper_hi:
         pop ecx
         add ebx, 8
         cmp ebx, dword [_v7d698]
-        jle short .L3daf7
+        jle short .wrap_ok_3daf7
         nop
         nop
         nop
         nop
         mov ebx, dword [_v7d6a0]
-.L3daf7:
+.wrap_ok_3daf7:
         add edi, 0x15e0
         mov ah, byte [_plane_bit]
         shl ah, 1
         cmp ah, 8
-        jle short .L3db12
+        jle short .plane_ok_3db12
         nop
         nop
         nop
         nop
         mov ah, 1
         inc di
-.L3db12:
+.plane_ok_3db12:
         xchg byte [_plane_bit], ah
-        loop .L3db1f
+        loop .next_col_3db1f
         jmp near floor_upper_done
-.L3db1f:
+.next_col_3db1f:
         jmp near .col_upper_hi_3c538
 floor_upper_med:
         mov edi, 0xa0000
@@ -10979,13 +10981,13 @@ floor_upper_med:
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
-        jge short .L3dc12
+        jge short .pos_ok_3dc12
         nop
         nop
         nop
         nop
         add ebx, 0x780
-.L3dc12:
+.pos_ok_3dc12:
         shl ebx, 3
         add ebx, dword [_v7d6a0]
         mov esi, dword [_v7d660]
@@ -12964,29 +12966,29 @@ floor_upper_med:
         add esi, 0x118
         add ebx, 0x10
         cmp ebx, dword [_v7d698]
-        jle short .L3f1ff
+        jle short .wrap_ok_3f1ff
         nop
         nop
         nop
         nop
         mov ebx, dword [_v7d6a0]
-.L3f1ff:
+.wrap_ok_3f1ff:
         add edi, 0x15e0
         mov ah, byte [_plane_bit]
         shl ah, 2
         cmp ah, 0xc
-        jle short .L3f21b
+        jle short .plane_ok_3f21b
         nop
         nop
         nop
         nop
         mov ah, 3
         inc di
-.L3f21b:
+.plane_ok_3f21b:
         xchg byte [_plane_bit], ah
-        loop .L3f228
+        loop .next_col_3f228
         jmp near floor_upper_done
-.L3f228:
+.next_col_3f228:
         jmp near .col_upper_med_3dc3a
 floor_upper_lo:
         mov edi, 0xa0000
@@ -13062,13 +13064,13 @@ floor_upper_lo:
         mov ebx, dword [_curpos]
         sub ebx, 0xa0
         cmp ebx, 0
-        jge short .L3f314
+        jge short .pos_ok_3f314
         nop
         nop
         nop
         nop
         add ebx, 0x780
-.L3f314:
+.pos_ok_3f314:
         shl ebx, 3
         add ebx, dword [_v7d6a0]
         mov esi, dword [_v7d660]
@@ -15043,20 +15045,20 @@ floor_upper_lo:
         add esi, 0x348
         add ebx, 0x20
         cmp ebx, dword [_v7d698]
-        jle short .L408f3
+        jle short .wrap_ok_408f3
         nop
         nop
         nop
         nop
         mov ebx, dword [_v7d6a0]
-.L408f3:
+.wrap_ok_408f3:
         add edi, 0x15e1
-        loop .L40900
+        loop .next_col_40900
         jmp short floor_upper_done
         nop
         nop
         nop
-.L40900:
+.next_col_40900:
         jmp near .col_upper_lo_3f33c
 floor_upper_done:
         popad
@@ -15075,13 +15077,13 @@ kbd_isr_:
 %endif
         mov ds, ebx
         cmp word [_kbd_busy], 1
-        jne short .L40925
+        jne short .enter_40925
         nop
         nop
         nop
         nop
-        jmp near .L409e4
-.L40925:
+        jmp near .leave_409e4
+.enter_40925:
         mov word [_kbd_busy], 1
         mov edi, dword [_keytab]
         in al, 0x60
@@ -15096,97 +15098,97 @@ kbd_isr_:
         out 0x20, al
         pop ax
         cmp al, 0xe0
-        jne short .L40957
+        jne short .not_e0_40957
         nop
         nop
         nop
         nop
         mov al, byte [_last_scan]
-.L40957:
+.not_e0_40957:
         rr mov, ah, al
         mov bl, 1
         cmp al, 0x52
-        jbe short .L40967
+        jbe short .scan_40967
         nop
         nop
         nop
         nop
         rr xor, bl, bl
         sub al, 0x80
-.L40967:
+.scan_40967:
         cmp al, 0x1c
-        jne short .L4097a
+        jne short .not_enter_4097a
         nop
         nop
         nop
         nop
         mov byte [_key_select], bl
-        jmp short .L409c1
+        jmp short .keytab_409c1
         nop
         nop
         nop
-.L4097a:
+.not_enter_4097a:
         cmp al, 0x39
-        jne short .L4098d
+        jne short .not_space_4098d
         nop
         nop
         nop
         nop
         mov byte [_key_select], bl
-        jmp short .L409c1
+        jmp short .keytab_409c1
         nop
         nop
         nop
-.L4098d:
+.not_space_4098d:
         cmp al, 0x44
-        jne short .L409a0
+        jne short .not_f10_409a0
         nop
         nop
         nop
         nop
         mov byte [_shotkey], bl
-        jmp short .L409d5
+        jmp short .last_scan_409d5
         nop
         nop
         nop
-.L409a0:
+.not_f10_409a0:
         cmp al, 0x48
-        jne short .L409b3
+        jne short .not_up_409b3
         nop
         nop
         nop
         nop
         mov byte [_key_up], bl
-        jmp short .L409c1
+        jmp short .keytab_409c1
         nop
         nop
         nop
-.L409b3:
+.not_up_409b3:
         cmp al, 0x50
-        jne short .L409c1
+        jne short .keytab_409c1
         nop
         nop
         nop
         nop
         mov byte [_key_down], bl
-.L409c1:
+.keytab_409c1:
         mov ecx, 0xc
 .keytab_409c6:
         cmp byte [edi], al
-        jne short .L409d1
+        jne short .next_key_409d1
         nop
         nop
         nop
         nop
         mov byte [edi + 1], bl
-.L409d1:
+.next_key_409d1:
         inc edi
         inc edi
         loop .keytab_409c6
-.L409d5:
+.last_scan_409d5:
         mov byte [_last_scan], ah
         mov word [_kbd_busy], 0
-.L409e4:
+.leave_409e4:
         pop ecx
         pop edi
         pop ds
