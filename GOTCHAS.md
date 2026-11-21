@@ -752,7 +752,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   above the rotation moves (0x21fad) and reads the register the game reads - with one shared temp the
   same source order sinks it below them (0x21fb3, `movsx edx,bx`), 2 -> 0 rows (iter 100). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
-  sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
+  sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`;
+  iter 100: `song && 0` and `2 - 2` fold to the same sunk xor, so a non-constant spelling is not a
+  trigger either),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group
   (classes_menu 0x1a05d, QUESTIONS 3), two independent load chains interleaved (in_sector 0x24a08; a
   statement written below a branch sinks past the whole branch), a dead copy of an incoming register
