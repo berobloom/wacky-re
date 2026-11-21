@@ -535,6 +535,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   declared BEFORE the scalar it swaps with and assigned where the game first stores it
   (`char *nm;` ... after the preceding call `nm = names[0];` ... `nm += 12;`): sounds_load 0x12124,
   0x168/0x16c, MATCH. Declared after, or assigned earlier, keeps a swap. [generic]
+- **But which frame slot two spilled pointer locals get is NOT an order question once both are
+  plain locals:** screenshot 0x114c8 binds pal [esp+0x508] / lineptr [esp+0x50c] where the game has
+  the mirror, and swapping the two declarations leaves the binding AND the code byte-identical while
+  swapping the two assignments changes only the emission order (6 -> 8 rows): the binding follows
+  neither declaration order nor assignment order, so of the two orders the game shows (its
+  `lineptr` owns the lower slot) no spelling reaches it (iter 102, `.work/vbatch/sc2.py`/`sc3.py`,
+  findings/formats.md). Try the `a[i]`-to-explicit-pointer lever above first; if both locals are
+  already explicit pointer locals taking adjacent slots, the row pair is the allocator's. [wacky]
 - **One local shared by two switch arms has one home, two locals get two:** one `short b` for the
   receive and transmit byte fixed com_isr 0x106c8 and com_isr_fifo. [generic]
 - **A 0/1 value in its own home: braced `if (c) { x = 1; } else { x = 0; }`**, not `x = (c)` (which

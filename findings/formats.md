@@ -626,6 +626,20 @@ was only the `fputc` count: 200 rows of the screen emit ~2 `fputc` each plus the
 - CONFIRMED (0x117d0-0x117f4): the tail is `fputc(0xc)` (the standard PCX palette selector),
   `fwrite` of 0x300 bytes from `[esp+0x50c]`, `fclose`, then `call nosound` 0x117f4 - taking a
   screenshot silences the sound - and the epilogue `add esp,0x514` + 6 pops + `ret` 0x11805.
+- CONFIRMED (iter 102): the frame's top three slots are the locals - `[esp+0x510]` = `n` (the
+  `inc dword [esp+0x510]` 0x11600 of the WACKnnn search loop), `[esp+0x50c]` = the palette pointer
+  (`mov [0x7d760],eax` 0x11618 = `palptr`, `mov edx,0x300` + `fwrite` 0x117e3) and `[esp+0x508]` =
+  the row buffer pointer (`mov [0x7d704],eax` 0x1172b = `sprptr`).
+- STRONGLY SUPPORTED (iter 102, two whole-file probe compiles `.work/vbatch/sc2.py`, `sc3.py`, each
+  scored by `vbatch.py`: control 6 rows, assign-swap 8, decl-swap 6; `V.OBJ` disassembled at
+  0x114d4-0x114eb): which of `[esp+0x508]` / `[esp+0x50c]` the two spilled pointer locals own does
+  NOT follow the source. Ours binds pal 0x508 / lineptr 0x50c in every spelling; swapping the two
+  assignments only swaps the emission order (the `lea eax,[esp+0x320]` store moves above the
+  `mov eax,esp` store) and costs 2 rows, and swapping the declarations changes nothing at all. The
+  game has the mirror binding (lineptr 0x508, pal 0x50c) with the same three slots, the same
+  `sub esp,0x514` and pal's address computed first (0x114d4 `mov eax,esp`), so the last 6 rows of
+  `screenshot` are the allocator's slot choice, not a spelling - see GOTCHAS "Which frame slot two
+  spilled pointer locals get".
 
 ## `gam_load` 0x2717c's line reader and the fade step (CONFIRMED, iter 80)
 

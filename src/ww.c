@@ -817,9 +817,14 @@ extern unsigned char *palptr;
 void getpalette(void);
 void spr_grab(void);
 
-/* differs (6 rows, all the pal/lineptr stack-slot pair: game pal [esp+0x50c], lineptr [esp+0x508];
-   ours the reverse - the slot-permutation dead end; declaration order (3), assignment order (3) and
-   dropping either local (worse: 25-30) tried). Fixed in iter 37 (51 -> 6): int n read back as
+/* differs (6 rows, all the pal/lineptr frame-slot pair: game lineptr [esp+0x508] (sprptr store
+   0x1172b), pal [esp+0x50c] (palptr store 0x11618, fwrite 0x117e3); ours the reverse). Iter 102
+   vbatch 11 variants (.work/vbatch/screenshot.py: assign-swap 8, decl-swap, both-swap 8,
+   decl-init-lineptr 8, pal-late 8, n-first 11, hp-first, decl-lineptr-after-n, pal-comma-q,
+   drop-lineptr 27): the slot BINDING does not move - swapping the declarations leaves the bytes
+   identical, swapping the assignments only swaps the emission order - so no spelling of these two
+   locals reaches the game's slot order (GOTCHAS "which frame slot two spilled pointer locals get",
+   findings/formats.md). Fixed in iter 37 (51 -> 6): int n read back as
    (short)n for itoa (the game's dword slot + movsx word reload), hp = &hdr with the other pointer
    inits (ebp from the prologue), the palette shift through its own pointer q in the pal_shift form
    (pal itself never moves, so `pal = palptr` went), and fputc(line[x++], f) (inc before the call).
