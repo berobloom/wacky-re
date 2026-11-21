@@ -4265,9 +4265,13 @@ extern struct trkline trklines[];
 #pragma aux trklines "_arr72350"
 extern struct trkline *v7d7f8;
 
-/* differs (26 rows, 324 bytes = the game's length; 22 rows are the masked-fixup artefact
+/* differs (4 rows, 324 bytes = the game's length; 22 rows are the masked-fixup artefact
  * [reg - @]/[reg + @]): the a <= 1 arm loads pts first, the game f06 and n first and pts last
- * (0x16d8b-0x16d9a); all 6 orders of the three stores, f1c stored first, f1c re-read as the index,
+ * (0x16d8b-0x16d9a). Iter 102 vbatch 8 variants (.work/vbatch/fn_16d68.py): the other five orders of
+ * the three stores cost 5, 5, 7, 12 and 12 rows, so the written f1a / f10 / f5e is the closest of
+ * all six, and dropping the `(int)` cast, moving the f1c store last or an explicit `short nn` for
+ * v7d7f8->n emit the same bytes as this - the pair swap is 9.5b's schedule, not the source's.
+ * All 6 orders of the three stores, f1c stored first, f1c re-read as the index,
  * *(int *)v7d7f8 and permute.py (20 rounds) leave it. Iter 37 rewrite (58 -> 26): named fields
  * instead of WS/WI absolute addresses (the game addresses players[] through fixups), v7d7f8 itself
  * as the trkline pointer (the game caches it in ESI and stores it once at the exit), and the inner
