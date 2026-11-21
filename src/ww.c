@@ -960,7 +960,11 @@ void music_start(int song, int loop)
  * inlined music_start(x, 1) keeps mov edx,1 early in ours too, so -oe only sinks the zero constant.
  * Tried: int/short/register local for the argument, local used by both calls, second (unused) parameter,
  * spelling the inline out by hand, swapping the two stores in music_start, #pragma aux parm [eax] [edx],
- * for(;;) wait loop - all produced the same 116 bytes with xor edx,edx after the cursong store. */
+ * for(;;) wait loop - all produced the same 116 bytes with xor edx,edx after the cursong store.
+ * Iter 100 whole-file vbatch (.work/vbatch/music_jingle.py, control 2): local-loop-zero,
+ * local-two-steps, stores-swapped, nonconst-loop (`song && 0`), const-expr (`2 - 2`) all fold to the
+ * same 116 bytes with the xor sunk, local-both-calls 9, if-wrap 5, short-proto 9 - a zero argument is
+ * 9.5b's own deferred `xor reg,reg` whatever the caller writes. */
 void music_jingle(int song)
 {
     music_start(song, 0);

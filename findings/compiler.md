@@ -216,6 +216,13 @@ survives only in the second case.
   *whose temp the register is*, not whether the original source declared it - a local that only
   changes the schedule of another instruction is real (GOTCHAS "Which of two locals gets EAX", DREA
   harness/TRAPS.md "Score a candidate only after checking which value it reads").
+- The other side of that, same iteration (`.work/vbatch/music_jingle.py`, control 2 rows): the sunk
+  zero argument of an inlined call is 9.5b's own def and cannot be pulled up by what the caller
+  writes - `music_start(song, 0)`, `int loop = 0; music_start(song, loop);`, `music_start(song, song &&
+  0)` and `music_start(song, 2 - 2)` compile byte-identical (116 bytes, `xor edx,edx` at 0x11893 in
+  all four), so the game's early `xor edx,edx` 0x11885 is not evidence of a non-constant in its
+  source. CONFIRMED: constant folding happens before that scheduling decision, so "make the constant
+  non-constant" is not a lever.
 
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 

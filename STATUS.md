@@ -6,8 +6,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **212 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 97 +1
-  fade_in; iter 94 +1 shots_clear; iter 93s +3; iter 90 +2 with no C change (`difffn.py`/`fncov.py` behaviour work);
+- **213 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 100 +1
+  line_draw; iter 97 +1 fade_in; iter 94 +1 shots_clear; iter 93s +3; iter 90 +2 with no C change (`difffn.py`/`fncov.py` behaviour work);
   iter 74 started counting `tools/link/extra.c`; objmatch compares rel32 branches between our own
   functions by target, `tools/wc/test_objmatch.py`). Iter 66 checked what a MATCH masks: all 4556
   linker-filled operands point where the game's do (`tools/wc/fixsites.py`, 0 disagreements). C
@@ -30,9 +30,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): all 15 names on that list are now
-   VB-marked or MATCHed, so take the next from `src/nearmiss.txt`: `line_draw` 0x21f04 (2 rows, no
-   SKIP/VB status), `demo_play` 0x2e348 (2), `music_jingle` 0x11884 (2). Levers: findings/compiler.md.
+0. Overnight (register-home night, overnight/prompt.md step 2): both that list and the three
+   two-row names next to it are done or VB-marked (`line_draw` matched iter 100; `demo_play`,
+   `music_jingle` VB iter 100). Next two-row lines in `src/nearmiss.txt` without a vbatch run:
+   `track_setup` 0x0124e8, `shot_hit` 0x0218a4, `duck_screen` 0x02b5e8, `fn_182d0` 0x0182d0.
+   Levers and what is closed: findings/compiler.md (iter 100 section).
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
