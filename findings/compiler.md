@@ -106,6 +106,17 @@ leaves only the p+1 copy, `lea eax,[ebx+4]` 0x26136 vs the game's `mov edx,ebx` 
 0x2612e/0x26136. CONFIRMED that the form changes the home; STRONGLY SUPPORTED that the game's C used
 the indexed pair (its two loads go through two registers, 0x26139/0x26141).
 
+CONFIRMED (iter 95, three probe compiles in `.work/vbatch/`, sha256 over each whole function's masked
+bytes): the operand
+order and parentheses of a flat sum never reach 9.5b's codegen. `(spr_w - 1) + spr_y`,
+`spr_w - 1 + spr_y` and `spr_y + (spr_w - 1)` in self_project 0x26a3c give the same 1160 bytes
+(sha `693313ad...`) and the same 3 rows, so which addend the allocator gives EAX cannot be steered by
+spelling the expression differently - only by changing what the temporaries ARE (widths, locals vs
+globals, how many are live). Equally negative: the game's `mov [0x7d690],ebx` 0x26130 +
+`mov edx,ebx`/`add edx,4` 0x2612e/0x26136 + `mov edx,[edx]` 0x26141 (shots_move) was not produced by
+any of the eight spellings tried in `.work/vbatch/shots_move.py`, including the four that read the pair through the incremented pointer like the
+machine code does - they score 13 rows against the indexed pair's 7 (`.work/vbatch/shots_move.py`).
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

@@ -12184,6 +12184,11 @@ void lights_project(void)
  * 10 -> 11, so it is not the game's form here. Game 0x26df2-0x26dfc is `movsx edx,[spr_w]`,
  * `movsx eax,cx`, `dec edx`, `add eax,edx`: the sum starts from spr_y. GOTCHAS "Which pseudo gets
  * EAX is a coin flip" - the only 3 real rows of this 1160-byte function are that swap.
+ * Iter 95 (vbatch, 6 spellings: noparen-cond, y-first-paren, both-y-first, body-y-first, w-temp,
+ * reuse-k): `(spr_w - 1) + spr_y`, `spr_w - 1 + spr_y` and `spr_y + (spr_w - 1)` compile BYTE-IDENTICAL
+ * (3 rows each), so the operand order and parentheses of this sum never reach the codegen - which
+ * addend gets EAX is decided after parsing. A `w = spr_w - 1` local is 31 (it removes the game's
+ * second `mov ax,[spr_w]` 0x26e06), reusing the switch local `k` 17, the y-first body 21.
  * Found: `k = v88c42; switch (k)` (else the n/v88c42 registers swap), `(m = v7e72c, ticks2 - m)` for
  * the inlined since2(), `sprptr = gnspr[f56]; f56++;`, and f56 > 3 (not <= 3) for the kind-2 step. */
 extern int tb7b328[], tb7b2d8[], v7e72c;

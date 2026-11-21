@@ -726,7 +726,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   and two CONSTANT pseudos are a genuine tie - voices_reset 0x11b1e keeps -1 in EBX whichever store is
   written first (iter 94, 7 spellings). The allocator traces
   in findings/compiler.md show a real tie: equal savings, and the order is the unstable Shell
-  sort's over creation order (`tools/wcc95/shellsort.py`). [generic]
+  sort's over creation order (`tools/wcc95/shellsort.py`). Two more levers are now closed (iter 95,
+  `tools/wcc95/vbatch.py`): the operand order and parentheses of a flat sum never reach the codegen
+  (self_project 0x26a3c: `(spr_w - 1) + spr_y`, `spr_w - 1 + spr_y` and `spr_y + (spr_w - 1)` compile
+  byte-identical, 3 rows each), and a home the game got from an incremented index register is not
+  spelled back into it (shots_move 0x2602c: the game stores the walked global twice 0x26130/0x2613b and
+  reads the second element through the incremented pointer 0x26141; all eight such spellings cost 6
+  rows more than the indexed pair). Caching a global in a local also has to be free: drawsprite_clip
+  0x11404 `short sy = spr_y` puts back the load the game keeps (`add ax,[spr_y]` 0x11437), 3 -> 11. [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group
