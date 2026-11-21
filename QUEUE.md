@@ -19,6 +19,9 @@ Rules for the agent:
 
 ## Items
 
-- [ ] **Q1 <short title>**
-  Report: <what the human saw>
-  Accept: <the observable condition that closes it>
+- [ ] **Q1 Port: first screen from the port**
+  Report: the human asked to start the port (2026-11-21); `port/` held only conventions.
+  Accept: `port/` builds a 32-bit SDL2 binary from `src/ww.c` unchanged plus the runtime layer, reads the
+  player's WW.EXE and data files, runs the game's `main` until the first picture is shown, and a headless
+  run writes that screen as a PNG that matches a DOSBox screenshot of the original at the same point.
+
