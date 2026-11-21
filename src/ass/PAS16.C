@@ -672,6 +672,15 @@ void PAS_SetSampleRateTimer
    Function: PAS_SetSampleBufferCount
 
    Programs the Sample Buffer Count.
+
+   Near miss (0x45E68, 6 rows, same 140 bytes): the game keeps flags in
+   ESI and never uses ECX; the prerelease gives ECX. The 1.04 spelling
+   (LoByte/HiByte locals) built by 10.0b is the game's code exactly, but
+   under the prerelease it spills HiByte (156 bytes), and 10.0a/10.0b
+   break 11 other functions of this module. Tried without a change:
+   all 120 declaration orders (1.04 spelling), flags as int/long/
+   unsigned long, LoByte/HiByte as char/unsigned char, LoByte only,
+   writes split, dead LoByte/HiByte stores, unsigned count.
 ---------------------------------------------------------------------*/
 
 void PAS_SetSampleBufferCount
@@ -833,10 +842,11 @@ void PAS_StopPlayback
    PAS_State->crosschannel = data;
 
    // Turn off 16-bit unsigned data
-   data = PAS_Read( SampleSizeConfiguration );
 #if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
-   data &= PAS_SignedSampleMask;
+   // one expression: a separate &= statement stores crosschannel through EDX first (4 rows)
+   data = PAS_Read( SampleSizeConfiguration ) & PAS_SignedSampleMask;
 #else
+   data = PAS_Read( SampleSizeConfiguration );
    data &= PAS_SampleSizeMask;
 #endif
    PAS_Write( SampleSizeConfiguration, data );

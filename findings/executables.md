@@ -248,8 +248,9 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   check. The prerelease assembles the pragma's `mov ax,ss` without the 0x66 prefix the game has;
   the port spells it out with `db 66h` (LIKELY: the original's spelling is unknown). 0x43F11
   "SOUNDSCAPE_Interrupts" was BLASTER_Interrupts' identical table seen at a wrong offset: removed.
-  PAS16 (iter 93l, 0x458B0-0x470B1, same length, 44 bytes differ: flags register in
-  SetSampleBufferCount, one store's scheduling in StopPlayback): **Watcom 10.0 prerelease** too
+  PAS16 (iter 93l, 0x458B0-0x470B1, same length; 6 bytes differ since StopPlayback matched in
+  iter 105: flags in ECX instead of ESI in SetSampleBufferCount, see its note in PAS16.C):
+  **Watcom 10.0 prerelease** too
   (CheckForDriver, GetStateTable and GetFunctionTable match only with it), the same `db 66h` pragma
   spelling as BLASTOLD. Older than 1.04: no recording (BeginTransfer takes no mode and plays only;
   it sets no PAS_SoundPlaying), SetupDMABuffer(ptr, size), StopPlayback without DMA_EndTransfer;

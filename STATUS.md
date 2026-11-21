@@ -34,8 +34,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
    unchanged) and closed the C module's offline near-miss list: the 15 register-home functions are every
    one `MATCH` or `VB:`, and the eight 2-row lines are the emission-order class (GOTCHAS).
 1. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
-   10.0a/10.0 prerelease, `tools/ass/asscheck.py` 276 of 285 named functions, 16 modules whole
-   (findings/executables.md). Near misses: MIDI 324, GUSMIDI 140, BLASTOLD 48, PAS16 44, FMCHIP's
+   10.0a/10.0 prerelease, `tools/ass/asscheck.py` 277 of 285 named functions, 16 modules whole
+   (findings/executables.md). Near misses: MIDI 324, GUSMIDI 140, BLASTOLD 48, PAS16 6 (iter 105:
+   StopPlayback MATCH; SetSampleBufferCount's ECX/ESI flags register is closed, see its note), FMCHIP's
    FM_SetChannelTimbre (40 -> 22 rows, same size; what is left is DL/EDX vs AL/EAX, the tried
    spellings are in its FMCHIP.C note); smallest first, and check the module's compiler in src/ass/README.md (BLASTOLD
    and PAS16 use the 10.0 **prerelease**) before blaming the C.
