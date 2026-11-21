@@ -16482,11 +16482,17 @@ void view_at_curpos(void)
  * box. Player one (netgame 1) keeps its own controls and takes the peer's into key88cc3..cc7 /
  * v88cdf; player two moves its own there and takes the peer's as its kart controls, so both
  * machines drive kart 0 with player one's input. Esc (v88cec) also comes from the peer.
- * differs: 9 rows, all scheduling in the bit split (the game reads v88cef once per use, so it is
+ * differs: 8 rows, all scheduling in the bit split (the game reads v88cef once per use, so it is
  * volatile here): the game groups four loads (0x2f60b-0x2f61d) and then the four masks, and puts
  * each in-branch read one store earlier than 9.5b does. Declaration orders, statement orders,
  * plain reads, the four masks in the game's load order (kept: 15 -> 9), `b = vv88cef; b &= m`,
- * four raw read temps (separate and comma forms) and t/u temps for the in-branch reads all tried. */
+ * four raw read temps (separate and comma forms) and t/u temps for the in-branch reads all tried.
+ * iter 96 register-home batch (.work/vbatch/net_input.py, 7 spellings: split-reads,
+ * split-reads-pairwise, store-order, split-reads-store-order, inbranch-temps,
+ * inbranch-temps-split, split-reads-inbranch-temps): all worse (31, 36, 11, 33, 23, 18, 36).
+ * There is no home to flip here - DH, BL, DL, AH hold the same four masks (0x20, 0x10, 8, 4) in
+ * both builds - and 9.5b fuses `t = g & m` into one register, so `b = vv88cef; b &= m;` makes the
+ * copy a live value of its own: +20 bytes, 31 rows. */
 extern int v7ed90;
 extern unsigned char v88cdf;
 extern short w774e0;
