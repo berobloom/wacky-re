@@ -30,9 +30,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): `car_laps` 0x12b44 (2 rows, nearest:
-   the compare operand order at 0x12ee0) is the only name on that list left without a VB status after
-   iter 98. The levers are in findings/compiler.md (iter 97-98) and each differs note, not here.
+0. Overnight (register-home night, overnight/prompt.md step 2): all 15 names on that list are now
+   VB-marked or MATCHed, so take the next from `src/nearmiss.txt`: `line_draw` 0x21f04 (2 rows, no
+   SKIP/VB status), `demo_play` 0x2e348 (2), `music_jingle` 0x11884 (2). Levers: findings/compiler.md.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
