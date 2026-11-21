@@ -9694,27 +9694,18 @@ void line_plot(void)
     pixel_plot();
 }
 
-/* differs (near-miss, 4 rows / 2 real): the two `err` initialisations. The game emits
- * `movsx edx,bx; sar edx,1` (int semantics straight into err's register, interleaved with the
- * loop-test load); `err = dx >> 1` goes through EAX (the shape kart_line wants), `err = dx;
- * err >>= 1` (this) gives `mov edx,ebx` + `sar dx,1`. Tried: 150 declaration orders, `dx > dy`,
- * for loops, `(int)` casts, `/ 2`, a temp; iter 16 added a 10-variant probe (direct form, `err =
- * err >> 1`, `(int)dx >> 1`, `/ 2`, each in both branches, and the dx/dy swap before or after the
- * init) and two whole-file tries. The best probe score (2 rows) was a FALSE FRIEND: swaps first
- * then `err = dy >> 1` reads the post-swap dy = the minor half, while the game's `movsx edx,cx`
- * sits at 0x21fad *before* the dx/dy rotation and takes the major half. Whole file: direct form in
- * both branches routes through EAX (13 rows); `err = dy >> 1` before the swaps in the else branch
- * alone (if branch untouched) moves the whole else block (58 rows). err stays a short local (the
- * game's `cmp dx,bx` at 0x21f87).
- * Iter 73 shape scan (an int `>> 1` of a short): `err = dx >> 1` in both arms, the else one AFTER the
- * swaps (dx is then the old dy, the same value) 4 -> 2; the row left is the movsx scheduled before
- * the swap moves in the game, after the first in ours (8 placements and swap orders probed). */
+/* Source shape (iter 100, MATCH): the else arm reads the major half BEFORE the rotation
+ * (`err = dy >> 1;` first; the game's `movsx edx,cx` 0x21fad sits before the rotation moves
+ * 0x21fb0-0x21fb4, `sar edx,1` lands late at 0x21fc2, interleaved with the loop-test load) and the
+ * two rotations use two temps (`t` for dx/dy, `u` for sx/sy). err stays a short local (the game's
+ * `cmp dx,bx` 0x21f87); with one shared temp 9.5b sinks the movsx after the rotation, where the
+ * value it reads is in the other register (2 rows). */
 /* ---- 0x21f04, 303 bytes: draws the Bresenham line (lx0, ly0) -> (lx1, ly1) point by point with
  * pixel_plot, the far end included (callers 0x22182, 0x221b2 in 0x22034). kart_line's walk with
  * line_plot's body written out. */
 void line_draw(void)
 {
-    short dx, t, sy, sx, err, dy;
+    short dx, t, u, sy, sx, err, dy;
 
     dx = lx1 - lx0;
     dy = ly1 - ly0;
@@ -9742,13 +9733,13 @@ void line_draw(void)
             lx0 += sx;
         }
     } else {
+        err = dy >> 1;                /* the major half, read before the rotation: movsx edx,cx 0x21fad */
         t = dx;
         dx = dy;
         dy = t;
-        t = sx;
+        u = sx;
         sx = sy;
-        sy = t;
-        err = dx >> 1;                /* the old dy: the game's movsx edx,cx 0x21fad before the swaps */
+        sy = u;
         while (ly0 != ly1) {
             spr_x = lx0;
             spr_y = ly0;

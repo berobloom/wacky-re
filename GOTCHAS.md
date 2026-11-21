@@ -746,7 +746,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   and writing `k = 0;` before `i = 0;` is what fixes the order of the two zeroing `xor`s (0x32d1c);
   and merging a loop's value local with the function's return code flips the homes of the OTHER
   locals (com_expect 0x2e008: one `c` for the com_getc result and the return code, no `r`, moves
-  want ESI -> EBX (0x2e00b `mov ebx,eax`) and t0 EBX -> ESI, 8 -> 4 rows). [generic]
+  want ESI -> EBX (0x2e00b `mov ebx,eax`) and t0 EBX -> ESI, 8 -> 4 rows). And a local that only
+  *pays for itself through the scheduler* is still the game's: line_draw 0x21f04 needs a second
+  rotation temp (`u` for the sx/sy swap next to `t` for dx/dy) before 9.5b lifts the `movsx edx,cx`
+  above the rotation moves (0x21fad) and reads the register the game reads - with one shared temp the
+  same source order sinks it below them (0x21fb3, `movsx edx,bx`), 2 -> 0 rows (iter 100). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group

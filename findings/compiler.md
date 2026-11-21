@@ -199,6 +199,24 @@ survives only in the second case.
   `cmp ebx,0x10`, `jne`) is 9.5b's own expansion of a `k++` loop and a source-level unroll of the
   same two calls does not reproduce it.
 
+### iter 100: a local nobody reads can still move the scheduler (CONFIRMED, one vbatch run, 15 spellings, one byte-identical)
+
+- `line_draw` 0x21f04 (2 rows: the game reads err's initial value above the register rotation,
+  `movsx edx,cx` 0x21fad then `mov eax,ebx; mov ebx,ecx; mov ecx,eax` 0x21fb0-0x21fb4; we read it
+  below, `movsx edx,bx` 0x21fb3, `sar edx,1` at the same relative late slot 0x21fc2). Fifteen
+  whole-file spellings (`.work/vbatch/line_draw.py`, `.work/vbatch/line_draw2.py`, control 2):
+  `err = dy >> 1;` first with the current single rotation temp 9, with comma-form rotations 9, read
+  between the rotation moves 19, with the two rotations in the other order 13, `err = dy; ... err >>=
+  1;` 17, `short err` declared first 17, `short dy` first 2 (no code change - declaration order is
+  not a lever here, as iter 99 found) and a second rotation temp alone 7. Only the combination
+  **`err = dy >> 1;` first AND a second temp `u` for the sx/sy rotation** is byte-identical (0).
+  CONFIRMED: with one temp shared by both rotations 9.5b sinks the load below the rotation, where the
+  same value sits in the post-rotation register; the extra temp (never read afterwards) is what puts
+  the load back above it. So "delete the local and see whether the row survives" (iter 96) answers
+  *whose temp the register is*, not whether the original source declared it - a local that only
+  changes the schedule of another instruction is real (GOTCHAS "Which of two locals gets EAX", DREA
+  harness/TRAPS.md "Score a candidate only after checking which value it reads").
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;
