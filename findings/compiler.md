@@ -294,3 +294,12 @@ about 10 minutes): three allocation passes (41, 23, 20 conflicts). `crc` (`unsig
 handle 0xA59, temp id 6, savings 4332) is given AX, 12th in order, after `n` took ECX. Open:
 why AX scores best for it (GiveBestReg's per-register move counts, `CountRegMoves`), and what
 in the game's source made CX win. Next probe: the scores inside GiveBestReg 0x440B4.
+
+## Defaults of 9.5b that another compiler must copy (CONFIRMED, iter 105, the port)
+
+Probe `struct { char a; int b; short c; char d; double e; }` and `int f(char *p) { return *p; }`
+compiled with the game's flags (`tools/wc/wcc.sh .work/toolchains/inst/WC95B ... -s -3r -oneatx`):
+`b` at +1, `c` at +5, `e` at +8, `sizeof` 16, and `movzx eax, byte [eax]`. So 9.5b's default struct
+packing is **1** (no `/zp`), and plain `char` is **unsigned**. The port compiles src/ww.c with
+`-fpack-struct=1 -funsigned-char` (port/build.sh).
+
