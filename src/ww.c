@@ -11754,6 +11754,11 @@ void ents_project(void)
  * `extern char *volatile v7d6a0v` / `#pragma aux v7d6a0v "_v7d6a0"` alias on the other load (so both
  * memory reads are volatile) keeps our order - Watcom schedules volatile reads freely, so it pins
  * nothing here (2 rows, the two loads merely shift by 3 bytes).
+ * Iter 102 vbatch 7 variants (.work/vbatch/shot_step.py): an int alias `extern int v7d6a0i;`
+ * + `#pragma aux v7d6a0i "_v7d6a0"` on the base, `&v7d6a0[t]`, `(int)v7d6a0` and `t = v7eb9c << 3`
+ * all emit the same 2 rows, `p = t;` in either operand order is 3 and the alias with the operands
+ * reversed is 11 (440 bytes). Both builds keep t in EBX and the base in EAX, so only the schedule of
+ * the two independent loads is at issue - GOTCHAS "Line up the two listings' loads before probing".
  * Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the game
  * tail-merges the two store pairs (the lx0 arm 0x25ff1 stores x, then `jmp 0x26021` 0x26008 into the
  * shared y store that the lx1 arm 0x2600f falls into), so the block its `je 0x2600f` 0x25fef lands on
