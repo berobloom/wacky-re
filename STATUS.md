@@ -28,6 +28,13 @@ Short: where the project stands, and what is next. History is in git; no diary.
   disc files (findings/formats.md) WACKY.DAT = 577 records of 22 bytes, offsets from 2, 42 sets of
   per-track files.
 
+- **Port (port/, iter 105)**: `port/build.sh` builds `.work/port/wacky` (32-bit, SDL2) from src/ww.c
+  unchanged (port/tools/prep.py), src/wwasm.asm translated by port/tools/asm2c.py, and a runtime that
+  maps WW.EXE's data object at 0x60000 and emulates the VGA, timer tasks, keyboard and DOS services
+  (port/README.md). Check: `port/check.sh` -> `PORTCHECK OK` (title screen pixel-identical to the
+  original's); mutation `plane[x & 3]` -> `plane[(x + 1) & 3]` in vga.c's render makes it FAIL. Sound is
+  silent stubs; the Apogee screen ends early because of it (QUEUE Q1).
+
 ## Next
 
 0. Iter 104 named all 61 asm-module loop headers (`.kind_<address>`, findings/video.md; bytes and fixups

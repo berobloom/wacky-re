@@ -24,3 +24,4 @@ deltas of that boot, the scene), and what reads it.
 
 | file | linear range / segment:offset | taken when | used by |
 |---|---|---|---|
+| `captures/title_ww.png` (local only: game screen, git-ignored) | the original's title screen ("WACKY WHEELS VERSION 1.1 ... PRESS FIRE"), DOSBox-X 640x400, 6 s after `WW` at the `C:\WACKY` prompt (`tools/dosrun.py start; type 'cd \WACKY'; type WW; sleep 6; shot`, iter 105). Read by `port/check.sh`. |

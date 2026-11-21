@@ -63,6 +63,10 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **`overnight/cleanup.sh` kills the shell that runs it if that shell's command line mentions
+  `dosrun.py`** [generic] (iter 105): its `pgrep -f '[d]osrun\.py'` matches `bash -c "...dosrun.py...;
+  overnight/cleanup.sh"`, and the whole call dies (exit 144) before its own output. Run cleanup in a
+  call of its own, before and after the harness calls.
 - **A write watch keyed on the store's start address misses stores that cover the byte from below**
   [generic] (iter 105). `difffn.py`'s `_watch` tested `address in watch`, so a dword store at 0x7d874 was seen for byte
   0x7d874 and never for 0x7d875-0x7d877. Test every byte of `[address, address+size)`. `BUCKET=1` relies on it.
