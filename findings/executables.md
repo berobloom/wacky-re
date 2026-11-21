@@ -203,7 +203,9 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   = task rate, word at +3 = event offset, timbres at +5; `TS_ScheduleTask( ..., rate, 1, NULL )`),
   StopSong, Continue (reprograms the timbres), Pause, SetLoopFlag, SongPlaying, Set/GetVolume, Init,
   Shutdown (unlocks only, does not stop the song). **FMCHIP.C** (0x50280-0x50A43, 13 of 14 functions
-  byte-identical; FM_SetChannelTimbre is 4 bytes shorter: the game spills two temporaries): an OPL2
+  byte-identical; FM_SetChannelTimbre is a near miss of 22 instruction rows at the game's 344 bytes:
+  two volatile locals give its byte and int stack slots, the rest is the game's DL/EDX for our AL/EAX,
+  see the note in FMCHIP.C): an OPL2
   layer in AL_MIDI's style but its own code. Port 0x388 written with interrupts off, 6 `inp`s after
   the register byte and **35 written-out `inp`s** after the data (1.04's AL_MIDI loops 27); OPL rhythm
   mode; 11 channels: 0-5 melodic, 6 bass drum (two operators), 7 snare, 8 tom tom, 9 top cymbal, 10

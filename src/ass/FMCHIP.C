@@ -210,6 +210,16 @@ void FM_Reset
    Function: FM_SetChannelTimbre
 
    Programs a channel's operators from an 11-byte timbre.
+
+   Near miss (0x50478, 22 instruction rows, same 344 bytes): the game
+   passes the modulator's level and KSL through a byte stack slot and
+   the level through an int slot (two volatile locals give that frame,
+   sub esp,0xc), and the carrier's slot is a second local loaded before
+   the 0xC0 write (it lives in ECX). What differs: the game keeps the
+   byte temp and 63 - lvl in DL/EDX, we get AL/EAX. Tried without a
+   change: declaration order (all 120), statement order, chained
+   assignment, unsigned/long types, volatile arrays, &-taken locals
+   instead of volatile, inlined helpers (-oe: no slots), every compiler.
 ---------------------------------------------------------------------*/
 
 void FM_SetChannelTimbre
@@ -220,7 +230,10 @@ void FM_SetChannelTimbre
 
    {
    int slot;
+   int slot2;
    int offset;
+   volatile unsigned char t;   // the game's byte slot [ebp-0x14]
+   volatile int lvl;           // the game's int slot [ebp-0x1c]
 
    if ( timbre == FM_ChannelTimbre[ channel ] )
       {
@@ -229,9 +242,12 @@ void FM_SetChannelTimbre
 
    FM_ChannelTimbre[ channel ] = timbre;
 
+   t = timbre[ 0 ] & 0x3f;
    slot = FM_ChannelSlot[ channel ][ 0 ];
-   FM_SlotLevel[ slot ] = 63 - ( timbre[ 0 ] & 0x3f );
-   FM_SlotKSL[ slot ]   = timbre[ 0 ] & 0xc0;
+   lvl = t;
+   FM_SlotLevel[ slot ] = 63 - lvl;
+   t = timbre[ 0 ] & 0xc0;
+   FM_SlotKSL[ slot ]   = t;
 
    offset = FM_SlotOffset[ slot ];
    FM_SendOutput( offset + 0x60, timbre[ 2 ] );
@@ -246,14 +262,14 @@ void FM_SetChannelTimbre
       }
 
    FM_SendOutput( offset + 0x40, timbre[ 0 ] );
+   slot2 = FM_ChannelSlot[ channel ][ 1 ];
    FM_SendOutput( channel + 0xc0, timbre[ 10 ] );
 
-   slot = FM_ChannelSlot[ channel ][ 1 ];
-   FM_SlotLevel[ slot ] = 63 - ( timbre[ 1 ] & 0x3f );
-   FM_SlotKSL[ slot ]   = timbre[ 1 ] & 0xc0;
-   FM_SetSlotVolume( slot );
+   FM_SlotLevel[ slot2 ] = 63 - ( timbre[ 1 ] & 0x3f );
+   FM_SlotKSL[ slot2 ]   = timbre[ 1 ] & 0xc0;
+   FM_SetSlotVolume( slot2 );
 
-   offset = FM_SlotOffset[ slot ];
+   offset = FM_SlotOffset[ slot2 ];
    FM_SendOutput( offset + 0x60, timbre[ 3 ] );
    FM_SendOutput( offset + 0x80, timbre[ 5 ] );
    FM_SendOutput( offset + 0x20, timbre[ 7 ] );

@@ -581,7 +581,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   (`extern volatile unsigned char v88ccav; #pragma aux v88ccav "_v88cca"`, demo_play 0x2e35f) and
   restores a re-test the game repeats after stores (race_results); alias per function, a volatile
   global changes other functions. It pins stores, not loads: an `extern char *volatile` alias on the
-  other side of a swapped pair of loads left the order alone (shot_step 0x25f46). [generic]
+  other side of a swapped pair of loads left the order alone (shot_step 0x25f46). A byte stack slot
+  stored then reloaded with `xor edx,edx; mov dl,[slot]` is a `volatile unsigned char` local, an int slot
+  after it a `volatile int` the byte is copied into (ASS FMCHIP FM_SetChannelTimbre 0x504a5, 40 -> 22
+  rows, the game's frame size exactly). [generic]
 - **A second typed name for one global** (`extern short w7ed8c; #pragma aux w7ed8c "_v7ed8c"`): a
   word load + `xor ah,ah` truncation (net_key 0x2dd42); int aliases of char* globals stop the
   scheduler hoisting a pointer chain (data_load 0x28180). No alias needed for the same effect: write

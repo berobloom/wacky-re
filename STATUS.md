@@ -36,7 +36,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
 1. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
    10.0a/10.0 prerelease, `tools/ass/asscheck.py` 276 of 285 named functions, 16 modules whole
    (findings/executables.md). Near misses: MIDI 324, GUSMIDI 140, BLASTOLD 48, PAS16 44, FMCHIP's
-   FM_SetChannelTimbre; smallest first, and check the module's compiler in src/ass/README.md (BLASTOLD
+   FM_SetChannelTimbre (40 -> 22 rows, same size; what is left is DL/EDX vs AL/EAX, the tried
+   spellings are in its FMCHIP.C note); smallest first, and check the module's compiler in src/ass/README.md (BLASTOLD
    and PAS16 use the 10.0 **prerelease**) before blaming the C.
 2. `src/wwasm.asm` still holds 104 `.Lxxxxx` labels - the branch targets inside the loops named in iter
    104. Leave `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, whose labels are arms of a compare chain.
