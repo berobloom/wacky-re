@@ -352,6 +352,13 @@ fixup sites) follow the same `.kind_<address>` scheme. CONFIRMED by reading each
   DAC data access, `getpalette` reading 0x3c9 (0x36d01 `in al,dx`, 0x36d02 `stosb`) and `dac_load`
   writing 0x3c9 (0x37d43 `out dx,al`) - the delay is the same six-iteration `loopne` + spin pair in all
   six places, so palette writes are paced by the display, not by a fixed count.
+- The delay sets how long a fade takes (STRONGLY SUPPORTED, port experiment 2026-11-21): the spin
+  waits for bit 0 to be clear (at most six reads) and then set, so an entry that starts inside a
+  horizontal blank goes through at once if six reads did not outlast the blank. With ~1 us reads
+  (an ISA bus; DOSBox-X charges 1020 ns an 8-bit read, iohandler.cpp) that is about one scanline an
+  entry, 8 ms a 256-entry step; with free reads several entries share a blank. The intro's fades
+  (`v88c46` = 4, 16 steps): 27 ms in the port with free I/O, 357 ms with DOSBox-X's delays, about
+  0.3 s on the original under DOSBox-X (burst screenshots, findings/menus.md).
 - `pcx_blit` preserves every register (`pushal`/`popal`) and takes no argument, so `pcx_row` 0x88b58 and
   `plane_bit` 0x88ccf are its only state; a PCX run longer than the rest of a row crosses the row
   boundary inside `.run_px_37674` (the row close 0x376a2-0x376ca sits in the loop, before its `loop`

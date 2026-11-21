@@ -25,5 +25,20 @@ for f in image vga machine clib sound glue main cpu; do
     $CC $RT -c port/src/$f.c -o "$out/obj/$f.o"
 done
 $CC $RT -Wno-unused-label -Iport/src -c "$out/wwasm.c" -o "$out/obj/wwasm.o"
+# the game's FM song player, rebuilt from the binary (src/ass/FMSONG.C, FMCHIP.C; findings/executables.md):
+# it includes its headers by lowercase names, so give it a folded include directory
+inc="$out/assinc"
+mkdir -p "$inc"
+for h in src/ass/*.H; do b=$(basename "$h" .H | tr A-Z a-z); ln -sf "$PWD/$h" "$inc/$b.h"; done
+rm -f "$inc/interrup.h"                       # port/include/interrupt.h stands in for it
+ASS="-O1 -g -w -fno-pie -fno-stack-protector -fno-strict-aliasing -funsigned-char -Iport/include -I$inc -DLIBVER_ASSREV=19941101L"
+for m in FMSONG FMCHIP; do
+    if grep -q "'$m.C'" port/tools/prep.py; then
+        python3 port/tools/prep.py src/ass/$m.C "$out/ass_$m.c"; srcf="$out/ass_$m.c"
+    else
+        srcf=src/ass/$m.C
+    fi
+    $CC $ASS -Isrc/ass -x c -c "$srcf" -o "$out/obj/ass_$m.o"
+done
 $CC -no-pie -g -o "$out/wacky" "$out"/obj/*.o port/gen/syms.ld "$SDLLIB" -lpthread -lm
 echo "$out/wacky"

@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""prep.py: src/ww.c -> the port's copy, with the few rewrites gcc needs.
+"""prep.py: a matching source (src/ww.c, src/ass/*.C) -> the port's copy, with the few rewrites gcc
+and a flat Linux process need.
 
 usage: port/tools/prep.py SRC OUT
 
-src/ww.c is the matching source: it keeps every construct that makes Watcom 9.5b emit the game's
-bytes, including some no other C compiler accepts. Each rewrite below names that construct, must
+The matching sources keep every construct that makes Watcom emit the game's bytes, including some
+no other C compiler accepts, and the game's own bugs that DOS/4GW forgives. The rules are keyed by
+the source's file name. Each rewrite below names that construct, must
 match an exact number of times (or the build stops: the source changed under it), and changes
 nothing a caller can see. Never edit the output; add a rule here.
 """
+import os
 import sys
 
-RULES = [
+RULES = {'ww.c': [
     # Watcom lets a cast be assigned to; the store goes to the variable, the value is the cast's
     ('fade_in((unsigned char *)v7d854 = v7d85c);',
      'fade_in((unsigned char *)(v7d854 = v7d85c));', 3),
@@ -20,13 +23,19 @@ RULES = [
     # unprototyped on purpose (a prototype makes the callers sign-extend and costs the MATCH); gcc
     # rejects `void f();` followed by a definition with a short parameter
     ('void fn_1d704();  ', 'void fn_1d704(short, int);', 1),
-]
+], 'FMCHIP.C': [
+    # the game's bug: MUSIC_SetVolume before the first song reads byte 10 of a NULL timbre. DOS/4GW
+    # maps linear 0, so the game reads the interrupt table (0x0A, int 2's segment) and goes on; here
+    # it faults. The port reads it as 0 (no additive modulator for a channel with no timbre yet).
+    ('if ( ( ( FEEDBACK * )&FM_ChannelTimbre[ channel ][ 10 ] )->Connection )',
+     'if ( FM_ChannelTimbre[ channel ] && ( ( FEEDBACK * )&FM_ChannelTimbre[ channel ][ 10 ] )->Connection )', 1),
+]}
 
 
 def main(argv):
     src, out = argv
     s = open(src, encoding='latin-1').read()
-    for old, new, n in RULES:
+    for old, new, n in RULES[os.path.basename(src)]:
         got = s.count(old)
         if got != n:
             sys.exit('prep.py: %r found %d times, expected %d' % (old, got, n))

@@ -533,6 +533,28 @@ what `SEED=` left them, so:
   0x1e4f8 store) without the abort key ran 55 minutes (`CALLS=3000000 COUNT=2e9`) and did not finish
   the race.
 
+## A key still down when the next menu starts selects there too (CONFIRMED, 2026-11-21, port Q2)
+
+`menu` 0x155c0 (src/ww.c `menu`) has no wait for the release on entry: its loop sets `joy88b40` from
+`key_select` on every poll and returns the cursor when it is set (the only release waits are for
+F12, `key88ccd`, and the net chat key). So how many menus one press goes through depends on how long
+the key is down against how long a menu change takes - the PC's speed, not the game's clocks.
+Evidence: the original under DOSBox-X (cycles=fixed 40000, `tools/dosrun.py key ret <hold>` on the
+CLASS menu after six Enters): a 0.15 s hold showed ENGINES (LAPS skipped), a 1.0 s hold the zone
+select (two skipped); racetest's 0.08 s presses select one menu each. The poll is once a loop of at
+least 8 ticks (`while (ticks - v7ea70 < 8)`, 59 ms). The port (QUEUE Q2, port/README.md "Timing")
+measured the CLASS-to-LAPS change at 13 ms natively - one Enter went through two menus - and 111 ms
+with DOSBox-X's port I/O delays; then 80 ms selects one menu, 150 ms sometimes two, 1 s three, as on
+the original.
+
+The intro has the same shape (src/ww.c `intro`): the Apogee screen's loop ends on a key or when the
+song stops (`!MUSIC_SongPlaying() && n >= 8`), BEAVIS.PCX stays 0x110 ticks (2 s) or until a key,
+and every screen between is a `fade_out`/`fade_in` whose length is set by `dac_load`'s per-entry
+wait (findings/video.md). In a burst of shots after the second Enter (original, DOSBox-X): Apogee
+fades out by 0.4 s, BEAVIS is in by 0.8 s and held to 2.8 s, the gate is in by 3.6 s. With no song
+(MUSIC_SongPlaying 0) the Apogee screen ends after 8 frames, and with 3 ms fades an Enter held
+over the Apogee screen also ends BEAVIS - each shifts racetest's key path by one screen.
+
 ## Traps
 
 - `fn_1c0f4` prints the caller's buffer at (0x10, 0x3c) (0x1c3a2 `mov ebx,ebp`): a port that hands

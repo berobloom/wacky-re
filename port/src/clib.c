@@ -1,8 +1,8 @@
 /* clib.c: what src/ww.c takes from Watcom's clib and DOS that glibc does not provide.
  *
  * rand/srand are Watcom's, not glibc's: the game's choices (AI, pickups, demo seeds) follow its
- * sequence, so the port must draw the same numbers (checked against the game's own rand under
- * Unicorn: port/tools/checkrand.py). */
+ * sequence, so the port must draw the same numbers. Watcom's documented LCG; NOT yet checked
+ * against the game's own rand (to do: run it under Unicorn, tools/le/emu.py, and compare). */
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -86,13 +86,8 @@ void nosound(void) {}
 /* ---- ports */
 unsigned int inp(unsigned int port) { return port_in8(port); }
 unsigned int outp(unsigned int port, unsigned int value) { port_out8(port, value); return value; }
-unsigned int inpw(unsigned int port) { return port_in8(port) | port_in8(port + 1) << 8; }
-unsigned int outpw(unsigned int port, unsigned int value)
-{
-    port_out8(port, value & 0xff);
-    port_out8(port + 1, value >> 8 & 0xff);
-    return value;
-}
+unsigned int inpw(unsigned int port) { return port_in16(port); }
+unsigned int outpw(unsigned int port, unsigned int value) { port_out16(port, value & 0xffff); return value; }
 
 /* ---- interrupts */
 port_isr _dos_getvect(unsigned int v) { return isr_get(v); }

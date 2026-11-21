@@ -5,9 +5,9 @@
  * Here it runs on the hardware thread: each task's service is called `rate` times a second, the
  * way TASK_MAN.C's timer interrupt called it. The struct is TASK_MAN.H's.
  *
- * FX_* and MUSIC_* accept the configured card and stay silent until the sound port is written, so
- * the game takes the path it takes with a working card (with a refusal it stops in sound_init and
- * waits for a key, src/ww.c). */
+ * FX_* accepts the configured card and plays nothing, so the game takes the path it takes with a
+ * working card (with a refusal it stops in sound_init and waits for a key, src/ww.c). MUSIC_* runs
+ * the game's own FM song player, silent until the OPL2 is emulated (below). */
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -117,7 +117,7 @@ void ts_tick(uint32_t now)
 
 typedef struct { int MaxVoices, MaxSampleBits, MaxChannels; } fx_device;   /* FX_MAN.H */
 
-char *FX_ErrorString(int code) { (void)code; return "Sound is not ported yet."; }
+char *FX_ErrorString(int code) { (void)code; return "Sound effects are not ported yet."; }
 int FX_SetupCard(int card, fx_device *dev)
 {
     (void)card;
@@ -143,16 +143,43 @@ int FX_SoundActive(int handle) { (void)handle; return 0; }
 int FX_StopSound(int handle) { (void)handle; return FX_Ok; }
 int FX_StopAllSounds(void) { return FX_Ok; }
 
-/* ---- MUSIC_* (MUSIC.H): no card */
+/* ---- MUSIC_* (MUSIC.H). Wacky Wheels' MUSIC module sends the FM cards (0-2, the .KLM songs) to its
+ * own FM song player (findings/executables.md "Sound library"), which the port runs as rebuilt:
+ * src/ass/FMSONG.C on this task manager, FMCHIP.C writing the OPL2 at 0x388 (no OPL emulated yet,
+ * so silent - but the song task runs at the song's own rate, so MUSIC_SongPlaying is true for as
+ * long as the song lasts, and the intro's waits on it last as on the PC). Cards 3-5 (MIDI) are
+ * accepted and silent. */
 #define MUSIC_Ok 0
 
-char *MUSIC_ErrorString(int code) { (void)code; return "Music is not ported yet."; }
-int MUSIC_Init(int card, int address) { (void)card; (void)address; return MUSIC_Ok; }
-int MUSIC_Shutdown(void) { return MUSIC_Ok; }
-void MUSIC_SetVolume(int v) { (void)v; }
-int MUSIC_SongPlaying(void) { return 0; }
-int MUSIC_StopSong(void) { return MUSIC_Ok; }
-int MUSIC_PlaySong(unsigned char *song, int loop) { (void)song; (void)loop; return MUSIC_Ok; }
-void MUSIC_FadeVolume(int tovol, int ms) { (void)tovol; (void)ms; }
-void music_pause(void) {}
-void music_resume(void) {}
+int FMSONG_Init(int card);
+void FMSONG_Shutdown(void);
+void FMSONG_StopSong(void);
+void FMSONG_PlaySong(unsigned char *song, int loopflag);
+int FMSONG_SongPlaying(void);
+void FMSONG_Continue(void);
+void FMSONG_Pause(void);
+void FMSONG_SetVolume(int volume);
+
+static int fm;                          /* MUSIC_Init chose the FM player */
+
+char *MUSIC_ErrorString(int code) { (void)code; return "Music error."; }
+int MUSIC_Init(int card, int address)
+{
+    (void)address;
+    fm = card >= 0 && card <= 2;
+    return fm ? FMSONG_Init(card) : MUSIC_Ok;
+}
+int MUSIC_Shutdown(void) { if (fm) FMSONG_Shutdown(); return MUSIC_Ok; }
+void MUSIC_SetVolume(int v) { if (fm) FMSONG_SetVolume(v); }
+int MUSIC_SongPlaying(void) { return fm ? FMSONG_SongPlaying() : 0; }
+int MUSIC_StopSong(void) { if (fm) FMSONG_StopSong(); return MUSIC_Ok; }
+int MUSIC_PlaySong(unsigned char *song, int loop) { if (fm) FMSONG_PlaySong(song, loop); return MUSIC_Ok; }
+void MUSIC_FadeVolume(int tovol, int ms) { (void)ms; if (fm) FMSONG_SetVolume(tovol); }
+void music_pause(void) { if (fm) FMSONG_Pause(); }
+void music_resume(void) { if (fm) FMSONG_Continue(); }
+
+/* DPMI memory locking (src/ass/DPMI.H): nothing pages out here */
+int DPMI_LockMemory(void *a, unsigned n) { (void)a; (void)n; return 0; }
+int DPMI_LockMemoryRegion(void *a, void *b) { (void)a; (void)b; return 0; }
+int DPMI_UnlockMemory(void *a, unsigned n) { (void)a; (void)n; return 0; }
+int DPMI_UnlockMemoryRegion(void *a, void *b) { (void)a; (void)b; return 0; }

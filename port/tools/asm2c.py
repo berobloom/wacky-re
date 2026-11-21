@@ -373,7 +373,7 @@ def emit(ln, need, out):
         if a.size == 8:
             w(put(a, 'port_in8(%s)' % port))
         else:
-            w(put(a, 'port_in8(%s) | port_in8((%s) + 1) << 8' % (port, port)))
+            w(put(a, 'port_in16(%s)' % port))
         return
     if mn == 'out':
         a, b = ops
@@ -381,7 +381,7 @@ def emit(ln, need, out):
         if b.size == 8:
             w('port_out8(%s, %s);' % (port, get(b)))
         else:
-            w('port_out8(%s, (uint8_t)c->r[0]); port_out8((%s) + 1, (uint8_t)(c->r[0] >> 8));' % (port, port))
+            w('port_out16(%s, (uint16_t)c->r[0]);' % port)
         return
     if mn in ('movsb', 'movsw', 'movsd', 'stosb', 'stosw', 'stosd', 'lodsb'):
         sz = {'b': 8, 'w': 16, 'd': 32}[mn[-1]]

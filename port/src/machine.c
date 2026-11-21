@@ -85,6 +85,27 @@ void port_out8(unsigned port, unsigned v)
     /* 0x20 (PIC EOI), 0x40-0x43 (PIT), 0x201: nothing to do */
 }
 
+/* a 16-bit access is one bus cycle on the PC (and one I/O delay in DOSBox), the bytes to port and
+ * port + 1 */
+unsigned port_in16(unsigned port)
+{
+    port &= 0xffff;
+    if (port >= 0x3b0 && port < 0x3df)
+        return vga_in16(port);
+    return port_in8(port) | port_in8(port + 1) << 8;
+}
+
+void port_out16(unsigned port, unsigned v)
+{
+    port &= 0xffff;
+    if (port >= 0x3b0 && port < 0x3df)
+        vga_out16(port, v);
+    else {
+        port_out8(port, v & 0xff);
+        port_out8(port + 1, v >> 8 & 0xff);
+    }
+}
+
 /* the BIOS's own int 9: scancode -> (scancode << 8 | ascii) for getch */
 static const char ascii_lo[0x3a] = "\0\0331234567890-=\b\tqwertyuiop[]\r\0asdfghjkl;'`\0\\zxcvbnm,./\0*\0 ";
 
@@ -304,10 +325,26 @@ static struct ev keys[512], shots[64];
 static int nkeys, nshots, ki, si;
 static uint32_t exit_ms;
 
+/* the events run in time order whatever order the list gives them (stable: two keys at one time keep
+ * theirs) */
+static void sort_events(struct ev *v, int n)
+{
+    for (int i = 1; i < n; i++) {
+        struct ev t = v[i];
+        int j = i;
+        while (j > 0 && v[j - 1].ms > t.ms) {
+            v[j] = v[j - 1];
+            j--;
+        }
+        v[j] = t;
+    }
+}
+
 static void parse_script(void)
 {
     const char *k = getenv("PORT_KEYS"), *s = getenv("PORT_SHOTS"), *e = getenv("PORT_EXIT");
-    char buf[4096], *tok, *save;
+    static char buf[16384];
+    char *tok, *save;
 
     if (k) {
         snprintf(buf, sizeof buf, "%s", k);
@@ -321,6 +358,8 @@ static void parse_script(void)
             if (sscanf(tok, "%u:%255s", &shots[nshots].ms, shots[nshots].path) == 2)
                 nshots++;
     }
+    sort_events(keys, nkeys);
+    sort_events(shots, nshots);
     if (e)
         exit_ms = (uint32_t)atoi(e);
 }

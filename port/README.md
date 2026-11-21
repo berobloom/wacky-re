@@ -25,8 +25,30 @@ translating; what is left is the memory layout, the asm module and the machine.
   modes and latches, DAC 0x3c8/0x3c9, CRTC start address, retrace 0x3da), PIT and the timer ISR,
   keyboard port 0x60 + the game's own `kbd_isr`, `int386` services the game calls, DOS file I/O via the
   host libc. Interrupt handlers the game installs with `_dos_setvect` run at poll points.
-- Sound (src/ass) and the serial link come after the first race runs; until then the sound library
-  reports no card.
+- Sound: the task manager (TS_*) runs the game's clocks on the hardware thread. MUSIC_* goes to the
+  game's own FM song player, compiled from its rebuild (`src/ass/FMSONG.C`, `FMCHIP.C`; prep.py
+  rewrites one NULL read, see there), so the songs last as long as on the PC; the OPL2 at 0x388 is
+  not emulated yet, so they are silent. FX_* accepts the card and plays nothing. The serial link is
+  not ported.
+
+### Timing (QUEUE Q2)
+
+The game's feel rests on the PC's speed, not only on its clocks. Its menus take Enter from the key
+state with no wait for the release, so a key still down when the next menu first polls selects there
+too (on the original under DOSBox-X: an 80 ms press selects one menu, 150 ms sometimes two, 1 s
+three). Its fades wait for a horizontal blank before each palette entry. Natively both run up to ten
+times too fast: a fade took 3 ms, and one Enter went through two menus. Two things put the time back:
+
+- **0x3da from a real clock** with mode 13h's timing (`status1` in `vga.c`): 31.47 kHz lines, 449 a
+  frame, display enable off in the last fifth of each line and lines 400-448, retrace on 412-413.
+- **Port I/O costs bus time**: each VGA port access spins for DOSBox-X's I/O delay (8-bit 1020 ns,
+  16-bit 660 ns, writes 3/4; `io_cost`, `PORT_IO_NS`). A 16-bit `out dx, ax` is one access.
+
+With both, a fade takes 357 ms (original: about 0.3 s), the CLASS-to-LAPS change 111 ms from the key
+read, and racetest's key path shows the same screen as the original's at every step
+(`port/check.sh`). Access to the VGA memory window is free by default, as in DOSBox-X (`vmemdelay`
+off); `PORT_VGA_NS` charges it, as a 1994 ISA card did (~1000 ns a byte). The race's frame rate is
+the game's own (about 11 frames a second on track 1, the same with the costs off).
 
 What worked in the earlier ports (redcat: C + SDL2 + Emscripten; cold:
 C + SDL2 with a self-check binary).

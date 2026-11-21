@@ -63,6 +63,15 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **A native port of a DOS game runs its I/O-paced code ten times too fast** [generic] (iter 106, port
+  Q2). Code that waits on 0x3da per palette entry (`dac_load`) and menus that read Enter without a
+  release wait both depend on the ISA bus's ~1 us per port access and on 0x3da following real scanline
+  timing. A status register that toggles bit 0 per read made a fade 3 ms (PC: 0.3 s), and one Enter
+  went through two menus, so racetest's key path landed one screen early. Fixed in port/src/vga.c
+  (real-clock 0x3da, DOSBox-X's I/O delays; port/README.md "Timing"). Tell-tale: screens right, the
+  sequence one key ahead of the original's.
+- **gcc compiles a `.C` file as C++** [generic] (iter 106): `src/ass/*.C` failed in libstdc++'s
+  `<cstdlib>`. Pass `-x c` before the file.
 - **`overnight/cleanup.sh` kills the shell that runs it if that shell's command line mentions
   `dosrun.py`** [generic] (iter 105): its `pgrep -f '[d]osrun\.py'` matches `bash -c "...dosrun.py...;
   overnight/cleanup.sh"`, and the whole call dies (exit 144) before its own output. Run cleanup in a

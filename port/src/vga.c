@@ -6,7 +6,9 @@
  * set/reset, rotate, logical function, bit mask, the four latches loaded by every read), gated per
  * plane by the sequencer map mask. Chain-4 (mode 13h) addresses plane a&3 at a&~3. */
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "machine.h"
 
@@ -17,6 +19,70 @@ static unsigned seq_i, gc_i, crtc_i, attr_i, attr_ff;
 static uint8_t dac[256][3];
 static unsigned dac_w, dac_r, dac_c, dac_rc;
 static uint8_t misc = 0x63;
+unsigned long vga_accesses;          /* reads + writes of the window (bus(), for measurements) */
+
+/* The memory side of the bus cost: each access of the VGA window costs PORT_VGA_NS nanoseconds,
+ * paid by the drawing thread in sleeps of at least 2 ms. Default 0, as in the harness's DOSBox-X
+ * (vmemdelay defaults to off), whose screens the port is compared with; an ISA card of 1994 took
+ * about 1000 ns a byte. The port I/O cost below is what paces the game like the original. */
+static uint64_t bus_debt;
+static long bus_ns = -1;
+
+static void bus_pay(void)
+{
+    struct timespec a, b, d;
+    uint64_t took;
+
+    clock_gettime(CLOCK_MONOTONIC, &a);
+    d.tv_sec = (time_t)(bus_debt / 1000000000u);
+    d.tv_nsec = (long)(bus_debt % 1000000000u);
+    nanosleep(&d, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &b);
+    took = (uint64_t)(b.tv_sec - a.tv_sec) * 1000000000u + (uint64_t)(b.tv_nsec - a.tv_nsec);
+    bus_debt = took >= bus_debt ? 0 : bus_debt - took;
+}
+
+/* A port access on the ISA bus takes about a microsecond, and the game's palette upload depends on
+ * it: dac_load polls 0x3da for each entry, and with free reads it uploads several entries in one
+ * horizontal blank and a fade takes 27 ms instead of the original's 0.3 s. The costs are DOSBox-X's
+ * (src/hardware/iohandler.cpp, the harness's emulator): on the 8.33 MHz ISA clock an 8-bit
+ * transfer is 8.5 clocks (1020 ns), a 16-bit one 5.5 (660 ns), a write 3/4 of a read. Too short to
+ * sleep, so the caller spins. PORT_IO_NS scales them (the 8-bit read's ns; 0 turns them off). */
+static long io_ns = -1;
+
+static void io_cost(int write, int wide)
+{
+    struct timespec a, b;
+    long want;
+
+    if (io_ns < 0) {
+        const char *e = getenv("PORT_IO_NS");
+        io_ns = e ? atol(e) : 1020;
+    }
+    want = wide ? io_ns * 11 / 17 : io_ns;     /* 5.5 / 8.5 clocks */
+    if (write)
+        want = want * 3 / 4;
+    if (want <= 0)
+        return;
+    clock_gettime(CLOCK_MONOTONIC, &a);
+    do
+        clock_gettime(CLOCK_MONOTONIC, &b);
+    while ((b.tv_sec - a.tv_sec) * 1000000000L + (b.tv_nsec - a.tv_nsec) < want);
+}
+
+static inline void bus(void)
+{
+    if (bus_ns < 0) {
+        const char *e = getenv("PORT_VGA_NS");
+        bus_ns = e ? atol(e) : 0;
+    }
+    vga_accesses++;
+    if (!bus_ns)
+        return;
+    bus_debt += (uint64_t)bus_ns;
+    if (bus_debt >= 2000000u)
+        bus_pay();
+}
 
 void vga_set_mode(int mode)
 {
@@ -48,6 +114,7 @@ uint8_t vga_read(uint32_t off)
 {
     int p;
 
+    bus();
     off &= 0xffff;
     if (chain4())
         return plane[off & 3][off & ~3u];
@@ -78,6 +145,7 @@ void vga_write(uint32_t off, uint8_t v)
     unsigned rot = gc[3] & 7, p;
     uint8_t mask = seq[2], bm = gc[8], r, raw = v;
 
+    bus();
     off &= 0xffff;
     if (chain4()) {
         if (mask >> (off & 3) & 1)
@@ -110,18 +178,39 @@ void vga_write(uint32_t off, uint8_t v)
     }
 }
 
-/* the vertical retrace: 70 Hz, retrace the first 1.4 ms of each period (real time, so the game's
- * waits pace it as they paced the PC) */
+/* Input status 1 (0x3da) from a real-time clock, with mode 13h's / Mode X's timing (the CRTC values
+ * the game sets: 100 character clocks a line of which 80 are shown, 449 lines a frame of which 400
+ * are shown, vertical retrace on lines 412-413): a 31.47 kHz line, 70.1 Hz frame. Bit 0 (display
+ * disabled) is set in each line's horizontal blank and in the vertical blank, bit 3 in the retrace.
+ * The game paces itself on both: page_show waits for bit 3, and dac_load waits for a horizontal
+ * blank before each palette entry, so a fade step (256 entries) takes 8 ms and a whole fade half a
+ * second, as on the PC. */
+#define LINE_NS 31778u                  /* 800 dots at 25.175 MHz */
+#define FRAME_LINES 449u
+
 static unsigned status1(void)
 {
-    uint32_t us = machine_ms() * 1000u % 14286u;
-    static unsigned hblank;
+    struct timespec ts;
+    uint64_t ns, line;
+    unsigned fl, dot;
 
-    hblank ^= 1;                       /* display enable toggles per read: hblank waits end */
-    return (us < 1400 ? 8 | 1 : hblank);
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    ns = (uint64_t)ts.tv_sec * 1000000000u + (uint64_t)ts.tv_nsec;
+    line = ns / LINE_NS;
+    fl = (unsigned)(line % FRAME_LINES);
+    dot = (unsigned)(ns % LINE_NS);
+    return (fl >= 400 || dot >= LINE_NS * 4 / 5 ? 1 : 0) | (fl >= 412 && fl < 414 ? 8 : 0);
 }
 
-unsigned vga_in8(unsigned port)
+static unsigned in8(unsigned port);
+static void out8(unsigned port, unsigned v);
+
+unsigned vga_in8(unsigned port) { io_cost(0, 0); return in8(port); }
+void vga_out8(unsigned port, unsigned v) { io_cost(1, 0); out8(port, v); }
+unsigned vga_in16(unsigned port) { io_cost(0, 1); return in8(port) | in8(port + 1) << 8; }
+void vga_out16(unsigned port, unsigned v) { io_cost(1, 1); out8(port, v & 0xff); out8(port + 1, v >> 8 & 0xff); }
+
+static unsigned in8(unsigned port)
 {
     switch (port) {
     case 0x3c5: return seq[seq_i & 7];
@@ -150,7 +239,7 @@ unsigned vga_in8(unsigned port)
     return 0xff;
 }
 
-void vga_out8(unsigned port, unsigned v)
+static void out8(unsigned port, unsigned v)
 {
     v &= 0xff;
     switch (port) {

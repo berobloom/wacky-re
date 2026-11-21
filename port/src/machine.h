@@ -17,6 +17,8 @@ int image_load(const char *exe);
 
 /* VGA (vga.c): 4 planes of 64 KB behind the sequencer and graphics controller */
 void vga_out8(unsigned port, unsigned v);
+unsigned vga_in16(unsigned port);       /* one bus access for both bytes */
+void vga_out16(unsigned port, unsigned v);
 unsigned vga_in8(unsigned port);
 uint8_t vga_read(uint32_t off);              /* off: 0..0xffff into the window */
 void vga_write(uint32_t off, uint8_t v);
@@ -28,6 +30,8 @@ void vga_set_mode(int mode);                 /* int 10h ah=0 */
 /* port I/O: VGA ports to vga.c, PIT/PIC/keyboard here (machine.c) */
 unsigned port_in8(unsigned port);
 void port_out8(unsigned port, unsigned v);
+unsigned port_in16(unsigned port);
+void port_out16(unsigned port, unsigned v);
 
 /* the linear address space as the game's code sees it: the VGA window is not memory */
 static inline int is_vga(uint32_t a) { return a - VGA_WIN < 0x10000u; }

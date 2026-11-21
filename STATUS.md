@@ -32,8 +32,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
   unchanged (port/tools/prep.py), src/wwasm.asm translated by port/tools/asm2c.py, and a runtime that
   maps WW.EXE's data object at 0x60000 and emulates the VGA, timer tasks, keyboard and DOS services
   (port/README.md). Check: `port/check.sh` -> `PORTCHECK OK` (title screen pixel-identical to the
-  original's); mutation `plane[x & 3]` -> `plane[(x + 1) & 3]` in vga.c's render makes it FAIL. Sound is
-  silent stubs; the Apogee screen ends early because of it (QUEUE Q1).
+  original's; iter 106: racetest's key path reaches ENGINES and the track overview as the original does,
+  QUEUE Q2); mutations: `plane[x & 3]` -> `plane[(x + 1) & 3]` in vga.c's render, and `io_cost` returning
+  at once, each make it FAIL. Music runs through the game's own FM song player (no OPL2 yet: silent);
+  sound effects are stubs. Timing model: port/README.md "Timing".
 
 ## Next
 
@@ -59,6 +61,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    env. The 4 DIFFs are the dead `v7d874`/`v7d7f4` stores and `palptr`'s stack address; `net_input`
    needed a seed for `p7e728`. `difffn.py BUCKET=1` buckets any DIFF (findings/game-loop.md). Open:
    `net_input` coverage (55 of 203 starts), `race_run` (784 of 2028).
+7. Port (iter 106, QUEUE Q2 ready for review): menus to the first race match the original's. Next
+   candidates: an OPL2 emulator behind FMCHIP's port 0x388 (the songs already run) and FX via SDL audio;
+   the race itself against a deterministic reference; Watcom `rand` checked under Unicorn
+   (port/src/clib.c claims port/tools/checkrand.py, which does not exist yet).
 
 ## BLOCKED
 

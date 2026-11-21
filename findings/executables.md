@@ -237,6 +237,12 @@ loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine 
   bit (byte 10 bit 0) is set; FM_Reset puts the rhythm instruments at fixed pitches (0xA8 0x57, 0xB8 9,
   0xA7 3, 0xB7 0x0A) and 0xBD = 0x20. **Bug** in both Inits (CONFIRMED, 0x4A7B0 and 0x50950): after
   `DPMI_LockMemoryRegion` they call `DPMI_UnlockMemory` on every variable instead of locking it.
+  **Bug** in FM_SetChannelVolume (CONFIRMED: the rebuilt FMCHIP.C is byte-identical there, and the port
+  faulted on it): it reads the connection bit at byte 10 of the channel's timbre without a NULL test,
+  and `sound_init` calls MUSIC_SetVolume(250) before any song has given a channel a timbre
+  (src/ww.c `sound_init` -> FMSONG_SetVolume -> FM_SetVolume -> FM_SetChannelVolume, port gdb
+  backtrace). Under DOS/4GW linear 0 is mapped, so the game reads linear 0x0A (the interrupt table,
+  int 2's segment) and goes on; the port's prep.py reads it as 0.
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four
   functions' register choices): the Watcom 10.0 prerelease, **without `/zu`** (CONFIRMED: with it
   `_MIDI_SendControlChange` gets a frame the game's lacks), and `#pragma aux _MIDI_ServiceRoutine
