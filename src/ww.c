@@ -2805,7 +2805,15 @@ void spr_draw_scaled(void);
    sel != -1 is known on that path and the two blocks it skips are both `sel == -1 && ...`
    (0x14623-0x1462b and 0x1468d-0x14695, the second testing sel before EBX, so the stale EBX is never
    read there); our build jumps to the twoplayer test 0x14603 and re-reads sel at 0x14620/0x1468a.
-   Same reachable paths and values - refs 76/76 same, no one-sided const, nothing else open. */
+   Same reachable paths and values - refs 76/76 same, no one-sided const, nothing else open.
+   Iter 103 vbatch (.work/vbatch/ents_show.py, ents_show2.py, control 7): the wtext scalar-slot
+   lever of GOTCHAS - `volatile int sl[3]` written for the three permuted slots (temp/n/animate),
+   in both declaration orders and with the indices swapped, plus `volatile int sl[2]` for n and
+   animate alone and a `volatile int wh` scalar - 17 to 24 rows and 12 bytes more frame: the array
+   does not start at [esp] while a fourth slot (the `sel` parameter spill at [esp+0xc]) exists, it
+   is allocated above them. Four parameter renames (`q`/`p`, `x`/`y`, `aa`/`bb`, `ncount`/
+   `doanimate`) leave 7 rows and 848 bytes unchanged, so com_open's "the slots move with the names"
+   (QUESTIONS 2) does not generalize. */
 void ents_show(short sel, int n, int animate, int custom, int skip)
 {
     short i;

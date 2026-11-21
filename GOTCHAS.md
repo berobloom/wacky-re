@@ -678,7 +678,10 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   MATCH; a plain `int sl[4]` or struct with constant indices is scalarized and its slots scramble,
   6 -> 21). Only works when they are the function's ONLY spilled locals - with other scalar slots
   around, the elements are still coloured individually (screenshot 0x114c8, release_check 0x034458:
-  no gain). [generic] [generic]
+  no gain). A slot holding a *parameter* spill counts as one of those other slots: ents_show
+  0x14380 has four slots, three permuted locals and one incoming argument, and `volatile int sl[3]`
+  for the three is allocated above all four, not at [esp] - frame 848 -> 860 bytes, 7 -> 20 rows
+  (iter 103, both declaration orders, both index orders). [generic]
 
 ### Dead ends: SKIP at once (0 variants) unless you bring a new idea
 
