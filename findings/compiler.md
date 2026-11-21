@@ -87,6 +87,25 @@ game's DL is the code generator's temp for a global used in place: writing the b
 (and `v88cef & N` per statement in netkeys_in) builds all three byte-identical (208 matches).
 CONFIRMED by the full check.
 
+**shots_clear 0x2D4FC (fixed, iter 94)**: the same lever one step further - a global that is a
+POINTER walked in place. `v7d874 = shots; ... (v7d874++)->f04 = 0;` with no `struct shot *p` local
+MATCHes: the game's EBX is the cached global (`mov ebx,0x7f2b0` 0x2d4fe, one store 0x2d53c) and the
+local had handed EBX to the loop counter. CONFIRMED by the full check (211).
+
+**voices_reset 0x11ADC**: not source order. The -1 and 0 of the unrolled voices loop are two constant
+pseudos; ours gives EBX to -1 and EDX to 0 whichever store is written first - the `swap-stores`
+whole-file variant (`.work/vbatch/V.OBJ`) leaves the rows at 0x11b1e/0x11b23 unchanged. So the
+pre-sort position of a materialised constant is not the source order of its stores. CONFIRMED for our
+build (that one experiment); the game's EDX/EBX stays unexplained, and no spelling of the two loops
+(7 tried) moves it.
+
+**shots_move 0x2602C**: the *form* of the use does move a walked global's home. `*v7d690++` keeps the
+pointer in EDX and loads through `[edx]`/`[edx+4]`; the indexed pair `vec_x = v7d690[0];
+vec_y = v7d690[1]; v7d690++;` puts it in EBX like the game (12 -> 7 rows, whole check unchanged) and
+leaves only the p+1 copy, `lea eax,[ebx+4]` 0x26136 vs the game's `mov edx,ebx` + `add edx,4`
+0x2612e/0x26136. CONFIRMED that the form changes the home; STRONGLY SUPPORTED that the game's C used
+the indexed pair (its two loads go through two registers, 0x26139/0x26141).
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

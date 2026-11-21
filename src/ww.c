@@ -1073,7 +1073,11 @@ void FX_StopAllSounds(void);
 /* differs: the -1/0 constants of the unrolled first loop live in EBX/EDX, the game's in EDX/EBX
  * (0x11b1e); the other 18 fndiff rows are masked-fixup artifacts. Tried: statement order in both
  * loops, int m = -1 / z = 0 locals (before or inside the loop, both declaration orders: the
- * constants propagate, same bytes), short i (worse). The coin-flip class (GOTCHAS dead ends). */
+ * constants propagate, same bytes), short i (worse). The coin-flip class (GOTCHAS dead ends).
+ * Iter 94 vbatch (7 spellings: swap-stores, bound 0x1b, `i != 27`, while, do/while, the two loops
+ * swapped, a `struct voice *p` walk): all 4 rows. The store order does not move a constant's home -
+ * with `plays = 0` written first EBX still materialises -1 and EDX the 0 (.work/vbatch/V.OBJ), so
+ * creation order here is not the source order of the stores. */
 void voices_reset(void)
 {
     int i;
