@@ -11800,7 +11800,15 @@ void shot_step(short move)
  * `lea eax,[ebx+4]` 0x26136) and the two load homes, plus the 2 tail rows. Not taken: `vec_k` moved
  * above the pointer or below the loads (79 - its position feeds the imul), `*++v7d690` and
  * `v7d690 = v7d690 + 1` (13), `*v7d690++` with `v7d690[0]` (13), `(int *)((char *)v7d6a0 + dir*8)`
- * (16, +8 bytes), a local `int *q` (22, -4 bytes). */
+ * (16, +8 bytes), a local `int *q` (22, -4 bytes).
+ * Iter 95 (vbatch, 8 spellings: inc-between, inc-between-deref, postinc-pair, prefixinc-pair,
+ * inc-first-neg, local-p, two-store-plus-plus, idx-pair-prefix): the game reads its second element
+ * through the incremented pointer (`add edx,4` 0x26136 then `mov edx,[edx]` 0x26141) and stores the
+ * global twice (0x26130, 0x2613b). Every spelling that does that - increment between the two reads,
+ * `*v7d690++`/`*v7d690` (the shape shot_step 0x25f6f uses), `*++v7d690`, increment first with
+ * `v7d690[-1]`, `v7d690 = v7d690 + 1` between, an `int *p` local (9) - scores 13 or worse; only the
+ * indexed pair with `v7d690++` after (and `++v7d690`, same 7) keeps the walked global in EBX. The
+ * doubled store and the `[edx]` load are allocator output, not source shape: left at 7. */
 void shots_move(void)
 {
     short i;
