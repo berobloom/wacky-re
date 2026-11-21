@@ -1405,7 +1405,13 @@ extern int trk7ebc8, trk7ec44, trk7ebc4, trk7ec40;
  * hoists the switch subject above the x load. Tried x/y assignment order, `int y, x;` declaration order
  * (that changes the register choice, 13 diffs), `register`, `unsigned`, switching on a local copy, and
  * compiling with -3 instead of -3r (identical object): all give these same 212 bytes. Iter 49: permute.py
- * 4 rounds x 30 copies (seed 11) - best 2 = control, no mutation sinks the `mov eax,[track]`. */
+ * 4 rounds x 30 copies (seed 11) - best 2 = control, no mutation sinks the `mov eax,[track]`.
+ * Iter 101 vbatch (.work/vbatch/track_setup.py, 9 whole-file spellings, control 2): declaration order
+ * is what homes y in EDX and x in EBX - `int y, x;` with the two statements reversed and
+ * `int y = trk7ec44, x = trk7ebc8;` give 12 diffs, while the comma form `y = trk7ec44, x = trk7ebc8;`,
+ * `int x = trk7ebc8, y = trk7ec44;`, two-step copies through a third local, an unused third local and
+ * two case-label orders are all byte-identical to the control: nothing reaches the order of the three
+ * independent loads. */
 void track_setup(void)
 {
     int x, y;
@@ -4676,7 +4682,14 @@ music:
    expression in both loops, plus (iter 16, one compile, 8 spellings) lim=a3
    then lim*=3, lim=a3 then lim=lim*3, short lim=(short)(a3*3), a long n=a3
    used in an `if (n == a3)` guard, long t=a3 as the bound in both loops, an
-   int counter, two limit locals in the two loops. Same family as
+   int counter, two limit locals in the two loops. Iter 101 vbatch
+   (.work/vbatch/fn_182d0.py, 9 whole-file spellings, every one 88 bytes and 3 rows:
+   `short lim = a3; lim *= 3;`, `lim = lim * 3;`, `(short)(a3 * 3)`, k/lim and i declaration
+   orders, `int a3`, `register short lim`, `long t = a3; short lim = t * 3;`) - the whole file
+   folds the copy just as the probe did, so the probe-vs-file gap of iter 21 is not the reason
+   that probe failed; 9.5b re-materialises `imul r,r,imm` from the argument register and deletes
+   the copy a copy-then-multiply spelling produces.
+   Same family as
    music_jingle/track_setup (GOTCHAS "sinks a zero argument constant").
    a4 is a WORD in the game (`test cx,cx` 0x182e9), which is why the prototype
    says short a4: that took the function from 4 diff rows to 3 with all ~24
@@ -9459,7 +9472,13 @@ void kart_hit(void)
  *    (much worse), a `(char *)+0x66` store (no change) and `flag = 1` above `kind = v7d874->kind`
  *    (25 rows, but the store lands at 0x21a7b, not the game's 0x21aad) all fail: the coin flip.
  * 2. the game hoists the karts[i] index conversion `movsx edx,cx` to 0x21be1, above the `f02 = 2`
- *    store; ours emits it inside the `soundon` arm.
+ *    store; ours emits it inside the `soundon` arm. Iter 101 vbatch (.work/vbatch/shot_hit.py, 9
+ *    spellings, control 2): a `struct kart *k = &karts[i]` local at that slot, after `voice_play`, or
+ *    for the whole arm gives 52 / 57 / 79 rows (the shared pointer removes the game's second
+ *    `movsx edx,cx` 0x21c16), `(char *)karts + i * 0x104` byte arithmetic 25, an `int` local holding the
+ *    sign-extended index 2 (byte-identical: no local owns that `movsx`), `int flag` 6, and moving the
+ *    `soundon` arm or the stores costs rows (f02-first 4, stores-rev 5, soundon-first 16). Nothing
+ *    hoists the index.
  * Levers that mattered: `kind != 5` / `kind != 4` arms first, and every branch falling into one
  * `v88bae = 3; return;` (the compiler duplicates the tail; per-branch stores get scheduled early). */
 /* ---- 0x218a4, 1338 bytes: what the shot at (lx0, ly0) hits (callers in 0x22230); v7d874 is the shot
@@ -14583,7 +14602,10 @@ void bigdigits(int x, int y, int n)
  * differs (10 rows, 1520 bytes = the game's length): 8 rows are the masked-fixup artefact
  * ([reg - @] vs [reg + @]); the 2 real ones are the inlined music_start(v7c64c, 0) zero
  * constant that -oe sinks below the stores (game `mov word [0x88bcc],0` 0x2b699 after
- * `xor edx,edx`; GOTCHAS scheduling class, as music_jingle). Fixed this iter (48 -> 10): the
+ * `xor edx,edx`; GOTCHAS scheduling class, as music_jingle). CONFIRMED by a full dump of both
+ * sides (iter 101): the second inlined music_start in the same function, the v7c658/1 call at
+ * 0x2badc-0x2baf3, is byte-identical on both sides, so the sink is specific to the `0` argument's
+ * fold and not to this function's schedule. Fixed this iter (48 -> 10): the
  * three centred x values outside the table loop are an int w (the game's dword slot 0xc8 +
  * movsx reload), the table loop keeps short x; arrays declared buf, name, num (buf at esp+0,
  * num at esp+0x50); `if (!after) return;`; num[1] = num[0] before num[2] = 0. */

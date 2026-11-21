@@ -755,10 +755,17 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`;
   iter 100: `song && 0` and `2 - 2` fold to the same sunk xor, so a non-constant spelling is not a
   trigger either),
-  one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group
+  one swapped pair of loads (track_setup 0x124e8; iter 101 vbatch, 9 spellings: declaration order flips
+  which of EBX/EDX is the home, nothing moves the order of the three loads), a conversion the game
+  hoists above a store (shot_hit 0x21be1 `movsx edx,cx`; iter 101: a shared `struct kart *k = &karts[i]`
+  costs 50+ rows because the game recomputes the index at 0x21c16, and an `int` local for the index
+  changes nothing - no local owns that `movsx`), a store 9.5b hoists or sinks out of a group
   (classes_menu 0x1a05d, QUESTIONS 3), two independent load chains interleaved (in_sector 0x24a08; a
   statement written below a branch sinks past the whole branch), a dead copy of an incoming register
-  (fn_182d0 `mov esi,ebx`), an allocator spill `mov [esp],eax; mov edx,[esp]` with no room for a
+  (fn_182d0 `mov esi,ebx`; iter 101, 9 more whole-file spellings - `lim = a3; lim *= 3;`,
+  `lim = lim * 3;`, `(short)(a3 * 3)`, `long t = a3; short lim = t * 3;`, `register`, three declaration
+  orders - all fold it: 9.5b re-materialises `imul r,r,imm` from the argument register, so a dead copy
+  in the game's bytes is a def for an unmodelled local, not a spelling, QUESTIONS 28), an allocator spill `mov [esp],eax; mov edx,[esp]` with no room for a
   local (view_at_curpos), a param a copy into a local will not spill the way the game does (its
   mirror image: the incoming value lands in the new slot at the prologue and the register is
   reloaded after the call - fn_1d704 0x1d7b5, 11 spellings). `tools/wc/permute.py` does not move

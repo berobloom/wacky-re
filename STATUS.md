@@ -30,10 +30,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): that list and the three two-row names
-   after it are done or VB-marked (`line_draw` matched iter 100). Next two-row lines in
-   `src/nearmiss.txt` with no vbatch run yet: `track_setup` 0x0124e8, `shot_hit` 0x0218a4,
-   `duck_screen` 0x02b5e8, `fn_182d0` 0x0182d0. Levers: findings/compiler.md iter 100.
+0. Overnight: the register-home list and the four 2-3 row lines after it are all MATCH or VB-marked
+   (`src/nearmiss.txt`; findings/compiler.md iter 101 says why their last rows are closed classes).
+   Open small ones: QUESTIONS 28 - `fn_182d0` 0x182d0's dead `mov esi,ebx` - and the same dead-copy
+   shape in `crcstep` 0x10260 (QUESTIONS 1, `mov ebx,edx` after the xor): one whole-file vbatch each.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom

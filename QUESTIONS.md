@@ -491,3 +491,11 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     class at 0x7c530/0x6508e (same function), 0x70660/0x6e728 (`fn_173c4`), 0x6aab6/0x6aabe
     (`fn_16f90` area) and 0x7cbe8 (main): 202 MATCH unchanged, every verdict line unchanged, RACETEST
     race mean 2.3 -> 1.1. `tools/link/fixcensus.py` finds the class (0 unexplained now).
+
+28. **OPEN** (iter 101, `fn_182d0` 0x182d0): why does the game's 9.5b keep a dead register copy -
+   `mov esi,ebx` 0x182d4 immediately followed by `imul esi,ebx,3` 0x182d6 - when every copy-then-multiply
+   spelling in the whole file (17 in all, iters 16 and 101) folds it? `ESI` is `lim`'s home and `EBX`
+   carries the incoming `a3`, so the copy is a def for something: an unmodelled local that shares ESI, or
+   an IR temp whose use the multiply replaced. What would settle it: `tools/wcc95/ratrace.py WW.C out
+   <fn_182d0 lines>` and read the temp list plus the RegAlloc decision for ESI, or find any C shape that
+   keeps the copy (it is worth 2 rows and the +2 bytes that shift every address after 0x182d4).

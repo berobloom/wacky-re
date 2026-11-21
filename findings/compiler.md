@@ -224,6 +224,41 @@ survives only in the second case.
   source. CONFIRMED: constant folding happens before that scheduling decision, so "make the constant
   non-constant" is not a lever.
 
+### iter 101: three one-instruction schedule diffs are closed classes (CONFIRMED, three vbatch runs, 27 spellings)
+
+The register-home list of iters 95-100 is exhausted (every name on it is MATCH or VB-marked), so the
+same whole-file method went to the next 2-3 row lines of `src/nearmiss.txt`, none of which had had a
+vbatch run:
+
+- `track_setup` 0x124e8 (2 rows: the game loads `mov edx,[trk7ec44]` 0x124ea, `mov ebx,[trk7ebc8]`
+  0x124f0, `mov eax,[track]` 0x124f6; ours puts the `[track]` load in the middle). 9 spellings: 7 are
+  byte-identical to the control (the comma statement, `int x = trk7ebc8, y = trk7ec44;`, two-step
+  copies through a third local, an unused third local, two case-label orders); the two that change
+  anything (`int y, x;` with the statements reversed, `int y = trk7ec44, x = trk7ebc8;`) are worse at
+  12 rows, and what they change is the **home** - which of EBX/EDX carries x - not the order.
+  CONFIRMED with iter 99 (`car_laps`, `net_recv`): the emission order of independent global loads in
+  one straight-line block is not a source property in 9.5b; declaration order is a source property of
+  the register home only.
+- `fn_182d0` 0x182d0 (3 rows, 1 real: the game's dead `mov esi,ebx` 0x182d4 immediately before
+  `imul esi,ebx,3` 0x182d6 - a copy of the argument in EBX into the short local's home ESI whose
+  multiply is emitted from EBX anyway). 9 whole-file spellings (`lim = a3; lim *= 3;`,
+  `lim = lim * 3;`, `(short)(a3 * 3)`, three declaration orders, `int a3`, `register short lim`,
+  `long t = a3; short lim = t * 3;`) all give 88 bytes / 3 rows. CONFIRMED: 9.5b re-materialises the
+  `imul r,r,imm` from the argument register and deletes the copy any copy-then-multiply spelling
+  produces, in the full build exactly as in a probe - so the iter 21 "probes do not rank this
+  function" caveat does not explain iter 16's probe, and a dead register copy in the game's bytes is
+  evidence of a local the port does not model, not of a spelling (QUESTIONS 28).
+- `shot_hit` 0x218a4 (2 rows: the game hoists the karts index conversion `movsx edx,cx` to 0x21be1,
+  above the `f02 = 2` store 0x21be4; ours emits it inside the `soundon` arm at 0x21bf0). Every
+  register/array lever costs: `struct kart *k = &karts[i]` at the game's slot, after the call, or for
+  the whole arm = 52 / 57 / 79 rows, because a shared pointer deletes the game's *second*
+  `movsx edx,cx` at 0x21c16; `(char *)karts + i * 0x104` byte arithmetic 25; store order 4-16;
+  `int flag` 6 (cause 1's home). An `int` local for the sign-extended index is byte-identical to the
+  control, so no local owns that `movsx` and there is no home to give it. CONFIRMED (negative).
+- Side product, `duck_screen` 0x2b5e8 (2 rows, no vbatch run): dumping both sides shows the *other*
+  inlined `music_start` in the same function (0x2badc-0x2baf3, second argument 1) byte-identical, so
+  iter 100's arg-def/store sink is specific to the `0` argument's fold. CONFIRMED by the bytes.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;
