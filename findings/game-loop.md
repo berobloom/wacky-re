@@ -464,6 +464,25 @@ merged).
       group as 0x2374c-0x2376c, 0x231b8-0x231cf, 0x22d2d-0x22d4a, 0x22c6a-0x22c7a, 0x234f0-0x23505,
       0x22ef5-0x22f10, 0x2317b-0x23181, 0x23119/0x23121, 0x2309a/0x230a0, 0x22f53/0x22f58,
       0x22dd8/0x22ddd, 0x234d2, 0x237a5.
+  - **Iter 105 closed the 55 (`kart_bump` 0x22bf4 walked to 603 of 606 starts, the 3 left
+    unreachable)** (CONFIRMED, fifteen more seed sets on the base `B` = `0x88b78=3:w,0x79a9c=1:w,0x6aac0=1:w,0x79ac4=0xffff:w,0x79abc=1:w,0x7d5b0=0x8200:d,0x827c=1:w,0x7d86c=0x79aa0:d,0x7d800=0x6aa90:d,0x88c44=2:w,0x72998=1:w`, each
+    `SAME` with both sides returning and the `NEW=wworig` control SAME). What each needed:
+    - the first loop's step 0x22c6a-0x22c7a: record 1's `f24` set (`+0x79a74=1:w`), so the search for the
+      player's own record goes on past it;
+    - `f20` 5/4 (0x22d2d-0x22d4a) and `f1e` 1/2 (0x22dd8, 0x22f53): the other record more than 4 pixels
+      right/left of, or above/below, record 1 - `+0x79a7c=100:w` / `+0x79a54=100:w` (x = f04),
+      `+0x79a56=100:w` / `+0x79a7e=100:w` (y = f06); the `f20 == 4` arm of the face block 0x22ef5 comes
+      with the left case;
+    - the `f28` face-animation switch 0x2317b-0x231cf (states 2, 3, other): the voice block skipped
+      (`+0x6aac0=0:w`, f30 = 0, or it sets f28 = 1 itself) and `f28` seeded (`0x6aab8=2:w` with
+      `ticks2` 0x7ec64 = 10 for the 3-tick wait, `=3:w`, `=4:w`);
+    - the `f38` arm 0x234f0-0x23505 and 0x234d2: the **live** pickup record (record 3) with `f24` > 0
+      (`+0x79ac4=1:w`; the base's -1 takes `jne 0x23441` 0x23213 the other way) and `curkart->f42` >= 0x64
+      (`+0x8242=0x64:w`), then `f38` 1/2/7 (`0x6aac8`) picks the arm and `netvoices` 0x7ec74 = 1 the
+      0x234d2 one. `0x88be2` is not needed (it only adds the `f18 > 1` zeroing 0x234be);
+    - the end switch on the live record's `f20` 0x2374c-0x2376c: record 3 right (`+0x79aa4=100:w`) or left.
+    Unreachable: 0x23754 and 0x2375c are that switch's arms for `f20` outside 3..5, but the same pass
+    has just set the record's `f20` to 3, 4 or 5; 0x237a5 is padding after the `ret`.
   - `line_points` 0x21554 is gated only by its own four input globals and its output cursor: the
     dx sign `test si,si; jge 0x2159e` 0x21590, the dy sign `cmp word [esp+0xc],0` 0x215a6, and
     `cmp si, word [esp+0xc]; jle 0x2160d` 0x215c4 (x-major loop 0x215dd vs y-major 0x2163d).

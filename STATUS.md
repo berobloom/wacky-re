@@ -45,9 +45,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
    arms of `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, which keep `.L<address>` on purpose.
 3. `trial_book` 0x2e4b8 is walked (iter 105: 1006 of 1034 starts, every record outcome SAME; findings/menus.md).
    Since iter 105 `tools/wc/difffn.py` stubs the hybrid's `WWASM_TEXT` too (GOTCHAS).
-4. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
-   wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be); 0x23746 reads the
-   **live** pickup record's `f20`, so print `[0x7d86c]` at the gate before seeding (`.work/kbprobe.py`).
+4. `kart_bump` 0x22bf4 is walked (iter 105: 603 of 606 starts, the 3 left unreachable; findings/game-loop.md).
 5. `demo_mode` 0x1e2e4 with its recorded seeds and raised `CALLS=`/`COUNT=` (iter 84's run stops at
    CALLS=6000), plus `fncov.py` for its coverage number. Do NOT add `RESEED=0x88cd0=0:b` - the abort arm
    0x31eae needs the press value on every read.
