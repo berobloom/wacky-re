@@ -136,6 +136,24 @@ survives only in the second case.
   `t = g;` statements - the split form makes every copy a live value of its own, +20 bytes of
   spills and 8 rows -> 31. Loads grouped above their masks are scheduling.
 
+### iter 97: the form of the loop, and a merged local, both move homes (CONFIRMED, two whole-file experiments)
+
+- `fade_in` 0x32cf8: `for (i = 0, k = 0; i <= 0x2ff; i++) { cur[i] = 0; if (++k > 2) k = 0; }` gives
+  i EBX / k EDX; `k = 0; i = 0; do { cur[i] = 0; if (++k > 2) k = 0; i++; } while (i <= 0x2ff);` gives
+  the game's i EDX (`movsx eax,dx` 0x32d20) and k EBX (`inc ebx` 0x32d23) - 13 -> 2 rows - and writing
+  `k = 0;` before `i = 0;` fixes the last pair (`xor ebx,ebx` before `xor edx,edx`, 0x32d1c/0x32d1e):
+  0 rows. The same initialisers in a `while` loop score 13/14, so it is the `do` form and not the
+  order of the two assignments alone (`.work/vbatch/fade_in.py`, `fade_in2.py`).
+- `fade_in` again, scheduling (CONFIRMED): `palptr = (char *)cur;` written above `dac_count = 0x100;`
+  puts the frame-address load `mov eax,esp` at 0x32d38, above the two global stores, as the game has
+  it (2 rows of the 13; 13 -> 12 on its own).
+- `com_expect` 0x2e008: ONE local for the `com_getc` result and the return code (no `r`) flips two
+  other homes - want ESI -> EBX (0x2e00b `mov ebx,eax`) and t0 EBX -> ESI (0x2e016) - 8 -> 4 rows,
+  whole check unchanged at 211. `t0` deleted in favour of the global `v7ea68` it is stored into
+  scores the same 4 (so t0 is a real local), and an added `d` for `ticks - t0` in four types and
+  three declaration positions never moves the last 4 rows (`ticks - t0` in EAX here, the game's
+  ECX at 0x2e08e).
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

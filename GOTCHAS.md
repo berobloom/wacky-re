@@ -739,7 +739,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   no `d` anywhere still `mov eax,[0x7e720]`/`sub eax,edx`/`cmp eax,0x110`, iter 96), while a real home
   shows up loudly (fn_1bf00 0x1bf00 - `players[i].face = v7ec6c;` with no `val` adds a fifth `push`,
   128 -> 136 bytes, 9 -> 15 rows, iter 96). And `t = g & m` is one fused load+mask: splitting it
-  (`b = g; b &= m`) makes every copy live, +20 bytes and 8 -> 31 rows (net_input 0x2f4a8, iter 96). [generic]
+  (`b = g; b &= m`) makes every copy live, +20 bytes and 8 -> 31 rows (net_input 0x2f4a8, iter 96).
+  Two more whole-file levers (iter 97): the *form of the loop* picks which counter gets the first
+  pushed register - fade_in 0x32cf8 `for (i = 0, k = 0; i <= 0x2ff; i++)` keeps i in EBX, while
+  `k = 0; i = 0; do { ... i++; } while (i <= 0x2ff);` gives the game's i EDX / k EBX, 13 -> 0 rows,
+  and writing `k = 0;` before `i = 0;` is what fixes the order of the two zeroing `xor`s (0x32d1c);
+  and merging a loop's value local with the function's return code flips the homes of the OTHER
+  locals (com_expect 0x2e008: one `c` for the com_getc result and the return code, no `r`, moves
+  want ESI -> EBX (0x2e00b `mov ebx,eax`) and t0 EBX -> ESI, 8 -> 4 rows). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group

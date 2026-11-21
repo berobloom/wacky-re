@@ -15920,20 +15920,20 @@ int com_wait_byte(int esc)
 
 /* ---- 0x2e008, 158 bytes: com_getc until the byte want arrives (1); key 0xcd0 aborts
  * (net88c14 = 2, 0); a non-zero timeout gives up after that many ticks (0). v7ea68 = start.
- * differs: registers only: want in EBX and t0 in ESI in the game, the reverse here (as in
- * com_wait_byte); all 30 orders of t0, c, r (and an elapsed temp) tried. Iter 22 closed the rest:
- * net_sync 0x2e0fc is byte-identical, so want really does arrive in EAX and timeout in EDX (the
- * parameter order is not the cause); 10 more spellings in one probe compile
- * (.work/probe_comexpect/CE.C, control 9 = the fndiff count, so the ranking applies) - an elapsed
- * local d in three declaration positions, an unsigned d, the elapsed written into r, a copy of
- * want in a local, t0 = ticks first, short want - leave the two homes alone; the row at 0x2e03b
- * (`[eax - @]` vs `[eax + @]`) is a fndiff masking artifact, not a row to fix (GOTCHAS); and the
- * pair `mov ebx,eax` + `mov esi,[abs]` occurs exactly once in the whole image (0x2e016), so no
- * matched function anywhere shows the game's spelling. GOTCHAS "Which pseudo gets EAX is a coin
- * flip": this is that case. */
+ * differs: 4 rows, iter 97: ONE local for the com_getc result and the return code (no `r`) puts
+ * want in EBX (0x2e00b `mov ebx,eax`) and t0 in ESI (0x2e016) exactly as the game has them - the
+ * separate `r` pseudo is what pushed want to ESI and t0 to EBX here. What is left is the elapsed
+ * temp: the game computes `ticks - t0` in ECX (0x2e08e-0x2e096) and 9.5b gives it EAX here, and the
+ * tail `lea eax,[eax]` vs `mov eax,eax` row is that choice's 1-byte size gap (GOTCHAS iter 96).
+ * 19 whole-file spellings (.work/vbatch/com_expect.py, com_expect2.py) stay at 4: t0 deleted in
+ * favour of the global v7ea68 it is stored into (also 4, so t0 is a real local), an elapsed d in
+ * int/unsigned/short and three declaration positions, d as a condition subexpression, `&&` nested,
+ * the compare the other way round (9), while/do, unsigned t0 (5), merged-but-declared the other
+ * way. Earlier (iter 22): net_sync 0x2e0fc is byte-identical, so want arrives in EAX and timeout in
+ * EDX; the row at 0x2e03b (`[eax - @]` vs `[eax + @]`) is a fndiff masking artifact (GOTCHAS). */
 int com_expect(int want, int timeout)
 {
-    int t0, c, r;
+    int t0, c;
 
     net88c14 = 0;
     t0 = ticks;
@@ -15941,20 +15941,20 @@ int com_expect(int want, int timeout)
         c = com_getc();
         if (key88cd0 == 1) {
             net88c14 = 2;
-            r = 0;
+            c = 0;
             break;
         }
         if (c != -1 && c == want) {
-            r = 1;
+            c = 1;
             break;
         }
         if (timeout && ticks - t0 >= timeout) {
-            r = 0;
+            c = 0;
             break;
         }
     }
     v7ea68 = t0;
-    return r;
+    return c;
 }
 
 /* ---- 0x2e0a8, 82 bytes: drops everything in the receive buffer. */
@@ -18167,14 +18167,12 @@ void fade_out(char *p)
  * and every step moves each entry by v88c46 towards target, clamped, then dac_load uploads it
  * (palptr = working copy, dac_count = 0x100 entries from dac_first = 0); stops after a step with no
  * change. The k counter (0..2, the RGB component) is computed but unused.
- * differs: the init loop's i/k registers swap (game i EDX - `movsx eax,dx` 0x32d20, k EBX - `inc ebx`
- * 0x32d23, `cmp bx,2` 0x32d28), ours i EBX and k EDX; the schedule and every other instruction are
- * identical, so all 13 rows are those two homes (the main loop's i is ESI in both). ~15 variants tried
- * (declaration order, k int, k++ placement, loop index); 6 more in .work/probe_fi: comma-operand order
- * `for (k = 0, i = 0; ...)` swaps only the emission order of the two `xor`s, never the homes (14);
- * `k = 0;` as its own statement before the loop (14); `k++` and `if (k > 2)` as two statements (14);
- * `int k` moves k to EAX with `cmp eax,2` - 12 rows but no match; `short i, k` declaration order (17);
- * `hi` assigned before `lo` (16). Coin flip (GOTCHAS "Which pseudo gets EAX is a coin flip"). */
+ * iter 97: the init loop is a `do` with `k = 0;` written before `i = 0;`, and `palptr = cur` is
+ * written before `dac_count`/`dac_first` - that gives the game's i EDX / k EBX (0x32d20, 0x32d23)
+ * and its `mov eax,esp` above the dac_count store (0x32d38). Byte-identical. (The same function as a
+ * `for` init loop keeps i EBX / k EDX, 13 rows: iter 97 tried 14 whole-file spellings - the comma
+ * order `for (k = 0, i = 0; ...)`, `while` and `for` forms with both init orders, declaration order
+ * `short i, k`, chained `k = i = 0` - all 12 to 15 rows.) */
 extern char v88c46;
 
 void fade_in(unsigned char *target)
@@ -18185,14 +18183,17 @@ void fade_in(unsigned char *target)
 
     lo = 0;
     hi = 0x2ff;
-    for (i = 0, k = 0; i <= 0x2ff; i++) {
+    k = 0;
+    i = 0;
+    do {
         cur[i] = 0;
         if (++k > 2)
             k = 0;
-    }
+        i++;
+    } while (i <= 0x2ff);
+    palptr = (char *)cur;
     dac_count = 0x100;
     dac_first = 0;
-    palptr = (char *)cur;
     do {
         same = -1;
         for (i = lo; i <= hi; i++) {
