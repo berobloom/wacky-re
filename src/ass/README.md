@@ -12,11 +12,10 @@ Wacky Wheels links a revision of the Apogee Sound System (ASS) older than any re
   unknown). Every change made here for it sits under `#if (LIBVER_ASSREV < 19950518L)`, so the 1.04
   build is untouched: `tools/ass/asscheck.py --lib` rebuilds 1.04 and must stay identical to the
   original 1.04 LIB, module by module.
-- **Build**: `tools/ass/build.sh` (one DOSBox run, AUDIO.MAK's 1.04 production flags). The compiler
-  is per module: Watcom 10.0a, except USER, GUS, PITCH, MIDI, GUSMIDI, BLASTOLD and PAS16 (the Watcom 10.0
-  prerelease: the game's objects predate the switch to 10.0a); MIDI without AUDIO.MAK's `/zu`,
-  GUSMIDI optimised but without `/zp4`, MULTIVOC without `/zu`;
-  10.0b for the 1.04 rebuild.
+- **Build**: `tools/ass/build.sh` (AUDIO.MAK's 1.04 production flags). Every module is built with
+  the Watcom 10.0 release (5/1994; findings/executables.md "Sound library"), run under Wine because
+  the only copy found has no DOS host; MIDI without AUDIO.MAK's `/zu`, GUSMIDI optimised but
+  without `/zp4`, MULTIVOC without `/zu`. 10.0b (DOSBox) for the 1.04 rebuild.
 - **Check**: `tools/ass/asscheck.py` compares every function with the game at its address in
   analysis/ww_names.txt (`tools/wc/objmatch.py`): `ASS: N of M named functions byte-identical`.
 - GUSWAVE.C, FX_MAN.C, MUSIC.C, MIDI.C and MULTIVOC.C hold Wacky Wheels' module as one alternative

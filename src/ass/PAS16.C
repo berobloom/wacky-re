@@ -125,24 +125,12 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
 
 // This function will get the current stack selector and pointer and save
 // them off.
-#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
-// The Watcom 10.0 prerelease assembles "mov ax,ss" without the operand-size
-// prefix the game has: spelled out here.
-#pragma aux GetStack =  \
-   "mov  [edi],esp"     \
-   "db   66h"           \
-   "mov  ax,ss"         \
-   "mov  [esi],ax"      \
-   parm [esi] [edi]     \
-   modify [eax esi edi];
-#else
 #pragma aux GetStack =  \
    "mov  [edi],esp"     \
    "mov  ax,ss"         \
    "mov  [esi],ax"      \
    parm [esi] [edi]     \
    modify [eax esi edi];
-#endif
 
 // This function will set the stack selector and pointer to the specified
 // values.
@@ -672,15 +660,6 @@ void PAS_SetSampleRateTimer
    Function: PAS_SetSampleBufferCount
 
    Programs the Sample Buffer Count.
-
-   Near miss (0x45E68, 6 rows, same 140 bytes): the game keeps flags in
-   ESI and never uses ECX; the prerelease gives ECX. The 1.04 spelling
-   (LoByte/HiByte locals) built by 10.0b is the game's code exactly, but
-   under the prerelease it spills HiByte (156 bytes), and 10.0a/10.0b
-   break 11 other functions of this module. Tried without a change:
-   all 120 declaration orders (1.04 spelling), flags as int/long/
-   unsigned long, LoByte/HiByte as char/unsigned char, LoByte only,
-   writes split, dead LoByte/HiByte stores, unsigned count.
 ---------------------------------------------------------------------*/
 
 void PAS_SetSampleBufferCount
@@ -716,18 +695,12 @@ void PAS_SetSampleBufferCount
       count >>= 1;
       }
 
-#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
-   // Program the Sample Buffer Count
-   PAS_Write( SampleBufferCount, lobyte( count ) );
-   PAS_Write( SampleBufferCount, hibyte( count ) );
-#else
    LoByte = lobyte( count );
    HiByte = hibyte( count );
 
    // Program the Sample Buffer Count
    PAS_Write( SampleBufferCount, LoByte );
    PAS_Write( SampleBufferCount, HiByte );
-#endif
    PAS_State->samplecnt = count;
 
    RestoreInterrupts( flags );
@@ -843,8 +816,8 @@ void PAS_StopPlayback
 
    // Turn off 16-bit unsigned data
 #if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
-   // one expression: a separate &= statement stores crosschannel through EDX first (4 rows)
-   data = PAS_Read( SampleSizeConfiguration ) & PAS_SignedSampleMask;
+   data = PAS_Read( SampleSizeConfiguration );
+   data &= PAS_SignedSampleMask;
 #else
    data = PAS_Read( SampleSizeConfiguration );
    data &= PAS_SampleSizeMask;

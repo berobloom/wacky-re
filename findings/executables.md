@@ -41,6 +41,15 @@ places by itself if the same libraries are given in the same order.
 floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, and patched with the set's
 `Patch32.zip` (APPLYA.BAT, then APPLYB.BAT). How: `harness/TRAPS.md`, "Watcom 9.5 install".
 
+`.work/toolchains/inst/WC100R`: the Watcom C/C++ 10.0 **release** (`WATCOM C32 Optimizing Compiler
+Version 10.0`, files dated 1994-05-31), the Wacky Wheels sound library's compiler. Source: archive.org
+item `watcom-c-cpp-compilers-collection`, file `watcom-10.0/discmaster/Sybase - Watcom C++ 10.0.zip`
+(57,179,575 bytes, SHA-256 8e5869e78cda5c42b1fd5aa0675abe52ed03217b4f835bfe4a9dc133d26158aa; a
+user upload, no reference checksum). BIN, BINB, BINNT, H and LIB386 unzipped as they are. The zip has
+no DOS-hosted compiler: `BINB/wcc386.exe` is an OS/2 LX image and `BINNT/wcc386.exe` a 7 KB Win32
+loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine (prefix
+`.work/toolchains/wineprefix`).
+
 ## Open
 
 - **`-oe` is CONFIRMED** (2025 session): the full-build function set matches only with `e`
@@ -133,6 +142,18 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   prerelease throughout, every other identical module differs (IRQ 78 bytes, TASK_MAN 80, SNDSRC
   10, DMA 9, GUSWAVE 400), so they stay 10.0a. STRONGLY SUPPORTED: two compilers, 10.0a and the
   10.0 prerelease; no ASS object needs 9.5b (`tools/ass/build.sh` WW100P).
+  **Correction (iter 105): one compiler, the Watcom 10.0 release (5/1994, `WC100R`, between the
+  prerelease and 10.0a).** STRONGLY SUPPORTED: built with it, all 27 modules give every MATCH the
+  10.0a/prerelease mix gave, plus BLASTER_GetEnv, BLASTER_Init, GUSMIDI_UnloadPatch, GUSMIDI_Init,
+  MIDI_LoadTimbres, and PAS_SetSampleBufferCount in its 1.04 spelling: 283 of 285, 19 modules whole.
+  The split looked like two compilers because the release shares some code generation with the
+  prerelease and some with 10.0a: GUSMIDI matched UnloadPatch/Init only under 10.0a and GetPatchMap
+  only under the prerelease, BLASTOLD Init only under 10.0a but ServiceInterrupt/WriteDSP only under
+  the prerelease, PAS16 SetSampleBufferCount only under 10.0b. Its inline assembler also settles the
+  `mov ax,ss` question below: the release emits `66 8c d0` for the 1.04 pragma as written, so the
+  `db 66h` spelling was a prerelease workaround and is gone (the prerelease drops the prefix, the
+  release with `db 66h` doubles it). Left: MIDI_PlaySong (39 rows) and FM_SetChannelTimbre (22 rows),
+  register allocation. The per-module compiler notes below (iter 93f-93l) are superseded by this.
   **TASK_MAN is an older task manager (iter 93, CONFIRMED: src/ass TASK_MAN.C now builds the whole
   module 0x40A80-0x411AC byte for byte):** a `volatile tasklist TaskList` {start, end} kept with
   ll_man.h's `LL_AddToHead`/`LL_AddToTail`/`LL_Remove` (1.04: a circular list with a sentinel),
@@ -246,10 +267,9 @@ floppy set (W9532 disks), installed with the original INSTALL.EXE under DOSBox, 
   keeps the mixer status in a register and restarts DSP 1.xx playback unconditionally; GetEnv skips
   unknown parameters with `sscanf( Blaster, "%*s" )`; a 1 KB interrupt stack; Init has no VALID_IRQ
   check. The prerelease assembles the pragma's `mov ax,ss` without the 0x66 prefix the game has;
-  the port spells it out with `db 66h` (LIKELY: the original's spelling is unknown). 0x43F11
+  the port spelled it out with `db 66h` (iter 105: not needed with the 10.0 release, see the correction above). 0x43F11
   "SOUNDSCAPE_Interrupts" was BLASTER_Interrupts' identical table seen at a wrong offset: removed.
-  PAS16 (iter 93l, 0x458B0-0x470B1, same length; 6 bytes differ since StopPlayback matched in
-  iter 105: flags in ECX instead of ESI in SetSampleBufferCount, see its note in PAS16.C):
+  PAS16 (iter 93l, 0x458B0-0x470B1, same length; whole module identical since iter 105 with the 10.0 release):
   **Watcom 10.0 prerelease** too
   (CheckForDriver, GetStateTable and GetFunctionTable match only with it), the same `db 66h` pragma
   spelling as BLASTOLD. Older than 1.04: no recording (BeginTransfer takes no mode and plays only;

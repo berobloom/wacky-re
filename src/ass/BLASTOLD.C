@@ -139,24 +139,12 @@ extern void SetStack(unsigned short selector,unsigned long stackptr);
 
 // This function will get the current stack selector and pointer and save
 // them off.
-#if (LIBVER_ASSREV < 19950518L) // Wacky Wheels' revision (src/ass/README.md)
-// The Watcom 10.0 prerelease assembles "mov ax,ss" without the operand-size
-// prefix the game has: spelled out here.
-#pragma aux GetStack =  \
-   "mov  [edi],esp"     \
-   "db   66h"           \
-   "mov  ax,ss"         \
-   "mov  [esi],ax"      \
-   parm [esi] [edi]     \
-   modify [eax esi edi];
-#else
 #pragma aux GetStack =  \
    "mov  [edi],esp"     \
    "mov  ax,ss"         \
    "mov  [esi],ax"      \
    parm [esi] [edi]     \
    modify [eax esi edi];
-#endif
 
 // This function will set the stack selector and pointer to the specified
 // values.

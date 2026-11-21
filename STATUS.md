@@ -33,13 +33,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 0. Iter 104 named all 61 asm-module loop headers (`.kind_<address>`, findings/video.md; bytes and fixups
    unchanged) and closed the C module's offline near-miss list: the 15 register-home functions are every
    one `MATCH` or `VB:`, and the eight 2-row lines are the emission-order class (GOTCHAS).
-1. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
-   10.0a/10.0 prerelease, `tools/ass/asscheck.py` 277 of 285 named functions, 16 modules whole
-   (findings/executables.md). Near misses: MIDI 324, GUSMIDI 140, BLASTOLD 48, PAS16 6 (iter 105:
-   StopPlayback MATCH; SetSampleBufferCount's ECX/ESI flags register is closed, see its note), FMCHIP's
-   FM_SetChannelTimbre (40 -> 22 rows, same size; what is left is DL/EDX vs AL/EAX, the tried
-   spellings are in its FMCHIP.C note); smallest first, and check the module's compiler in src/ass/README.md (BLASTOLD
-   and PAS16 use the 10.0 **prerelease**) before blaming the C.
+1. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md). Iter 105
+   found the game's compiler: the **Watcom 10.0 release** (5/1994, `WC100R`, run under Wine), one
+   compiler for every module. `tools/ass/asscheck.py` 283 of 285 named functions, 19 modules whole
+   (findings/executables.md). Two near misses left, both register allocation: MIDI_PlaySong
+   (39 rows; declaration orders and four header-read spellings tried) and FMCHIP's
+   FM_SetChannelTimbre (22 rows, DL/EDX vs AL/EAX; the tried spellings are in its FMCHIP.C note).
 2. `src/wwasm.asm` still holds 104 `.Lxxxxx` labels - the branch targets inside the loops named in iter
    104. Leave `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, whose labels are arms of a compare chain.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,

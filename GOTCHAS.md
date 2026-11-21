@@ -63,6 +63,13 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **A module whose near misses each match under a different compiler version wants the release between
+  them** [generic] (iter 105). The sound library looked like two compilers (10.0a and the 3/1994
+  prerelease, per module) for 12 iterations; every leftover miss matched one or the other but never
+  both. The Watcom 10.0 release (5/1994) builds all 27 modules at once: 277 -> 283 of 285, and two
+  source workarounds made for the wrong compiler (`db 66h`, a merged read-and-mask) went away. It
+  has no DOS host in the only copy found: `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine,
+  which does not truncate `#include "interrupt.h"` to 8.3 (the build links `.work/ass/inc/interrupt.h`).
 - **`overnight/cleanup.sh` kills the shell that called it when that shell's command line names the
   harness driver** [generic]. Its pattern `[d]osrun\.py` keeps pgrep off its own line but matches any
   `bash -c` whose text contains the driver's file name - a heredoc body, a `find -name`, a loop that
