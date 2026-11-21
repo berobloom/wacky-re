@@ -10533,7 +10533,13 @@ void pair_reset(void)
  * one t, t+u, a name per use, no temps, short/int/register hit, five declaration orders (best 19
  * instrdiffs). Same family as QUESTIONS 9/10/12. Also tried (iter 30) the shot_step lever:
  * `volatile int t` with u folded into t (39 rows), with u kept (88), t and u volatile (56); the
- * frame stays 8, so the game's [esp] slot is a compiler spill, not a named local. */
+ * frame stays 8, so the game's [esp] slot is a compiler spill, not a named local.
+ * Iter 103 vbatch (.work/vbatch/kart_move.py, control 10 rows): the only spelled comparison in the
+ * 10 rows is the f54 countdown, ours `movsx ebx,word [eax+0x54]; cmp ebx,-1; jg` 0x23e7b vs the
+ * game's `cmp word [eax+0x54],0; jge` 0x23e81. `curkart->f54 < 0`, `if (--curkart->f54 < 0)`,
+ * `>= 0` with an empty then-arm and `!(curkart->f54 >= 0)` all give 2752 bytes and 15 rows: to get
+ * the game's memory-operand compare the value would have to stay out of a register, and `<= -1` is
+ * the closest of the five. */
 extern int v7d614, v7d5e4, vec_k, vec_x, vec_y, v7d678, v7d61c, v7d5ec, v7d618, v7d5e8;
 extern int v7d768, v7d76c, v7d798, v7d79c;
 extern int *v7d690;
