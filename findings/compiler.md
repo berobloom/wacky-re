@@ -117,6 +117,25 @@ globals, how many are live). Equally negative: the game's `mov [0x7d690],ebx` 0x
 any of the eight spellings tried in `.work/vbatch/shots_move.py`, including the four that read the pair through the incremented pointer like the
 machine code does - they score 13 rows against the indexed pair's 7 (`.work/vbatch/shots_move.py`).
 
+### iter 96: deleting the local shows whether a register is a home or 9.5b's temp (CONFIRMED, two deletes)
+
+The cheapest test of "is this differing register a declared local's home, or the compiler's own
+temporary" is one compile with the local declared nowhere and the global used in place; the row
+survives only in the second case.
+
+- `com_wait_byte` 0x2df70, `d` gone (`if (ticks - t0 >= 0x110)`): still `mov eax,[0x7e720]` +
+  `sub eax,edx` + `cmp eax,0x110`, same 152 bytes, same 8 rows, and esc/t0 keep EBX/EDX through
+  11 spellings (`.work/vbatch/com_wait_byte.py`, `cwb_nod.py`). That EAX/ECX row is a tie-break,
+  not a home.
+- `fn_1bf00` 0x1bf00, `val` gone (`players[i].face = v7ec6c;` in both arms): a fifth `push edi`,
+  128 -> 136 bytes, `n` displaced into EDI, 9 rows -> 15 (`.work/vbatch/fn_1bf00.py`). The face
+  value's register is a declared local in the game as well.
+- One more fused form (STRONGLY SUPPORTED: 7 spellings, `.work/vbatch/net_input.py`): 9.5b
+  compiles `t = g & m` as one load plus one `and` in one register, so the game's four grouped
+  `mov dh/bl/dl/ah,[0x88cef]` (0x2f60b-0x2f61d) above four `and`s (0x2f623-0x2f62c) are not four
+  `t = g;` statements - the split form makes every copy a live value of its own, +20 bytes of
+  spills and 8 rows -> 31. Loads grouped above their masks are scheduling.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;

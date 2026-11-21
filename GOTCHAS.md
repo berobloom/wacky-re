@@ -733,7 +733,13 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   spelled back into it (shots_move 0x2602c: the game stores the walked global twice 0x26130/0x2613b and
   reads the second element through the incremented pointer 0x26141; all eight such spellings cost 6
   rows more than the indexed pair). Caching a global in a local also has to be free: drawsprite_clip
-  0x11404 `short sy = spr_y` puts back the load the game keeps (`add ax,[spr_y]` 0x11437), 3 -> 11. [generic]
+  0x11404 `short sy = spr_y` puts back the load the game keeps (`add ax,[spr_y]` 0x11437), 3 -> 11.
+  Deleting the local is the one compile that says which case you are in: the row survives the delete
+  only when the register is 9.5b's own temp (com_wait_byte 0x2df70 - `if (ticks - t0 >= 0x110)` with
+  no `d` anywhere still `mov eax,[0x7e720]`/`sub eax,edx`/`cmp eax,0x110`, iter 96), while a real home
+  shows up loudly (fn_1bf00 0x1bf00 - `players[i].face = v7ec6c;` with no `val` adds a fifth `push`,
+  128 -> 136 bytes, 9 -> 15 rows, iter 96). And `t = g & m` is one fused load+mask: splitting it
+  (`b = g; b &= m`) makes every copy live, +20 bytes and 8 -> 31 rows (net_input 0x2f4a8, iter 96). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe
   sinks below inlined stores (music_jingle, duck_screen, race_results, trial_book: `xor edx,edx`),
   one swapped pair of loads (track_setup 0x124e8), a store 9.5b hoists or sinks out of a group

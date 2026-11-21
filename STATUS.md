@@ -30,10 +30,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): ten of that list have had no vbatch
-   pass yet - fn_1bf00 0x1bf00, net_input 0x2f4a8, com_wait_byte 0x2df70, com_expect 0x2e008,
-   fade_in 0x32cf8, view_at_curpos 0x2f408, pcx_load 0x27060, net_recv 0x2db00, fn_19db8 0x19db8,
-   car_laps 0x12b44 (2 real rows, the nearest); shots_move, drawsprite_clip, self_project VB-closed.
+0. Overnight (register-home night, overnight/prompt.md step 2): seven of that list still have no
+   vbatch pass - com_expect 0x2e008, fade_in 0x32cf8, view_at_curpos 0x2f408, pcx_load 0x27060,
+   net_recv 0x2db00, fn_19db8 0x19db8, car_laps 0x12b44 (2 real rows, the nearest). Start each
+   with the delete-the-local compile (findings/compiler.md iter 96): one variant, and it says
+   whether a differing register is a declared local's home at all.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
 2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
