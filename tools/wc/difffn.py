@@ -146,9 +146,10 @@ ACC = {16: 'read', 17: 'write', 18: 'fetch', 19: 'write_prot', 20: 'read_prot', 
 class Run:
     """one image, and what one call into it left behind"""
 
-    def __init__(self, img, lo, hi):
+    def __init__(self, img, lo, hi, more=()):
         self.e, self.img = Emu(img), img
         self.lo, self.hi = lo, max(hi, lo)              # the stub range (asm module + clib)
+        self.more = list(more)                          # further stub ranges (the hybrid's WWASM_TEXT)
         self.stubs, self.crash, self.watch, self.calls = [], None, set(), False
         self.ncalls = 0        # stubbed calls and interrupts only - not the port traffic below
         self.fread = None      # this image's clib fread, set by main() (map offset + code base)
@@ -172,6 +173,8 @@ class Run:
         self.went = False
         # the per-instruction hook covers only the stub range, so running C costs nothing
         self.e.uc.hook_add(UC_HOOK_CODE, self._stub, begin=self.lo, end=self.hi)
+        for mlo, mhi in self.more:
+            self.e.uc.hook_add(UC_HOOK_CODE, self._stub, begin=mlo, end=mhi)
         self.e.uc.hook_add(UC_HOOK_INTR, self._intr)
         self.e.uc.hook_add(UC_HOOK_MEM_UNMAPPED, self._unmapped)
         # `in`/`out` (Watcom's inline outp/inp, e.g. com_open's UART init at 0x10436) are not
@@ -326,14 +329,14 @@ def lin(r, i):
 
 
 def map_publics(path, lnk):
-    """a WLINK map -> ({segment class}, {symbol: (seg, off)}, {segment name: (seg, off)});
+    """a WLINK map -> ({segment class}, {symbol: (seg, off)}, {segment name: (seg, off, size)});
     WW.LNK's `alias a=b` adds a's name for the game's old spelling of one of our functions"""
     cls, pubs, segs = {}, {}, {}
     for line in open(path):
-        m = re.match(r'^(\S+)\s+(CODE|DATA)\s+\S*\s+(\d+):([0-9a-f]{8})\s+[0-9a-f]{8}\s*$', line)
+        m = re.match(r'^(\S+)\s+(CODE|DATA)\s+\S*\s+(\d+):([0-9a-f]{8})\s+([0-9a-f]{8})\s*$', line)
         if m:
             cls[m.group(3)] = m.group(2)
-            segs[m.group(1)] = (m.group(3), int(m.group(4), 16))
+            segs[m.group(1)] = (m.group(3), int(m.group(4), 16), int(m.group(5), 16))
             continue
         m = re.match(r'^(\d+):([0-9a-f]{8}).? (\S+)\s*$', line)   # WLINK marks publics * + -
         if m:
@@ -431,6 +434,10 @@ def main():
     # our C module starts where _TEXT starts; a build with no _TEXT (NEW=wworig, the game relinked -
     # the control) is stubbed by the same rule as the original, above the game's C module
     text = nb[0] + segs['_TEXT'][1] if '_TEXT' in segs else None
+    # since iter 90 the hybrid links src/wwasm.asm as WWASM_TEXT ABOVE our C (tools/link/build.sh; the
+    # old DELINK_ASM=0 link kept it in BLOBTEXT below): stub it too, or our side runs the real asm -
+    # port loops like vretrace_wait's `in 0x3da` that never end here (iter 105, trial_book)
+    more = [(nb[0] + segs[n][1], nb[0] + segs[n][1] + segs[n][2] - 1) for n in ('WWASM_TEXT',) if n in segs]
 
     def new_addr(name):
         for cand in (name + '_', name, '_' + name):
@@ -462,7 +469,7 @@ def main():
         a.exit = oexit
         a = a.go(addr)
         b = Run(new, CMOD_END, 1 << 32) if text is None \
-            else Run(new, nb[0], text)               # BLOBTEXT below our code is asm + clib
+            else Run(new, nb[0], text, more)         # BLOBTEXT below our code is clib (+ asm, old link)
         b.fread, b.rand, b.getch = nfread, nrand, ngetch
         b.exit = nexit
         b = b.go(naddr)

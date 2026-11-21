@@ -63,6 +63,12 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- **`difffn.py` must stub every non-C range of the hybrid, wherever the link puts it** (iter 105). Since
+  iter 90 `tools/link/build.sh` links `src/wwasm.asm` as `WWASM_TEXT` ABOVE our `_TEXT`, while
+  `difffn.py` stubbed only `BLOBTEXT` below it, so our side ran the real asm: `out 0x3c7`, then a
+  `vretrace_wait` on `in 0x3da` that never ends (trial_book: "one side never returned", calls 515 vs 19999978).
+  Fixed: the map's `WWASM_TEXT` is a second stub range. Tell-tale: `CALLSEQ=1` lists `$in`/`$out` on one
+  side where the other has a routine name. No verdict was affected; every earlier difffn run predates iter 90.
 - **A module whose near misses each match under a different compiler version wants the release between
   them** [generic] (iter 105). The sound library looked like two compilers (10.0a and the 3/1994
   prerelease, per module) for 12 iterations; every leftover miss matched one or the other but never

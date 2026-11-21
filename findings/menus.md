@@ -409,6 +409,26 @@ what `SEED=` left them, so:
   this function - it parks the run in `wait_release`'s pump, because 0x278ef then stores joy88b40 = 1
   (19963 passes of 0x278ca-0x278ff).
 
+- CONFIRMED (iter 105): `trial_book` 0x2e4b8 with **show** set (the after-a-time-trial call) behaves
+  as the game in every outcome: a new best lap (and race), a race record only (pos 6), a lap at place 3
+  with the names below shifted down, no record; groups 1-6 (all six `switch` arms), 6 HP and 12 HP,
+  the end-of-screen music restart, the screenshot key. Seven `tools/wc/difffn.py` runs, all **SAME with
+  both sides returning** (env `RESEED=0x88cd0=0:b,0x88ccd=0:b TICKREAD=8 KEY=0x41,0x42,0x0d CALLS=20000
+  COUNT=60000000`). The seed that opens the record path: `laptimes` 0x7d358 (six ints, one lower than
+  the rest), `v7eccc` 0x7eccc (the race time), and the track's record `trial70730[idx]`
+  (0x70730 + idx*0x78, idx = b + 0/5/10/15/20/25 - 1): its four name strings NUL-terminated (+0, +0x14,
+  +0x28, +0x3c), the four lap times at +0x50, the race name at +0x60 and the race time at +0x74, e.g.
+  `ARGS=1,1,1 SEED=0x7d358=1000,0x7d35c=1000,0x7d360=900,0x7d364=1000,0x7d368=1000,0x7d36c=1000,0x7eccc=6000,0x70730=0:b,0x70744=0:b,0x70758=0:b,0x7076c=0:b,0x70780=2000,0x70784=3000,0x70788=4000,0x7078c=5000,0x70790=0:b,0x707a4=9000,0x88c46=4:w,0x88cd0=1:b`.
+  The run then takes `enter_name` (three stubbed `getch`), `trial_write` (fopen/fwrite/fclose), both
+  "BEST ... TIME EVER" boxes (`box_draw` x2) and the blinking pointers. `tools/wc/fncov.py` over these
+  seven plus iter 89's two: **1006 of 1034 instruction starts** (was 561). The 28 left: the second half of
+  an inlined strcat 0x2e613-0x2e621 that needs a two-digit track number (b is 1..5); `MUSIC_StopSong`
+  0x2e74c/0x2f058 behind the stubbed `MUSIC_SongPlaying` (returns 0); the second blink pass
+  0x2f0b7-0x2f0c0/0x2f2ea and the key_select/joystick/screenshot exits of the input pump 0x2f335-0x2f388
+  plus the held-key waits 0x2f18a/0x2f191/0x2f3e3-0x2f3f8, which need a key that appears or stays after a
+  later read (`RESEED=` writes after every read, and forcing `key_select` on leaves `wait_release` waiting
+  for good); 0x2f405 is padding after the `ret`.
+
 - CONFIRMED (iter 83: `SEED=0x88cd0=1:b,RESEED=0x88cd0=0:b CALLS=3000 tools/wc/difffn.py trial_book`
   prints **SAME with both sides returning**; control `NEW=wworig MAP=.work/link/WWORIG.MAP` with the same
   env SAME; `hotfn.py` 42703 insns at 919 addrs and `returned`; with `ARGS=3,1000,0` - the three

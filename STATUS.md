@@ -43,10 +43,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
    prerelease, release, 10.0a, 10.0b; 9.5c in iter 93p) and none matches a function 9.5b misses.
 2. `src/wwasm.asm` branch targets are all named (iter 105, findings/video.md), except the compare-chain
    arms of `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, which keep `.L<address>` on purpose.
-3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
-   `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
-   record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3
-   stops eating the instruction budget.
+3. `trial_book` 0x2e4b8 is walked (iter 105: 1006 of 1034 starts, every record outcome SAME; findings/menus.md).
+   Since iter 105 `tools/wc/difffn.py` stubs the hybrid's `WWASM_TEXT` too (GOTCHAS).
 4. `kart_bump` 0x22bf4: 55 of 606 instruction starts unwalked after iter 88. The f38 arm 0x234f0-0x23505
    wants `0x6aac8=2:w` with no `0x88be2=1:w` (the f18 arm zeroes EAX at 0x234be); 0x23746 reads the
    **live** pickup record's `f20`, so print `[0x7d86c]` at the gate before seeding (`.work/kbprobe.py`).
