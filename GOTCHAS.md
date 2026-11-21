@@ -720,7 +720,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   (DL) were the compiler's own temp for a global the source read or built in place (`v88cf0 = 0;
   if (..) v88cf0 += 2;`, `x = v88cef & 1;` each line), iter 93s: 3 matches. Same for a global that is
   a POINTER walked in place: shots_clear 0x2d4fc 11 -> 0 with `v7d874 = shots; ... (v7d874++)->f04 = 0;`
-  and no `struct shot *p` - the local is what handed EBX to the loop counter (iter 94). The allocator traces
+  and no `struct shot *p` - the local is what handed EBX to the loop counter (iter 94). The *form of
+  the use* moves it too: `vec_x = v7d690[0]; vec_y = v7d690[1]; v7d690++;` gives shots_move 0x2602c
+  the game's EBX home for the walked pointer where `*v7d690++` had it in EDX (12 -> 7 rows, iter 94),
+  and two CONSTANT pseudos are a genuine tie - voices_reset 0x11b1e keeps -1 in EBX whichever store is
+  written first (iter 94, 7 spellings). The allocator traces
   in findings/compiler.md show a real tie: equal savings, and the order is the unstable Shell
   sort's over creation order (`tools/wcc95/shellsort.py`). [generic]
 - **Scheduling the game does differently in one straight-line run:** a zero argument constant -oe

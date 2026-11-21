@@ -6,15 +6,12 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **210 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 93s +3; iter 90 207 -
-  no C change, `difffn.py`/`fncov.py` behaviour work only; iter 75 re-ran check.sh after the cars_menu behaviour fix: still 207; iter 74: check.sh also
-  compiles `tools/link/extra.c`, whose `fn_1c068`/`fn_1c0ac` were always MATCH but never counted; objmatch
-  compares rel32 branches between our own functions by target, which made demo_rec/pic_show/fade_out
-  MATCH, `tools/wc/test_objmatch.py`), and iter
-  66 checked what a MATCH masks inside those 202: all 4556 linker-filled operands point where the
-  game's point (`tools/wc/fixsites.py`, 0 disagreements; `test_fixsites.py`). C covers
-  all of 0x10260-0x36a4d (no gaps left, iter 56c); 0x36a4e on is the
-  hand-written asm module.
+- **211 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; iter 94 +1
+  shots_clear; iter 93s +3; iter 90 +2 with no C change (`difffn.py`/`fncov.py` behaviour work);
+  iter 74 started counting `tools/link/extra.c`; objmatch compares rel32 branches between our own
+  functions by target, `tools/wc/test_objmatch.py`). Iter 66 checked what a MATCH masks: all 4556
+  linker-filled operands point where the game's do (`tools/wc/fixsites.py`, 0 disagreements). C
+  covers all of 0x10260-0x36a4d (no gaps left, iter 56c); 0x36a4e on is the hand-written asm module.
 - **Assembler module 0x36A4E-0x409EE rebuilt (iter 90)**: `src/wwasm.asm` (nasm, bootstrapped by
   `tools/asm/genasm.py`) assembles to the game's 40,865 bytes exactly; `tools/asm/asmcheck.py` (in
   `src/check.sh`; mutations in `test_asmcheck.py`) checks the bytes with -DBIN and the 1567 fixup sites
@@ -33,13 +30,15 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Overnight (register-home night, overnight/prompt.md step 2): the global-in-place lever and its
-   relatives over 15 register-only near misses with `tools/wcc95/vbatch.py`.
+0. Overnight (register-home night, overnight/prompt.md step 2): 12 of that list's functions are open,
+   drawsprite_clip 0x11404, self_project 0x26a3c and fn_1bf00 0x1bf00 first. shots_move 0x2602c is 5
+   rows closer: only the incremented-pointer copy (`lea eax,[ebx+4]` 0x26136) is left unexplained.
 1. The asm is read and named (iter 91, findings/video.md + input.md; 33 data names, names file
    "was"). Left: names for the loops worth naming.
-2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), built with
-   Watcom 10.0a/10.0 prerelease, `tools/ass/asscheck.py` 276 of 285 named functions, 16 modules whole (TASK_MAN, PCFX, SNDSRC, DMA, GUS, GUSWAVE, PITCH, FX_MAN, MUSIC, MULTIVOC, FMSONG
-   rewritten: findings/executables.md; `tools/ass/portnames.py` names their symbols). Near misses: MIDI 324 bytes, GUSMIDI 140, BLASTOLD 48, PAS16 44, FMCHIP's FM_SetChannelTimbre (register choices, scheduling, spills). Every sound-library module the game links now has source (the KLM player rebuilt from the binary as FMSONG/FMCHIP, iter 93n).
+2. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md), Watcom
+   10.0a/10.0 prerelease, `tools/ass/asscheck.py` 276 of 285 named functions, 16 modules whole
+   (findings/executables.md). Near misses: MIDI 324 bytes, GUSMIDI 140, BLASTOLD 48, PAS16 44,
+   FMCHIP's FM_SetChannelTimbre.
 3. `trial_book` 0x2e4b8 with `show` != 0 (iter 89 opened it): seed `laptimes` 0x7d358 (five entries,
    `cmp edx,5` 0x2e6b2) and NUL-terminated name strings in the 0x78-byte records at 0x70730, then the
    record block behind `newlap` (stored only at 0x2f076) is walkable and the text loop 0x149df-0x14af3
