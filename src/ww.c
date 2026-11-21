@@ -16086,7 +16086,11 @@ void demo_rec(void)
  * first mask (7 spellings: it copies too early or late), mask1 through a temp, mask1 with the store
  * inside the AND's left or right operand (comma forms), a local pointer to v88cca, the store at
  * every one of the nine source positions, and a read of v88cca after the loop (46 spellings, six
- * probe compiles, .work/probe_dplay). */
+ * probe compiles, .work/probe_dplay). Iter 100 whole-file vbatch (.work/vbatch/demo_play.py, control
+ * 2) adds store-after-cd5, store-after-cdd, chain-load, chain-load-rev, plain-store (non-volatile 4),
+ * register-k, mask-temp, comma-in-cd5, k-unsigned-int (40), store-before-if (4): the copy stays put in
+ * every position, ten spellings leave the same 2 rows (GOTCHAS "Scheduling the game does
+ * differently": store hoisted/sunk out of a group). */
 void demo_play(void)
 {
     unsigned char k;
