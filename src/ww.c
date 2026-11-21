@@ -5511,7 +5511,11 @@ extern char cls_name[];
  * 0x19dc2); ours emits the switch's controlling expression first (`mov dx,[v88bb2]` + `dec edx`, OBJ
  * 0x9a3f) and the keep load after it (0x9a47), so the flip is the scheduler's, not the colourer's.
  * Init as its own statement, a `short`/`int` `sw` local holding v88bb2 (alone and with the init
- * statement), and `switch (v88bb2 - 1)` with renumbered cases all keep our order. */
+ * statement), and `switch (v88bb2 - 1)` with renumbered cases all keep our order.
+ * iter 98 vbatch (.work/vbatch/fn_19db8.py, 5 variants, rows in brackets): the arms reordered to
+ * 1,2,3,4 [32], 1,4,2,3 [32], 3,4,1,2 [49], `v7ee5a` cached in a local above the switch [26] and
+ * `switch ((unsigned short)v88bb2)` [18]. The arm order is not free: the written order 4,1,2,3 is
+ * the best of the four tried (findings/compiler.md). */
 void fn_19db8(void)
 {
     short keep = v88b84;
@@ -15667,7 +15671,11 @@ int com_getc_wait(int timeout)
  * 4 rows. `int crc` does move the home to ECX (the loop-carried value then needs a widening move):
  * `movzx ecx,ax` + `movzx eax,cx` where the game has `movzx eax,ax` (the value stays in EAX for the
  * 2nd arg) + `mov ecx,eax`, so the whole file goes 4 rows -> 5. No spelling tried moves crc's home
- * register without some other change. */
+ * register without some other change.
+ * iter 98 vbatch (.work/vbatch/net_recv.py, 8 variants, rows in brackets): `p` declared with its
+ * initialiser [4], `p` assigned late (just before the byte stores) [15], `unsigned char *p` [4],
+ * `short crc` [13], `unsigned crc` [9], an explicit `got = crc` before the compare [4], `int n, t,
+ * c, k;` split into four declarations [4], `crc` declared before `rcrc` and `p` [4]. */
 extern int v7ed60;
 extern unsigned char v88cf6, v88cf5;
 extern short v88cb0;

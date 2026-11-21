@@ -154,6 +154,27 @@ survives only in the second case.
   three declaration positions never moves the last 4 rows (`ticks - t0` in EAX here, the game's
   ECX at 0x2e08e).
 
+### iter 98: delete-test on a tie, and the written order of switch arms is compiled (CONFIRMED, three vbatch runs)
+
+- `pcx_load` 0x27060 (5 rows, `n`/`size` swap ESI/EDI): deleting either local costs rows - `t` gone
+  (`fseek(datfile, ftell(datfile), SEEK_SET)`) 5 -> 11, the size expression inline in the `fread`
+  argument 14, both gone 14, `t` reused as size 12, size computed before `ftell` 11, a
+  `char *dst = p6a978s[n]` above `datfind` 9, `int t` and `unsigned long size` tie at 5
+  (`.work/vbatch/pcx_load.py`). Both are homes, not 9.5b temps, so iter 96's delete test says
+  "real local" here too; the ESI/EDI colouring stands.
+- `net_recv` 0x2db00 (4 rows, `crc` EAX vs the game's ECX): `p` declared with its initialiser,
+  `unsigned char *p`, an explicit `got = crc` before the compare, `int n, t, c, k;` split into four
+  declarations, and `crc` declared before `rcrc` all tie at 4; `p` assigned late (before the byte
+  stores) 15, `short crc` 13, `unsigned crc` 9 (`.work/vbatch/net_recv.py`). Declaration position
+  does not reach this home either - consistent with the iter 93 trace reading (crc is not in a tie).
+- `fn_19db8` 0x19db8 (18 rows): the written ORDER of a switch's case arms is compiled, not
+  canonical. Moving the `case 4:` arm of `switch (v88bb2)` to the end costs 18 -> 32 rows, moving it
+  second 32, and moving `case 3:` first 49, same body, same jump table
+  (the table is indexed by case value, so only the emitted arm order moves).
+  `.work/vbatch/fn_19db8.py`. So arm order is a real lever on switch-shaped near misses, and the
+  written 4,1,2,3 is the closest of the four tried - do not "tidy" case labels into numeric order.
+  Caching `v7ee5a` in a local above the switch: 26 rows; `switch ((unsigned short)v88bb2)`: 18.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;
