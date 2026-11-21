@@ -259,6 +259,26 @@ vbatch run:
   inlined `music_start` in the same function (0x2badc-0x2baf3, second argument 1) byte-identical, so
   iter 100's arg-def/store sink is specific to the `0` argument's fold. CONFIRMED by the bytes.
 
+### iter 105: pcx_load's list is fixed by the front end; the aim is known, the C is not (CONFIRMED, 25 traced variants)
+
+`tools/wcc95/flipsim.py LOG A B` (new) says what change to a traced pre-sort list would let conflict A
+be allocated before B. For pcx_load 0x27060 (`n` id2 at position 13, `size` id3 at 9, both s24) it
+reproduces the hand result above and adds the rest: n's savings +1 or more, or size's -1 or less; one
+extra conflict at positions 2..9 (s24 or more) or 3..4/6..7/9 (any savings); or id27 (position 10, the
+last `fread`'s temp), id41 or id33 removed. The parameters' conflicts are created first (both in the
+global-bits phase) and every later one is pushed in front, so `n` and `name` are always the last two
+(OW `dataflo.c` AssignGlobalBits, `conflict.c` AddConflictNode).
+Traced with `vtrace.py` (9 s each): 25 spellings - casts on every argument, `*(p + n)`, `fseek(.., 0)`
+/ `0L`, `&hdr`, `&hdr[0]`, `128`, `896L`, `(long)` / `+ -0x380`, `(int)datidx`, `(void)datfind`,
+`return;`, K&R parameters in both orders, `size` in an inner block, the whole body in an inner block
+and in `do { } while (0)`, `hdr` declared last - all give the **same 15 conflicts, positions and
+savings**; only `size = ...; size -= 0x380;` (size s40, 9 rows) and size computed after the fseek
+(12 rows) move anything, both the wrong way. So 9.5b's front end folds every spelling of this body to
+one IR, and the game's must differ in something that is not a spelling of these statements (an
+operation the optimizer removes only after allocation, other types in the externs, or other compile
+options). The guided search works as a filter - one trace says whether a variant reaches the list at
+all - but it cannot produce the variant.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;
