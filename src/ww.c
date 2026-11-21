@@ -6604,7 +6604,12 @@ extern short v7ec6c, v7ec70;            /* 0x7ec6c / 0x7ec70: read as words here
  * scored (.work/n1bf/{I,J,K,K2}.C): split val into two locals, int/unsigned val, arm order
  * swap, a scratch local, the load after the clamp, ++i/do-while tests, volatile-alias reads
  * - every per-arm shape keeps the mirror; every merged shape (m1-m4, SHAPES.C) gets the
- * homes right but loses the CFG. m5 = the shape below, kept in SHAPES.C. */
+ * homes right but loses the CFG. m5 = the shape below, kept in SHAPES.C.
+ * iter 96 register-home batch (.work/vbatch/fn_1bf00.py, 8 spellings: inline-face-both,
+ * inline-face-storeorder, inline-face-arm1/arm2, val-int, cnt-split, ndecl-last,
+ * inline-face-both-n-first) stays at 9. The netkeys lever (no local, use the global in place)
+ * is disproved for this one: writing `players[i].face = v7ec6c;` in both arms adds `push edi`
+ * (128 -> 136 bytes) and moves n to EDI, so the face value's register is the declared local. */
 void fn_1bf00(void)
 {
     short n, cnt, i, val;
