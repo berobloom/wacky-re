@@ -243,6 +243,11 @@ loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine 
   (src/ww.c `sound_init` -> FMSONG_SetVolume -> FM_SetVolume -> FM_SetChannelVolume, port gdb
   backtrace). Under DOS/4GW linear 0 is mapped, so the game reads linear 0x0A (the interrupt table,
   int 2's segment) and goes on; the port's prep.py reads it as 0.
+  The rebuilt FMSONG + FMCHIP play the game's songs as the game does (STRONGLY SUPPORTED, 2026-11-22):
+  compiled into the port over Nuked OPL3, the Apogee song correlates 0.945 with the original's
+  recording under DOSBox-X (notes per 20 ms in semitone bands, port/tools/audiocmp.py; another song
+  0.05, noise 0.01) and fades at the same point, 5.5 s after the Enter. What the port lacks in that
+  recording is the logo's voice, `voice_play(0xc)` in `intro` (an FX sample, ~1.5 s in).
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four
   functions' register choices): the Watcom 10.0 prerelease, **without `/zu`** (CONFIRMED: with it
   `_MIDI_SendControlChange` gets a frame the game's lacks), and `#pragma aux _MIDI_ServiceRoutine

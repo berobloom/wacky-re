@@ -14,6 +14,7 @@ original/*
 captures/*.png
 # RAM dumps and save states hold the game's code and data
 captures/*.bin
+captures/*.wav
 captures/*.state
 captures/*.dmp
 captures/scratch/

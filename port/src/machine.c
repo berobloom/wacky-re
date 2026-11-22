@@ -59,6 +59,14 @@ static uint32_t machine_us(void)
     return (uint32_t)((t.tv_sec - t0.tv_sec) * 1000000 + (t.tv_nsec - t0.tv_nsec) / 1000);
 }
 
+static uint64_t machine_us64(void)
+{
+    struct timespec t;
+
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (uint64_t)((int64_t)(t.tv_sec - t0.tv_sec) * 1000000 + (t.tv_nsec - t0.tv_nsec) / 1000);
+}
+
 void isr_set(unsigned vec_no, port_isr fn) { vec[vec_no & 255] = fn; }
 port_isr isr_get(unsigned vec_no) { return vec[vec_no & 255]; }
 
@@ -71,6 +79,7 @@ unsigned port_in8(unsigned port)
     case 0x60: return port60;
     case 0x61: return port61;
     case 0x201: return 0xf0;           /* game port: no joystick, buttons up, axes never time out */
+    case 0x388: case 0x389: return audio_in(port);
     }
     return 0xff;                       /* nothing there (UARTs, sound cards: not emulated yet) */
 }
@@ -82,6 +91,8 @@ void port_out8(unsigned port, unsigned v)
         vga_out8(port, v);
     else if (port == 0x61)
         port61 = v;
+    else if (port == 0x388 || port == 0x389)
+        audio_out(port, v);
     /* 0x20 (PIC EOI), 0x40-0x43 (PIT), 0x201: nothing to do */
 }
 
@@ -384,10 +395,12 @@ static void *hw_main(void *arg)
         SDL_RenderSetLogicalSize(ren, 320, 240);     /* 4:3: 320x200 pixels stretched to 240 rows */
         tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 320, 240);
     }
+    audio_start(headless);
     while (running) {
         uint32_t ms = machine_ms();
 
         ts_tick(machine_us());
+        audio_pump(machine_us64());
         while (ki < nkeys && keys[ki].ms <= ms) {
             if (keys[ki].sc & 0x100)
                 machine_key(0xe0);
@@ -402,6 +415,7 @@ static void *hw_main(void *arg)
         }
         if (exit_ms && ms >= exit_ms) {
             fprintf(stderr, "port: PORT_EXIT at %u ms\n", ms);
+            audio_close();
             _exit(0);
         }
         if (!headless && ms >= next_frame) {
@@ -410,8 +424,10 @@ static void *hw_main(void *arg)
 
             next_frame = ms + 14;
             while (SDL_PollEvent(&e)) {
-                if (e.type == SDL_QUIT)
+                if (e.type == SDL_QUIT) {
+                    audio_close();
                     _exit(0);
+                }
                 if ((e.type == SDL_KEYDOWN && !e.key.repeat) || e.type == SDL_KEYUP)
                     key_event(e.key.keysym.scancode, e.type == SDL_KEYUP);
             }

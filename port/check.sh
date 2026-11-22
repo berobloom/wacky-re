@@ -1,5 +1,5 @@
 #!/bin/sh
-# port/check.sh: build the port, run it headless and compare its screens with the original's.
+# port/check.sh: build the port, run it headless and compare its screens and sound with the original's.
 #
 #   port/check.sh            -> PORTCHECK OK / PORTCHECK FAIL <which: shotcmp line>
 #   port/check.sh --title    only the first check (4 s instead of a minute)
@@ -17,6 +17,10 @@
 #    Mutation: io_cost in port/src/vga.c returns at once (or PORT_IO_NS=0): the fades take 3 ms, the
 #    menus change faster than a keypress, and the 8th Enter's screen is the zone select (engines
 #    mean 109.45, 97.50%).
+# 3. music: Enter on the title at 8 s, the port's sound recorded (PORT_WAV) to 17 s, must play the
+#    Apogee song as captures/apogee_ww.wav does (the original under DOSBox-X): port/tools/audiocmp.py
+#    SAME, notes and timing per 20 ms in semitone bands, mean correlation at least 0.9.
+#    Mutation: audio.c writes the data to register reg_index + 1.
 # Runs from a copy of the game directory (.work/port/run, made from original/ on first use).
 set -u
 cd "$(dirname "$0")/.."
@@ -54,4 +58,11 @@ for pair in engines:engines_menu_ww overview:race_overview_ww; do
         { echo "PORTCHECK FAIL $name: $r ($out/check_${name}_diff.png)"; exit 1; }
     eval "r_$name=\"\$r\""
 done
-echo "PORTCHECK OK title SAME; engines: $r_engines; overview: $r_overview"
+
+wav=$out/check_apogee.wav
+rm -f "$wav"
+(cd $run && PORT_HEADLESS=1 PORT_WAV=$wav PORT_KEYS=8000:1c,8080:9c PORT_EXIT=17000 timeout 40 ../wacky > /dev/null 2>&1)
+[ -f "$wav" ] || { echo "PORTCHECK FAIL music: no recording (the port stopped early)"; exit 1; }
+r_music=$(python3 port/tools/audiocmp.py "$wav" captures/apogee_ww.wav) ||
+    { echo "PORTCHECK FAIL music: $r_music"; exit 1; }
+echo "PORTCHECK OK title SAME; engines: $r_engines; overview: $r_overview; music: $r_music"

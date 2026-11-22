@@ -30,6 +30,12 @@ void vga_set_mode(int mode);                 /* int 10h ah=0 */
 /* port I/O: VGA ports to vga.c, PIT/PIC/keyboard here (machine.c) */
 unsigned port_in8(unsigned port);
 void port_out8(unsigned port, unsigned v);
+/* audio.c: the OPL2 at 0x388/0x389 and the sound output */
+void audio_start(int headless);
+void audio_out(unsigned port, unsigned v);
+unsigned audio_in(unsigned port);
+void audio_pump(uint64_t us);
+void audio_close(void);
 unsigned port_in16(unsigned port);
 void port_out16(unsigned port, unsigned v);
 

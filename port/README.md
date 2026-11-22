@@ -27,9 +27,11 @@ translating; what is left is the memory layout, the asm module and the machine.
   host libc. Interrupt handlers the game installs with `_dos_setvect` run at poll points.
 - Sound: the task manager (TS_*) runs the game's clocks on the hardware thread. MUSIC_* goes to the
   game's own FM song player, compiled from its rebuild (`src/ass/FMSONG.C`, `FMCHIP.C`; prep.py
-  rewrites one NULL read, see there), so the songs last as long as on the PC; the OPL2 at 0x388 is
-  not emulated yet, so they are silent. FX_* accepts the card and plays nothing. The serial link is
-  not ported.
+  rewrites one NULL read, see there). It writes the OPL2 at 0x388/0x389, which `port/src/audio.c`
+  emulates with Nuked OPL3 (`port/third_party/nukedopl`, LGPL) and plays through SDL audio, or with
+  `PORT_WAV=file` records in step with the clock (headless); `PORT_NOSOUND=1` silences it. The
+  Apogee song plays the original's notes and timing (`port/check.sh` step 3, port/tools/audiocmp.py).
+  FX_* (the digitized effects) accepts the card and plays nothing yet. The serial link is not ported.
 
 ### Timing (QUEUE Q2)
 

@@ -25,3 +25,4 @@ deltas of that boot, the scene), and what reads it.
 | file | linear range / segment:offset | taken when | used by |
 |---|---|---|---|
 | `captures/title_ww.png` (local only: game screen, git-ignored) | the original's title screen ("WACKY WHEELS VERSION 1.1 ... PRESS FIRE"), DOSBox-X 640x400, 6 s after `WW` at the `C:\WACKY` prompt (`tools/dosrun.py start; type 'cd \WACKY'; type WW; sleep 6; shot`, iter 105). Read by `port/check.sh`. |
+| `captures/apogee_ww.wav` (local only: the game's music, git-ignored) | the original's audio from `WW` at the `C:\WACKY` prompt through the Apogee screen: 48 kHz stereo, DOSBox-X default OPL (`tools/dosrun.py start; type 'cd \WACKY'; wave start; type WW; sleep 8; key ret; sleep 8; wave stop`, the file lands in .work/dos/capture/; 2026-11-22). Holds the Apogee song and the logo's voice 0xC. Read by `port/check.sh` (port/tools/audiocmp.py). |

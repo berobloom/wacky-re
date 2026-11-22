@@ -15,6 +15,8 @@ usage: dosrun.py start                 launch (no-op if running)
        dosrun.py type 'GAME /DEBUG'    type a line at the DOS prompt (+Enter)
        dosrun.py key ret [secs]        tap (or hold) a QEMU qcode
        dosrun.py shot out.png          VGA screenshot
+       dosrun.py wave start|stop       record the guest's audio (QMP capture-wave-*); stop prints
+                                       the WAV DOSBox-X wrote (in .work/dos/capture/)
        dosrun.py mem 0xADDR len [out]  linear memory dump (hexdump or file)
        dosrun.py find hexbytes [start len]   search linear memory
        dosrun.py save name | load name save states in .work/dos/states/
@@ -391,6 +393,12 @@ def main(argv):
                 d.key(args[0], float(args[1]) if len(args) > 1 else 0.08)
             elif cmd == 'shot':
                 d.shot(args[0])
+            elif cmd == 'wave':
+                d.q.command('capture-wave-start' if args[0] == 'start' else 'capture-wave-stop')
+                if args[0] != 'start':
+                    time.sleep(0.5)
+                    waves = sorted((DOS / 'capture').glob('*.wav'), key=lambda f: f.stat().st_mtime)
+                    print(waves[-1] if waves else 'no WAV in %s' % (DOS / 'capture'))
             elif cmd == 'mem':
                 b = d.mem(int(args[0], 0), int(args[1], 0))
                 if len(args) > 2:
