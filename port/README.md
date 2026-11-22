@@ -91,6 +91,22 @@ C + SDL2 with a self-check binary).
   temporary hook (an env variable that jumps there), take the screenshot
   under Xvfb, and remove the hook before committing.
 
+### Checks (`port/check.sh`, about 3 minutes)
+
+| Step | Compares with | Mutation that must fail it |
+|---|---|---|
+| 1 title | `captures/title_ww.png`, pixel-identical | vga.c `plane[(x + 1) & 3]` |
+| 2 menus | racetest's ENGINES and overview shots | `PORT_IO_NS=0` |
+| 3 sound | `captures/apogee_ww.wav` (audiocmp, >= 0.9) | OPL register + 1 (0.848); 16-bit ring as signed (0.838) |
+| 4 race | `captures/race_trace_ww.bin`: 600 race frames, the eight player records byte for byte (port/tools/racecmp.py) | cpu_drive's path step `step < v88c24` (DIFF at frame 35) |
+
+The race is a frame-by-frame trace taken at race_run's `ticks2++`, in the original with
+`tools/dosrun.py watch 0x3114c+delta` and in the port with gdb. It works because the race steps
+once per frame (ticks pace only the display: the port at 12 and 15 ticks a frame gave the same
+600 frames) and because the grid seed (`racetime` at fn_1be3c, which depends on how long the menus
+took) is forced to the original run's 459, found by calling the game's own fn_1be3c in the port
+under gdb for every seed until its start order matched. No player input: the computer karts race.
+
 ## Layout that worked
 
 ```

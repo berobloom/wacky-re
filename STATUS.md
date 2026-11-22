@@ -73,7 +73,11 @@ Short: where the project stands, and what is next. History is in git; no diary.
    4th places (TRY TO QUALIFY, lives, GAME OVER) run through without a crash. Then time trial
    (a NULL surface read the original makes too: port_lowmem), two-player race and shoot-out
    (cars_menu's turn tests were inverted: fixed, 445 -> 444), duck shoot and kid mode, each driven
-   with forced finishes - no crash left (findings/game-loop.md "Reads through NULL"). Done iter 106: music - Nuked OPL3 behind FMCHIP's
+   with forced finishes - no crash left (findings/game-loop.md "Reads through NULL").
+   Done 2026-11-22: the race against the original - port/check.sh step 4 compares 600 race frames
+   of all eight player records with captures/race_trace_ww.bin (SAME; 1201 frames checked once;
+   mutation in cpu_drive fails at frame 35). Next: the same with player input (needs input the
+   harness can give at a known frame) and the karts[] records. Done iter 106: music - Nuked OPL3 behind FMCHIP's
    0x388, SDL audio or PORT_WAV; port/check.sh step 3 compares the Apogee song with the original's
    recording (captures/apogee_ww.wav, `tools/dosrun.py wave start|stop`): corr 0.945, mutation 0.848. Done iter 106: the port's rand/srand
    (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under Unicorn,

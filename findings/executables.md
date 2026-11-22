@@ -253,6 +253,12 @@ loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine 
   MV_Silence 0x643a8 = 0x80008000, BLASTER_Version 0x88e38 = 4.05): this revision's MULTIVOC mixes
   unsigned (MV_Mix16bitUnsignedMono), while BLASTOLD.C (the card driver the game links, module 0x43F20)
   asks the DSP for signed data; the reference recording plays as unsigned (QUESTIONS.md 30).
+  The race (CONFIRMED, 2026-11-22, port/check.sh step 4): with the same grid seed, the port's first
+  race equals the original's frame for frame - all eight player records byte for byte for 1201
+  frames (the computer karts racing, no player input), except `players[].f5e`, a pointer into a
+  heap table that differs by one constant (0x7ed100c, the two heaps' bases). The race steps once
+  per frame (`ticks2`, race_run 0x3114c); the start order comes from `srand(racetime)` in fn_1be3c,
+  so it changes with how long the menus took (the original's run: seed 459, the port's 441).
   MV_Init keeps its DMA ring inside one 64 KB page with `(ptr & 0xff0000) + 0x10000`, a 24-bit ISA
   address rule.
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four
