@@ -10,8 +10,9 @@ log-scaled, so the comparison is of notes and their timing, not of samples: the 
 Each band's mean over the recording is removed first; without that the spectrum's overall slope
 dominates and white noise scored 0.912. The reference's loud frames (over a fifth of its loudest) are
 matched against the port's at the best shift within +-4 s; SAME when the mean correlation is at least
-0.9. Measured on the Apogee song (captures/apogee_ww.wav): the port 0.946 (it lacks the logo's
-voice), the port writing each OPL value one register up 0.847, the menu song 0.051, noise 0.013.
+0.9. Measured on the Apogee song (captures/apogee_ww.wav): the port 0.956 (0.946 before it played
+the logo's voice), the port writing each OPL value one register up 0.847, reading the 16-bit effects
+as signed 0.838, the menu song 0.051, noise 0.013.
 """
 import sys
 import wave

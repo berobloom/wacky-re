@@ -67,6 +67,27 @@ static uint64_t machine_us64(void)
     return (uint64_t)((int64_t)(t.tv_sec - t0.tv_sec) * 1000000 + (t.tv_nsec - t0.tv_nsec) / 1000);
 }
 
+/* the interrupt flag (port/include/interrupt.h) */
+static pthread_mutex_t cli_mu;
+static pthread_once_t cli_once = PTHREAD_ONCE_INIT;
+
+static void cli_init(void)
+{
+    pthread_mutexattr_t a;
+
+    pthread_mutexattr_init(&a);
+    pthread_mutexattr_settype(&a, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&cli_mu, &a);
+}
+
+void port_cli(void)
+{
+    pthread_once(&cli_once, cli_init);
+    pthread_mutex_lock(&cli_mu);
+}
+
+void port_sti(void) { pthread_mutex_unlock(&cli_mu); }
+
 void isr_set(unsigned vec_no, port_isr fn) { vec[vec_no & 255] = fn; }
 port_isr isr_get(unsigned vec_no) { return vec[vec_no & 255]; }
 

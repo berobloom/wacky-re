@@ -246,8 +246,15 @@ loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine 
   The rebuilt FMSONG + FMCHIP play the game's songs as the game does (STRONGLY SUPPORTED, 2026-11-22):
   compiled into the port over Nuked OPL3, the Apogee song correlates 0.945 with the original's
   recording under DOSBox-X (notes per 20 ms in semitone bands, port/tools/audiocmp.py; another song
-  0.05, noise 0.01) and fades at the same point, 5.5 s after the Enter. What the port lacks in that
-  recording is the logo's voice, `voice_play(0xc)` in `intro` (an FX sample, ~1.5 s in).
+  0.05, noise 0.01) and fades at the same point, 5.5 s after the Enter. The logo's voice,
+  `voice_play(0xc)` in `intro` (an FX sample, ~1.5 s in), comes from FX_MAN + MULTIVOC, which the port
+  also runs as rebuilt (over its own SB16 driver): with it the recording scores 0.956.
+  Sound effects at 16 bits (CONFIRMED from the original's memory under DOSBox-X: MV_MixMode 0x643a4 = 2,
+  MV_Silence 0x643a8 = 0x80008000, BLASTER_Version 0x88e38 = 4.05): this revision's MULTIVOC mixes
+  unsigned (MV_Mix16bitUnsignedMono), while BLASTOLD.C (the card driver the game links, module 0x43F20)
+  asks the DSP for signed data; the reference recording plays as unsigned (QUESTIONS.md 30).
+  MV_Init keeps its DMA ring inside one 64 KB page with `(ptr & 0xff0000) + 0x10000`, a 24-bit ISA
+  address rule.
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four
   functions' register choices): the Watcom 10.0 prerelease, **without `/zu`** (CONFIRMED: with it
   `_MIDI_SendControlChange` gets a frame the game's lacks), and `#pragma aux _MIDI_ServiceRoutine

@@ -31,7 +31,11 @@ translating; what is left is the memory layout, the asm module and the machine.
   emulates with Nuked OPL3 (`port/third_party/nukedopl`, LGPL) and plays through SDL audio, or with
   `PORT_WAV=file` records in step with the clock (headless); `PORT_NOSOUND=1` silences it. The
   Apogee song plays the original's notes and timing (`port/check.sh` step 3, port/tools/audiocmp.py).
-  FX_* (the digitized effects) accepts the card and plays nothing yet. The serial link is not ported.
+  FX_* is the library's own FX_MAN + MULTIVOC (the 1994 C mixer) over the port's SB16
+  (`port/src/blaster.c`): audio.c plays MULTIVOC's DMA ring at 11 kHz, calls MV_ServiceVoc after each
+  part as the card's interrupt did, resamples and mixes it with the OPL. DisableInterrupts is a real
+  lock (port/include/interrupt.h) that the timer tasks and that interrupt take. The other cards are
+  stubs (`port/src/cards.c`). The serial link is not ported.
 
 ### Timing (QUEUE Q2)
 

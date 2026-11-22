@@ -192,6 +192,19 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     130 rows from VRAM 0x7d00 over the top of the page when `v7d998` == 2 (playback?); Low has
     neither, and `floor_draw_upper` has neither at any level. Test: record and play back a race at
     each detail level in the original and screenshot the horizon band (rows 0-129).
+30. **OPEN** (port FX, findings/executables.md): **the original's 16-bit sound effects: unsigned data, "signed" to the DSP, played clean** (2026-11-22, port FX).
+    Wacky Wheels' MULTIVOC mixes 16-bit as unsigned (MV_Mix16bitUnsignedMono, MV_Silence 0x80008000;
+    read from the original under DOSBox-X: MV_MixMode 2, MV_Silence 0x80008000, DSP 4.05), and BLASTOLD.C's
+    DSP4xx_BeginPlayback sends DSP_SignedMonoData (0x10), which DOSBox-X's sblaster.cpp turns into
+    `dma.sign` (`dsp.in.data[0] & 0x10`). Played as signed, silence would be a constant -32768 and every
+    effect sign-flipped. Yet captures/apogee_ww.wav is exactly 0 on the title and the logo's voice is clean
+    with a +1000 offset, which is what the unsigned reading gives (port: audiocmp 0.958 unsigned vs 0.837
+    signed). Also seen: with `tools/dosrun.py mem` reads 0.3-0.5 s apart, MV_PlayPage 0x643c8 stood still on the
+    title and advanced by one per read on the Apogee screen, where 11 kHz playback makes ~43 parts per 0.5 s;
+    and the ring at 0x10240 held 0x5000-0x6700 values, not silence. What would settle it: trace the DSP
+    bytes the original writes to 0x22C (a port-write breakpoint) and DOSBox-X's dma.sign and IRQ state, in a
+    run without halting reads; and whether the stall is the reads' doing. The port plays the ring as unsigned
+    (port/src/audio.c sb_read), matching the reference.
 
 ## Hypotheses
 

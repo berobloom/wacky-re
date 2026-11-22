@@ -7,7 +7,9 @@
  * the samples are made on SDL's audio thread, or, with PORT_WAV=file, by the hardware thread in step
  * with the clock (audio_pump) and written to that file - the headless way to hear a run.
  * A write takes effect at the next block of samples (SDL: 512 frames, 10 ms); OPL3's own write
- * buffer spaces the writes as the chip would. */
+ * buffer spaces the writes as the chip would.
+ * The digitized effects come from the Sound Blaster's DMA ring (blaster.c): read here at the card's
+ * rate, resampled and mixed in, with the card's interrupt raised after each part. */
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -18,6 +20,7 @@
 
 #include "machine.h"
 #include "opl3.h"
+#include "sb.h"
 
 #define OPL_RATE 49716                  /* the chip's own: 14.318 MHz / 288 */
 
@@ -48,11 +51,65 @@ unsigned audio_in(unsigned port)
     return 0;                           /* status: no timer expired, no IRQ */
 }
 
+/* one sample frame of the Sound Blaster's DMA ring; after each part of the ring, the card's
+ * interrupt: MULTIVOC's MV_ServiceVoc, with the interrupt flag held */
+static void sb_read(int out[2])
+{
+    const uint8_t *p = sb.buf + sb.pos;
+
+    /* 16-bit samples are read as unsigned (0x8000 = silence): that is what this revision's
+     * MULTIVOC writes (MV_Mix16bitUnsignedMono, MV_Silence 0x80008000 - both read from the original
+     * under DOSBox-X), and what the reference recording plays (captures/apogee_ww.wav: silence 0,
+     * the voice's offset +1000; read as signed the port gave -25000 and audiocmp 0.837 instead of
+     * 0.958). BLASTOLD.C asks the DSP for signed data (DSP_SignedMonoData); why the reference
+     * still plays it as unsigned is open (QUESTIONS.md). */
+    if (sb.mode & 2) {                  /* SIXTEEN_BIT */
+        out[0] = (p[0] | p[1] << 8) - 0x8000;
+        out[1] = sb.mode & 1 ? (p[2] | p[3] << 8) - 0x8000 : out[0];
+    } else {                            /* 8-bit: unsigned */
+        out[0] = (p[0] - 128) << 8;
+        out[1] = sb.mode & 1 ? (p[1] - 128) << 8 : out[0];
+    }
+    sb.pos += sb.frame;
+    if (sb.pos % sb.part == 0) {
+        if (sb.pos >= sb.size)
+            sb.pos = 0;
+        port_cli();
+        if (sb.playing && sb.callback)
+            sb.callback();
+        port_sti();
+    }
+}
+
+/* the card's output, resampled linearly from its rate to ours and mixed in at the mixer's voice
+ * volume */
+static void sb_mix(int16_t *s, unsigned frames)
+{
+    double step = (double)sb.rate / rate;
+
+    for (unsigned i = 0; i < frames && sb.playing; i++) {
+        sb.phase += step;
+        while (sb.phase >= 1.0) {
+            sb.prev[0] = sb.cur[0];
+            sb.prev[1] = sb.cur[1];
+            sb_read(sb.cur);
+            sb.phase -= 1.0;
+        }
+        for (int c = 0; c < 2; c++) {
+            double v = sb.prev[c] + (sb.cur[c] - sb.prev[c]) * sb.phase;
+            int o = s[2 * i + c] + (int)(v * sb.gain);
+            s[2 * i + c] = (int16_t)(o > 32767 ? 32767 : o < -32768 ? -32768 : o);
+        }
+    }
+}
+
 static void render(int16_t *s, unsigned frames)
 {
     pthread_mutex_lock(&amu);
     OPL3_GenerateStream(&opl, s, frames);
     pthread_mutex_unlock(&amu);
+    if (sb.playing)
+        sb_mix(s, frames);
 }
 
 static void sdl_callback(void *u, Uint8 *stream, int len)

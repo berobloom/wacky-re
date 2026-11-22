@@ -62,8 +62,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    needed a seed for `p7e728`. `difffn.py BUCKET=1` buckets any DIFF (findings/game-loop.md). Open:
    `net_input` coverage (55 of 203 starts), `race_run` (784 of 2028).
 7. Port (iter 106, QUEUE Q2 ready for review): menus to the first race match the original's. Next
-   candidates: FX via SDL audio (the digitized effects; the Apogee logo's voice 0xC is the first);
-   the race itself against a deterministic reference. Done iter 106: music - Nuked OPL3 behind FMCHIP's
+   candidate: the race itself against a deterministic reference. Done iter 106: sound effects -
+   FX_MAN + MULTIVOC as rebuilt over the port's SB16 (blaster.c), mixed with the OPL; the Apogee
+   recording now scores 0.956 with the logo's voice (QUESTIONS.md 30: the original's 16-bit data is
+   unsigned though the DSP is told signed). Done iter 106: music - Nuked OPL3 behind FMCHIP's
    0x388, SDL audio or PORT_WAV; port/check.sh step 3 compares the Apogee song with the original's
    recording (captures/apogee_ww.wav, `tools/dosrun.py wave start|stop`): corr 0.945, mutation 0.848. Done iter 106: the port's rand/srand
    (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under Unicorn,

@@ -17,10 +17,11 @@
 #    Mutation: io_cost in port/src/vga.c returns at once (or PORT_IO_NS=0): the fades take 3 ms, the
 #    menus change faster than a keypress, and the 8th Enter's screen is the zone select (engines
 #    mean 109.45, 97.50%).
-# 3. music: Enter on the title at 8 s, the port's sound recorded (PORT_WAV) to 17 s, must play the
-#    Apogee song as captures/apogee_ww.wav does (the original under DOSBox-X): port/tools/audiocmp.py
-#    SAME, notes and timing per 20 ms in semitone bands, mean correlation at least 0.9.
-#    Mutation: audio.c writes the data to register reg_index + 1.
+# 3. sound: Enter on the title at 8 s, the port's sound recorded (PORT_WAV) to 17 s, must play the
+#    Apogee song and the logo's voice as captures/apogee_ww.wav does (the original under DOSBox-X):
+#    port/tools/audiocmp.py SAME, notes and timing per 20 ms in semitone bands, mean correlation at
+#    least 0.9 (0.956). Mutations: audio.c writes the OPL data to register reg_index + 1 (0.848);
+#    sb_read takes the 16-bit ring as signed (0.838).
 # Runs from a copy of the game directory (.work/port/run, made from original/ on first use).
 set -u
 cd "$(dirname "$0")/.."

@@ -5,12 +5,12 @@
  * Here it runs on the hardware thread: each task's service is called `rate` times a second, the
  * way TASK_MAN.C's timer interrupt called it. The struct is TASK_MAN.H's.
  *
- * FX_* accepts the configured card and plays nothing, so the game takes the path it takes with a
- * working card (with a refusal it stops in sound_init and waits for a key, src/ww.c). MUSIC_* runs
- * the game's own FM song player, silent until the OPL2 is emulated (below). */
+ * FX_* and MUSIC_* are the sound library's own code (src/ass): FX_MAN + MULTIVOC over the port's
+ * Sound Blaster (blaster.c), and the game's FM song player over the emulated OPL2 (audio.c). */
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "machine.h"
 
@@ -92,6 +92,7 @@ void ts_tick(uint32_t now)
 {
     int i, n;
 
+    port_cli();                         /* the timer interrupt waits while the flag is clear */
     pthread_mutex_lock(&tmu);
     for (i = 0; i < MAXTASKS; i++) {
         task *t = tasks[i];
@@ -110,38 +111,11 @@ void ts_tick(uint32_t now)
             due[i] = now + step;
     }
     pthread_mutex_unlock(&tmu);
+    port_sti();
 }
 
-/* ---- FX_* (FX_MAN.H): no card */
-#define FX_Ok 0
-
-typedef struct { int MaxVoices, MaxSampleBits, MaxChannels; } fx_device;   /* FX_MAN.H */
-
-char *FX_ErrorString(int code) { (void)code; return "Sound effects are not ported yet."; }
-int FX_SetupCard(int card, fx_device *dev)
-{
-    (void)card;
-    dev->MaxVoices = 8;
-    dev->MaxSampleBits = 16;
-    dev->MaxChannels = 2;
-    return FX_Ok;
-}
-int FX_Init(int card, int voices, int channels, int bits, unsigned rate)
-{
-    (void)card; (void)voices; (void)channels; (void)bits; (void)rate;
-    return FX_Ok;
-}
-int FX_Shutdown(void) { return FX_Ok; }
-void FX_SetVolume(int v) { (void)v; }
-int FX_SetPitch(int handle, int pitch) { (void)handle; (void)pitch; return FX_Ok; }
-int FX_PlayVOC(char *p, int pitch, int vol, int l, int r, int prio, unsigned long cb)
-{
-    (void)p; (void)pitch; (void)vol; (void)l; (void)r; (void)prio; (void)cb;
-    return 0;
-}
-int FX_SoundActive(int handle) { (void)handle; return 0; }
-int FX_StopSound(int handle) { (void)handle; return FX_Ok; }
-int FX_StopAllSounds(void) { return FX_Ok; }
+/* ---- FX_* is the sound library's own FX_MAN.C over MULTIVOC.C (src/ass), with the port's Sound
+ * Blaster driver under it (blaster.c, audio.c). */
 
 /* ---- MUSIC_* (MUSIC.H). Wacky Wheels' MUSIC module sends the FM cards (0-2, the .KLM songs) to its
  * own FM song player (findings/executables.md "Sound library"), which the port runs as rebuilt:
@@ -178,7 +152,21 @@ void MUSIC_FadeVolume(int tovol, int ms) { (void)ms; if (fm) FMSONG_SetVolume(to
 void music_pause(void) { if (fm) FMSONG_Pause(); }
 void music_resume(void) { if (fm) FMSONG_Continue(); }
 
-/* DPMI memory locking (src/ass/DPMI.H): nothing pages out here */
+/* DPMI (src/ass/DPMI.H): nothing pages out here. "DOS memory" (below 1 MB, for the DMA buffer)
+ * must still keep ISA DMA's rule: MULTIVOC moves a ring that crosses a 64 KB boundary to the next
+ * page with `(ptr & 0xff0000) + 0x10000` (MULTIVOC.C MV_Init), which only works on a 24-bit
+ * address - on a heap pointer it gave 0x280000 and a crash. A 64 KB-aligned block never crosses
+ * (the ring is 2 * 4 KB), so the move never happens. */
+int DPMI_GetDOSMemory(void **ptr, int *descriptor, unsigned length)
+{
+    *ptr = aligned_alloc(0x10000, (length + 0xffffu) & ~0xffffu);
+    if (*ptr)
+        memset(*ptr, 0, length);
+    *descriptor = (int)(uintptr_t)*ptr;
+    return *ptr ? 0 : -1;
+}
+int DPMI_FreeDOSMemory(int descriptor) { free((void *)(uintptr_t)descriptor); return 0; }
+
 int DPMI_LockMemory(void *a, unsigned n) { (void)a; (void)n; return 0; }
 int DPMI_LockMemoryRegion(void *a, void *b) { (void)a; (void)b; return 0; }
 int DPMI_UnlockMemory(void *a, unsigned n) { (void)a; (void)n; return 0; }

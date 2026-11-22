@@ -31,6 +31,8 @@ void vga_set_mode(int mode);                 /* int 10h ah=0 */
 unsigned port_in8(unsigned port);
 void port_out8(unsigned port, unsigned v);
 /* audio.c: the OPL2 at 0x388/0x389 and the sound output */
+void port_cli(void);                    /* the interrupt flag: port/include/interrupt.h */
+void port_sti(void);
 void audio_start(int headless);
 void audio_out(unsigned port, unsigned v);
 unsigned audio_in(unsigned port);
