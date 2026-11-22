@@ -1,8 +1,6 @@
 /* clib.c: what src/ww.c takes from Watcom's clib and DOS that glibc does not provide.
  *
- * rand/srand are Watcom's, not glibc's: the game's choices (AI, pickups, demo seeds) follow its
- * sequence, so the port must draw the same numbers. Watcom's documented LCG; NOT yet checked
- * against the game's own rand (to do: run it under Unicorn, tools/le/emu.py, and compare). */
+ * rand/srand are in wrand.c. */
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -15,16 +13,6 @@
 #include "machine.h"
 
 /* ---- Watcom clib */
-static uint32_t rand_next = 1;
-
-int rand(void)
-{
-    rand_next = rand_next * 1103515245u + 12345u;
-    return (int)(rand_next >> 16 & 0x7fff);
-}
-
-void srand(unsigned seed) { rand_next = seed; }
-
 char *itoa(int value, char *buf, int radix)
 {
     char tmp[34], *p = tmp, *o = buf;

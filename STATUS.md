@@ -63,8 +63,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    `net_input` coverage (55 of 203 starts), `race_run` (784 of 2028).
 7. Port (iter 106, QUEUE Q2 ready for review): menus to the first race match the original's. Next
    candidates: an OPL2 emulator behind FMCHIP's port 0x388 (the songs already run) and FX via SDL audio;
-   the race itself against a deterministic reference; Watcom `rand` checked under Unicorn
-   (port/src/clib.c claims port/tools/checkrand.py, which does not exist yet).
+   the race itself against a deterministic reference. Done iter 106: the port's rand/srand
+   (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under Unicorn,
+   `port/tools/checkrand.py` -> RANDCHECK OK (14 seeds + unseeded x 2000 draws; mutation 0x3039 ->
+   0x3038 fails it).
 
 ## BLOCKED
 

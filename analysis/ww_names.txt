@@ -587,7 +587,9 @@
 0x0430ac srand          # CONFIRMED: Watcom clib srand in WW.EXE
 0x043065 int386x       # CONFIRMED: Watcom clib INT 386h wrapper - push esi/edi/ebp, mov ebx,ecx/esi,eax/edi,edx, mov edx,[ebp-4], call 0x4c748; our fixup site int386x_ binds here (tools/link/symmap.txt "observed"); game call sites 0x1cc5b (enter_name), 0x14e66 (chat), 0x369c6 (main)
 0x043231 signal         # CONFIRMED: Watcom clib signal - cmp eax,1 / cmp eax,0xc range check, stores handler 0x431fa in [0x644c0]; our fixup sites signal_ bind here (tools/link/symmap.txt "observed"); game call sites 0x35cd6, 0x35ce5 (main's signal(7,1)/signal(4,1))
-0x043088 rand           # CONFIRMED: Watcom clib rand in WW.EXE
+0x043088 rand           # CONFIRMED: Watcom clib rand in WW.EXE: seed = seed*0x41c64e6d + 0x3039, returns seed>>16 & 0x7fff (0x43092-0x430a5); port/tools/checkrand.py runs it against port/src/wrand.c
+0x043082 rand_seedp     # CONFIRMED: returns 0x64008, the seed's address (mov eax,0x64008; ret), called by rand and srand
+0x064008 rand_seed      # CONFIRMED: Watcom clib rand seed, initially 1 in the data object (lelib u32); its one reference is 0x43082 (tools/le/xref.py)
 0x06aa90 arr16           # SPECULATIVE: per-vehicle shorts base (same as players); countdown/lap constants written here
 0x07d7cc order_a         # LIKELY: 8-entry start-order table (positions x)
 0x07d7e0 order_b         # LIKELY: 8-entry start-order table (positions y)
