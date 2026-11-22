@@ -52,20 +52,20 @@ void fn_430f7(void *dst, int value, int count)
         *d++ = (uint32_t)value;
 }
 
-struct dostime { unsigned char hund, sec; unsigned short minhrs; unsigned char dst; };
+struct dosdate { unsigned char day, month; unsigned short year; unsigned char dayofweek; };
 
-/* 0x43164: INT 21h time into the game's 5-byte record (src/ww.c dos_gettime) */
-void dos_gettime(struct dostime *t)
+/* 0x43164: Watcom's _dos_getdate, INT 21h/2Ah, into struct dosdate_t (src/ww.c dos_getdate);
+ * fn_1c994 stamps records with it ("22 NOV 2026") */
+void dos_getdate(struct dosdate *d)
 {
-    struct timespec ts;
+    time_t now = time(NULL);
     struct tm tm;
 
-    clock_gettime(CLOCK_REALTIME, &ts);
-    localtime_r(&ts.tv_sec, &tm);
-    t->hund = (unsigned char)(ts.tv_nsec / 10000000);
-    t->sec = (unsigned char)tm.tm_sec;
-    t->minhrs = (unsigned short)(tm.tm_min | tm.tm_hour << 8);
-    t->dst = 0;
+    localtime_r(&now, &tm);
+    d->day = (unsigned char)tm.tm_mday;
+    d->month = (unsigned char)(tm.tm_mon + 1);
+    d->year = (unsigned short)(tm.tm_year + 1900);
+    d->dayofweek = (unsigned char)tm.tm_wday;
 }
 
 void sound(unsigned hz) { (void)hz; }      /* PC speaker: silent for now */
@@ -119,13 +119,24 @@ int int386x(int intno, union REGS *in, union REGS *out, struct SREGS *seg)
             if (seg)
                 seg->es = 0;
             break;
+        case 0x2a: {                     /* get date */
+            struct dosdate d;
+            dos_getdate(&d);
+            r.x.ecx = d.year;
+            r.h.dh = d.month;
+            r.h.dl = d.day;
+            r.h.al = d.dayofweek;
+            break;
+        }
         case 0x2c: {                     /* get time */
-            struct dostime t;
-            dos_gettime(&t);
-            r.h.ch = t.minhrs >> 8;
-            r.h.cl = t.minhrs & 0xff;
-            r.h.dh = t.sec;
-            r.h.dl = t.hund;
+            struct timespec ts;
+            struct tm tm;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            localtime_r(&ts.tv_sec, &tm);
+            r.h.ch = tm.tm_hour;
+            r.h.cl = tm.tm_min;
+            r.h.dh = tm.tm_sec;
+            r.h.dl = ts.tv_nsec / 10000000;
             break;
         }
         default:

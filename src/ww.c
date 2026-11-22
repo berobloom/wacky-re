@@ -6715,22 +6715,23 @@ void fade_out_screen(void)
 }
 
 
-/* ---- the DOS clock wrapper 0x43164: INT 21h/2Ah into a 5-byte record (stores at
- * 0x4316d-0x43179: word [p+2] = cx, [p+1] = dh, [p] = dl, [p+4] = al). */
+/* ---- Watcom's _dos_getdate 0x43164: INT 21h/2Ah (DOS Get Date; 0x43169 `mov ah,0x2a`) into a
+ * 5-byte struct dosdate_t (stores at 0x4316d-0x43179: word [p+2] = cx, [p+1] = dh, [p] = dl,
+ * [p+4] = al). Its sibling 0x4317f is _dos_gettime (AH=2Ch). */
 
-struct dostime {
-    unsigned char hund;                 /* +0 dl: hundredths of a second */
-    unsigned char sec;                  /* +1 dh: seconds */
-    unsigned short minhrs;              /* +2 cl = minutes, +3 ch = hours; the game reads +2 as a
-                                       * word (movzx, WORD PTR [esp+0x42], 0x1ca75) */
-    unsigned char dst;                  /* +4 al: daylight-saving flag */
+struct dosdate {
+    unsigned char day;                  /* +0 dl: 1..31 */
+    unsigned char month;                /* +1 dh: 1..12 */
+    unsigned short year;                /* +2 cx: 1980..; the game reads it as a word (movzx,
+                                       * WORD PTR [esp+0x42], 0x1ca75) */
+    unsigned char dayofweek;            /* +4 al: 0 = Sunday */
 };
 
-extern void dos_gettime(struct dostime *t);     /* 0x43164 */
+extern void dos_getdate(struct dosdate *t);     /* 0x43164 */
 
-/* ---- 0x1c994: pads the string s into a fixed-width stamp. The month table (mth) is the
- * game's 48-byte const at 0x10154 ("JAN\0FEB\0..."), indexed by the seconds byte minus one;
- * what the fields mean is SPECULATIVE, every address step below is CONFIRMED from the listing.
+/* ---- 0x1c994: today's date as the record stamp "DD MON YYYY" (the defaults read "01 SEP 1994").
+ * The month table (mth) is the game's 48-byte const at 0x10154 ("JAN\0FEB\0..."), indexed by the
+ * month minus one; every address step below is CONFIRMED from the listing.
  * The loop tail (0x1ca83-0x1cac1) is entered twice, first with the itoa buffer in esi. */
 /* The loop's destination pointer is a second local (EDX/EDI) that the game re-arms from `s` (EBP)
  * after the strcat and on the back edge; with one local both loads fold into the loop head. */
@@ -6739,13 +6740,13 @@ void fn_1c994(char *s)                  /* arg1 = eax */
     char mth[12][4] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
                         "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
     char num[16];
-    struct dostime t;
+    struct dosdate t;
     char *src;
     char c;
     char *p;
 
-    dos_gettime(&t);                    /* 0x1c9b8 (arg eax = esp+0x40) */
-    itoa(t.hund, s, 10);                /* 0x1c9bd movzx eax,BYTE [esp+0x40]; call 0x425f9 */
+    dos_getdate(&t);                    /* 0x1c9b8 (arg eax = esp+0x40) */
+    itoa(t.day, s, 10);                 /* 0x1c9bd movzx eax,BYTE [esp+0x40]; call 0x425f9 */
     if (s[1] == 0) {                    /* 0x1c9c7: a one-digit value gets a leading '0' */
         s[2] = 0;
         c = s[0];
@@ -6753,9 +6754,9 @@ void fn_1c994(char *s)                  /* arg1 = eax */
         s[1] = c;
     }
     strcat(s, " ");                     /* 0x1c9db (inlined strcat, repnz scas + copy) */
-    strcat(s, mth[t.sec - 1]);          /* 0x1ca08: eax = sec*4 - 4, esi = esp + eax */
+    strcat(s, mth[t.month - 1]);        /* 0x1ca08: eax = month*4 - 4, esi = esp + eax */
     strcat(s, " ");                     /* 0x1ca45 */
-    itoa(t.minhrs, num, 10);            /* 0x1ca75 movzx eax,WORD [esp+0x42]; edx = esp+0x30 */
+    itoa(t.year, num, 10);              /* 0x1ca75 movzx eax,WORD [esp+0x42]; edx = esp+0x30 */
     src = num;
     p = s;
     while (1) {

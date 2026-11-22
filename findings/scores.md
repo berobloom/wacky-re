@@ -27,11 +27,12 @@ car-select chain and the name entry.
   `v7d8a8 = tbl77758 + (v88bb6 + v7ecb4) * 0x450 + {0, 0x170, 0x2e0} + idx * 0x2e`
   (0x1cb3b-0x1cb40); anything else returns without storing (0x1cadf). The three
   groups start 8 and 16 records into the row.
-- CONFIRMED (disassembly 0x4316d-0x43179): `dos_gettime` 0x43164 is an
-  `INT 21h/AH=2Ah` wrapper; it stores `[p] = dl` (1/100 s), `[p+1] = dh`
-  (seconds), `[p+2..3] = cx` (CL = minutes, CH = hours) and `[p+4] = al`
-  (daylight flag) of a 5-byte record. Its sibling `0x4317f` is the date call
-  (`AH=2Ch`, month in `dh`) and is *not* what `fn_1c994` calls.
+- CONFIRMED (disassembly 0x43169 `mov ah,0x2a`, stores 0x4316d-0x43179): `dos_getdate`
+  0x43164 is Watcom's `_dos_getdate`, DOS Get Date (INT 21h/AH=2Ah): `[p] = dl` (day),
+  `[p+1] = dh` (month), `[p+2..3] = cx` (year) and `[p+4] = al` (weekday) - a
+  `struct dosdate_t`. Its sibling `0x4317f` is `_dos_gettime` (AH=2Ch, 0x43184; ch/cl/dh/dl to
+  `[p]..[p+3]`). Until 2026-11-22 this file had the two DOS functions swapped (2Ah called the
+  time), and the port answered with the time: its records were stamped "31 JUN 3370".
 - CONFIRMED (rebuild `src/ww.c`, 312 of 313 bytes at 0x1c994, 4 instruction
   diffs): `fn_1c994(s)` appends to the NUL-terminated string `s`:
   `itoa(seconds_100ths)` padded to two digits (0x1c9bd-0x1c9d8), one space
@@ -43,15 +44,11 @@ car-select chain and the name entry.
   0x1c9b6 is `mov ecx,0xc` + `rep movsd`): the month table is a local
   `char mth[12][4]` in `fn_1c994`, not a pointer table.
 - CONFIRMED (0x1c9bd reads `[esp+0x40]`, 0x1ca08 reads `[esp+0x41]`, 0x1ca75
-  reads `WORD [esp+0x42]`, and 0x43164 fills those bytes as above): the value
-  passed to the first `itoa` is the hundredths-of-a-second byte, the month index
-  is `seconds - 1`, and the value of the second `itoa` is minutes and hours read
-  as one little-endian word.
-- LIKELY: the original meant a date and got a time, so the month field of the
-  stamp is garbage unless the clock's seconds happen to be 1..12 (`mth` has 12
-  entries and seconds run 0..59, so the index leaves the table from 13 up). Gap:
-  nobody has run the original (STATUS Next 7); a save state plus a memory read of
-  a record at 0x77758 would show what the field really contains.
+  reads `WORD [esp+0x42]`, and 0x43164 fills those bytes as above): the stamp is
+  today's date, "DD MON YYYY" - `itoa(day)` padded to two digits, `mth[month - 1]`,
+  `itoa(year)` - the same form as the defaults' "01 SEP 1994". (An earlier LIKELY here,
+  "the original meant a date and got a time", rested on the swapped DOS functions and is
+  withdrawn.)
 - CONFIRMED (record copies at 0x1cfb4-0x1d01d and the insert at 0x1d03b-0x1d0b6, read in
   the `scores_screen` rebuild: words at +0, +2, +4 and inline `strcpy`s at +6 and +0x1a;
   46 = 6 + 20 + 20): a record is
@@ -120,8 +117,8 @@ car-select chain and the name entry.
   shipped save files are the DAT defaults, and `records_load` copies the DAT entry to
   `<savedir>WACKY<n>.HI` when the file is missing. The score defaults are filler - every record is
   name "KNOCK ME OFF!", stamp "01 SEP 1994", `+4` falling by 9 / 12 / 15 per record in class group
-  1 / 2 / 3, `+0` = 1..6 by row in group 1 but 2 and 3 in groups 2 and 3 - so the `fn_1c994`
-  date/time mix-up never reaches the screen until a real run writes a stamp. The `.TIM` defaults
+  1 / 2 / 3, `+0` = 1..6 by row in group 1 but 2 and 3 in groups 2 and 3 - and a real run's
+  stamp is that day's date. The `.TIM` defaults
   are real names with dword times (BRIAN DHATT, CHRIST WHITE, CRAIG HAMILTON, ...).
 - CONFIRMED (one call site each): `scores_write` 0x3542c is called only from 0x1d0d0
   (`scores_screen`, argument `v7ee5a`) and `trial_write` 0x35324 only from 0x2f01b (`trial_book`,
