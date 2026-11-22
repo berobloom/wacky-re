@@ -12,6 +12,8 @@
 #define DATA_SIZE 0x33100u
 #define DATA_MAP  0x34000u       /* DATA_SIZE rounded up to pages */
 #define VGA_WIN   0xa0000u       /* the 64 KB graphics window the game addresses */
+#define TEXT_BASE 0xb8000u       /* B800:0, the colour text screen (port/src/textmode.c) */
+#define TEXT_SIZE 0x8000u
 
 int image_load(const char *exe);
 
@@ -26,6 +28,9 @@ void vga_render(uint32_t *rgb);              /* 320x200 (or the CRTC's size) as 
 int vga_width(void);
 int vga_height(void);
 void vga_set_mode(int mode);                 /* int 10h ah=0 */
+int vga_text(void);                          /* in text mode 3 */
+int textmode_map(void);
+void textmode_print(void);
 
 /* port I/O: VGA ports to vga.c, PIT/PIC/keyboard here (machine.c) */
 unsigned port_in8(unsigned port);

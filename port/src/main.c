@@ -36,7 +36,7 @@ int main(int argc, char **argv)
         perror(dir);
         return 1;
     }
-    if (image_load("WW.EXE") != 0)
+    if (image_load("WW.EXE") != 0 || textmode_map() != 0)
         return 1;
     if (machine_start(headless, scale) != 0)
         port_fatal("cannot start the hardware thread");

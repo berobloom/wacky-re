@@ -84,8 +84,13 @@ static inline void bus(void)
         bus_pay();
 }
 
+static int text;
+
+int vga_text(void) { return text; }
+
 void vga_set_mode(int mode)
 {
+    text = mode == 3;
     memset(seq, 0, sizeof seq);
     memset(gc, 0, sizeof gc);
     memset(crtc, 0, sizeof crtc);

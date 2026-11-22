@@ -21,7 +21,7 @@ python3 port/tools/prep.py src/ww.c "$out/ww.c"
 python3 port/tools/asm2c.py src/wwasm.asm "$out/wwasm.c"
 $CC $GAME -Dmain=game_main -c "$out/ww.c" -o "$out/obj/ww.o"
 $CC $GAME -c tools/link/extra.c -o "$out/obj/extra.o"
-for f in image vga machine clib wrand sound glue main cpu audio lowmem; do
+for f in image vga machine clib wrand sound glue main cpu audio lowmem textmode; do
     $CC $RT -Iport/third_party/nukedopl -c port/src/$f.c -o "$out/obj/$f.o"
 done
 # Nuked OPL3 (port/third_party/nukedopl/README.md): C, LGPL

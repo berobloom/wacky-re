@@ -91,6 +91,12 @@ C + SDL2 with a self-check binary).
   temporary hook (an env variable that jumps there), take the screenshot
   under Xvfb, and remove the hook before committing.
 
+### Leaving the game
+
+The game's last screen is a DOS text screen (WWREG.BIN, the Apogee ordering notice) that stays at
+the prompt after the program ends. The port prints it to the terminal it was started from, in
+colour, and the window's title asks for the key the game waits for (`port/src/textmode.c`).
+
 ### Checks (`port/check.sh`, about 3 minutes)
 
 | Step | Compares with | Mutation that must fail it |

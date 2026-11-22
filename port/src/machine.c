@@ -154,11 +154,19 @@ static void bios_int9(uint8_t sc)
     bq_tail = n;
 }
 
+static volatile int text_title;       /* set by getch, shown by the hardware thread */
+
 int getch(void)
 {
     static int pending = -1;
+    static int printed;
     uint16_t k;
 
+    if (vga_text() && !printed && bq_head == bq_tail) {     /* the end screen waits for a key */
+        textmode_print();
+        printed = 1;
+        text_title = 1;
+    }
     if (pending >= 0) {
         k = pending;
         pending = -1;
@@ -420,6 +428,10 @@ static void *hw_main(void *arg)
     while (running) {
         uint32_t ms = machine_ms();
 
+        if (text_title == 1 && win) {
+            SDL_SetWindowTitle(win, "Wacky Wheels - the end screen is in the terminal: press a key");
+            text_title = 2;
+        }
         ts_tick(machine_us());
         audio_pump(machine_us64());
         while (ki < nkeys && keys[ki].ms <= ms) {
