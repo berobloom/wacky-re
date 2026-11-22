@@ -79,7 +79,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
    mutation in cpu_drive fails at frame 35). Done 2026-11-22: the same with player input -
    port/check.sh step 5, 800 frames SAME with captures/race_inputs.txt written into the key-state
    bytes per frame (tools/dosrun.py watch --pokes; left/right swapped fails at frame 61).
-   Next: the karts[] records in the trace.
+   Done 2026-11-22: the karts[] records are in step 5's trace and equal (pointer fields by one
+   constant each; a kart-only mutation fails at frame 35).
    Fixed 2026-11-22: leaving the game crashed the port - end_screen's textscreen_show writes
    WWREG.BIN to B800:0; port/src/textmode.c maps 0xb8000 and prints the screen to the terminal
    (the window has no VGA font). WWREG.BIN hides an editor's BBS menu in attribute 0x77 (grey on

@@ -265,6 +265,15 @@ loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine 
   `tools/dosrun.py watch --pokes`, the port through gdb - gives 800 equal frames; the input changes
   player 0 from frame 1 (against the undriven trace), and swapping left and right in the steering
   (src/ww.c, `v88b98 = key88cdd != 0`) fails at frame 61, one frame after the first left press.
+  The karts[] records (0x68410, 8 x 0x104) are equal too (CONFIRMED, same check, 800 frames). Only
+  kart 0 is live in a one-player race: karts[] are the human players' karts (all 79 bytes that
+  change are in kart 0). Four pointer fields differ by one constant each: f4e, f72, f76 by the
+  original boot's data delta 0x1d9000 (they point into the data object, which the port maps at
+  the game's 0x60000), f4a (sparkdata) by 0xf8003950 (game 0x94d80, past the data object).
+  A mutation of a kart-only field (the bob toggle `curkart->f68 = 2`, src/ww.c kart_draw) fails at
+  frame 35 while the player records still match.
+  Trap: fn_1be3c (the grid seed) runs when the race is chosen, before the track overview; a
+  breakpoint set at the overview misses it, and the race gets another grid.
   MV_Init keeps its DMA ring inside one 64 KB page with `(ptr & 0xff0000) + 0x10000`, a 24-bit ISA
   address rule.
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four

@@ -63,6 +63,9 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- Never edit `port/check.sh` while it runs [generic]: sh reads a script as it executes, so a
+  changed file gives "Syntax error: Unterminated quoted string" minutes in (cost one 5-minute run).
+
 - Scripted port runs change the game's own files in `.work/port/run`: a forced finish writes
   WACKY1.HI / WACKY1.TIM records, and a run through GAME OPTIONS saves the chosen detail level to
   WACKY.CFG - which then silently changes every later run (a "Medium" test raced at Low). Copy
