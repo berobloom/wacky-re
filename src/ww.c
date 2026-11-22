@@ -6340,8 +6340,12 @@ input:
     }
     if (joy88b40 != 0 && move == 0 && slide_dn == 0 && slide_up == 0)
         goto confirm;                           /* 0x1b576 */
+    /* left turns the karts first (move 1) only after a right (f144), right only after a left (f120):
+       0x1b5a0 `cmp [esp+0x144],0; je` and 0x1b629 `cmp [esp+0x120],0; je` skip the move when the
+       flag is 0. Written `== 0` until 2026-11-22: the first right counted frame 2 down past 0, and
+       img[-1] (0 at 0x73c04) crashed the port's PLAYER TWO screen. */
     if (key88cd5 != 0 && slide_up == 0 && slide_dn == 0) {
-        if (f144 == 0)
+        if (f144 != 0)
             move = 1;
         f120 = 1;
         f144 = 0;
@@ -6353,7 +6357,7 @@ input:
             goto input;
     }
     if (key88cdd != 0 && slide_up == 0 && slide_dn == 0) {
-        if (f120 == 0)
+        if (f120 != 0)
             move = 2;
         f144 = 1;
         f120 = 0;

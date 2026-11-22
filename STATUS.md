@@ -70,7 +70,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    restarted; game 0x1762f); the leader board and the next race now follow. Also 2026-11-22: the hall of fame's stamp is today's
    date (0x43164 is _dos_getdate, INT 21h/2Ah - findings/scores.md had 2Ah/2Ch swapped, and the port
    stamped "31 JUN 3370"); a forced cup (13 races 1st, the final, rostrum, name entry) and forced
-   4th places (TRY TO QUALIFY, lives, GAME OVER) run through without a crash. Done iter 106: music - Nuked OPL3 behind FMCHIP's
+   4th places (TRY TO QUALIFY, lives, GAME OVER) run through without a crash. Then time trial
+   (a NULL surface read the original makes too: port_lowmem), two-player race and shoot-out
+   (cars_menu's turn tests were inverted: fixed, 445 -> 444), duck shoot and kid mode, each driven
+   with forced finishes - no crash left (findings/game-loop.md "Reads through NULL"). Done iter 106: music - Nuked OPL3 behind FMCHIP's
    0x388, SDL audio or PORT_WAV; port/check.sh step 3 compares the Apogee song with the original's
    recording (captures/apogee_ww.wav, `tools/dosrun.py wave start|stop`): corr 0.945, mutation 0.848. Done iter 106: the port's rand/srand
    (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under Unicorn,

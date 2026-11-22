@@ -341,6 +341,28 @@ merged).
     not seeded here.
   No DIFF in the sweep is a code difference.
 
+## Reads through NULL: the game's bugs that DOS/4GW forgives (CONFIRMED, 2026-11-22)
+
+Under DOS/4GW the flat data selector maps linear 0, the real-mode interrupt table, so a NULL
+pointer read returns data instead of faulting. The port has no page 0 (Linux forbids mappings below
+`vm.mmap_min_addr`, 65536), so each such read is routed to `port_lowmem`, a copy of linear
+0x0-0x4ff taken from the original under the harness (`port/src/lowmem.c`, macro `LOWMEM`,
+rules in `port/tools/prep.py`). Known cases:
+
+- Time trial, first frame: `kart_draw` 0x24bcc loads `curkart->f76` into `v7d89c` (0x24e8b/0x24e97)
+  before `race_run` has set it (src/ww.c, the `curkart->f76 = sp` block after the first
+  `frame_draw`). Seen in the original: a breakpoint at 0x24e9c (`tools/dosrun.py watch`, code delta
+  0x1dc000) showed `v7d89c` = 0 with `v88bb2` = 4 and `curkart` = karts[0], then 0x24d1f8 (a real
+  surface record) on the next frame. The whole 0x12e-byte record lies in the interrupt table; with
+  speed `f26` = 0 nothing is drawn from it, and `f6e`, set from it, is reset by `race_run`.
+- FMCHIP.C (`MUSIC_SetVolume` before the first song): byte 10 of a NULL timbre (prep.py rule).
+
+Not a NULL read, though it crashed the same way: the PLAYER TWO vehicle select reached
+`faces[0].img[-1]` (0 at 0x73c04) because src/ww.c had `cars_menu`'s two turn tests inverted
+(fixed 2026-11-22; the game: 0x1b5a0 and 0x1b629 skip the turn when the flag is 0). Watched in the
+original at 0x1adfe (cars_menu's input-loop `ents_show` call) with the same keys: F slides the rows
+8 px a step with every frame at 2 or 6, never below.
+
 ## Traps
 
 - `tab6e470` 0x6e470's row bases and the two header words in each row come from `kartsets_load`'s 2-byte

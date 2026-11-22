@@ -23,6 +23,11 @@ RULES = {'ww.c': [
     # unprototyped on purpose (a prototype makes the callers sign-extend and costs the MATCH); gcc
     # rejects `void f();` followed by a definition with a short parameter
     ('void fn_1d704();  ', 'void fn_1d704(short, int);', 1),
+    # the game's bug: in time trial the first frame's kart_draw runs before race_run has set the
+    # kart's surface record (f76, f72 NULL; seen in the original, v7d89c = 0 at 0x24e97), and reads
+    # the record from linear 0. The port reads the same bytes (LOWMEM, port/src/lowmem.c).
+    ('v7d89c = curkart->f76;', 'v7d89c = LOWMEM(curkart->f76);', 1),
+    ('v7d89c = curkart->f72;', 'v7d89c = LOWMEM(curkart->f72);', 2),
 ], 'FMCHIP.C': [
     # the game's bug: MUSIC_SetVolume before the first song reads byte 10 of a NULL timbre. DOS/4GW
     # maps linear 0, so the game reads the interrupt table (0x0A, int 2's segment) and goes on; here
