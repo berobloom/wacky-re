@@ -2581,7 +2581,12 @@ void fn_17888(char *s, short y)
    folded absolute operands (`mov edx,[eax+0x73c0c]` 0x17506 .. `[eax+0x73c24]` 0x17542) plus
    `[eax+0x74190]`/`[esi+0x73c38]` 0x1782f-0x17835 in the arr7418c block, which nmrefs masks as
    absolute. `#0x2` is our `add esi,2`
-   cursor in the sp7b374b loop against the game's `mov ebx,1` 0x17625 - the loop shape above. */
+   cursor in the sp7b374b loop against the game's `mov ebx,1` 0x17625 - the loop shape above.
+   BUG fixed (2026-11-22, found by the port crashing at a 1st-3rd finish): the second sp7b374b loop
+   restarted its destination at 0x7b378 and stepped i twice, so the face's own win frames never
+   reached 0x7b38c.. and those entries stayed 0; the game goes on from 0x14 (0x1762f `lea
+   edx,[eax*4]`, eax counted by both loops 0x1760f/0x17647) with one `inc ebx` per entry 0x1764f.
+   Written with the game's eax count: 100 -> 97 rows, MATCH count unchanged (213). */
 
 extern short v88b7e;
 extern short v88c4e, v88c50, v88c52;
@@ -2660,17 +2665,23 @@ void fn_173c4(void)
     }
     v88c52 = faces[myplayer].f92;
     esi = 0x10;
+    eax = 0;
     edx = 0;
     do {
         edx += 4;
+        eax++;
         *(int *)(sp7b374b + edx) = *(int *)((char *)&faces[myplayer] + esi);
         esi -= 4;
     } while (esi != -4);
-    for (i = 1, esi = 4, edx = 0; i <= v88c52; i++) {
+    /* the face's own frames follow the five shared ones: edx goes on from 0x14 (0x1762f
+       `lea edx,[eax*4]`, eax = 5), one i per entry (0x1764f `inc ebx`). Restarting at 0 with i
+       stepped twice left entries 5.. at 0, and the win animation (case 10 of kart_anim, which walks
+       0x7b378 up to v88c52 = f92 + 5) drew a null sprite on finishing 1st-3rd: the port crashed. */
+    for (i = 1, esi = 4, edx = eax * 4; i <= v88c52; i++) {
         esi += 4;
         edx += 4;
+        eax++;
         *(int *)(sp7b374b + edx) = *(int *)((char *)&faces[myplayer] + esi + 0x68);
-        i++;
     }
     *(int *)(sp7b518b + v88b7e * 4) = faces[myplayer].img[12];   /* +0x30 */
     *(int *)(sp7b518b + 8 + v88b7e * 4) = faces[myplayer].img[13];

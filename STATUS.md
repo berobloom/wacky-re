@@ -65,7 +65,9 @@ Short: where the project stands, and what is next. History is in git; no diary.
    candidate: the race itself against a deterministic reference. Done iter 106: sound effects -
    FX_MAN + MULTIVOC as rebuilt over the port's SB16 (blaster.c), mixed with the OPL; the Apogee
    recording now scores 0.956 with the logo's voice (QUESTIONS.md 30: the original's 16-bit data is
-   unsigned though the DSP is told signed). Done iter 106: music - Nuked OPL3 behind FMCHIP's
+   unsigned though the DSP is told signed). Fixed 2026-11-22: finishing a race 1st-3rd crashed the
+   port - fn_173c4 (src/ww.c) left the win animation's face frames 0x7b38c.. empty (loop cursor
+   restarted; game 0x1762f); the leader board and the next race now follow. Done iter 106: music - Nuked OPL3 behind FMCHIP's
    0x388, SDL audio or PORT_WAV; port/check.sh step 3 compares the Apogee song with the original's
    recording (captures/apogee_ww.wav, `tools/dosrun.py wave start|stop`): corr 0.945, mutation 0.848. Done iter 106: the port's rand/srand
    (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under Unicorn,
