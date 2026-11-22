@@ -63,6 +63,13 @@ it can be copied back into DREA.
 
 ## This project's traps
 
+- Scripted port runs change the game's own files in `.work/port/run`: a forced finish writes
+  WACKY1.HI / WACKY1.TIM records, and a run through GAME OPTIONS saves the chosen detail level to
+  WACKY.CFG - which then silently changes every later run (a "Medium" test raced at Low). Copy
+  `original/WACKY*.HI original/WACKY*.TIM original/WACKY.CFG` back after each run. Menus: a
+  cursor move starts a ~240 ms slide that drops input, so space moves 330-400 ms apart and keep
+  them in the last 1.3 s before the next Enter; Up wraps from the first entry to the last.
+
 - **A native port of a DOS game runs its I/O-paced code ten times too fast** [generic] (iter 106, port
   Q2). Code that waits on 0x3da per palette entry (`dac_load`) and menus that read Enter without a
   release wait both depend on the ISA bus's ~1 us per port access and on 0x3da following real scanline
