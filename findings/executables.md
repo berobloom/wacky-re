@@ -259,6 +259,12 @@ loader that runs it, so `tools/ass/build.sh` runs `BINNT/wcc386.exe` under Wine 
   heap table that differs by one constant (0x7ed100c, the two heaps' bases). The race steps once
   per frame (`ticks2`, race_run 0x3114c); the start order comes from `srand(racetime)` in fn_1be3c,
   so it changes with how long the menus took (the original's run: seed 459, the port's 441).
+  With player input too (CONFIRMED, 2026-11-22, port/check.sh step 5): captures/race_inputs.txt
+  (accelerate, steer both ways, brake, hop, fire) written into player one's key-state bytes
+  (0x7b6d9 ... 0x7b6e3, findings/input.md) at the frame's `ticks2++` in both - the original through
+  `tools/dosrun.py watch --pokes`, the port through gdb - gives 800 equal frames; the input changes
+  player 0 from frame 1 (against the undriven trace), and swapping left and right in the steering
+  (src/ww.c, `v88b98 = key88cdd != 0`) fails at frame 61, one frame after the first left press.
   MV_Init keeps its DMA ring inside one 64 KB page with `(ptr & 0xff0000) + 0x10000`, a 24-bit ISA
   address rule.
   MIDI (iter 93i, 0x4A890-0x4B553, 3267 bytes, same length as the rebuild, 324 bytes differ in four

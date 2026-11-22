@@ -76,8 +76,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
    with forced finishes - no crash left (findings/game-loop.md "Reads through NULL").
    Done 2026-11-22: the race against the original - port/check.sh step 4 compares 600 race frames
    of all eight player records with captures/race_trace_ww.bin (SAME; 1201 frames checked once;
-   mutation in cpu_drive fails at frame 35). Next: the same with player input (needs input the
-   harness can give at a known frame) and the karts[] records.
+   mutation in cpu_drive fails at frame 35). Done 2026-11-22: the same with player input -
+   port/check.sh step 5, 800 frames SAME with captures/race_inputs.txt written into the key-state
+   bytes per frame (tools/dosrun.py watch --pokes; left/right swapped fails at frame 61).
+   Next: the karts[] records in the trace.
    Fixed 2026-11-22: leaving the game crashed the port - end_screen's textscreen_show writes
    WWREG.BIN to B800:0; port/src/textmode.c maps 0xb8000 and prints the screen to the terminal
    (the window has no VGA font). WWREG.BIN hides an editor's BBS menu in attribute 0x77 (grey on

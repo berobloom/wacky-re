@@ -27,7 +27,7 @@ usage: dosrun.py start                 launch (no-op if running)
                                        break at a linear address (e.g. a packed
                                        program's real entry), dump 0..0xA0000
                                        there, print the registers, resume
-       dosrun.py watch 0xLIN[,0xLIN..] 0xMEM:len[,0xMEM:len..] [secs]
+       dosrun.py watch 0xLIN[,0xLIN..] 0xMEM:len[,0xMEM:len..] [secs] [--pokes FILE]
                                        no watchpoints in the stub: break at
                                        candidate code addresses and print the
                                        memory each time it has changed, with
@@ -297,16 +297,33 @@ def resume_over(r, addr):
     r.continue_nowait()
 
 
-def watch(addrs, mems, secs=60.0, out=sys.stdout):
+def load_pokes(path):
+    """A pokes file for watch: one `EIP COND_ADDR COND_VALUE ADDR HEX` per line (numbers in any
+    base int() takes, '#' comments). At a hit at linear EIP whose u32 at COND_ADDR equals
+    COND_VALUE ('-' for both: every hit) the bytes HEX are written to ADDR, before the watched
+    memory is read. The way to give the same input on the same frame to a port and to the
+    original, whose timing differs: key on a frame counter, write the game's key-state bytes."""
+    pokes = []
+    for line in open(path):
+        f = line.split('#')[0].split()
+        if not f:
+            continue
+        cond = None if f[1] == '-' else (int(f[1], 0), int(f[2], 0))
+        pokes.append((int(f[0], 0), cond, int(f[3], 0), bytes.fromhex(f[4])))
+    return pokes
+
+
+def watch(addrs, mems, secs=60.0, out=sys.stdout, pokes=()):
     """A poor man's watchpoint: breakpoints at the linear `addrs`; at each
     hit read the (addr, size) ranges in `mems` and print them when they
     differ from the previous hit, with the eip hit (so a write is bracketed
     between two candidates). Runs `secs` seconds; returns the hit count."""
     r = RspClient('127.0.0.1', GDB_PORT, max(secs, 10.0) + 10.0)
     hits, prev, t0 = 0, None, time.time()
+    pokeonly = sorted({p[0] for p in pokes} - set(addrs))
     try:
         r.halt(5.0)
-        for a in addrs:
+        for a in list(addrs) + pokeonly:
             r.insert_breakpoint(a)
         r.continue_nowait()
         while time.time() - t0 < secs:
@@ -315,6 +332,13 @@ def watch(addrs, mems, secs=60.0, out=sys.stdout):
             except Exception:
                 break
             eip = r.registers()['eip']
+            for pe, cond, pa, data in pokes:
+                if pe == eip and (cond is None or
+                                  int.from_bytes(r.read_memory(cond[0], 4), 'little') == cond[1]):
+                    r.write_memory(pa, data)
+            if eip in pokeonly:
+                resume_over(r, eip)
+                continue
             vals = [r.read_memory(a, n) for a, n in mems]
             hits += 1
             if vals != prev:
@@ -328,7 +352,7 @@ def watch(addrs, mems, secs=60.0, out=sys.stdout):
             r.halt(5.0)
         except Exception:
             pass
-        for a in addrs:
+        for a in list(addrs) + pokeonly:
             r.remove_breakpoint(a)
         r.continue_nowait()
         r.close()
@@ -380,8 +404,13 @@ def main(argv):
             print('%-6s %08x' % (k, v))
     elif cmd == 'watch':
         addrs = [int(a, 0) for a in args[0].split(',')]
+        pokes = []
+        if '--pokes' in args:
+            i = args.index('--pokes')
+            pokes = load_pokes(args[i + 1])
+            del args[i:i + 2]
         mems = [(int(m.split(':')[0], 0), int(m.split(':')[1], 0)) for m in args[1].split(',')]
-        print('hits', watch(addrs, mems, float(args[2]) if len(args) > 2 else 60.0))
+        print('hits', watch(addrs, mems, float(args[2]) if len(args) > 2 else 60.0, pokes=pokes))
     elif cmd == 'regs':
         for k, v in regs().items():
             print('%-6s %08x' % (k, v))

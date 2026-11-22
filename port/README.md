@@ -97,7 +97,7 @@ The game's last screen is a DOS text screen (WWREG.BIN, the Apogee ordering noti
 the prompt after the program ends. The port prints it to the terminal it was started from, in
 colour, and the window's title asks for the key the game waits for (`port/src/textmode.c`).
 
-### Checks (`port/check.sh`, about 3 minutes)
+### Checks (`port/check.sh`, about 5 minutes)
 
 | Step | Compares with | Mutation that must fail it |
 |---|---|---|
@@ -105,13 +105,17 @@ colour, and the window's title asks for the key the game waits for (`port/src/te
 | 2 menus | racetest's ENGINES and overview shots | `PORT_IO_NS=0` |
 | 3 sound | `captures/apogee_ww.wav` (audiocmp, >= 0.9) | OPL register + 1 (0.848); 16-bit ring as signed (0.838) |
 | 4 race | `captures/race_trace_ww.bin`: 600 race frames, the eight player records byte for byte (port/tools/racecmp.py) | cpu_drive's path step `step < v88c24` (DIFF at frame 35) |
+| 5 drive | `captures/race_drive_ww.bin`: 800 frames of the same race with `captures/race_inputs.txt` as player one's input | left and right swapped in the steering, `v88b98 = key88cd5 != 0` (DIFF at frame 61) |
 
 The race is a frame-by-frame trace taken at race_run's `ticks2++`, in the original with
 `tools/dosrun.py watch 0x3114c+delta` and in the port with gdb. It works because the race steps
 once per frame (ticks pace only the display: the port at 12 and 15 ticks a frame gave the same
 600 frames) and because the grid seed (`racetime` at fn_1be3c, which depends on how long the menus
 took) is forced to the original run's 459, found by calling the game's own fn_1be3c in the port
-under gdb for every seed until its start order matched. No player input: the computer karts race.
+under gdb for every seed until its start order matched. Step 4 has no player input; step 5 gives
+the same input to both by writing player one's key-state bytes (0x7b6d9 ...) at the frame's
+`ticks2++`, keyed on ticks2 (`port/tools/raceinput.py`: a pokes file for `tools/dosrun.py watch
+--pokes` and gdb commands for the port), so neither side's timing matters.
 
 ## Layout that worked
 

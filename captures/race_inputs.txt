@@ -1,0 +1,26 @@
+# Player one's input for the race comparison with input (port/check.sh step 5, port/tools/raceinput.py):
+# FRAME CONTROL down|up, FRAME = ticks2 at race_run's ticks2++. Accelerate throughout, steer both
+# ways, brake, hop, fire.
+0 accel down
+60 left down
+75 left up
+120 right down
+150 right up
+200 hop down
+203 hop up
+230 fire down
+233 fire up
+300 brake down
+320 brake up
+400 left down
+440 left up
+480 right down
+500 right up
+550 hop down
+553 hop up
+600 fire down
+603 fire up
+650 left down
+700 left up
+750 right down
+790 right up

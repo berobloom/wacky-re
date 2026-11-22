@@ -28,6 +28,8 @@
 #    under DOSBox-X, tools/dosrun.py watch at 0x3114c): 600 frames, every byte equal but the heap
 #    pointer f5e (one constant delta). The race steps per frame, so gdb's slowness does not matter.
 #    Mutation: see port/README.md "Checks".
+# 5. the race with player input: as 4, with captures/race_inputs.txt written into player one's key
+#    state bytes at each frame (port/tools/raceinput.py), 800 frames against captures/race_drive_ww.bin.
 # Runs from a copy of the game directory (.work/port/run, made from original/ on first use).
 set -u
 cd "$(dirname "$0")/.."
@@ -72,10 +74,14 @@ rm -f "$wav"
 [ -f "$wav" ] || { echo "PORTCHECK FAIL music: no recording (the port stopped early)"; exit 1; }
 r_music=$(python3 port/tools/audiocmp.py "$wav" captures/apogee_ww.wav) ||
     { echo "PORTCHECK FAIL music: $r_music"; exit 1; }
-trace=$out/check_race.bin
-rm -f "$trace"
 line=$(awk '/^void race_run\(void\)$/ {f = 1} f && /^    ticks2\+\+;$/ {print NR; exit}' src/ww.c)
-cat > $out/check_race.gdb <<EOF
+# race_trace NAME FRAMES [INPUT_SCRIPT]: the race traced at every ticks2++ into $out/check_NAME.bin
+race_trace() {
+trace=$out/check_$1.bin
+rm -f "$trace"
+inputs=""
+[ -n "${3:-}" ] && inputs=$(python3 port/tools/raceinput.py gdb "$3")
+cat > $out/check_$1.gdb <<EOF
 set pagination off
 set confirm off
 break fn_1be3c
@@ -90,7 +96,8 @@ silent
 append binary memory $trace 0x7ec64 0x7ec68
 append binary memory $trace 0x6aa90 0x6add0
 append binary memory $trace 0x70720 0x70730
-if ticks2 >= 600
+$inputs
+if ticks2 >= $2
   kill
 end
 cont
@@ -98,9 +105,14 @@ end
 run
 EOF
 (cd $run && PORT_HEADLESS=1 PORT_KEYS=$keys,$((t + 8500)):39,$((t + 8580)):b9 PORT_EXIT=$((t + 200000)) \
-    timeout 300 gdb -q -batch -x $out/check_race.gdb --args ../wacky > /dev/null 2>&1 < /dev/null)
-cp original/WACKY*.HI original/WACKY*.TIM $run/ 2>/dev/null
-[ -f "$trace" ] || { echo "PORTCHECK FAIL race: no trace (the port stopped early)"; exit 1; }
+    timeout 400 gdb -q -batch -x $out/check_$1.gdb --args ../wacky > /dev/null 2>&1 < /dev/null)
+cp original/WACKY*.HI original/WACKY*.TIM original/WACKY.CFG $run/ 2>/dev/null
+[ -f "$trace" ] || { echo "PORTCHECK FAIL $1: no trace (the port stopped early)"; exit 1; }
+}
+race_trace race 600
 r_race=$(python3 port/tools/racecmp.py captures/race_trace_ww.bin "$trace" 600) ||
     { echo "PORTCHECK FAIL race: $r_race"; exit 1; }
-echo "PORTCHECK OK title SAME; engines: $r_engines; overview: $r_overview; music: $r_music; race: $r_race"
+race_trace drive 800 captures/race_inputs.txt
+r_drive=$(python3 port/tools/racecmp.py captures/race_drive_ww.bin "$trace" 800) ||
+    { echo "PORTCHECK FAIL drive: $r_drive"; exit 1; }
+echo "PORTCHECK OK title SAME; engines: $r_engines; overview: $r_overview; music: $r_music; race: $r_race; drive: $r_drive"
