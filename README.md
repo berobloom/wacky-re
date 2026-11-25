@@ -29,13 +29,13 @@ changes or redistributes the original files.
 
 ## Progress
 
-<a href="docs/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
+<a href="https://berobloom.github.io/wacky-re/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
 
 **207 of the game's 285 C functions compile to the original's exact bytes.**
 The other 78 are near misses. The game's assembler module (`src/wwasm.asm`) reassembles
 to the original's bytes exactly; the libraries are outside that count.
 
-[`docs/WWPROGRESS.HTML`](docs/WWPROGRESS.HTML) lists every function: search it,
+[`docs/WWPROGRESS.HTML`](https://berobloom.github.io/wacky-re/WWPROGRESS.HTML) lists every function: search it,
 filter it by status or subsystem, and click a near miss to see its instruction
 diff against the game. [`PROGRESS.md`](PROGRESS.md) has the same numbers as
 tables, part by part and by subsystem. `tools/progress.py` writes all three from a fresh build of
