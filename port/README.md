@@ -97,6 +97,16 @@ The game's last screen is a DOS text screen (WWREG.BIN, the Apogee ordering noti
 the prompt after the program ends. The port prints it to the terminal it was started from, in
 colour, and the window's title asks for the key the game waits for (`port/src/textmode.c`).
 
+### Fixed along the way (2026-11-22, moved here from STATUS.md)
+
+- Finishing a race 1st-3rd crashed the port: fn_173c4 (src/ww.c) left the win animation's face
+  frames 0x7b38c.. empty (its loop cursor restarted; the game's code at 0x1762f).
+- WWREG.BIN, which end_screen writes to B800:0, hides an editor's BBS menu in attribute 0x77 (grey on
+  grey, invisible in the original's screenshot): textmode.c prints it as blanks.
+- The port's rand/srand (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under
+  Unicorn: `port/tools/checkrand.py` -> RANDCHECK OK (14 seeds + unseeded x 2000 draws; mutation
+  0x3039 -> 0x3038 fails it).
+
 ### Checks (`port/check.sh`, about 5 minutes)
 
 | Step | Compares with | Mutation that must fail it |
@@ -118,6 +128,10 @@ the same input to both by writing player one's key-state bytes (0x7b6d9 ...) at 
 --pokes` and gdb commands for the port), so neither side's timing matters.
 
 ## Layout that worked
+
+From the earlier ports (another game's layout), kept as reference; this port's tree is
+`port/build.sh`, `port/src/` (vga.c, machine.c, audio.c, blaster.c, ...) and `port/tools/`, with no
+CMake and no web build.
 
 ```
 port/

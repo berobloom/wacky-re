@@ -39,60 +39,26 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 ## Next
 
-0. Iter 104 named all 61 asm-module loop headers (`.kind_<address>`, findings/video.md; bytes and fixups
-   unchanged) and closed the C module's offline near-miss list: the 15 register-home functions are every
-   one `MATCH` or `VB:`, and the eight 2-row lines are the emission-order class (GOTCHAS).
-1. Sound library: src/ass is ASS at Wacky Wheels' revision (iter 93; src/ass/README.md). Iter 105
-   found the game's compiler: the **Watcom 10.0 release** (5/1994, `WC100R`, run under Wine), one
-   compiler for every module. `tools/ass/asscheck.py` 283 of 285 named functions, 19 modules whole
-   (findings/executables.md). Two near misses left, both register allocation: MIDI_PlaySong
-   (39 rows; declaration orders and four header-read spellings tried) and FMCHIP's
-   FM_SetChannelTimbre (22 rows, DL/EDX vs AL/EAX; the tried spellings are in its FMCHIP.C note).
-   The game's own C is 9.5b beyond doubt: iter 105 built it with every Watcom here (9.5, 9.5a, 10.0
-   prerelease, release, 10.0a, 10.0b; 9.5c in iter 93p) and none matches a function 9.5b misses.
-2. `src/wwasm.asm` branch targets are all named (iter 105, findings/video.md), except the compare-chain
-   arms of `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c, which keep `.L<address>` on purpose.
-3. `trial_book` 0x2e4b8 is walked (iter 105: 1006 of 1034 starts, every record outcome SAME; findings/menus.md).
-   Since iter 105 `tools/wc/difffn.py` stubs the hybrid's `WWASM_TEXT` too (GOTCHAS).
-4. `kart_bump` 0x22bf4 is walked (iter 105: 603 of 606 starts, the 3 left unreachable; findings/game-loop.md).
-5. `demo_mode` 0x1e2e4 is walked (iter 105: modes 1-3 SAME, 189 of 221 starts; the second-race path needs a
-   race that ends without the abort, out of the harness's reach; findings/menus.md).
-6. DIFF-bucket pass done (iter 105): of the 72 non-matching functions, 68 are SAME with the default
-   env. The 4 DIFFs are the dead `v7d874`/`v7d7f4` stores and `palptr`'s stack address; `net_input`
-   needed a seed for `p7e728`. `difffn.py BUCKET=1` buckets any DIFF (findings/game-loop.md). Open:
-   `net_input` coverage (55 of 203 starts), `race_run` (784 of 2028).
-7. Port (iter 106, QUEUE Q2 ready for review): menus to the first race match the original's. Next
-   candidate: the race itself against a deterministic reference. Done iter 106: sound effects -
-   FX_MAN + MULTIVOC as rebuilt over the port's SB16 (blaster.c), mixed with the OPL; the Apogee
-   recording now scores 0.956 with the logo's voice (QUESTIONS.md 30: the original's 16-bit data is
-   unsigned though the DSP is told signed). Fixed 2026-11-22: finishing a race 1st-3rd crashed the
-   port - fn_173c4 (src/ww.c) left the win animation's face frames 0x7b38c.. empty (loop cursor
-   restarted; game 0x1762f); the leader board and the next race now follow. Also 2026-11-22: the hall of fame's stamp is today's
-   date (0x43164 is _dos_getdate, INT 21h/2Ah - findings/scores.md had 2Ah/2Ch swapped, and the port
-   stamped "31 JUN 3370"); a forced cup (13 races 1st, the final, rostrum, name entry) and forced
-   4th places (TRY TO QUALIFY, lives, GAME OVER) run through without a crash. Then time trial
-   (a NULL surface read the original makes too: port_lowmem), two-player race and shoot-out
-   (cars_menu's turn tests were inverted: fixed, 445 -> 444), duck shoot and kid mode, each driven
-   with forced finishes - no crash left (findings/game-loop.md "Reads through NULL").
-   Done 2026-11-22: the race against the original - port/check.sh step 4 compares 600 race frames
-   of all eight player records with captures/race_trace_ww.bin (SAME; 1201 frames checked once;
-   mutation in cpu_drive fails at frame 35). Done 2026-11-22: the same with player input -
-   port/check.sh step 5, 800 frames SAME with captures/race_inputs.txt written into the key-state
-   bytes per frame (tools/dosrun.py watch --pokes; left/right swapped fails at frame 61).
-   Done 2026-11-22: the karts[] records are in step 5's trace and equal (pointer fields by one
-   constant each; a kart-only mutation fails at frame 35).
-   Fixed 2026-11-22: leaving the game crashed the port - end_screen's textscreen_show writes
-   WWREG.BIN to B800:0; port/src/textmode.c maps 0xb8000 and prints the screen to the terminal
-   (the window has no VGA font). WWREG.BIN hides an editor's BBS menu in attribute 0x77 (grey on
-   grey; invisible in the original's screenshot, .work/orig_endscreen.png): printed as blanks.
-   Menus driven without a crash (2026-11-22): Wacky Wheels Info (ordering and instructions demos,
-   Famous Drivers and the time-trial hall of fame, credits), Ordering Info, Volume Levels, Race
-   Screen Options, Graphic Detail; races at Medium and Low detail. Not driven: Comm-Bat. Done iter 106: music - Nuked OPL3 behind FMCHIP's
-   0x388, SDL audio or PORT_WAV; port/check.sh step 3 compares the Apogee song with the original's
-   recording (captures/apogee_ww.wav, `tools/dosrun.py wave start|stop`): corr 0.945, mutation 0.848. Done iter 106: the port's rand/srand
-   (port/src/wrand.c, seed at the game's 0x64008) equal WW.EXE's under Unicorn,
-   `port/tools/checkrand.py` -> RANDCHECK OK (14 seeds + unseeded x 2000 draws; mutation 0x3039 ->
-   0x3038 fails it).
+History of the items below is in git (`git log --grep 'iter 10[4-6]'`) and in the findings files.
+
+1. Sound library (src/ass, ASS at Wacky Wheels' revision, built with the **Watcom 10.0 release**,
+   iter 105): `tools/ass/asscheck.py` 283 of 285 functions, 19 modules whole. Left: MIDI_PlaySong
+   (39 rows) and FMCHIP's FM_SetChannelTimbre (22 rows, DL/EDX vs AL/EAX), both register allocation.
+   The game's own C is 9.5b beyond doubt (iter 105 built it with every Watcom here).
+2. C near misses: the offline list is closed (iter 104: the 15 register-home functions are each
+   `MATCH` or `VB:`; the eight 2-row lines are the emission-order class, GOTCHAS). Untested leads from
+   other Watcom projects: QUESTIONS "Leads from other Watcom matching projects".
+3. `src/wwasm.asm`: every routine and branch target named (iters 91, 104, 105), except the
+   compare-chain arms of `rect_overlap` 0x36d69 and `surface_at_7c` 0x37a6c (`.L<address>` on purpose).
+4. Behaviour coverage (`tools/wc/difffn.py`, iter 105): trial_book 1006/1034 starts, kart_bump
+   603/606, demo_mode 189/221 (second-race path out of reach), all SAME; of the 72 non-matching
+   functions 68 are SAME with the default env (`BUCKET=1` buckets a DIFF; findings/game-loop.md).
+   Open: `net_input` coverage (55 of 203 starts), `race_run` (784 of 2028).
+5. Port (iter 106; QUEUE Q1, Q2 ready for review): title, menus, race (600 frames, step 4) and race
+   with player input (800 frames, step 5) equal the original's; music (Nuked OPL3, corr 0.945) and
+   effects (FX_MAN + MULTIVOC, 0.956); rand equals WW.EXE's under Unicorn; every menu, cup, time trial,
+   two-player modes, duck shoot and kid mode driven without a crash (findings/game-loop.md "Reads
+   through NULL"). Not driven: Comm-Bat. Next candidate: a QUEUE item from the human.
 
 ## BLOCKED
 

@@ -11,19 +11,14 @@ Do exactly this, in order:
    Obey the context-budget rules in `AGENTS.md`: grep before reading, read line ranges, never read
    whole: `.work/ghidra/*.c`, `src/ww.c` (~19k lines, grep it), `harness/TRAPS.md`.
 
-2. REGISTER-HOME NIGHT: the near misses whose only difference is which register a value lives in.
-   210 of 285 functions are byte-identical (`src/matched.baseline`). Iter 93s matched netkeys_out,
-   netkeys_pack and netkeys_in after 30+ failed spellings, by one idea: the game had NO local there.
-   The game's register was Watcom's own temporary for a GLOBAL that the source used in place
-   (`v88cf0 = 0; if (k) v88cf0 += 2;` instead of `c = 0; if (k) c += 2; v88cf0 = c;`). A register
-   the allocator would never give a declared local is often the home of such a compiler temp
-   (findings/compiler.md, GOTCHAS "Which of two locals gets EAX"). Tonight retries that idea and its
-   relatives on these functions, in this order, up to 3 per iteration:
-     shots_clear 0x2d4fc, shots_move 0x2602c, voices_reset 0x11adc, drawsprite_clip 0x11404,
-     self_project 0x26a3c, fn_1bf00 0x1bf00, net_input 0x2f4a8, com_wait_byte 0x2df70,
-     com_expect 0x2e008, fade_in 0x32cf8, view_at_curpos 0x2f408, pcx_load 0x27060,
-     net_recv 0x2db00, fn_19db8 0x19db8, car_laps 0x12b44
-   Skip one whose `src/nearmiss.txt` status already starts with `VB:` (an earlier pass did it).
+2. THE TASK comes from `QUEUE.md` only (step 1). If it has no open item, write nothing, commit
+   nothing, print `NO TASK: QUEUE.md has no open item` and stop: the night's list of register-home
+   functions is used up (iter 104: each is `MATCH` or `VB:`), and nights that steered themselves from
+   STATUS `## Next` repeated themselves (2026-11-19). When the item names near-miss functions, work
+   them with the recipe below, up to 3 per iteration, and skip one whose `src/nearmiss.txt` status
+   already starts with `VB:`. Levers for register-home misses: the game's register is often Watcom's
+   own temporary for a GLOBAL the source used in place (`v88cf0 = 0; if (k) v88cf0 += 2;`, not a
+   local copied into it: iter 93s, findings/compiler.md, GOTCHAS "Which of two locals gets EAX").
    For one function:
    a. Read its `differs:` note in `src/ww.c` (grep `^[a-z].* NAME(` and read from the comment above
       it to the closing brace) and the rows: `.work/venv/bin/python tools/wc/fndiff.py ww
@@ -75,8 +70,8 @@ Do exactly this, in order:
 4. Update `STATUS.md` ONCE, at the end of the iteration, inside your last commit (not a commit of
    its own). Change only the match count line and the `## Next` items (at least 3, small, doable in
    one iteration). Levers, tried spellings and SKIP lists do NOT go into STATUS.md: they live in
-   GOTCHAS.md, the `differs:` notes and `src/nearmiss.txt`. Keep it under 60 lines (`wc -l
-   STATUS.md`); if it is longer, delete your own additions rather than trimming in extra commits.
+   GOTCHAS.md, the `differs:` notes and `src/nearmiss.txt`. Keep it at 80 lines or fewer (`wc -l
+   STATUS.md`; `overnight/check.sh` fails above 80); if it is longer, delete your own additions rather than trimming in extra commits.
 
 5. Run `overnight/check.sh` after committing. If it fails, fix the cause and commit again until it
    prints OK. Never edit `overnight/` or `original/` to make it pass.

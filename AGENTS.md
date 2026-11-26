@@ -1,11 +1,10 @@
-# <GAME> reverse engineering
-
-<!-- Template from DREA. Replace every <...>, delete this comment. -->
+# Wacky Wheels reverse engineering
 
 ## Project goal
 
-Reverse engineer the <year> DOS game <GAME> (<publisher>) and reimplement it in
-C <for SDL2 / the browser / ...>.
+Reverse engineer the 1994 DOS game Wacky Wheels (Beavis Soft, published by Apogee; version 1.1,
+registered), rebuild WW.EXE's C byte for byte (`src/ww.c`, MATCHING.md), and run that source on
+the desktop (SDL2) through the port's runtime (`port/`).
 
 ## Session start (in this order)
 
@@ -13,7 +12,7 @@ C <for SDL2 / the browser / ...>.
 2. `QUEUE.md`: the human's work list. Its first open item is the task.
 3. `METHOD.md`: how to RE and port one thing. Follow it.
 4. `findings/INDEX.md`, then only the one findings file the task needs.
-5. `STATUS.md`, then `GOTCHAS.md` (17 traps; the rest is in
+5. `STATUS.md`, then `GOTCHAS.md` (the top list first; the rest is in
    `harness/TRAPS.md`: grep it when something looks impossible).
 
 ## Context budget
@@ -64,18 +63,16 @@ written into `../DREA` the same session, tagged with this project's name:
 
 - `original/` holds the untouched game files (read-only; checksums in
   `original/SHA256SUMS`). Derived files go to `.work/` (not committed).
-- Executables: <list, format: MZ 16-bit / LE DOS/4GW / ...>; details in
-  `findings/executables.md`.
-- Address convention: <real mode: `rel SSSS:OOOO`, the segment relative to
-  the load segment (PSP + 0x10), which no boot changes; a boot's own
-  `SSSS:OOOO` or linear only with that boot's load segment named | LE: the image's own addresses (code object at
-  0x10000), as `tools/le/leparse.py` loads them>. Run-time deltas this boot:
+- Executables: `WW.EXE` (the game) and `SETUP.EXE`, both MZ stubs with DOS/4GW bound in front of
+  an LE program (Watcom C/C++32 9.5b); details in `findings/executables.md`.
+- Address convention: the LE image's own addresses (code object at 0x10000), as
+  `tools/le/leparse.py` loads them. Run-time deltas this boot:
   derive them (`tools/dosrun.py locate <prog>` for LE), never copy them from
   notes.
 
 ## Running the original
 
-The patched DOSBox-X and MCP server live in `<path>/dos-re-suite`
+The patched DOSBox-X and MCP server live in `../dos-re-suite`
 (`harness/README.md`). `harness/install.sh` installs the game into
 `.work/dos/C`; `tools/dosrun.py` drives it on a hidden Xvfb display (type,
 keys, screenshots, memory, save states). Through MCP: the `dosre` server
@@ -83,7 +80,7 @@ keys, screenshots, memory, save states). Through MCP: the `dosre` server
 port: never run two agents on
 one harness.
 
-Debug switches of the game: <e.g. /DEBUG writes DEBUG.TXT>.
+Debug switches of the game: none known.
 
 ## Reverse engineering rules
 

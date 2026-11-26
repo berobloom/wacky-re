@@ -1,6 +1,8 @@
 # GOTCHAS: read every session
 
-The traps that cost the most time, in one screen. The full list, by topic, is
+The traps that cost the most time: the numbered list below fits one screen; the long sections
+under "This project's traps" (reading near-miss diffs, levers, dead ends) are grep material. The
+full harness list, by topic, is
 `harness/TRAPS.md`: grep it when something looks impossible.
 
 Rules for this file: one line or two per trap; harness, tool and process traps
@@ -1037,7 +1039,7 @@ From the chat history (2026-11-16..25) and the memory notes.
   2161/4446. CONFIRMED
 - **With QUEUE.md empty a night steers itself from STATUS `## Next` and turns repetitive** (11-19
   passes 12-16 kept extending emulator coverage without moving the count). Write the night's task into
-  QUEUE or prompt step 2. CONFIRMED
+  QUEUE: since 2026-11-26 prompt step 2 stops with `NO TASK` when QUEUE has no open item. CONFIRMED
 - **A helper the night writes to `/tmp` is lost** (`/tmp/introdiff.py` behind a findings section, rebuilt
   as `difffn.py BUCKET=1` in iter 105): a tool a finding depends on is committed under `tools/`.
   CONFIRMED

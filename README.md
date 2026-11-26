@@ -31,7 +31,7 @@ changes or redistributes the original files.
 
 <a href="https://berobloom.github.io/wacky-re/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
 
-**207 of the game's 285 C functions compile to the original's exact bytes.**
+**213 of the game's 285 C functions compile to the original's exact bytes.**
 The other 78 are near misses. The game's assembler module (`src/wwasm.asm`) reassembles
 to the original's bytes exactly; the libraries are outside that count.
 
@@ -58,8 +58,9 @@ src/check.sh                    # compile src/ww.c, compare every function with 
 ```
 
 `WW.EXE` goes in `original/`, untouched; `original/SHA256SUMS` lists the
-files the notes were made with. There is no playable build of `src/ww.c` yet:
-it is compared as an object file, function by function.
+files the notes were made with. `src/ww.c` is checked as an object file, function by
+function; the port (`port/`, `port/build.sh`) runs the same source on SDL2 through every menu and
+the race (port/README.md).
 
 ## Layout
 
@@ -98,11 +99,11 @@ there.
 ## Status
 
 The game's C is all written (fn_1c068 and fn_1c0ac stay out on purpose: the compiler would
-inline them where the game calls them), and 207 of its functions match. The assembler module
-(VGA drawing, interrupt handlers) is reassembled byte for byte from `src/wwasm.asm`, still as raw
-disassembly. The hybrid link (`tools/link/build.sh`) uses our C and our asm with the game's library
+inline them where the game calls them), and 213 of its functions match (PROGRESS.md has the current count). The assembler module
+(VGA drawing, interrupt handlers) is reassembled byte for byte from `src/wwasm.asm`, with every
+routine and label named. The hybrid link (`tools/link/build.sh`) uses our C and our asm with the game's library
 bytes and runs to the first race. The sound library is being rebuilt from source in `src/ass`
-(16 modules byte-identical so far, `tools/ass/asscheck.py`). Not started: a link that reproduces
+(19 modules byte-identical, 283 of 285 functions, `tools/ass/asscheck.py`). Not started: a link that reproduces
 WW.EXE's layout.
 
 ## License
