@@ -34,8 +34,8 @@ Short: where the project stands, and what is next. History is in git; no diary.
   (port/README.md). Check: `port/check.sh` -> `PORTCHECK OK` (title screen pixel-identical to the
   original's; iter 106: racetest's key path reaches ENGINES and the track overview as the original does,
   QUEUE Q2); mutations: `plane[x & 3]` -> `plane[(x + 1) & 3]` in vga.c's render, and `io_cost` returning
-  at once, each make it FAIL. Music runs through the game's own FM song player (no OPL2 yet: silent);
-  sound effects are stubs. Timing model: port/README.md "Timing".
+  at once, each make it FAIL. Music runs through the game's own FM song player into Nuked OPL3, and the
+  sound effects through FX_MAN + MULTIVOC (`port/check.sh` step 3; see Next). Timing model: port/README.md "Timing".
 
 ## Next
 
@@ -97,6 +97,6 @@ Short: where the project stands, and what is next. History is in git; no diary.
 ## BLOCKED
 
 - The dead-end classes in GOTCHAS ("Dead ends: SKIP at once"): stack-slot permutation (except where
-  the spilled locals are the whole frame - see the `volatile` array lever), a global
-  promoted across a loop, the EAX/pushed-register coin flip, straight-line scheduling, folded
+  the spilled locals are the whole frame - see the `volatile` array lever), the
+  EAX/pushed-register coin flip, straight-line scheduling, folded
   address constants. QUESTIONS.md 1, 2, 3, 9, 10.

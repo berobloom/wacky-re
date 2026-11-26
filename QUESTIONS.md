@@ -204,7 +204,10 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     and the ring at 0x10240 held 0x5000-0x6700 values, not silence. What would settle it: trace the DSP
     bytes the original writes to 0x22C (a port-write breakpoint) and DOSBox-X's dma.sign and IRQ state, in a
     run without halting reads; and whether the stall is the reads' doing. The port plays the ring as unsigned
-    (port/src/audio.c sb_read), matching the reference.
+    (port/src/audio.c sb_read), matching the reference. Ruled out (2026-11-22): a bad interrupt-status
+    ack - BLASTOLD's ISR acks 0x22F on `MIXER_16BITDMA_INT` and 0x22E on `MIXER_8BITDMA_INT`, which
+    `src/ass/_BLASTER.H:58-59` define as 0x2 and 0x1, the bits DOSBox-X returns from mixer register 0x82
+    (LIKELY: DOSBox-X's values read from its source in that session).
 
 ## Hypotheses
 
@@ -396,7 +399,9 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    320-pixel window from `v7d860` to screen rows 110..129 each frame, and the screenshot matches
    that window (93.9%, the rest karts and HUD). The earlier LIKELY 320x20 at 4 bytes a pixel was
    wrong.
-21. **OPEN** (findings/formats.md "SPRITE.ATR"): what do `kind` 3..7 do in the race? CONFIRMED: the
+21. **ANSWERED** (2026-11-18, findings/game-loop.md "Pickups, weapons and shot kinds": kinds 3..7 are
+   a weapon, `f16 = kind`, taken only when the kart holds no weapon). Was (findings/formats.md
+   "SPRITE.ATR"): what do `kind` 3..7 do in the race? CONFIRMED: the
    record field at +0x00 partitions the 36 sets - kind 0 the twelve one-frame OB sets, kind 1 OB1.SP
    alone, kind 2 the eighteen animated H sets, and kinds 3,4,5,6,7 exactly one set each: H1.SP (id 0,
    the only set in all 42 `.SPW` lists, 69 instances), H15.SP, H12.SP, H16.SP, H20.SP; the game reads
@@ -458,7 +463,9 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     `ww.c`, where adding literals moves every later literal of its CONST group and breaks the
     327-references base check. Unknown neighbour: the three `01` bytes at 0x60000-0x60002 (four dwords in
     the image hold 0x60000: 0x35580, 0x47692, 0x476c6, 0x4d636; none of the other three addresses).
-26. **OPEN** (iter 84, `intro` 0x348f4): is intro clean? Its run now returns on both sides with
+26. **RESOLVED** (iter 89, findings/game-loop.md: the 123 DIFF bytes are all stub-harness garbage, not
+    our C; src/nearmiss.txt intro SEEDED; reproduced by iter 105's `BUCKET=1`). Was (iter 84, `intro`
+    0x348f4): is intro clean? Its run now returns on both sides with
     `TICK=8 TICKREAD=8 SEED=0x88cce=1:b,0x88cd0=1:b,0x88c46=4:w,0x7d858=0x8000:d RESEED=0x88cd0=0:b`
     and the control is SAME, but 123 DIFF bytes remain and **all of them are inside the harness's
     0x0-0x10000 scratch page**, written through the palette/picture pointers `main` takes from
@@ -513,10 +520,43 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
     (`fn_16f90` area) and 0x7cbe8 (main): 202 MATCH unchanged, every verdict line unchanged, RACETEST
     race mean 2.3 -> 1.1. `tools/link/fixcensus.py` finds the class (0 unexplained now).
 
-28. **OPEN** (iter 101, `fn_182d0` 0x182d0): why does the game's 9.5b keep a dead register copy -
+31. **OPEN, same as 14** (renumbered from a second "28"; iter 101, `fn_182d0` 0x182d0): why does the game's 9.5b keep a dead register copy -
    `mov esi,ebx` 0x182d4 immediately followed by `imul esi,ebx,3` 0x182d6 - when every copy-then-multiply
    spelling in the whole file (17 in all, iters 16 and 101) folds it? `ESI` is `lim`'s home and `EBX`
    carries the incoming `a3`, so the copy is a def for something: an unmodelled local that shares ESI, or
    an IR temp whose use the multiply replaced. What would settle it: `tools/wcc95/ratrace.py WW.C out
    <fn_182d0 lines>` and read the temp list plus the RegAlloc decision for ESI, or find any C shape that
    keeps the copy (it is worth 2 rows and the +2 bytes that shift every address after 0x182d4).
+
+## Leads from other Watcom matching projects (2026-11-25; none tested on 9.5b)
+
+In redcat (Watcom 10.5/10.6) the cheap probes moved nothing; that says nothing about 9.5b.
+
+- SPECULATIVE: **late register picks rotate across the whole module.** NHL95PC (Watcom 10.0 GA,
+  `docs/WCC_INTERNALS.md` "Late register picks"): constants turned into registers after allocation
+  take registers round-robin from a fixed list per size, never reset in a compile. `src/ww.c` is one
+  module, so a function's constant register would depend on the late picks before it. Candidates:
+  music_jingle 0x11884 `xor edx,edx`, duck_screen 0x2b5e8. Test: insert functions with byte stores
+  of 0 before it and see whether its register moves.
+- SPECULATIVE: **compiler state carries between functions or runs.** NHL95PC: `BlkTooBig` reads an
+  uninitialised instruction id, so warm and fresh compiles can split blocks differently; Daggerfall
+  (10.0a) fixed one ECX/EDX swap by padding headers. Test: compile a probe fresh and after a warm-up
+  compile in the same run; look at fn_1832c, cars_menu, menu.
+- LIKELY informative: **force the tie order inside the real compiler before spending spellings**
+  (NHL95PC `tieorder.py`, reordering only within runs of equal savings). `flipsim.py` simulates it;
+  forcing it in 9.5b under the tracer would prove it (pcx_load is a known tie). Reach the order
+  afterwards by a natural edit, never a dead tie-breaker.
+- SPECULATIVE: **run WCC386 9.5b under Unicorn** (NHL95PC `wccemu.py`, ~1.3 s a file, byte-identical to
+  DOSBox on 711 files; `vbatch.py` takes ~35 s a variant). Not checked: whether 9.5b's P3-format
+  WCC386 loads that way.
+- SPECULATIVE: **Theme Hospital's source shapes (10.5/10.6):** `if (!A && !B) {} else {...}` gives
+  `jmp` stubs; an inline `#pragma aux` helper with `value [eax]`, or an empty `#pragma aux ... = ""
+  modify [ebx]` after a call, gives a value-copy `mov` plain C does not - a candidate for fn_182d0's
+  dead `mov esi,ebx` (14).
+- SPECULATIVE: **Daggerfall's operand rules (10.0a):** "Watcom 10 never folds a pointer load into an
+  add"; the left operand goes first when its tree has at least as many nodes. (Its slot-order rule
+  failed on 9.5b, iter 73.)
+
+Undecided by the human (raised 2026-11-19 and 11-25): whether generated asm stand-ins may count as
+matched (Theme Hospital does), and whether a patched compiler with register-choice pragmas may be used
+(Daggerfall did). Both would change what PROGRESS.md's "byte-identical" means.

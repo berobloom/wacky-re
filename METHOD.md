@@ -102,6 +102,12 @@ runtime experiments over manuals, box text, or other people's notes.
 - A check that runs a binary runs the binary under test (an env variable),
   so a mutation harness tests the mutant.
 - Print the measured and the wanted numbers on failure.
+- Test a similarity score against noise and against a different input before trusting its pass
+  mark: audiocmp's first version scored white noise 0.912, above its 0.9 pass; with each band's mean
+  removed: port 0.946, mutation 0.847, another song 0.05, noise 0.01. [generic] (2026-11-22)
+- Read state in memory directly instead of inferring it from screens: reading four pointers three
+  seconds into the race in both builds replaced a planned 1-2 hour race drive (iter 73 check,
+  2026-11-19). Use the screen only when no address names the state.
 
 ## 7. Comparing port and original
 
@@ -152,6 +158,11 @@ the original's bytes and the OMF fixup sites are the original's (wacky-re
 `tools/asm/genasm.py`, `asmcheck.py`: 40 KB exact in one session). Then
 read and name it with that check running.
 Once it matches, port by translation (section 10), not by rewriting.
+
+When a library module's leftover misses split between compiler versions A and B, look for the
+release between them before blaming the source (the ASS modules needed the Watcom 10.0 release, from
+archive.org's "Watcom C/C++ Compilers Complete Distribution Media Collection"; provenance in
+findings/executables.md). LIKELY useful.
 
 ## 10. From a matching rebuild to a port: translate, don't rewrite [SAM3]
 

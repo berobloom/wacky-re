@@ -95,6 +95,11 @@ raise it in the same commit as the code that adds a MATCH, and only after
 whose count drops below the baseline. Run `tools/wc/nmrefs.py` after every
 change (section 6).
 
+**Changing the counting rule is the human's decision.** On 2026-11-19 comparing branches between our
+own functions by target rather than distance (reccmp-style) was asked first and done after a yes (+3:
+demo_rec, pic_show, fade_out; `test_objmatch.py` shifts one branch by 4 to prove the rule can fail).
+Two such changes are pending (QUESTIONS, "Undecided by the human"): asm stand-ins, a patched compiler.
+
 ## 5. Matching one function
 
 1. **Write the C** in `src/ww.c` at its address order (one file, address
@@ -201,6 +206,16 @@ A function defined under an alias (showlines is `showlines_def` with
    against the previous commit, record each in `nearmiss.txt`
    (`iter N permute.py a -> b: <mutations>`), and commit. A winner with a
    1-row gain that moves nmrefs counts is not worth keeping.
+
+**How often a probe winner loses in place (2026-11-18 batches):** 4 of 19 winners scored better as
+appended copies than in place (demo_mode, fn_16f24, fn_1be3c, volume_menu), 3 more in batch 3
+(fn_193a8 84 -> 88, kart_move 10 -> 11, leaderboard 36 -> 39): about 1 in 4 to 1 in 3.
+
+**Statement swaps changed behaviour in 6 winners before the `independent()` guard** (line_points,
+netkeys_in read `c` before setting it, pic_at used `spr_w` before its store, overlay_draw,
+players_project, fn_173c4 moved `datfind()` after the `fread()` that needs it). Every regex mutation
+is a behaviour risk; decomp-permuter mutates a parsed C tree (pycparser, `PERM_IGNORE`/`PERM_PRETEND`
+for `#pragma aux`), the step to take if the permuter is extended again. LIKELY
 
 ## 8. Names, after the match, with their evidence
 
