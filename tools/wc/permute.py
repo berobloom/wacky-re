@@ -22,15 +22,11 @@ Mutations marked '!' can change what the code does (statement swaps, int/short f
 uses one must be checked by hand before it goes into src/ww.c. Rank here, decide in src/ww.c
 (GOTCHAS "Rank in a probe, decide in src/ww.c").
 """
-import functools, os, random, re, subprocess, sys
+import functools, os, random, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.join(ROOT, 'tools', 'le'))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'wc'))
-import json, difflib
-import capstone
-import libmatch as L
-import objmatch as M
+import permlib
 
 args = sys.argv[1:]
 weighted = '--weighted' in args
@@ -47,84 +43,10 @@ copies = int(args[4]) if len(args) > 4 else 30
 rng = random.Random(int(args[5]) if len(args) > 5 else 1)
 if slack is None:
     slack = 30 if weighted else 6
-work = os.path.join(ROOT, '.work', 'perm', name.upper())    # full name: name[:8] collided (netkeys_in/_out/_pack, iter 56)
-os.makedirs(work, exist_ok=True)
 
-src = open(os.path.join(ROOT, 'src', 'ww.c')).read()
-cname = name                    # the C name of the definition
-al = re.search(r'#pragma aux (\w+) "%s_"' % re.escape(name), src)
-if al:
-    cname = al.group(1)         # defined under an alias (showlines is showlines_def, iter 56)
-m = re.search(r'^[A-Za-z_][\w \*]*\b%s\s*\([^;{]*\)[ \t]*(?:/\*.*?\*/)?\s*\n\{' % re.escape(cname), src, re.M)
-if not m:
-    sys.exit('definition of %s not found' % cname)
-fstart = m.start()
-fend = src.index('\n}\n', m.end()) + 3
-func = src[fstart:fend]
-
-meta = json.load(open(os.path.join(ROOT, '.work', 'le', 'ww.json')))
-code = open(os.path.join(ROOT, '.work', 'le', 'ww.obj1.bin'), 'rb').read()
-cbase = meta['objects'][0]['base']
-md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
-
-
-def norm(s):
-    return re.sub(r'0x[0-9a-f]{4,}', '@', s).replace('- @', '+ @')  # masked fixup, see fndiff.norm
-
-
-def dis(buf, vma, upto):
-    return [(i.address, i.size, norm(i.mnemonic + ' ' + i.op_str))
-            for i in md.disasm(buf, vma) if i.address < upto]
-
-
-game = [t[2] for t in dis(code[addr - cbase:endg - cbase], addr, endg)]
-
-
-def score_obj(path, names):
-    (_, recs), = list(L.modules(open(path, 'rb').read()))
-    segs = L.code_of(recs)
-    pubs = sorted(p for p in M.publics(recs) if p[0] in segs)
-    out = {}
-    for nm in names:
-        hit = [p for p in pubs if M.plain(p[2]) == nm or p[2] == nm]
-        if not hit:
-            continue
-        seg, off, _ = hit[0]
-        end = next((q[1] for q in pubs if q[0] == seg and q[1] > off), len(segs[seg][0]))
-        buf, mask = segs[seg]
-        ours = bytes(b if not mask[off + k] else 0x90 for k, b in enumerate(buf[off:end]))
-        A = [t[2] for t in dis(ours, addr, endg)]
-        out[nm] = rows_and_weight(A)
-    return out
-
-
-def rows_and_weight(A):
-    # rows: what fndiff/variants count. weight: decomp-permuter's scorer.py constants -
-    # PENALTY_REGALLOC 5 (a replaced pair with the same mnemonic), PENALTY_REORDERING 60 (a row
-    # inserted on one side and deleted on the other), PENALTY_INSERTION/DELETION 100.
-    sm = difflib.SequenceMatcher(None, A, game, autojunk=False)
-    rows, ins, dels, w = 0, [], [], 0
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        if tag == 'equal':
-            continue
-        rows += max(i2 - i1, j2 - j1)
-        a, g = A[i1:i2], game[j1:j2]
-        n = min(len(a), len(g)) if tag == 'replace' else 0
-        for x, y in zip(a[:n], g[:n]):
-            if x.split()[0] == y.split()[0]:
-                w += 5
-            else:
-                ins.append(x); dels.append(y)
-        ins += a[n:]; dels += g[n:]
-    moved = 0
-    pool = {}
-    for x in ins:
-        pool[x] = pool.get(x, 0) + 1
-    for y in dels:
-        if pool.get(y):
-            pool[y] -= 1; moved += 1
-    w += 60 * moved + 100 * (len(ins) - moved) + 100 * (len(dels) - moved)
-    return rows, w
+T = permlib.Target(name, addr, endg)            # setup, scoring and compiling: tools/wc/permlib.py
+src, func, work = T.src, T.func, T.work
+compile_round = T.compile_round
 
 
 # ---- mutations: each takes the function text, returns (new text, label) or None
@@ -378,37 +300,6 @@ def mutate(t):
     return t, labs
 
 
-def compile_round(cands):
-    # Copies that do not compile are dropped by the error lines in WCC.OUT and the rest recompiled
-    # (iter 56: one bad mutant used to kill the round - kart_bump lost 23 of 30 rounds that way).
-    alive = list(range(len(cands)))
-    for _ in range(6):
-        body, spans, line = [], [], src[:fend].count('\n') + 2
-        for k in alive:
-            c = re.sub(r'\b%s\s*\(' % re.escape(cname), 'pm%03d(' % k, cands[k][0], count=1)
-            spans.append((line, line + c.count('\n'), k))
-            line += c.count('\n') + 1
-            body.append(c)
-        probe = src[:fend] + '\n' + '\n'.join(body) + src[fend:]
-        open(os.path.join(work, 'PERM.C'), 'w').write(probe)
-        obj = os.path.join(work, 'PERM.OBJ')
-        if os.path.exists(obj):
-            os.remove(obj)
-        subprocess.run([os.path.join(ROOT, 'tools', 'wc', 'wcc.sh'), os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B'),
-                        work, 'PERM.C', '-s', '-3r', '-oneatx'], capture_output=True, text=True)
-        if os.path.exists(obj):
-            return score_obj(obj, ['pm%03d' % k for k in alive] + [name])
-        try:
-            out = open(os.path.join(work, 'WCC.OUT'), errors='replace').read()
-        except OSError:
-            return None
-        bad = {k for n in map(int, re.findall(r'PERM\.C\((\d+)\): Error', out))
-               for a, b, k in spans if a <= n <= b + 1}
-        if not bad or 0 in bad:
-            return None
-        alive = [k for k in alive if k not in bad]
-    return None
-
 def key(v):
     return v[1] if weighted else v[0]
 
@@ -419,7 +310,6 @@ if not sc:
 rows0 = sc['pm000'][0]
 print('control %s: %d rows, weight %d (original in the same object: %s)'
       % (name, rows0, sc['pm000'][1], sc.get(name, (None,))[0]), flush=True)
-cache = {func: sc['pm000']}
 if sweep:
     # --sweep (iter 73, after the Daggerfall decomp's systematic choice search): every distinct
     # SINGLE mutation of the function (each mutator drawn until 200 draws in a row bring nothing new),
@@ -454,54 +344,6 @@ if sweep:
         open(os.path.join(work, 'sweep_best_%s_%d.c' % (name, res[0][1])), 'w').write('/* %s */\n' % res[0][2] + res[0][3])
     print('sweep: %d scored, %d better than control %d' % (len(res), sum(1 for x in res if x[1] < rows0), rows0))
     sys.exit(0)
-best_rows = rows0                               # what best_<NAME>_<rows>.c and the report use
-best, best_t, best_l = sc['pm000'], func, []    # by key(): rows, or weight with --weighted
-cur, cur_t, cur_l = best, func, []
-for r in range(rounds):
-    if hill:
-        cur, cur_t, cur_l = best, best_t, best_l
-    cands = [(cur_t, cur_l)]
-    seen = {cur_t}
-    tries = 0
-    while len(cands) < copies and tries < 50 * copies:     # a small function may have < COPIES mutants
-        tries += 1
-        base_t, base_l = (best_t, best_l) if (not hill and rng.random() < 1 / 6) else (cur_t, cur_l)
-        t, labs = mutate(base_t)
-        if t in seen or t in cache:
-            continue
-        seen.add(t)
-        cands.append((t, base_l + labs))
-    sc = compile_round(cands)
-    if not sc:
-        print('round %d: compile failed' % r, flush=True)
-        continue
-    res = []
-    for k, (t, labs) in enumerate(cands):
-        v = sc.get('pm%03d' % k)
-        if v is None:
-            continue
-        cache[t] = v
-        res.append((key(v), v[0], k))
-    if len(res) <= 1:
-        print('round %d: no new mutants' % r, flush=True)
-        continue
-    res.sort()
-    kv, rows, k = next(x for x in res if x[2] != 0)       # the round's best new candidate
-    v = sc['pm%03d' % k]
-    print('round %d: best %d rows / weight %d (current %d, best %d) %s'
-          % (r, rows, v[1], cur[0], best_rows, cands[k][1][-3:]), flush=True)
-    if rows < best_rows:
-        best_rows = rows
-        open(os.path.join(work, 'best_%s_%d.c' % (name, rows)), 'w').write(
-            '/* %s */\n' % '; '.join(cands[k][1]) + cands[k][0])
-    if kv < key(best) or (kv == key(best) and rows <= best[0]):
-        best, best_t, best_l = v, cands[k][0], cands[k][1]
-    if hill:
-        if kv < key(cur) or (kv == key(cur) and rng.random() < 0.5):
-            cur, cur_t, cur_l = v, cands[k][0], cands[k][1]
-    elif kv <= key(cur) or (kv <= key(cur) + slack and rng.random() < 0.3):
-        cur, cur_t, cur_l = v, cands[k][0], cands[k][1]
-    if best_rows == 0:
-        print('ZERO ROWS - verify with src/check.sh', flush=True)
-        break
+best_rows, best_l = permlib.walk(T, func, lambda t: t, mutate, rounds, copies, rng, weighted=weighted,
+                                 slack=slack, hill=hill, control=sc['pm000'])
 print('final best %d: %s' % (best_rows, '; '.join(best_l)))

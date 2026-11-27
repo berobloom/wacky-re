@@ -215,7 +215,46 @@ appended copies than in place (demo_mode, fn_16f24, fn_1be3c, volume_menu), 3 mo
 netkeys_in read `c` before setting it, pic_at used `spr_w` before its store, overlay_draw,
 players_project, fn_173c4 moved `datfind()` after the `fread()` that needs it). Every regex mutation
 is a behaviour risk; decomp-permuter mutates a parsed C tree (pycparser, `PERM_IGNORE`/`PERM_PRETEND`
-for `#pragma aux`), the step to take if the permuter is extended again. LIKELY
+for `#pragma aux`), the step to take if the permuter is extended again. LIKELY (done in iter 107:
+`astperm.py`, below)
+
+**A copy's score depends on the function after it** (iter 107, CONFIRMED on screenshot): the game's
+836 bytes of screenshot end with `add esp,0x1c; pop edx; pop ebx; ret` (0x11806), which is not its
+code (its frame is 0x514) but a piece the compiler put before the next function's label
+(music_start jumps to that `ret`). A copy followed by another copy does not get it, the copy
+followed by the real neighbour does: until iter 107 the last copy of every round scored 4 rows
+better on screenshot, with any text. `permlib.compile_round` now appends one unscored copy after the
+scored ones, so every scored copy has the same neighbour; the in-place check (point 1) is still
+what counts.
+
+### 7b. Tree mutations: `tools/wc/astperm.py`
+
+```sh
+tools/wc/astperm.py [--all] [--only P1,P2] [--weighted] [--slack N] [--hill] NAME 0xADDR 0xEND [ROUNDS [COPIES [SEED]]]
+tools/wc/astperm.py --check LIST          # round trip of every LIST function, in place
+PERMUTER=astperm tools/wc/permute_all.sh LIST [JOBS [ROUNDS [COPIES]]]
+```
+
+Runs decomp-permuter's own randomization passes (`.work/decomp-permuter`, MIT, clone of
+simonlindholm/decomp-permuter at 860b6d9; its pycparser fork) on NAME's syntax tree: `cpp` with the
+WC95B headers (lower-case symlinks in `.work/astperm/h`, the Watcom keywords defined away), the whole
+of `src/ww.c` parsed (it parses as it is: pragmas and all), NAME's body mutated, printed, and spliced
+under NAME's signature as written. Scoring and the random walk are `tools/wc/permlib.py`, shared with
+`permute.py` (same seed, same output as before the split: checked on showlines).
+
+What it adds to the regex permuter: a temporary for a subexpression assigned at an earlier point
+(`temp_for_expr`, decomp-permuter's main pass), a variable replaced by its value, split and chained
+assignments, `if (v) {}` and other no-op blocks, struct reference forms, `x ^ 0` / `0, x` / `x * 0`,
+self-assignments, condition and inequality forms. Left out unless `--all`: statement moves, deletions,
+type changes, masks, narrowing casts, factored multiplies, duplicated assignments (they change
+behaviour). `!` labels mark passes that move or copy an evaluation without checking calls in between
+(`temp_for_expr`, `expand_expr`): read the diff (point 2 above).
+
+The printed body is the preprocessed one (macros expanded, comments gone, every block braced).
+**Round trip, 2026-11-27: all 70 near misses print back to the same code in place**
+(`--check` on check.sh's "differs" list); a run also compiles the printed body next to the original
+and says so if they differ. A winner is a candidate exactly as above, and it has to be written back
+in the file's own style (macros, comments) before it goes in.
 
 ## 8. Names, after the match, with their evidence
 

@@ -938,6 +938,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   folded, so they cannot steer it: a game that evaluates the smaller side first had a different
   tree (grouping, or a temp in its own statement). permute.py's `comm` can only help on equal
   subtrees. [generic]
+- **A permuter's appended copies are scored with the wrong neighbour** (2026-11-27): code after a
+  function's last `ret` can belong to the next function (9.5b put an epilogue that music_start jumps
+  into at the end of screenshot's range, 0x11806), so a copy followed by another copy and the one
+  followed by the real neighbour score differently with the same text - the last copy of each
+  round won 4 rows on screenshot. Give every scored copy the same neighbour (one unscored copy at
+  the end, `permlib.compile_round`) and still decide in place. [generic]
 - **Keeping 9.5b from inlining a small function (`-oe`)**: definition order, K&R style and
   `#pragma off (inline)` do nothing; an unused local `static` in the callee does, with no code
   change (OW cfe: a local static clears FUNC_OK_TO_INLINE; also varargs and the node threshold).
