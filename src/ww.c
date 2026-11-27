@@ -12915,7 +12915,14 @@ void track_load(void)
  * reduces k away like the game, 48 -> 36), p7d838 += sz through an int alias (`add [p7d838],eax`,
  * 31) and the table store written before `p = p7d838` (load into EDX, copy to ESI, 26). Tried:
  * a 1-D `tab6e470[k * 20 + i]` index (steps by 0x14, not 0x50), `n > k`, w/h declared first or
- * after p, `p = kartfr[k][i] = p7d838`, `int wh[2]` (24 rows but at esp+0, not the game's 0x10). */
+ * after p, `p = kartfr[k][i] = p7d838`, `int wh[2]` (24 rows but at esp+0, not the game's 0x10).
+ * 2026-11-27, 20 -> 12 rows: p, w, h, sz declared in the inner loop's block (in that order) put the
+ * two loop temps where the game has them (k*0x50 [esp+4], name [esp]) and move `one`/n to the top;
+ * left is w/h (game 0x14/0x10, ours 8/0xc) against one/n (game 0xc/8, ours 0x14/0x10), the entry
+ * load order and the `p7d838 += 2` position. Slot per variable for 27 variants:
+ * .work/vbatch/kartsets4-6.py with tools/wc/slotroles.py. No gain: a copy `int o = one` (15; without the
+ * block scope 22-25), w/h alone in either loop's block (23), inner order `int w, h` first (20) or
+ * `h, w` (16), w/h in the k loop (16), outer order of n, k, i (12, same bytes). */
 struct kartset { int f00; char name[0x12]; };
 extern struct kartset kartsets[];
 #pragma aux kartsets "_arr7d8b4"
@@ -12928,9 +12935,7 @@ extern int a7d838x;                   /* p7d838 as an int: `add [p7d838],eax` (0
 void kartsets_load(int one)
 {
     int n, k;
-    short *p;
-    int w, h;
-    short i, sz;
+    short i;
 
     p7d838 = v7d844;
     if (one) {
@@ -12945,6 +12950,10 @@ void kartsets_load(int one)
         else
             datfind(kartsets[k].name);
         for (i = 0; i <= 9; i++) {
+            short *p;
+            int w, h;
+            short sz;
+
             kartfr[k][i] = p7d838;
             p = p7d838;
             fread(&w, 2, 1, datfile);

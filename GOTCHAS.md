@@ -738,6 +738,12 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   set or frame size = a different object shape (array sizes above; on redcat-rrr-re, WCC 10.5, a
   value in a local `int v[3]` element). Not a general fix: showlines 0x2a268 (two spilled
   parameters, two short locals) got worse with copies, 13 -> 17-32 rows in 11 variants. [generic]
+- **Permuted slots, second lever: declare the locals in the block that uses them.** kartsets_load
+  0x28038, 20 -> 12: `short *p; int w, h; short sz;` moved from the function's top into the inner
+  for's block reorders every slot, compiler temps included (its two loop temps landed on the game's
+  slots). The order inside the block matters (20 / 16 / 12), the outer order did not. Score slot
+  permutations by the slot each variable gets, not by rows: `tools/wc/slotroles.py` (a regex
+  per variable over `stackmap.py -v`) shows which variant moved what. [generic]
 - **A `jmp` from the end of an if-arm straight to the loop tail is `continue;`**, also when the
   blocks it skips could be proved dead from the arm's condition - 9.5b does not prove that.
   ents_show 0x145c3 `jmp 0x146bd` was filed as "same-shape, the compiler skips two `sel == -1`
