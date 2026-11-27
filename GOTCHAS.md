@@ -938,6 +938,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   folded, so they cannot steer it: a game that evaluates the smaller side first had a different
   tree (grouping, or a temp in its own statement). permute.py's `comm` can only help on equal
   subtrees. [generic]
+- **Other Watcom decomps' levers, checked against 9.5b** (2026-11-27): a local kept in memory by
+  being an array element or struct field (redcat, WCC 10.5) does NOT carry over - 9.5b keeps
+  `int t[1]`, `int t[2]` and a one-field struct in a register like a plain int (shot_step, 6
+  variants, 11-12 rows). Not yet tried here, from the Theme Hospital decomp (wpp386 10.x,
+  github.com/matteo-pacini/theme-hospital-decomp docs/MATCHING.md "Idioms"): a global loaded on the
+  wrong side of an operator is often a struct field (a field at a nonzero offset is a bigger tree)
+  or the reverse; `if (x)` vs `if (x != 0)` on a short moves registers across a whole function;
+  `x *= 2` vs `x += x`; an `if`/`else` assignment vs `?:` (the latter through a temporary). [generic]
 - **Compare the data, not only the code, and expect dead bytes**: `tools/wc/datamatch.py ww
   .work/src/WW.OBJ` (iter 68) puts our build's data groups on the game's image. Two traps, both found
   getting a clean run: (a) the group's base must be voted over **every** occurrence of each anchor -
