@@ -253,6 +253,13 @@ misses) proved the last two unsafe:** net_recv's 4 -> 2 wrote `crc = buf[4];` ov
 `spr_y -= 2` split into `spr_y = 2; spr_y = spr_y - spr_y;`. `--reduce FILE` shrinks a winner by
 undoing its change hunks in place one at a time (repeated until stable); read what is left. `!` labels mark passes that move or copy an evaluation without checking calls in between
 (`temp_for_expr`, `expand_expr`): read the diff (point 2 above).
+**The second batch (iter 108, safe profile) found no clean match.** Two 0-row winners read a local
+that is never assigned (fn_1bf00's `nplayers = n`; in_sector's reduced `tbl6e858[new_var2]`, its
+assignment lost with an undone hunk); `--reduce` now prints UNINITIALIZED for a permuter temp it
+never sees assigned. Four winners need only an empty test: net_recv 4 -> 0 (`if (buf) {}` /
+`if (&rcrc) {}` right after the crc loop), fn_16f24 26 -> 24 (`if (r && r) {}`), screenshot,
+pcx_load. They show which value's live range decides the allocation, not what was written; none
+has a natural spelling yet (SPECULATIVE: a debug macro compiled to an empty test).
 
 The printed body is the preprocessed one (macros expanded, comments gone, every block braced).
 **Round trip, 2026-11-27: all 70 near misses print back to the same code in place**

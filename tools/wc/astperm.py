@@ -38,6 +38,7 @@ Needs .work/decomp-permuter (MIT; clone https://github.com/simonlindholm/decomp-
 import copy
 import os
 import random
+import re
 import subprocess
 import sys
 
@@ -255,6 +256,12 @@ if reduce:
     print('reduced: %d of %d hunks needed, %s -> %s' % (len(keep), len(hunks), cur, out))
     print('READ IT: a pass can change behaviour (iter 107: net_recv, overlay_draw), and so can undoing'
           ' some hunks and keeping others')
+    # A permuter temp that is read but never assigned is an uninitialized read (iter 108: in_sector's
+    # `tbl6e858[new_var2]` after its assignment hunk was undone; fn_1bf00's `nplayers = n`).
+    red = build(keep)
+    for v in sorted(set(re.findall(r'\b(new_var\d*)\b', red))):
+        if not re.search(r'\b%s\s*=[^=]' % v, red):
+            print('UNINITIALIZED: %s is read but never assigned - reject' % v)
     for k in sorted(keep):
         tag, i1, i2, j1, j2 = hunks[k]
         print('  - %s\n  + %s' % (' / '.join(x.strip() for x in a[i1:i2]), ' / '.join(x.strip() for x in b[j1:j2])))
