@@ -938,6 +938,11 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   folded, so they cannot steer it: a game that evaluates the smaller side first had a different
   tree (grouping, or a temp in its own statement). permute.py's `comm` can only help on equal
   subtrees. [generic]
+- **Keeping 9.5b from inlining a small function (`-oe`)**: definition order, K&R style and
+  `#pragma off (inline)` do nothing; an unused local `static` in the callee does, with no code
+  change (OW cfe: a local static clears FUNC_OK_TO_INLINE; also varargs and the node threshold).
+  It stops every site, so a helper the original inlined at some sites and called at others was
+  most likely a macro at the inlined ones (wacky effects_load vs the 24 readdat calls). [generic]
 - **Other Watcom decomps' levers, checked against 9.5b** (2026-11-27): a local kept in memory by
   being an array element or struct field (redcat, WCC 10.5) does NOT carry over - 9.5b keeps
   `int t[1]`, `int t[2]` and a one-field struct in a register like a plain int (shot_step, 6

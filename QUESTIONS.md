@@ -245,6 +245,19 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    in another one, where a call is forced), and `#pragma on(off)/inlining`.
    Test: compile `src/ww.c` as two modules (the palette pair in its own) and see whether the 11
    call sites come back without losing the 84.
+   **2026-11-27 (iter 106): the second module is ruled out as the cause** (CONFIRMED by the call sites).
+   A module boundary can only sit at one of 15 places (a 16-aligned function start with no filler
+   before it, `0x12490` .. `0x343a0`; WLINK starts modules on 16 bytes), and the game calls com_getc
+   from inside its smallest possible module (0x10ee6, 0x1100a in modem), kart_anim2 three times from
+   kart_state (0x22609..) and cursor_at once (0x35c93); and effects_load 0x2754c INLINES seekdat/
+   readdat while every other site calls them. So the game decided per call site, inside one module:
+   LIKELY a macro at the inlined sites and the function at the others (as wait_connect, above).
+   9.5b probes (.work/inl/INL*.C, CONFIRMED): it inlines a helper defined AFTER its callers too;
+   K&R definitions, `return;`, a used return value change nothing; `#pragma off (inline)` around
+   the definition or the callers has no effect; **an unused local `static` in the helper stops all
+   inlining at no code cost** (OW cfe csym.c: a local static clears FUNC_OK_TO_INLINE) - a cleaner
+   stand-in than the alias declarations wherever a helper is never inlined, but not for readdat,
+   which effects_load inlines.
    New evidence (iter 14), LIKELY: the pair is not inlined by the compiler at all. `wait_connect`
    0x1dca0 (byte-identical) has the pair's body five times and calls it twice, the calls only in
    the escape branch (0x1de6b/0x1dea6), and `modem` has the same mix. Both rebuild byte-identical
