@@ -25,7 +25,8 @@ printed body, whose score is then the control).
 Passes (default weights from decomp-permuter's default_weights.toml [base]). Left out by default,
 because they change what the code does or cannot work on a body alone: reorder_stmts,
 remove_ast, remove_var, add_mask, cast_simple, randomize_internal_type, factor_mult,
-duplicate_assignment (unsafe); randomize_external_type, randomize_function_type, inline (change
+duplicate_assignment, split_assignment (unsafe; split_assignment broke `x -= 2` in iter 107), and
+temp_for_expr's reuse of an existing variable as its temporary (it reused a live one); randomize_external_type, randomize_function_type, inline (change
 code outside the body); float_literal, sameline (nothing for them here). --all adds the unsafe
 ones; --only runs just the named passes (without the perm_ prefix). Labels marked '!' are passes
 that can change behaviour (temp_for_expr and expand_expr move or copy an evaluation and do not
@@ -53,7 +54,8 @@ from src import randomizer as R
 from perm_pycparser import c_ast as ca
 
 UNSAFE = {'reorder_stmts', 'remove_ast', 'remove_var', 'add_mask', 'cast_simple',
-          'randomize_internal_type', 'factor_mult', 'duplicate_assignment'}
+          'randomize_internal_type', 'factor_mult', 'duplicate_assignment',
+          'split_assignment'}   # iter 107: split `spr_y -= 2` into `spr_y = 2; spr_y = spr_y - spr_y;`
 NEVER = {'randomize_external_type', 'randomize_function_type', 'inline', 'float_literal', 'sameline'}
 RISKY = UNSAFE | {'temp_for_expr', 'expand_expr', 'reorder_decls'}
 BASE = {   # decomp-permuter default_weights.toml [base] at 860b6d9
@@ -93,6 +95,10 @@ rounds = int(args[3]) if len(args) > 3 else 10
 copies = int(args[4]) if len(args) > 4 else 30
 rng = random.Random(int(args[5]) if len(args) > 5 else 1)
 
+if '--all' not in opt:
+    # iter 107: temp_for_expr reused the live `crc` of net_recv as its temporary (`crc = buf[4];`
+    # before `if (crc != rcrc)`): its liveness test goes by text position. New temporaries only.
+    R.PROB_REUSE_VAR = 0
 weights = {}
 for m in R.RANDOMIZATION_PASSES:
     p = m.__name__[5:]
@@ -247,6 +253,8 @@ if reduce:
     out = os.path.join(T.work, 'reduced_%s_%d.c' % (name, cur[0]))
     open(out, 'w').write(build(keep))
     print('reduced: %d of %d hunks needed, %s -> %s' % (len(keep), len(hunks), cur, out))
+    print('READ IT: a pass can change behaviour (iter 107: net_recv, overlay_draw), and so can undoing'
+          ' some hunks and keeping others')
     for k in sorted(keep):
         tag, i1, i2, j1, j2 = hunks[k]
         print('  - %s\n  + %s' % (' / '.join(x.strip() for x in a[i1:i2]), ' / '.join(x.strip() for x in b[j1:j2])))

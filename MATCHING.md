@@ -246,8 +246,12 @@ What it adds to the regex permuter: a temporary for a subexpression assigned at 
 (`temp_for_expr`, decomp-permuter's main pass), a variable replaced by its value, split and chained
 assignments, `if (v) {}` and other no-op blocks, struct reference forms, `x ^ 0` / `0, x` / `x * 0`,
 self-assignments, condition and inequality forms. Left out unless `--all`: statement moves, deletions,
-type changes, masks, narrowing casts, factored multiplies, duplicated assignments (they change
-behaviour). `!` labels mark passes that move or copy an evaluation without checking calls in between
+type changes, masks, narrowing casts, factored multiplies, duplicated assignments, split assignments
+and a reused variable as a temporary (they change behaviour). **The first batch (iter 107, 43 near
+misses) proved the last two unsafe:** net_recv's 4 -> 2 wrote `crc = buf[4];` over the live CRC
+(decomp-permuter's reuse test goes by text position), overlay_draw's 29 -> 22 had
+`spr_y -= 2` split into `spr_y = 2; spr_y = spr_y - spr_y;`. `--reduce FILE` shrinks a winner by
+undoing its change hunks in place one at a time (repeated until stable); read what is left. `!` labels mark passes that move or copy an evaluation without checking calls in between
 (`temp_for_expr`, `expand_expr`): read the diff (point 2 above).
 
 The printed body is the preprocessed one (macros expanded, comments gone, every block braced).
