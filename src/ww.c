@@ -13976,7 +13976,11 @@ void hud_draw(void)
  * Iter 47 (.work/probe_cl, control 16 there): an `int tv` temp (`tv = spr_y + 4; y = tv;`) scored
  * 15 in the probe but 18 -> 20 in src/ww.c (rejected, GOTCHAS "Rank in a probe, decide in
  * src/ww.c"); `(int)` casts on the two sums, `p = netstats[1];` before the for, and
- * `&netstats[1][0]` all keep the probe control's 16. */
+ * `&netstats[1][0]` all keep the probe control's 16.
+ * 2026-11-27 (.work/vbatch/showlines2.py, in src/ww.c, control 13): the ents_show parameter-copy
+ * lever does not carry over. `int m = n; int w = wait;` with short x/y 17 rows (either order),
+ * with `int x, y` 28, with `int y, x` 32; `int x, y` alone 24 in three declaration orders. Game
+ * slots n [esp+0xc], wait [esp+8], y [esp+4], x [esp]; ours n [esp], wait [esp+4], y 0xc, x 8. */
 void showlines_def(int n, int wait, int t);
 #pragma aux showlines_def "showlines_"
 

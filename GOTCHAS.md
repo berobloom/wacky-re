@@ -736,7 +736,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   .work/src/WW.OBJ ww NAME -v` prints ours and the game's slots with the instructions that touch
   each. Same slot SET on both sides = a permutation (this lever, the volatile array); a different
   set or frame size = a different object shape (array sizes above; on redcat-rrr-re, WCC 10.5, a
-  value in a local `int v[3]` element). [generic]
+  value in a local `int v[3]` element). Not a general fix: showlines 0x2a268 (two spilled
+  parameters, two short locals) got worse with copies, 13 -> 17-32 rows in 11 variants. [generic]
 - **A `jmp` from the end of an if-arm straight to the loop tail is `continue;`**, also when the
   blocks it skips could be proved dead from the arm's condition - 9.5b does not prove that.
   ents_show 0x145c3 `jmp 0x146bd` was filed as "same-shape, the compiler skips two `sel == -1`
