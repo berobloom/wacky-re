@@ -340,6 +340,9 @@ Facts this settles:
   that frame needs y and x 4 bytes wide. The game's 32-bit `movsx` + `add eax,4` for both (0x2a332,
   0x2a340) agrees, but `int x, y` in ours hands y a register (EDI) that the game gives to i, keeping
   y in memory - so the register contest differs too (src/nearmiss.txt showlines).
+  The ratrace of `int x, y` shows why: y (savings 976) ties with the netstats pointer temp for the
+  first pick and takes EDI, i (816) EBP, t (512) memory; the game's i EDI / t EBP / y memory needs y
+  allocated after t or not a candidate at all, and `volatile` or a taken address of y does not give it.
 
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
