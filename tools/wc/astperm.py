@@ -4,6 +4,8 @@
 usage: astperm.py [--all] [--only P1,P2,..] [--weighted] [--slack N] [--hill]
                   NAME 0xADDR 0xEND [ROUNDS [COPIES [SEED]]]
        astperm.py --check LIST      # round trip only: every function of LIST printed in place
+       astperm.py --reduce FILE NAME 0xADDR 0xEND   # shrink a winner: undo each change hunk (against
+                                    # the printed original) in place while the rows do not rise
                                     # (LIST lines "name ourbytes 0xADDR", as permute_all.sh)
 
 permute.py mutates the function's text with regexes; this one parses src/ww.c into a C syntax tree
@@ -71,6 +73,9 @@ CPP_DEFS = ['-D__386__', '-D__WATCOMC__=950', '-DM_I386', '-D_M_I386', '-D__FLAT
 
 args = sys.argv[1:]
 check = None
+reduce = None
+if '--reduce' in args:
+    i = args.index('--reduce'); reduce = args[i + 1]; del args[i:i + 2]
 if '--check' in args:
     i = args.index('--check'); check = args[i + 1]; del args[i:i + 2]
 flags = {'--all', '--weighted', '--hill'}
@@ -193,6 +198,59 @@ def mutate(fn):
 
 
 start = text_of(fn0)
+
+
+def inplace(text):
+    """Rows and weight of NAME with its definition replaced by TEXT in src/ww.c (one compile)."""
+    work = T.work
+    open(os.path.join(work, 'IP.C'), 'w').write(T.src[:T.fstart] + text + T.src[T.fend:])
+    obj = os.path.join(work, 'IP.OBJ')
+    if os.path.exists(obj):
+        os.remove(obj)
+    subprocess.run([os.path.join(ROOT, 'tools', 'wc', 'wcc.sh'), os.path.join(ROOT, '.work', 'toolchains', 'inst', 'WC95B'),
+                    work, 'IP.C', '-s', '-3r', '-oneatx'], capture_output=True, text=True)
+    if not os.path.exists(obj):
+        return None
+    return T.score_obj(obj, [T.cname]).get(T.cname) or T.score_obj(obj, [name]).get(name)
+
+
+if reduce:
+    import difflib
+    win = open(reduce).read()
+    if win.startswith('/*'):
+        win = win.split('\n', 1)[1]
+    a, b = start.split('\n'), win.split('\n')
+    hunks = [op for op in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes() if op[0] != 'equal']
+
+    def build(keep):
+        out, last = [], 0
+        for k, (tag, i1, i2, j1, j2) in enumerate(hunks):
+            out += a[last:i1]
+            out += b[j1:j2] if k in keep else a[i1:i2]
+            last = i2
+        return '\n'.join(out + a[last:])
+
+    keep = set(range(len(hunks)))
+    cur = inplace(build(keep))
+    print('in place: printed original %s, winner %s, %d hunks' % (inplace(start), cur, len(hunks)), flush=True)
+    changed = True
+    while changed:              # again until stable: a declaration is needed until its uses go
+        changed = False
+        for k in sorted(keep):
+            trial = keep - {k}
+            v = inplace(build(trial))
+            tag, i1, i2, j1, j2 = hunks[k]
+            verdict = 'undone' if v is not None and v[0] <= cur[0] else 'needed'
+            print('hunk %2d %-8s %s  -> %s' % (k, verdict, ' / '.join(x.strip() for x in b[j1:j2])[:90], v), flush=True)
+            if verdict == 'undone':
+                keep, cur, changed = trial, v, True
+    out = os.path.join(T.work, 'reduced_%s_%d.c' % (name, cur[0]))
+    open(out, 'w').write(build(keep))
+    print('reduced: %d of %d hunks needed, %s -> %s' % (len(keep), len(hunks), cur, out))
+    for k in sorted(keep):
+        tag, i1, i2, j1, j2 = hunks[k]
+        print('  - %s\n  + %s' % (' / '.join(x.strip() for x in a[i1:i2]), ' / '.join(x.strip() for x in b[j1:j2])))
+    sys.exit(0)
 sc = T.compile_round([(T.func, []), (start, ['roundtrip'])])
 if not sc or 'pm001' not in sc:
     sys.exit('round-trip compile failed (see %s/WCC.OUT and PERM.C)' % T.work)

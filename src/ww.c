@@ -4315,8 +4315,9 @@ void fn_16d68(int a, int b, int face)   /* arg regs: EAX, EDX, EBX */
         v7d7f8 = &trklines[(short)face];
         players[1].f1c = face;
         players[1].f1a = v7d7f8->f06;
+        i = (int)v7d7f8->pts;   /* through i, loaded before the count (iter 107 astperm: 4 -> 0) */
         players[1].f10 = v7d7f8->n;
-        players[1].f5e = (int)v7d7f8->pts;
+        players[1].f5e = i;
     } else {
         v7d7f8 = &trklines[players[a - 1].f1c];
         players[a].f1a = v7d7f8->f06;
@@ -12300,6 +12301,7 @@ void self_project(void)
 {
     short x, n, k;
     int m;
+    int skip;           /* the clip's byte offset goes through an int (iter 107 astperm: 3 -> 0) */
 
     if (v88c42 == 4 || v88ca8)
         return;
@@ -12393,7 +12395,8 @@ void self_project(void)
             if ((spr_w - 1) + spr_y > 0xc7) {
                 n = spr_w - 1 + spr_y - 0xc7;
                 spr_w -= n;
-                v7d878 = n * 4;
+                skip = n * 4;
+                v7d878 = skip;
             }
         } else if (curkart->f26 == 0 && curkart->f56 == 5) {
             v7d878 = 0x10;
