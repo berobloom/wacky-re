@@ -2810,34 +2810,30 @@ extern int v7d338[];
 extern short v88c68;
 void spr_draw_scaled(void);
 
-/* differs (36 rows, 29 of them the masked-fixup artefact [reg - @]/[reg + @]): a three-way stack-slot
-   permutation of n, animate and the w*h temporary (game n [esp+4], animate [esp+8], temp [esp]; ours
-   n [esp+8], animate [esp], temp [esp+4]) - the slot dead end, plus the 4-byte size gap it causes
-   ([esp] has no displacement byte). The braced `if (..) { two = 1; } else { two = 0; }` (iter 37)
-   gave the game's `mov ebx,1`/`xor ebx,ebx` AND its loop shape (jmp to the bottom test, one
-   epilogue): 49 -> 36. An explicit int wh for the temp (3 declaration positions x 2 forms) moves
-   nothing. Behaviour pass (iter 63), 1 item: the one-sided jump-target block is SAME-shape - the
-   game's `jmp 0x146bd` 0x145c3 (right after `call spr_draw_scaled` 0x145be, the end of the `if (sel != -1)`
-   arm) leaves the loop body at the loop tail 0x146bd `inc edx; cmp eax,[esp+4]; jl 0x14398`, because
-   sel != -1 is known on that path and the two blocks it skips are both `sel == -1 && ...`
-   (0x14623-0x1462b and 0x1468d-0x14695, the second testing sel before EBX, so the stale EBX is never
-   read there); our build jumps to the twoplayer test 0x14603 and re-reads sel at 0x14620/0x1468a.
-   Same reachable paths and values - refs 76/76 same, no one-sided const, nothing else open.
-   Iter 103 vbatch (.work/vbatch/ents_show.py, ents_show2.py, control 7): the wtext scalar-slot
-   lever of GOTCHAS - `volatile int sl[3]` written for the three permuted slots (temp/n/animate),
-   in both declaration orders and with the indices swapped, plus `volatile int sl[2]` for n and
-   animate alone and a `volatile int wh` scalar - 17 to 24 rows and 12 bytes more frame: the array
-   does not start at [esp] while a fourth slot (the `sel` parameter spill at [esp+0xc]) exists, it
-   is allocated above them. Four parameter renames (`q`/`p`, `x`/`y`, `aa`/`bb`, `ncount`/
-   `doanimate`) leave 7 rows and 848 bytes unchanged, so com_open's "the slots move with the names"
-   (QUESTIONS 2) does not generalize. */
+/* MATCH (2026-11-27, 7 rows -> 0). Three things did it:
+   - `int m = n; int a = animate;` - the two spilled parameters read through local copies, in that
+     declaration order. Parameters spilled in place sat n [esp+8], animate [esp], w temp [esp+4];
+     the copies get the game's n [esp+4], animate [esp+8], temp [esp]. `int a ..; int m ..;` is 5 rows,
+     one copy alone grows the frame 12 bytes (.work/vbatch/ents_show3.py).
+   - `continue;` after spr_draw_scaled(): the game's `jmp 0x146bd` 0x145c3 to the loop tail. It was
+     read as the compiler skipping two dead `sel == -1` blocks; it is a statement (9.5b never
+     derived it - the else arm stays, the game re-tests sel at 0x14623/0x1468d).
+   - `w * h * frame`, not `frame * (w * h)`: with the continue in, the product's operand order
+     picks `imul ebx,edi` 0x14409 (.work/vbatch/ents_show4.py; `(w * h) * frame` is the same bytes).
+   Whether the game's source had the two copies or something else that orders the slots, the bytes
+   cannot say. What did not move the slots: declaration order, `volatile int sl[]` (frame +12), an
+   explicit local for the temp, parameter renames, dead early references to n/animate.
+   The braced `if (..) { two = 1; } else { two = 0; }` gives `mov ebx,1`/`xor ebx,ebx` and the loop
+   shape (jmp to the bottom test, one epilogue). */
 void ents_show(short sel, int n, int animate, int custom, int skip)
 {
     short i;
     short id;
     int two;
+    int m = n;
+    int a = animate;
 
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < m; i++) {
         if (skip && (i == 1 || i == 3))
             continue;
         if (!custom) {
@@ -2845,9 +2841,9 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
         } else {
             id = ents[i].id;
             sprptr = ((struct attr *)sprattr)[id].data
-                + ents[i].frame * (((struct attr *)sprattr)[id].w * ((struct attr *)sprattr)[id].h);
+                + ((struct attr *)sprattr)[id].w * ((struct attr *)sprattr)[id].h * ents[i].frame;
         }
-        if (animate) {
+        if (a) {
             if (++ents[i].f8 > 1) {
                 if (!custom) {
                     if (i < 2 || sel == -1) {
@@ -2886,6 +2882,7 @@ void ents_show(short sel, int n, int animate, int custom, int skip)
             spr_y -= spr_w >> 1;
             spr_x -= spr_h >> 1;
             spr_draw_scaled();
+            continue;
         } else {
             if (!custom) {
                 spr_h = 0x26;

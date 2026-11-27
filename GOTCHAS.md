@@ -403,7 +403,8 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   (0x90 filler) - 7 of self_project's 10 rows; rows past the end of a shorter function are its own
   epilogue or alignment (race_records_menu, ctl_label's nops); a padding row (`lea eax,[eax]` vs
   `nop`) is the size gap of a register choice above it (com_wait_byte 0x2df70). [generic]
-- **Rows that are only stack displacements = the slot-permutation dead end** (below): count them
+- **Rows that are only stack displacements = the slot-permutation class** (dead end below, but
+  first `tools/wc/stackmap.py` and the parameter-copy lever, ents_show): count them
   first (showlines 0x2a268: 10 of 18). Count them, and every other class, with one pass over the two
   full listings: normalise each instruction (addresses as `@`) and subtract the COUNTERS per side -
   what remains is the register/width/epilogue gap, not the slot permutation. [generic]
@@ -696,9 +697,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
 - **A one-sided nmrefs jump-target block is three SAME classes before it is a bug:** (1) the game
   tail-merges a store pair, so the block an arm jumps into uses only the second half (shot_step
   0x25ff1 stores x then `jmp 0x26021` 0x26008 into the shared y store, where our `return` jumps to
-  the epilogue and our tail block re-reads the struct); (2) the game skips a block it can prove dead
-  from the condition that got it there (ents_show 0x145c3 `jmp 0x146bd` = the loop tail, leaving both
-  `sel == -1 && ...` blocks 0x14623/0x1468d, reached only from inside `if (sel != -1)`); (3) the game
+  the epilogue and our tail block re-reads the struct); (2) WITHDRAWN 2026-11-27: "the game skips a block it can prove dead from the condition that got
+  it there" was ents_show 0x145c3 `jmp 0x146bd`, and that was a `continue;` in the source (lever
+  below) - try the statement before filing a jump as same-shape; (3) the game
   keeps ONE head for nested retry loops, so its retry jumps re-test an outer condition our build
   tests once (fn_1be3c 0x1beae: the rand retries 0x1bec2/0x1bec8 and the duplicate-found `je 0x1beae`
   all land on the `splitscreen` test, ours land on the call 0x1beb8 or on the bottom test 0x1bef5).
@@ -723,9 +724,27 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   6 -> 21). Only works when they are the function's ONLY spilled locals - with other scalar slots
   around, the elements are still coloured individually (screenshot 0x114c8, release_check 0x034458:
   no gain). A slot holding a *parameter* spill counts as one of those other slots: ents_show
-  0x14380 has four slots, three permuted locals and one incoming argument, and `volatile int sl[3]`
-  for the three is allocated above all four, not at [esp] - frame 848 -> 860 bytes, 7 -> 20 rows
-  (iter 103, both declaration orders, both index orders). [generic]
+  0x14380 has four slots, three permuted and one more parameter, and `volatile int sl[3]` for the
+  three is allocated above all four, not at [esp] - frame +12 bytes, 7 -> 20 rows. [generic]
+- **Permuted slots where some hold spilled PARAMETERS: read each such parameter through a local
+  copy** (`int m = n; int a = animate;`, then use m and a). ents_show 0x14380, 7 rows -> 1 and then
+  MATCH: spilled in place the parameters sat n [esp+8], animate [esp], compiler temp [esp+4]; as
+  copies they get the game's 4 / 8 / 0. The copies' declaration order matters (`a` first: 5 rows)
+  and it is all or nothing (one copy alone: frame +12, 15-17 rows). Declaration order of the other
+  locals, renames, `volatile` arrays, an explicit local for the temp and dead early references
+  (`(void)animate;`) had moved nothing. See the frames first: `tools/wc/stackmap.py
+  .work/src/WW.OBJ ww NAME -v` prints ours and the game's slots with the instructions that touch
+  each. Same slot SET on both sides = a permutation (this lever, the volatile array); a different
+  set or frame size = a different object shape (array sizes above; on redcat-rrr-re, WCC 10.5, a
+  value in a local `int v[3]` element). [generic]
+- **A `jmp` from the end of an if-arm straight to the loop tail is `continue;`**, also when the
+  blocks it skips could be proved dead from the arm's condition - 9.5b does not prove that.
+  ents_show 0x145c3 `jmp 0x146bd` was filed as "same-shape, the compiler skips two `sel == -1`
+  blocks" from iter 63 on; `continue;` after the call gave the game's size (848 -> 852). A
+  size gap of 3 bytes with equal rows = one jmp that is short on one side: find it. [generic]
+- **Operand order of a product is a lever once the rest is right:** `data + w * h * frame` gives
+  `imul ebx,edi` 0x14409, `data + frame * (w * h)` gives `imul edi,ebx`; before the `continue` was
+  in, the second form was the one that agreed, so re-probe operand orders after a structural fix. [generic]
 
 ### Dead ends: SKIP at once (0 variants) unless you bring a new idea
 

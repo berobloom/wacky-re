@@ -31,7 +31,7 @@ changes or redistributes the original files.
 
 <a href="https://berobloom.github.io/wacky-re/WWPROGRESS.HTML"><img src="docs/WWPROGRESS.SVG" width="50%" alt="WW.EXE: the share of the game's C functions that compile to the original's bytes"></a>
 
-**213 of the game's 285 C functions compile to the original's exact bytes.**
+**214 of the game's 285 C functions compile to the original's exact bytes.**
 The other 78 are near misses. The game's assembler module (`src/wwasm.asm`) reassembles
 to the original's bytes exactly; the libraries are outside that count.
 
@@ -99,7 +99,7 @@ there.
 ## Status
 
 The game's C is all written (fn_1c068 and fn_1c0ac stay out on purpose: the compiler would
-inline them where the game calls them), and 213 of its functions match (PROGRESS.md has the current count). The assembler module
+inline them where the game calls them), and 214 of its functions match (PROGRESS.md has the current count). The assembler module
 (VGA drawing, interrupt handlers) is reassembled byte for byte from `src/wwasm.asm`, with every
 routine and label named. The hybrid link (`tools/link/build.sh`) uses our C and our asm with the game's library
 bytes and runs to the first race. The sound library is being rebuilt from source in `src/ass`

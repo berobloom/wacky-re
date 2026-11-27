@@ -31,7 +31,9 @@ pointer to the finding, and leave it here so the number stays valid.
    Data point (ents_show 0x14380, iter 103): renaming two `int` parameters four ways moves nothing (7 rows,
    848 bytes unchanged), and the `volatile int sl[]` slot lever fails there because the frame's fourth slot
    is a parameter spill - the array is allocated above the existing slots instead of at [esp] (+12 bytes,
-   20-24 rows).
+   20-24 rows). 2026-11-27: what does move them there is reading the two spilled parameters through local
+   copies `int m = n; int a = animate;` (CONFIRMED, ents_show MATCH; GOTCHAS levers) - a parameter spilled in
+   place and a local are placed by different rules, so "which slot" is partly a parameter-vs-local question.
    Data point (engines_menu 0x167D8): the game keeps a multi-assigned int local in EDX (xor edx / mov $1,edx /
    movsx edx / mov edx,[esp]) while our compile spills it to slot 8 with identical C; `register` and declaration
    order did not change it. Data point (view_at_curpos 0x2F408, iter 20): the same shape with NO

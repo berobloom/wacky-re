@@ -25,6 +25,7 @@ python. Every tool prints its usage with no arguments.
 | `tp/inventory.py UNPACKED.EXE OUT.json` | Turbo Pascal MZ: segments from the relocated words, routines by recursive descent, `frame_only` candidates; writes a matching-decomp recipe skeleton [SAM2] |
 | `wc/libmatch.py PROG LIB [LIB..]` | Watcom/OMF: which library modules occur byte for byte (fixups masked) in an LE program; compares patch levels to pin the compiler version [wacky] |
 | `wc/fndiff.py PROG OBJ FN` | Watcom near-miss function vs the game: aligned instruction-by-instruction diff (fixup bytes masked, addresses shown as `@`); use it instead of `wc/objdiff.py`, whose byte alignment marks everything after a 1-byte drift [wacky] |
+| `wc/stackmap.py OBJ PROG FN [-v]` | a function's stack frame, ours and the game's: frame size, the 4-byte slots touched, the holes; `-v` the instructions per slot. For near misses whose rows are only `[esp+N]` displacements: same slot set = permutation, different set = different objects (GOTCHAS levers) [wacky, from redcat-rrr-re] |
 
 LE workflow:
 
