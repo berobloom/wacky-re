@@ -335,6 +335,11 @@ Facts this settles:
   that has one (`one`, savings 22), and the size sort leaves ours one, id62, w, h, id59, id56 top
   down against the game's h, w, one, id62, id59, id56. Of the 720 orders of those six in the rough
   output only one gives the game's frame, and it needs w and h among the high-savings conflicts.
+- **showlines 0x2a268 likewise** (STRONGLY SUPPORTED, iter 106): the game's two 4-byte parameter
+  spills (n 0xc, wait 8) sit above its two shorts (y 4, x 0); the size sort puts smaller first, so
+  that frame needs y and x 4 bytes wide. The game's 32-bit `movsx` + `add eax,4` for both (0x2a332,
+  0x2a340) agrees, but `int x, y` in ours hands y a register (EDI) that the game gives to i, keeping
+  y in memory - so the register contest differs too (src/nearmiss.txt showlines).
 
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
