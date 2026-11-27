@@ -20,6 +20,10 @@ Short: where the project stands, and what is next. History is in git; no diary.
 - Near misses: `src/nearmiss.txt` is the work list (ranked by `tools/wc/nearmiss.sh`; status
   column MATCH / SKIP: cause / LAYOUT / empty = open). Each function's causes and tried spellings
   are in its `differs:` note in `src/ww.c`.
+- **Stack-slot permutations have a model (iter 106)**: 9.5b's slot allocator traced inside WCC386 and
+  simulated (findings/compiler.md "Stack slots", `tools/wcc95/slottrace.py` + `slotsim.py`). Before
+  spelling a slot near miss, simulate it: enter_name and kartsets_load are out of reach of
+  declaration-level changes (no declaration order, savings or type change gives the game's frame).
 - What works and what does not: GOTCHAS.md "This project's traps" - *Reading a near-miss diff*,
   *Levers that produced MATCHes*, *Dead ends*. Do not copy levers into this file.
 - Findings, evidence at the links: serial (findings/serial.md) rings 0x84b00/0x80afa, wrap 0x4000;

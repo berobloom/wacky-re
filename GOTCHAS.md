@@ -742,6 +742,18 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   slots). The order inside the block matters (20 / 16 / 12), the outer order did not. Score slot
   permutations by the slot each variable gets, not by rows: `tools/wc/slotroles.py` (a regex
   per variable over `stackmap.py -v`) shows which variant moved what. [generic]
+- **Before trying spellings for a slot permutation, simulate it** (findings/compiler.md "Stack
+  slots"). In 9.5b a frame comes from two unstable Shell sorts: locals in declaration order ->
+  rough savings (IR references, x20 per loop level) -> newer compiler temps in front -> size,
+  smaller first. Names never matter; declaration order only breaks savings ties; the size mix is
+  what scrambles equal sizes. `tools/wcc95/slottrace.py` + `slotsim.py --want` say in minutes
+  whether ANY declaration order, savings change or `int` subset gives the game's frame. enter_name:
+  none does (hundreds of thousands simulated), which is why 16 hand spellings never moved it. [generic]
+- **Trace a compiler on a probe cut after the target function, never count passes in a whole-file
+  trace**: the Nth hit of a per-function routine was not the Nth function of the object's publics
+  (wacky-re: off by one at enter_name, cause not pinned down), and a plausible-looking frame made the
+  wrong pass look right. With the cut, the target is the last pass. A return address read off the stack under a flat DOS extender is an image address already;
+  only EIP from the stub is linear (image + the load delta). [generic]
 - **A `jmp` from the end of an if-arm straight to the loop tail is `continue;`**, also when the
   blocks it skips could be proved dead from the arm's condition - 9.5b does not prove that.
   ents_show 0x145c3 `jmp 0x146bd` was filed as "same-shape, the compiler skips two `sel == -1`

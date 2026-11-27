@@ -284,6 +284,16 @@ Data points (fn_193a8 0x193A8, near-miss 2072/2240 bytes): (a) the game keeps th
    Test: keep the statements fixed and vary one thing at a time (a variable that only ever
    appears as an argument, a `short` vs `int`, an extra unused local); a match is 21 diffs gone
    and `enter_name` byte-identical at 0x1cb44.
+   **2026-11-27, iter 106 - the rule is now known** (findings/compiler.md "Stack slots", CONFIRMED by
+   traces of WCC386): declaration order -> RoughSortTemps by IR reference counts (x20 per loop level)
+   -> 14 newer compiler temps in front -> size sort; both sorts unstable. Our slots (top down, traced):
+   lim 0x70, xc 0x6c, cx 0x68, nx 0x64, x 0x60, cy 0x5c, y 0x58 (the slot list above came from
+   slotroles' regexes and was partly wrong: 0x58 is y, the 0x60 constant). The game's: cx, y, lim,
+   nx, x, cy, xc. `slotsim.py` (STRONGLY SUPPORTED): no declaration order, no savings change of
+   -2..+2 per short, no `int` subset, no single extra or missing temp and no compiler-temp prefix of
+   10..16 gives it. So the game's function differs in more than one of these at once - the
+   statements, not the declarations, are where to look (a reference more or fewer to several locals,
+   another temp mix). Still OPEN.
 
    Iter 73 (GOTCHAS "9.5b frame and evaluation-order rules"): the slot order is the Open Watcom cg's
    temp-list order at AssignTemps (savings sort of the last MakeConflicts, unstable ShellSort, plus

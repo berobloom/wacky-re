@@ -287,6 +287,55 @@ uses nothing it knows about a callee in the same file (KKND-Decomp and ReverseAp
 `fseek`, `ftell`: 5 -> 8..17 rows, never fewer), so callee clobber sets are an input, but the game's are
 the defaults: no clobber set tried gives the game's pairing.
 
+## Stack slots (iter 106): how 9.5b orders a frame (CONFIRMED, traces of the real compiler)
+
+Tools: `tools/wcc95/slottrace.py` (breaks below, about 6 min for a probe cut after the target),
+`tools/wcc95/slotread.py` (the locations handed out), `tools/wcc95/slotsim.py` (the chain simulated,
+and searches for a wanted order).
+
+| Address | Open Watcom | What | Level |
+|---|---|---|---|
+| 0x2df17 / SortList at 0x2dfa4 | `RoughSortTemps` (dataflo.c) | adds `Weight(1, blk)` per IR operand/result to each temp's conflict savings (1 outside loops, x20 per loop level, `LOOP_FACTOR`), then sorts Names[N_TEMP] with 0x2dec2 | CONFIRMED |
+| 0x2dec2 | `AllocBefore` | const temps (+0x2d bit 0) last; names with a conflict (+0xc) first, higher savings first (unsigned `seta`); the rest higher temp id first (`setg`) | CONFIRMED by disasm, simulated = traced |
+| 0x3e64f, SortList at 0x3e674 | `AssignOtherLocals` | sorts Names[N_TEMP] with 0x3e716, then calls `AllocNewLocal` 0x3e7f3 for every NEEDS_MEMORY (+0x18 & 0x80), not HAS_MEMORY (& 0x40), not ALIAS (+0x2c & 2) temp in sorted order | CONFIRMED |
+| 0x3e716 | `TempAllocBefore` (x86temps.c) | +0x2d bit 1 first, then **smaller size first**, then same id with the larger offset first; nothing else - equal sizes keep the order the unstable Shell sort leaves | CONFIRMED, simulated = traced in 217 of 218 functions (the 218th: a list longer than the 300 entries logged) |
+| 0x4580a | `SetTempLocation` | `CurrProc` [0x6ff10] +0x2c `locals.size` += size; location (+0x20) = -locals.size - locals.base (+0x30). The first temp allocated gets the highest slot: esp offset = frame + location | CONFIRMED (enter_name: 116 bytes = `sub esp,0x74`) |
+| 0x456d6 | `PushLocals`/`AssignPushLocals` | leading `mov reg -> temp` of the first block become prologue pushes (counter `CurrProc+0xc`) - but it returns at once under `-oneatx` (store cost <= push cost): zero hits in 60 functions | CONFIRMED |
+| 0x46212 | (sort by id, 0x46208) | not called before AssignOtherLocals in the traced functions | CONFIRMED (enter_name) |
+
+Name record (9.5b): +0 next, +8 size, +0xc conflict, +0x10 v.offset, +0x14 FE symbol, +0x18 usage,
++0x20 t.location, +0x24 id, +0x28 blk_id (word), +0x2c/+0x2d temp flags.
+
+**The chain**, CONFIRMED end to end for enter_name 0x1cb44 (`slotsim.py`: both sorts simulated =
+traced, and the simulated frame = our frame):
+1. Names[N_TEMP] holds the locals **in declaration order**, then the parameters in reverse, then
+   compiler temps (front-end handles also follow declaration order: enter_name heading 0x648 ..
+   lim 0x654).
+2. RoughSortTemps orders them by rough savings (IR reference counts, loop-weighted); ties keep what
+   the Shell sort leaves of step 1. enter_name: ch 180, i 141, cx 123, name 63, heading 23, n 23,
+   y 22, x 22, lim/cy/nx/xc 21.
+3. Temps created after that (14 in enter_name, sizes 2,2,2,4,2,2,2,2,2,2,4,4,2,2) are pushed in front.
+4. TempAllocBefore sorts by size; the mix of sizes is what scrambles equal-size locals.
+
+Facts this settles:
+- **Variable names do not reach the frame**: swapping the names cx<->lim and y<->xc in enter_name
+  (code unchanged) gives byte-identical output (vbatch, 3 variants).
+- **Stack slots are a second, separate allocator** from the register allocator's conflict sort
+  (SortConflicts 0x44ac3): the same savings feed both, but through different sorts and tie orders.
+- **enter_name's frame is out of reach of single source changes** (STRONGLY SUPPORTED, simulation
+  over the traced lists): the game's top-down cx, y, lim, nx, x, cy, xc is given by no declaration
+  order of the shorts (40,320), no savings change of -2..+2 each (78,125), no subset declared `int`,
+  no single temp inserted (any size, any position) or deleted, and no prefix of 10..16 compiler temps
+  of sizes 2/4 (130,048 patterns). Within the fixed positions of our list exactly one arrangement works
+  (two pair swaps, cx/lim and y/xc), and the savings that give it need cx at 21..23 - one reference in
+  the loop where the game's code has six. So the game's function reached the slot sort with a list
+  that differs in more than one of these inputs at once.
+- **kartsets_load 0x28038 likewise** (STRONGLY SUPPORTED, iter 106): its address-taken `w`, `h`
+  (`fread(&w, ..)`) have no conflict, so RoughSortTemps orders them by temp id behind every name
+  that has one (`one`, savings 22), and the size sort leaves ours one, id62, w, h, id59, id56 top
+  down against the game's h, w, one, id62, id59, id56. Of the 720 orders of those six in the rough
+  output only one gives the game's frame, and it needs w and h among the high-savings conflicts.
+
 ## First trace: net_recv 0x2DB00 (near miss, `crc` in EAX, the game ECX)
 
 `ratrace.py WW.C out 15668-15719` (the whole file compiles, events of these lines are logged;
