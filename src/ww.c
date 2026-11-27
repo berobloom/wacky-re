@@ -7043,7 +7043,13 @@ void fn_1c968(void)
  * (QUESTIONS.md 9). The two palette flips are byte-identical as if/else statements - the
  * `page_draw = page_draw ? 0 : 0x3e80` form compiles to a value select in EAX, which the game never
  * emits (GOTCHAS). SKIPped iter 31 with 0 variants: every fndiff row is a slot displacement,
- * no lever outside the class in this note. */
+ * no lever outside the class in this note.
+ * 2026-11-27 (.work/vbatch/enter_name2-3.py, tools/wc/slotroles.py, 16 variants, in src/ww.c): the
+ * rows are two swapped pairs, xc/y (game 0x58/0x6c) and cx/lim (game 0x70/0x68). y stays at 0x58
+ * in every variant: declaration swaps of xc/y and cx/lim and the game's allocation order (19-30),
+ * cx/cy/i/nx/lim in a block from `cx = x + 0xa0` (24-30), and `y = 0x60` moved before strcpy,
+ * wtext or center_x, or written into the print_at call (19-20; the game loads it into EDX before
+ * the inline strcpy, ours stores the immediate in every position). */
 void enter_name(char *name, char *heading, int n)   /* arg1 = eax, arg2 = edx, arg3 = ebx */
 {
     char prompt[0x28];
@@ -12922,7 +12928,13 @@ void track_load(void)
  * load order and the `p7d838 += 2` position. Slot per variable for 27 variants:
  * .work/vbatch/kartsets4-6.py with tools/wc/slotroles.py. No gain: a copy `int o = one` (15; without the
  * block scope 22-25), w/h alone in either loop's block (23), inner order `int w, h` first (20) or
- * `h, w` (16), w/h in the k loop (16), outer order of n, k, i (12, same bytes). */
+ * `h, w` (16), w/h in the k loop (16), outer order of n, k, i (12, same bytes).
+ * Later the same day (.work/vbatch/kartsets7-10.py, 45 more): all 24 orders of the four block-local
+ * declarations (best 12, the current one); `short w, h` in the block is 12 too and gets the game's
+ * top three slots (w 0x14, h 0x10, one 0xc) but then n/k50/name sit 4/0/8 against the game's 8/4/0;
+ * no outer declaration of n/k moves those three (12), and naming the loop temps as C pointers (a
+ * walked `char *nm`, `short **row`, a `struct kartset *` in the k loop) costs 18-42. The two 4-byte
+ * temps are the compiler's strength-reduced pointers, so their order is not a source position. */
 struct kartset { int f00; char name[0x12]; };
 extern struct kartset kartsets[];
 #pragma aux kartsets "_arr7d8b4"
