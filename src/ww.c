@@ -1948,7 +1948,16 @@ void spr_grab(void);
    (0x13283, 0x13316), "DEMO MODE " 0x13384, "TIME TRIAL" 0x133c1 - against our four (0x3273, 0x32fb,
    0x3369, 0x33a6), same count, our literals are fixups globrefs skips (GOTCHAS). The one-sided branch
    signature is the same jump landing on our shared-index block 0x32ba rather than on the game's
-   strcpy head 0x132e1 (that block uses no absolute address). No BUG, no code change. */
+   strcpy head 0x132e1 (that block uses no absolute address). No BUG, no code change.  *
+ * 2026-11-27 (tools/wc/jumpland.py): the 12-byte size gap is one merge. In the second netgame
+ * strcpy pair (0x132b0) the game builds each arm's source address in full (v88c6a straight into
+ * ESI, myplayer through EAX) and jumps into one copy loop 0x132e1; ours gives both arms the EAX form
+ * and cross-jumps from the imul on (0x132c1 `jmp 0x132ca`). The first pair (0x13218) has the same C
+ * and is not merged. Tried (.work/vbatch/draw_status2-4.py, 18): arm order, braces, casts, ternaries,
+ * two ifs, six address spellings of the v88c6a arm (all byte-identical: the spelling does not reach
+ * the codegen), and the spr_x/spr_y statements around it - `spr_x = 4;` after the strcpy un-merges it
+ * (1108 bytes) but flips an earlier pair's register forms (18 rows), and the game has that store
+ * before the test. */
 void draw_status(void)
 {
     char buf[80];
@@ -11810,7 +11819,12 @@ void ents_project(void)
  * epilogue instead and our tail block reads v7d874 again. Same three paths and values: 0x25fe3
  * `cmp word [0x88bae],3; jne 0x25ff1` then 0x25fea `cmp word [eax+2],1; je 0x2600f` is our
  * `!= 3 ||` short-circuit, and 0x25f07/0x25f0c `test dx,dx` + `test bx,bx` are `if (move && stay)`.
- * refs 44/44 and the consts already matched, so nothing else was open. */
+ * refs 44/44 and the consts already matched, so nothing else was open.
+ * 2026-11-27 (tools/wc/jumpland.py; fndiff prints jump targets as @ and could not see this): the
+ * kind == 1 path's `je` 0x25fef landed on our reload of v7d874 (0x2600a), the game's on the lx1 store
+ * behind it (0x2600f). Writing the lx1/ly1 store a second time inside `if (move)` (+ return) lets
+ * 9.5b cross-jump into the shared store like the game; else-arm, `==`/`&&` and no-return spellings
+ * do the same (.work/vbatch/shot_step2.py). Still 2 rows: the load order above. */
 extern int v7d5d0;
 
 void shot_step(short move)
@@ -11865,6 +11879,9 @@ void shot_step(short move)
             v7d874->y = ly0;
             return;
         }
+        v7d874->x = lx1;
+        v7d874->y = ly1;
+        return;
     }
     v7d874->x = lx1;
     v7d874->y = ly1;
@@ -19183,7 +19200,10 @@ void tiles_setup(void)
  * in a probe (14 - .work/probe_in) - 9.5b gives a comparison's source-LEFT operand both the cmp
  * destination AND the first register home (ECX here, EAX in car_laps), so flipping the C operands
  * swaps the two temps and leaves the emitted `cmp` alone; the other rows are the moved fread load,
- * the zero sink, that hoist, and the padding/epilogue rows at 0x3526a and 0x352d4. */
+ * the zero sink, that hoist, and the padding/epilogue rows at 0x3526a and 0x352d4.
+ * 2026-11-27: the hoist is the one jump tools/wc/jumpland.py finds here (the game's `jle 0x35162`
+ * lands below its one load of v7ea70). The same C hoists in both builds in cars_menu 0x1a9f7 and
+ * 0x1a762, so this is register pressure in this loop, not the wait loop's spelling. */
 void vram_clear(void);
 void rows_restore(void);
 extern int v7aa98;

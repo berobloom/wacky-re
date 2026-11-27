@@ -755,6 +755,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   4 and then MATCH; a do-while around rand plus `goto again` past the store (ours) and `continue`
   (9 rows) do not. Both were nmrefs "one-sided jump-target block, SAME-shape" verdicts: re-read
   every such verdict as a statement to try. [generic]
+- **fndiff cannot see where a jump goes: it prints every target as `@`.** A near miss at N rows can
+  hold a jump that lands elsewhere and the rows never show it (shot_step 0x25e6c: 2 rows, plus a
+  `je` 0x25fef on our v7d874 reload instead of the game's store behind it). `tools/wc/jumpland.py
+  ww .work/src/WW.OBJ [NAME..]` follows both targets of every aligned jump through the alignment and
+  lists the ones that land elsewhere (no names: all open near misses). Many hits in one function
+  that all land on a store of the same global (kart_fire, players_project, fn_193a8, main_menu) are
+  the game keeping that global in a register and writing it back on each exit path, not statements;
+  hits that land on `unaligned` instructions at the same address are register differences. [generic]
 - **Operand order of a product is a lever once the rest is right:** `data + w * h * frame` gives
   `imul ebx,edi` 0x14409, `data + frame * (w * h)` gives `imul edi,ebx`; before the `continue` was
   in, the second form was the one that agreed, so re-probe operand orders after a structural fix. [generic]
