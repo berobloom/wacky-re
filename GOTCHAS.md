@@ -699,11 +699,9 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   0x25ff1 stores x then `jmp 0x26021` 0x26008 into the shared y store, where our `return` jumps to
   the epilogue and our tail block re-reads the struct); (2) WITHDRAWN 2026-11-27: "the game skips a block it can prove dead from the condition that got
   it there" was ents_show 0x145c3 `jmp 0x146bd`, and that was a `continue;` in the source (lever
-  below) - try the statement before filing a jump as same-shape; (3) the game
-  keeps ONE head for nested retry loops, so its retry jumps re-test an outer condition our build
-  tests once (fn_1be3c 0x1beae: the rand retries 0x1bec2/0x1bec8 and the duplicate-found `je 0x1beae`
-  all land on the `splitscreen` test, ours land on the call 0x1beb8 or on the bottom test 0x1bef5).
-  In all three compare reachability and the values at the stores, not the jump targets. [generic]
+  below) - try the statement before filing a jump as same-shape; (3) WITHDRAWN 2026-11-27 as well: fn_1be3c's "one head for nested retry loops" was `goto retry`
+  to the top of the loop body (lever below). Two of the three were source statements, so try the
+  statement first; compare reachability and stored values only to rule out a bug. [generic]
 - **An unsigned `cmp eax,1; jbe A` + `cmp eax,2; je B` + `jmp` chain is a `switch` with `case 0: case
   1:`**, not `if (v <= 1) ... else if (v == 2)` (signed `jg`, other block order). A block the game
   jumps BACK into from a later test is the same statements written twice in the source and
@@ -749,6 +747,14 @@ not about this game `[generic]`. Watcom = WCC386 9.5b with the project's flags t
   ents_show 0x145c3 `jmp 0x146bd` was filed as "same-shape, the compiler skips two `sel == -1`
   blocks" from iter 63 on; `continue;` after the call gave the game's size (848 -> 852). A
   size gap of 3 bytes with equal rows = one jmp that is short on one side: find it. [generic]
+- **Where a jump inside a loop lands says which statement it is.** Landing on the loop's bottom test
+  = `continue;`; on the loop tail past the rest of the body = `continue;` from an if-arm (ents_show);
+  on the TOP of the body, skipping the test, = `goto label;` with the label as the body's first
+  statement. fn_1be3c 0x1be3c: three retry jumps (two rand range checks, one duplicate found) all
+  land on 0x1beae, the first statement of the while body - `goto retry` for all three took it 10 ->
+  4 and then MATCH; a do-while around rand plus `goto again` past the store (ours) and `continue`
+  (9 rows) do not. Both were nmrefs "one-sided jump-target block, SAME-shape" verdicts: re-read
+  every such verdict as a statement to try. [generic]
 - **Operand order of a product is a lever once the rest is right:** `data + w * h * frame` gives
   `imul ebx,edi` 0x14409, `data + frame * (w * h)` gives `imul edi,ebx`; before the `continue` was
   in, the second form was the one that agreed, so re-probe operand orders after a structural fix. [generic]

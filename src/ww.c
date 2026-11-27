@@ -6611,7 +6611,13 @@ animframe:
  * the same seat cd is drawn again); our build jumps back to the rand call 0x1beb8 or to the bottom
  * test 0x1bef5 `cmp cx,7; jle 0x1beaf` and also leaves cx alone, so every retry is the same. The only
  * extra effect in the game is re-reading splitscreen 0x1beae, dead: nothing between the test and the
- * call writes it and 0x43088 is the clib rand. refs 13/13 same, no one-sided const. */
+ * call writes it and 0x43088 is the clib rand. refs 13/13 same, no one-sided const.
+ * MATCH 2026-11-27 (10 -> 0, .work/vbatch/fn_1be3c2-3.py): that "same-shape" verdict was the source.
+ * The three retries are `goto retry` to a label at the top of the while body (the splitscreen test
+ * 0x1beae) - no do-while around rand, no `goto again` past the store (4 rows: the EDI zero register
+ * and the second loop head go with it). `continue` would land on the bottom test (9 rows, 200 bytes).
+ * Last 2 rows: `seat = 1;` written before `v70720[0] = myplayer;` (the game's `mov eax,1` 0x1be70
+ * between the load into DX and the store). */
 void fn_1be3c(void)
 {
     short i, seat, cd, cand;
@@ -6623,29 +6629,28 @@ void fn_1be3c(void)
     srand(m);                           /* 0x1be4e (clib srand at 0x430ac) */
     for (i = 0; i <= 7; i++)
         v70720[i] = -1;                 /* 0x1be59 */
+    seat = 1;                           /* 0x1be70 */
     v70720[0] = myplayer;               /* 0x1be75 */
-    seat = 1;
     if (twoplayer != 0 || splitscreen != 0) {
         v70720[1] = v88c6a;             /* 0x1be96 */
         seat = 2;
     }
     cd = seat;                          /* 0x1bea6 (the pre-test 0x1bea8 is on seat, eax) */
     cand = -1;                          /* 0x1bea1 */
-    while (cd <= 7) {                   /* 0x1beae */
+    while (cd <= 7) {
+    retry:
         if (splitscreen == 0) {
-            do {
-                cand = rand();          /* 0x1beb8 (clib rand at 0x43088) */
-            } while (cand < 0 || cand > 7);
+            cand = rand();
+            if (cand < 0 || cand > 7)
+                goto retry;
         }
-        cand++;                         /* 0x1beca */
+        cand++;
         if (cand > 7)
             cand = 0;
-        for (i = 0; i <= 7; i++)        /* 0x1bed5 */
+        for (i = 0; i <= 7; i++)
             if (cand == v70720[i])
-                goto again;
-        v70720[cd++] = cand;            /* 0x1beed */
-    again:
-        ;
+                goto retry;
+        v70720[cd++] = cand;
     }
 }
 

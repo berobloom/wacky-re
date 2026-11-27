@@ -6,7 +6,7 @@ Short: where the project stands, and what is next. History is in git; no diary.
 
 - Executables: WW.EXE 1.1, bound DOS/4GW LE, Watcom C/C++32 **9.5b**, `-s -3r -oailrt` (`-oneatx`
   used); one C module, an asm block, libraries (findings/executables.md).
-- **214 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; 2026-11-27 +1 ents_show; iter 100 +1 line_draw;
+- **215 of 285 functions byte-identical** (`src/matched.baseline`, `src/check.sh`; 2026-11-27 +2 ents_show, fn_1be3c; iter 100 +1 line_draw;
   iter 97 +1 fade_in; iter 94 +1 shots_clear; iter 93s +3; iter 90 +2 with no C change (`difffn.py`/`fncov.py` behaviour work);
   iter 74 started counting `tools/link/extra.c`; objmatch compares rel32 branches between our own
   functions by target, `tools/wc/test_objmatch.py`). Iter 66 checked what a MATCH masks: all 4556
